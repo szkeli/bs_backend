@@ -1,0 +1,54 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+generator nestgraphql {
+  provider = "node node_modules/prisma-nestjs-graphql"
+  output   = "../src/@generated/prisma-nestjs-graphql"
+}
+
+enum Gender {
+  NONE
+  MALE
+  FEMALE
+}
+
+model User {
+  id          String   @id @default(uuid())
+  openId      String
+  unionId     String
+  nickName    String   @default("空格用户")
+  gender      Gender   @default(NONE)
+  flag        Int      @default(0)
+  createAt    DateTime @default(now())
+  lastLoginAt DateTime @default(now())
+  avatarUrl   String?
+  school      String?
+  grade       String?
+  Post        Post[]   @ignore
+}
+
+model Post {
+  id            String   @id @default(uuid())
+  author        User     @relation(fields: [authorId], references: [id])
+  authorId      String
+  content       String   @db.LongText
+  upvoteCount   Int      @default(0)
+  downvoteCount Int      @default(0)
+  flag          Int      @default(0)
+  createAt      DateTime @default(now())
+  updateAt      DateTime @updatedAt
+}
+
+model Comment {
+  id        String    @id @default(uuid())
+  content   String
+  replyTo   Comment   @relation("CommentToComment", fields: [replyToId], references: [id])
+  replyToId String
+  Comment   Comment[] @relation("CommentToComment") @ignore
+}
