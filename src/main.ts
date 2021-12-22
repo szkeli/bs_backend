@@ -41,30 +41,31 @@ async function bootstrap() {
       
   // `;
 
-  let doit = `
-    user_a = g.traversal().V(538407723369234444)
+  // let doit = `
+  //   user_a = g.traversal().V(538407723369234444)
 
-    // created and posted a post
-    g.traversal()
-      .addV('post')
-      .property('content', '帖子内容测试 内容测试 内容 富文本 文本 纯文本 test for contenting......')
-      .addE('created_post')
-      .from(user_a)
-  `;
+  //   // created and posted a post
+  //   g.traversal()
+  //     .addV('post')
+  //     .property('content', '帖子内容测试 内容测试 内容 富文本 文本 纯文本 test for contenting......')
+  //     .addE('created_post')
+  //     .from(user_a)
+  // `;
 
-  let a = await axios.post("http://127.0.0.1:8080/gremlin", {
-    gremlin: doit,
-    bindings: {},
-    language: "gremlin-groovy",
-    aliases: {
-      "graph": "hugegraph",
-      "g": "hugegraph",
-    },
-  }).then((data) => data.data)
-    .catch((e) => {
-      console.error(pretty.render(e));
-    });
-  console.error(pretty.render(a));
+
+  // let a = await axios.post("http://127.0.0.1:8080/gremlin", {
+  //   gremlin: doit,
+  //   bindings: {},
+  //   language: "gremlin-groovy",
+  //   aliases: {
+  //     "graph": "hugegraph",
+  //     "g": "hugegraph",
+  //   },
+  // }).then((data) => data.data)
+  //   .catch((e) => {
+  //     console.error(pretty.render(e));
+  //   });
+  // console.error(pretty.render(a));
   const app = await NestFactory.create(AppModule);
   await app.listen(3000);
 }
