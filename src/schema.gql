@@ -3,8 +3,8 @@
 # ------------------------------------------------------
 
 type Post {
-  id: Int!
-  title: String!
+  id: Int
+  title: String
   votes: Int
 }
 
@@ -15,6 +15,67 @@ type Author {
   posts: [Post!]!
 }
 
+type User {
+  id: String!
+  openId: String!
+  unionId: String!
+  nickName: String!
+  gender: GENDER!
+  flag: Int!
+  createAt: Int!
+  lastLoginAt: Int!
+  avatarUrl: String!
+  school: String!
+  grade: String!
+  Post: [Post!]
+}
+
+enum GENDER {
+  NONE
+  MALE
+  FEMALE
+}
+
 type Query {
   author(id: Float!): Author!
+  user(id: String!): User!
+}
+
+type Mutation {
+  upvote_post(postId: Int!): Post!
+  createUser(input: UserCreateInput!): User!
+  updateUser(input: UserUpdateInput!): User!
+  followOne(input: UserFollowOneInput!): User!
+}
+
+input UserCreateInput {
+  id: String!
+  openId: String!
+  unionId: String!
+  nickName: String!
+  gender: GENDER!
+  flag: Int!
+  createAt: String!
+  lastLoginAt: String!
+  avatarUrl: String!
+  school: String!
+  grade: String!
+}
+
+input UserUpdateInput {
+  id: String!
+  openId: String!
+  unionId: String!
+  nickName: String!
+  gender: GENDER!
+  flag: String!
+  createAt: String!
+  lastLoginAt: String!
+  avatarUrl: String!
+  school: String!
+  grade: String!
+}
+
+input UserFollowOneInput {
+  id: String!
 }

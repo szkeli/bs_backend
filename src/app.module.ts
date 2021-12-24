@@ -7,6 +7,8 @@ import { PostsService } from './posts/posts.service';
 import { AuthorsService } from './authors/authors.service';
 import { AuthorsModule } from './authors/authors.module';
 import { PostsModule } from './posts/posts.module';
+import { UserModule } from './user/user.module';
+import { DbService } from './db/db.service';
 
 @Module({
   imports: [
@@ -18,8 +20,9 @@ import { PostsModule } from './posts/posts.module';
     }),
     AuthorsModule,
     PostsModule,
+    UserModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PostsService, AuthorsService],
+  providers: [AppService, PostsService, AuthorsService, DbService],
 })
 export class AppModule {}

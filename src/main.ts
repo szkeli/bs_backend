@@ -1,7 +1,8 @@
 import { NestFactory } from "@nestjs/core";
-import { AppModule } from "./app.module";
 import axios from "axios";
+import { AppModule } from "./app.module";
 import * as pretty from "prettyjson";
+
 
 async function bootstrap() {
   // user a following user b

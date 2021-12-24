@@ -1046,6 +1046,11 @@
   dependencies:
     graphql "*"
 
+"@types/gremlin@^3.5.0":
+  version "3.5.0"
+  resolved "https://registry.yarnpkg.com/@types/gremlin/-/gremlin-3.5.0.tgz#e4dc4aa0553ecc4f789218cba6ecd6d6600192e2"
+  integrity sha512-km32K1KuZZsgOgEGtqDBq6enaI26hHazk/n0n6mpbDmxwDz8i/WXQwM0RPSC6G/X/tieA/Twk5fU7dH1jYu+LA==
+
 "@types/istanbul-lib-coverage@*", "@types/istanbul-lib-coverage@^2.0.0", "@types/istanbul-lib-coverage@^2.0.1":
   version "2.0.3"
   resolved "https://registry.yarnpkg.com/@types/istanbul-lib-coverage/-/istanbul-lib-coverage-2.0.3.tgz#4ba8ddb720221f432e443bd5f9117fd22cfd4762"
@@ -1117,6 +1122,11 @@
   version "2.4.2"
   resolved "https://registry.yarnpkg.com/@types/prettier/-/prettier-2.4.2.tgz#4c62fae93eb479660c3bd93f9d24d561597a8281"
   integrity sha512-ekoj4qOQYp7CvjX8ZDBgN86w3MqQhLE1hczEJbEIjgFEumDy+na/4AJAbLXfgEWFNB2pKadM5rPFtuSGMWK7xA==
+
+"@types/prettyjson@^0.0.30":
+  version "0.0.30"
+  resolved "https://registry.yarnpkg.com/@types/prettyjson/-/prettyjson-0.0.30.tgz#6d948dd2d3e50c0aac0571dd3e9d712c04517d26"
+  integrity sha512-BQ15wnnSvzlvDAVvd4t+zXjd9o6QAcfBeEUlZcinDYeb0A1xTfRBc0s8nxHlctojnsxDrbiG7amTqLWbXsiK7Q==
 
 "@types/qs@*":
   version "6.9.7"
