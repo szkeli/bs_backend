@@ -1,33 +1,18 @@
 import { Injectable } from '@nestjs/common';
+import { DbService } from 'src/db/db.service';
+import { Post } from './models/post.model';
 
 @Injectable()
 export class PostsService {
-  posts = [
-    {
-      id: 0,
-      title: 'Post One',
-      votes: 0,
-    },
-    {
-      id: 1,
-      title: 'Post Two',
-      votes: 0,
-    },
-    {
-      id: 2,
-      title: 'Post 3',
-      votes: 0,
-    }
-  ]
+  constructor(private readonly dbService: DbService) {}
 
-  async upvoteById(arg0: { id: number; }) {
-    const post = this.posts.find(post => post.id === arg0.id);
-    if(!post) throw Error("not such a post");
-    post.votes++;
-    return post;
-  }
+  async commentsPaging(parent: Post, skip: number, limit: number) {
+    const { id: postId } = parent;
+    return this.dbService.commentsPaging(postId, skip, limit).then(r => {
+      console.error(r.result.data);
 
-  findAll(arg0: { authorId: number; }) {
-    throw new Error("Method not implemented.");
+      return r.result.data
+
+    });
   }
 }

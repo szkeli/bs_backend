@@ -1,11 +1,15 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
-import { User } from 'src/user/models/user.model';
+import { GENDER, User, UserCreateInput, UserUpdateInput } from 'src/user/models/user.model';
 import * as crypto from 'crypto';
+import * as pretty from "prettyjson";
 import { exec } from 'src/tool';
+import { Post } from 'src/posts/models/post.model';
+import { Comment } from 'src/comment/models/comment.model';
 
 @Injectable()
 export class DbService {
+  
   origin = 'http://w3.onism.cc:8084/graphs/hugegraph';
   baseUrl = 'http://w3.onism.cc:8084/graphs/hugegraph/schema/propertykeys';
   base = 'http://w3.onism.cc:8084/graphs/hugegraph/schema';
@@ -48,44 +52,81 @@ export class DbService {
   async getAllVertexLabel() {
     return await axios.get<GetAllVertexLabel>(`${this.base}/vertexlabels`).then(r => r.data);
   }
+
   // dealing with EdgeLabel
 
-  async createAUser(input: User) {
+  async createAUser(input: CreateUserDto) {
     const id = this.hash(`${JSON.stringify(input)}:${Date.now()}`);
-    return await axios.post(
-      `${this.origin}/graph/vertices`,
-      {
-        label: 'user',
-        id,
-        properties: {
-          nickName: input.nickName,
-          createAt: input.createAt,
-          lastLoginAt: input.lastLoginAt,
-          avatarUrl: input.avatarUrl,
-          unionId: input.unionId,
-          openId: input.openId,
-          school: input.school,
-          grade: input.grade,
-          gender: input.gender,
-        }
+    return await exec<CreateUserDto, DbResponse<User>>(
+      `
+        g.traversal()
+          .addV("user")
+          .property(id, "${id}")
+          .as("u")
+          .property("nickName", nickName)
+          .property("lastLoginAt", lastLoginAt)
+          .property("createAt", createAt)
+          .property("avatarUrl", avatarUrl)
+          .property("unionId", unionId)
+          .property("openId", openId)
+          .property("school", school)
+          .property("grade", grade)
+          .property("gender", gender)
+          .select("u")
+          .valueMap(true).by(unfold())
+      `, input
+    );
+  }
+  async getUser(id: UserId) {
+    return await exec<UserId, DbResponse<User>>(
+      `
+        g.traversal()
+          .V("${id}")
+          .hasLabel("user")
+          .valueMap(true).by(unfold())
+      `, {}
+    );
+  }
+  async updateAUser(input: UserUpdateInput) {
+    console.error(input);
+    return await exec(
+      `
+        g.traversal()
+          .V("${input.id}")
+          .hasLabel("user")
+          ${input.nickName?'.property("nickName", nickName)':''}
+          ${input.openId?'.property("openId", openId)':''}
+          ${input.unionId?'.property("unionId", unionId)':''}
+          ${input.school?'.property("school", school)':''}
+          ${input.avatarUrl?'.property("avatarUrl", avatarUrl)':''}
+          ${input.gender?'.property("gender", gender)':''}
+          ${input.grade?'.property("grade", grade)':''}
+      `, {
+        nickName: input.nickName,
+        openId: input.openId,
+        school: input.school,
+        avatarUrl: input.avatarUrl,
+        gender: input.gender,
+        unionId: input.unionId,
+        grade: input.grade,
       }
-    ).then(r => r.data);
+    );
   }
 
   async createAPost(input: CreateAPostDto) {
     const id = this.hash(`${JSON.stringify(input)}:${Date.now()}`)
-    // 事务
-    // 创建帖子 关联用户和帖子
     return await exec(
       `
-      post = hugegraph.traversal().addV("post")
+        g.traversal()
+          .addV("post")
           .property(id, "${id}")
+          .as("post")
           .property("title", title)
           .property("content", content)
           .property("createAt", createAt)
-      hugegraph.traversal().addE("created_post")
-          .from(hugegraph.traversal().V("${input.userId}"))
-          .to(post)
+          .V("${input.userId}")
+          .addE("created_post")
+          .to("post")
       `, {
         title: input.title,
         content: input.content,
@@ -93,6 +134,35 @@ export class DbService {
     })
   }
 
+  async getAUserAllPost(input: GetAUserAllPostDto) {
+    return await exec<UserId, DbResponse<Post>>(`
+      g.traversal()
+        .V("${input.id}")
+        .hasLabel("user")
+        .out()
+        .hasLabel("post")
+        .order()
+        .by("createAt", ${input.range})
+        .valueMap(true)
+        .range(${input.skip + 1}, ${input.limit + input.skip + 1})
+      `, {}).then(r => {
+        r.result.data.map(r => {
+          delete r['label'];
+          r.title = r.title[0];
+          r.content = r.content[0];
+          r.createAt = r.createAt[0];
+        })
+        return r;
+      })
+  }
+
+  async getAPost(id: PostId) {
+    return await exec<PostId, DbResponse<Post>>(`
+      g.traversal()
+        .V("${id}")
+        .hasLabel("post")
+    `, {});
+  }
   async createACommentAtPost(input: CreateACommentDto) {
     const id = this.hash(`${JSON.stringify(input)}:${Date.now()}`);
     return await exec(
@@ -121,12 +191,14 @@ export class DbService {
 
   async createACommentAtComment(input: CreateACommentAtCommentDto) {
     const id = this.hash(`${JSON.stringify(input)}:${Date.now()}`);
-    return await exec(
+    return await exec<string, DbResponse<Comment>>(
       `
         g.traversal()
-          .V("${input.userId}")
+          .V("${input.creator}")
+          .hasLabel("user")
           .as("user")
           .V("${input.commentId}")
+          .hasLabel("comment")
           .as("comment")
           .addV("comment")
           .as("newComment")
@@ -138,6 +210,8 @@ export class DbService {
           .select("user")
           .addE("created_comment")
           .to("newComment")
+          .select("newComment")
+          .valueMap(true).by(unfold())
       `, {
         content: input.content,
         createAt: input.createAt,
@@ -145,6 +219,33 @@ export class DbService {
     );
   }
 
+  async followAPerson(input: FollowAPersonDto) {
+    return await exec(
+      `
+        g.traversal()
+          .V("${input.to}")
+          .as("to")
+          .V("${input.from}")
+          .addE("followed")
+          .to("to")
+      `, {}
+    )
+  }
+
+  async unFollowAPerson(input: UnFollowAPersonDto) {
+    return await exec(
+      `
+        g.traversal()
+          .V("${input.to}")
+          .inE()
+          .as("e")
+          .outV()
+          .hasId("${input.from}")
+          .select("e")
+          .drop()
+      `, {}
+    );
+  }
   async dropAVertex(id: string) {
     return await exec(
       `
@@ -152,29 +253,169 @@ export class DbService {
       `, {}
     );
   }
+
+  async commentsPaging(postId: PostId, skip: number, limit: number) {
+    return await exec<UserId, DbResponse<Comment>>(`
+      g.traversal()
+        .V("${postId}")
+        .hasLabel("post")
+        .in()
+        .hasLabel("comment")
+        .order()
+        .by("createAt", ${RANGE.DECR})
+        .valueMap(true)
+        .by(unfold())
+        .range(${skip + 1}, ${limit + skip + 1})
+    `, {}).then(r => {
+      return r;
+    });
+  }
+
+  async createAdminer(input: CreateAAdminerDto) {
+    const id = this.hash(`${JSON.stringify(input)}:${Date.now()}`);
+    return await exec(
+      `
+        g.traversal()
+          .V("${input.createBy}")
+          .as("pre")
+          .addV("admin")
+          .property(id, "${id}")
+          .as("newAdmin")
+          .property("createAt", createAt)
+          .property("nickName", nickName)
+          .property("lastLoginAt", lastLoginAt)
+          .property("action", action)
+          .select("pre")
+          .addE("authorised")
+          .to("newAdmin")
+      `, {
+        createAt: input.createAt,
+        nickName: input.nickName,
+        lastLoginAt: input.lastLoginAt,
+        action: input.action,
+      }
+    )    
+  }
+  // TODO 修改管理员权限等属性的函数
+  async deleteAdminer(id: UserId) {
+    return await exec(
+      `
+        g.traversal()
+          .V("${id}")
+          .drop()
+      `, {}
+    );
+  }
+
+  async testClear() {
+    return await exec(
+      `
+        g.traversal()
+          // .V()
+          // .hasLabel("comment")
+          // .where(inE("created_comment").count().is(0))
+          // .drop()
+          .V()
+          .hasLabel("comment")
+          .where(outE("owned").count().is(0))
+          .drop()
+      `, {}
+    );
+  }
 }
 
+export enum ERROR_NUMBER {
+  _200 = 200,
+  _400 = 400,
+  _500 = 500,
+}
+
+export type DbResponse<T> = {
+  requestId: string;
+  status: {
+    message: string;
+    code: ERROR_NUMBER;
+    attributes: {
+      [index: string]: string,
+    }
+  },
+  result: {
+    data: T[],
+  },
+  meta: {
+    [index: string]: string,
+  }
+} 
 export type UserId = string; 
 export type PostId = string;
 export type CommentId = string;
+export type Time = number;
+export class GetAUserAllPostDto {
+  id: UserId;
+  skip: number;
+  limit: number;
+  range: RANGE;
+}
+export enum RANGE {
+  INCR = 'incr',
+  DECR = 'decr',
+  // 随机排序
+  SHUFFLE = 'shuffle',
+}
+export class CreateUserDto {
+  nickName: string;
+  createAt: Time;
+  lastLoginAt: Time;
+  avatarUrl: string;
+  unionId: string;
+  openId: string;
+  school: string;
+  grade: string;
+  gender: string;
+}
+export class CreateAAdminerDto {
+  action: string[];
+  createAt: Time;
+  lastLoginAt: Time;
+  createBy: UserId;
+  privilege: PRIVILEGE;
+  nickName: string;
+}
 
-export class CreateACommentAtCommentDto {
-  userId: UserId;
+export enum PRIVILEGE {
+  NORMAL = 'ADMIN',
+}
+export class UnFollowAPersonDto {
+  from: UserId;
+  to: UserId;
+}
+export class FollowAPersonDto {
+  /**
+   * 关注者
+   */
+  from: UserId;
+  /**
+   * 被关注者
+   */
+  to: UserId;
+}
+export interface CreateACommentAtCommentDto {
+  creator: UserId;
   commentId: CommentId;
   content: string;
-  createAt: number;
+  createAt: Time;
 }
 export class CreateAPostDto {
   userId: UserId;
   content: string;
   title: string;
-  createAt: number;
+  createAt: Time;
 }
 export class CreateACommentDto {
   userId: UserId;
   postId: PostId;
   content: string;
-  createAt: number;
+  createAt: Time;
 }
 
 export interface MyData {

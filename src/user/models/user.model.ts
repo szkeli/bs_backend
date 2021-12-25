@@ -14,8 +14,6 @@ registerEnumType(GENDER, {
 @InputType()
 export class UserCreateInput {
   @Field()
-  id: string;
-  @Field()
   openId: string;
   @Field()
   unionId: string;
@@ -23,12 +21,6 @@ export class UserCreateInput {
   nickName: string;
   @Field(type => GENDER)
   gender: GENDER
-  @Field(type => Int)
-  flag: number;
-  @Field()
-  createAt: string;
-  @Field()
-  lastLoginAt: string;
   @Field()
   avatarUrl: string;
   @Field()
@@ -41,26 +33,20 @@ export class UserCreateInput {
 export class UserUpdateInput {
   @Field()
   id: string;
-  @Field()
-  openId: string;
-  @Field()
-  unionId: string;
-  @Field()
-  nickName: string;
-  @Field(type => GENDER)
-  gender: GENDER;
-  @Field()
-  flag: string;
-  @Field()
-  createAt: string;
-  @Field()
-  lastLoginAt: string;
-  @Field()
-  avatarUrl: string;
-  @Field()
-  school: string;
-  @Field()
-  grade: string;
+  @Field({ nullable: true })
+  openId?: string;
+  @Field({ nullable: true })
+  unionId?: string;
+  @Field({ nullable: true })
+  nickName?: string;
+  @Field(type => GENDER, { nullable: true })
+  gender?: GENDER;
+  @Field({ nullable: true })
+  avatarUrl?: string;
+  @Field({ nullable: true })
+  school?: string;
+  @Field({ nullable: true })
+  grade?: string;
 }
 
 @InputType()
@@ -81,8 +67,6 @@ export class User {
   nickName: string;
   @Field(type => GENDER, { defaultValue: GENDER.NONE})
   gender: GENDER;
-  @Field(type => Int, {defaultValue: 0})
-  flag?: number;
   @Field(type => Int)
   createAt: number;
   @Field(type => Int)
@@ -93,6 +77,6 @@ export class User {
   school: string;
   @Field()
   grade: string;
-  @Field(type => [Post], {nullable: true})
-  Post?: Post[];
+  @Field({ nullable: true })
+  label?: string;
 }

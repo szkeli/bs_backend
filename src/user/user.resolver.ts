@@ -30,14 +30,5 @@ export class UserResolver {
     return this.userService.followOne(input);
   }
 
-  @ResolveField('Post')
-  async Post(@Parent() user: User) {
-    const { id } = user;
-    console.error(id);
-    return [{
-      id: 21332,
-      title: 'dsadsa',
-      votes: 321312,
-    }]
-  }
+ 
 }

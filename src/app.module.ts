@@ -4,11 +4,11 @@ import { AppService } from './app.service';
 import { GraphQLModule } from '@nestjs/graphql';
 import { join } from 'path';
 import { PostsService } from './posts/posts.service';
-import { AuthorsService } from './authors/authors.service';
-import { AuthorsModule } from './authors/authors.module';
 import { PostsModule } from './posts/posts.module';
 import { UserModule } from './user/user.module';
 import { DbService } from './db/db.service';
+import { CommentService } from './comment/comment.service';
+import { CommentModule } from './comment/comment.module';
 
 @Module({
   imports: [
@@ -18,11 +18,11 @@ import { DbService } from './db/db.service';
       sortSchema: false,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
     }),
-    AuthorsModule,
     PostsModule,
     UserModule,
+    CommentModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PostsService, AuthorsService, DbService],
+  providers: [AppService, PostsService, DbService, CommentService],
 })
 export class AppModule {}

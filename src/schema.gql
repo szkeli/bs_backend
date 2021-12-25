@@ -2,17 +2,20 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Post {
-  id: Int
-  title: String
-  votes: Int
+type Comment {
+  id: String!
+  content: String!
+  createAt: String!
+  comments(limit: Float!, skip: Float!): [Comment!]!
 }
 
-type Author {
-  id: Int!
-  firstName: String
-  lastName: String
-  posts: [Post!]!
+type Post {
+  id: String!
+  title: String!
+  content: String!
+  votes: Int!
+  createAt: String!
+  comments(limit: Float = 10, skip: Float = 0): [Comment!]!
 }
 
 type User {
@@ -21,13 +24,12 @@ type User {
   unionId: String!
   nickName: String!
   gender: GENDER!
-  flag: Int!
   createAt: Int!
   lastLoginAt: Int!
   avatarUrl: String!
   school: String!
   grade: String!
-  Post: [Post!]
+  label: String
 }
 
 enum GENDER {
@@ -37,26 +39,24 @@ enum GENDER {
 }
 
 type Query {
-  author(id: Float!): Author!
+  posts: [Post!]!
+  post(id: String!): Post!
   user(id: String!): User!
+  getAComent(id: String!): Comment!
 }
 
 type Mutation {
-  upvote_post(postId: Int!): Post!
   createUser(input: UserCreateInput!): User!
   updateUser(input: UserUpdateInput!): User!
   followOne(input: UserFollowOneInput!): User!
+  addACommentOnComment(input: AddACommentOnCommentInput!): Comment!
 }
 
 input UserCreateInput {
-  id: String!
   openId: String!
   unionId: String!
   nickName: String!
   gender: GENDER!
-  flag: Int!
-  createAt: String!
-  lastLoginAt: String!
   avatarUrl: String!
   school: String!
   grade: String!
@@ -64,18 +64,21 @@ input UserCreateInput {
 
 input UserUpdateInput {
   id: String!
-  openId: String!
-  unionId: String!
-  nickName: String!
-  gender: GENDER!
-  flag: String!
-  createAt: String!
-  lastLoginAt: String!
-  avatarUrl: String!
-  school: String!
-  grade: String!
+  openId: String
+  unionId: String
+  nickName: String
+  gender: GENDER
+  avatarUrl: String
+  school: String
+  grade: String
 }
 
 input UserFollowOneInput {
   id: String!
+}
+
+input AddACommentOnCommentInput {
+  to: String!
+  creator: String!
+  content: String!
 }
