@@ -1046,10 +1046,10 @@
   dependencies:
     graphql "*"
 
-"@types/gremlin@^3.5.0":
-  version "3.5.0"
-  resolved "https://registry.yarnpkg.com/@types/gremlin/-/gremlin-3.5.0.tgz#e4dc4aa0553ecc4f789218cba6ecd6d6600192e2"
-  integrity sha512-km32K1KuZZsgOgEGtqDBq6enaI26hHazk/n0n6mpbDmxwDz8i/WXQwM0RPSC6G/X/tieA/Twk5fU7dH1jYu+LA==
+"@types/gremlin@^3.5.1":
+  version "3.5.1"
+  resolved "https://registry.yarnpkg.com/@types/gremlin/-/gremlin-3.5.1.tgz#071b9ecf10d16c36fb568997ba064289ce37185f"
+  integrity sha512-PcZBz4MaOryz/MTWSYsD7QiLZo4thda3aX1UiI06Ci879/NQR6jMR5+1AkenGQIvYCgDxKM7iUaeSp59Lx+miw==
 
 "@types/istanbul-lib-coverage@*", "@types/istanbul-lib-coverage@^2.0.0", "@types/istanbul-lib-coverage@^2.0.1":
   version "2.0.3"

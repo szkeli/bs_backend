@@ -1,14 +1,16 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
 import {
   GENDER,
+  ORDERBY,
   User,
   UserCreateInput,
   UserFollowOneInput,
+  UserPostsInput,
   UserUpdateInput,
 } from "./models/user.model";
 import * as pretty from "prettyjson";
 import { exec } from "src/tool";
-import { DATA_TYPE, DbService, ICON_SIZE, ID_STRATEGY, PRIVILEGE, RANGE } from "src/db/db.service";
+import { DATA_TYPE, DbService, ICON_SIZE, ID_STRATEGY, PRIVILEGE, RANGE, UserId } from "src/db/db.service";
 
 @Injectable()
 export class UserService {
@@ -17,45 +19,53 @@ export class UserService {
   async findPostById(id: string) {
     return await this.dbService.getAUserAllPost({
       id,
-      range: RANGE.DECR,
+      orderBy: ORDERBY.DESC,
       skip: 2,
       limit: 3,
     }).then(r => {
-
-      const res = r.result.data;
-      console.error(res)
-      return res;
+      return r;
     })
   }
 
-  followOne(input: UserFollowOneInput) {
+  async findPostsByUserId(id: UserId, input: UserPostsInput) {
+    return await this.dbService.getAUserAllPost({
+      id,
+      orderBy: input.orderBy,
+      skip: input.skip,
+      limit: input.limit,
+    }).then(r => {
+      console.error(r);
+      return r;
+    });
+  }
+
+  async followOne(input: UserFollowOneInput) {
     throw new Error('Method not implemented.');
   }
 
   async createUser(input: UserCreateInput) {
+    const createAt = Date.now();
     return await this.dbService.createAUser({
       ...input,
-      createAt: Date.now(),
-      lastLoginAt: Date.now(),
-    }).then(r => {
-      console.error(r.result.data[0]);
-      return r.result.data[0];
+      createAt: createAt,
+      lastLoginAt: createAt,
     });
   }
 
   async updateUser(input: UserUpdateInput) {
     return this.dbService.updateAUser(input).then(r => {
       console.error(r);
+      return r;
     })
   }
 
-  async getUser(id: string) {
-    return await this.dbService.getUser(id).then(r => {
-      if(r.result.data.length === 0) {
+  async getUser(id: string): Promise<User> {
+    return await this.dbService.getUser(id).then(user => {
+      // TODO: 更严格的判断用户是否存在
+      if(!user || Object.entries(user).length === 0) {
         throw new ForbiddenException("该用户不存在");
       }
-      console.error(r.result.data);
-      return r.result.data[0]
+      return user;
     });
     
     // await this.dbService.createAPropertyKey('nickdsaNddsadssdsame', DATA_TYPE.TEXT);

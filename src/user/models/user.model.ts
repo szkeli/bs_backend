@@ -1,5 +1,17 @@
 import { Field, ObjectType, Int, registerEnumType, InputType } from "@nestjs/graphql";
-import { Post } from "src/posts/models/post.model";
+
+export enum ORDERBY {
+  // 时间戳从大到小
+  DESC = 'DESC',
+  // 随机排列
+  SHUFFLE = 'SHUFFLE',
+  // 时间戳从小到大
+  ASC = 'ASC'
+}
+
+registerEnumType(ORDERBY, {
+  name: 'ORDERBY'
+})
 
 export enum GENDER {
   NONE = 'NONE',
@@ -67,16 +79,24 @@ export class User {
   nickName: string;
   @Field(type => GENDER, { defaultValue: GENDER.NONE})
   gender: GENDER;
-  @Field(type => Int)
-  createAt: number;
-  @Field(type => Int)
-  lastLoginAt: number;
+  @Field()
+  createAt: string;
+  @Field()
+  lastLoginAt: string;
   @Field()
   avatarUrl: string;
   @Field()
   school: string;
   @Field()
   grade: string;
-  @Field({ nullable: true })
-  label?: string;
+}
+
+@InputType()
+export class UserPostsInput {
+  @Field(type => Int, { nullable: true, defaultValue: 0 })
+  skip: number;
+  @Field(type => Int, { nullable: true, defaultValue: 10 })
+  limit: number;
+  @Field(type => ORDERBY, { defaultValue: ORDERBY.DESC })
+  orderBy: ORDERBY;
 }

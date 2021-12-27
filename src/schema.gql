@@ -2,6 +2,38 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type User {
+  id: String!
+  openId: String!
+  unionId: String!
+  nickName: String!
+  gender: GENDER!
+  createAt: String!
+  lastLoginAt: String!
+  avatarUrl: String!
+  school: String!
+  grade: String!
+  posts(input: UserPostsInput!): [Post!]!
+}
+
+enum GENDER {
+  NONE
+  MALE
+  FEMALE
+}
+
+input UserPostsInput {
+  skip: Int = 0
+  limit: Int = 10
+  orderBy: ORDERBY = DESC
+}
+
+enum ORDERBY {
+  DESC
+  SHUFFLE
+  ASC
+}
+
 type Comment {
   id: String!
   content: String!
@@ -13,43 +45,30 @@ type Post {
   id: String!
   title: String!
   content: String!
-  votes: Int!
   createAt: String!
+  creator: User!
   comments(limit: Float = 10, skip: Float = 0): [Comment!]!
 }
 
-type User {
-  id: String!
-  openId: String!
-  unionId: String!
-  nickName: String!
-  gender: GENDER!
-  createAt: Int!
-  lastLoginAt: Int!
-  avatarUrl: String!
-  school: String!
-  grade: String!
-  label: String
-}
-
-enum GENDER {
-  NONE
-  MALE
-  FEMALE
-}
-
 type Query {
-  posts: [Post!]!
   post(id: String!): Post!
+  posts: [Post!]!
   user(id: String!): User!
   getAComent(id: String!): Comment!
 }
 
 type Mutation {
+  createAPost(input: CreateAPostInput!): Post!
   createUser(input: UserCreateInput!): User!
   updateUser(input: UserUpdateInput!): User!
   followOne(input: UserFollowOneInput!): User!
   addACommentOnComment(input: AddACommentOnCommentInput!): Comment!
+}
+
+input CreateAPostInput {
+  title: String!
+  content: String!
+  creator: String!
 }
 
 input UserCreateInput {

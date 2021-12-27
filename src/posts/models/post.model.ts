@@ -1,4 +1,5 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql';
+import { Field, InputType, Int, ObjectType } from '@nestjs/graphql';
+import { UserId } from 'src/db/db.service';
 
 @ObjectType()
 export class Post {
@@ -8,8 +9,16 @@ export class Post {
   title: string;
   @Field()
   content: string;
-  @Field(type => Int)
-  votes: number;
   @Field()
   createAt: string;
+}
+
+@InputType()
+export class CreateAPostInput {
+  @Field()
+  title: string;
+  @Field()
+  content: string;
+  @Field()
+  creator: UserId;
 }

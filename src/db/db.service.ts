@@ -1,18 +1,35 @@
 import { Injectable } from '@nestjs/common';
 import axios from 'axios';
-import { GENDER, User, UserCreateInput, UserUpdateInput } from 'src/user/models/user.model';
+import { GENDER, ORDERBY, User, UserCreateInput, UserPostsInput, UserUpdateInput } from 'src/user/models/user.model';
 import * as crypto from 'crypto';
 import * as pretty from "prettyjson";
+import * as gremlin from 'gremlin';
 import { exec } from 'src/tool';
-import { Post } from 'src/posts/models/post.model';
+import { CreateAPostInput, Post } from 'src/posts/models/post.model';
 import { Comment } from 'src/comment/models/comment.model';
+import { SocialTraversalSource, SocialTraversal, anonymous, objectify } from './dsl';
+import { skip } from 'rxjs';
+
+const { unfold } = gremlin.process.statics;
+const T = gremlin.process.t;
 
 @Injectable()
 export class DbService {
-  
   origin = 'http://w3.onism.cc:8084/graphs/hugegraph';
   baseUrl = 'http://w3.onism.cc:8084/graphs/hugegraph/schema/propertykeys';
   base = 'http://w3.onism.cc:8084/graphs/hugegraph/schema';
+  private readonly g: SocialTraversalSource;
+
+  constructor() {
+    const traversal = gremlin.process.AnonymousTraversalSource.traversal;
+    const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
+    this.g = traversal(SocialTraversalSource).withRemote(
+      new DriverRemoteConnection('ws://w3.onism.cc:8182/gremlin', {
+        traversalSource: 'hugegraph',
+      })
+    );
+  }
+
   async init() {}
   private hash(content: string) {
     const hash = crypto.createHash('sha256');
@@ -54,115 +71,106 @@ export class DbService {
   }
 
   // dealing with EdgeLabel
-
   async createAUser(input: CreateUserDto) {
     const id = this.hash(`${JSON.stringify(input)}:${Date.now()}`);
-    return await exec<CreateUserDto, DbResponse<User>>(
-      `
-        g.traversal()
-          .addV("user")
-          .property(id, "${id}")
-          .as("u")
-          .property("nickName", nickName)
-          .property("lastLoginAt", lastLoginAt)
-          .property("createAt", createAt)
-          .property("avatarUrl", avatarUrl)
-          .property("unionId", unionId)
-          .property("openId", openId)
-          .property("school", school)
-          .property("grade", grade)
-          .property("gender", gender)
-          .select("u")
-          .valueMap(true).by(unfold())
-      `, input
-    );
+    return await this.g
+      .createUser(id)
+      .as('user')
+      .updateUserProps(input)
+      .select('user')
+      .filterAllUserProps()
+      .toList()
+      .then(r => objectify<User>(r[0]));
   }
   async getUser(id: UserId) {
-    return await exec<UserId, DbResponse<User>>(
-      `
-        g.traversal()
-          .V("${id}")
-          .hasLabel("user")
-          .valueMap(true).by(unfold())
-      `, {}
-    );
+    // TODO: 实现属性按需查询
+    return await this.g
+      .userWithAllProps(id)
+      .toList()
+      .then(r => objectify(r[0]));
   }
   async updateAUser(input: UserUpdateInput) {
-    console.error(input);
-    return await exec(
-      `
-        g.traversal()
-          .V("${input.id}")
-          .hasLabel("user")
-          ${input.nickName?'.property("nickName", nickName)':''}
-          ${input.openId?'.property("openId", openId)':''}
-          ${input.unionId?'.property("unionId", unionId)':''}
-          ${input.school?'.property("school", school)':''}
-          ${input.avatarUrl?'.property("avatarUrl", avatarUrl)':''}
-          ${input.gender?'.property("gender", gender)':''}
-          ${input.grade?'.property("grade", grade)':''}
-      `, {
-        nickName: input.nickName,
-        openId: input.openId,
-        school: input.school,
-        avatarUrl: input.avatarUrl,
-        gender: input.gender,
-        unionId: input.unionId,
-        grade: input.grade,
-      }
-    );
+    let u = this.g.user(input.id);
+    for(let props of Object.entries(input)) {
+      if(props[0] === 'id') continue;
+      u = u.property(props[0], props[1]);
+    }
+    return await u
+      .filterAllUserProps()
+      .toList()
+      .then(r => objectify(r[0]))
   }
-
-  async createAPost(input: CreateAPostDto) {
+  async createAPost(input: CreateAPostInput) {
     const id = this.hash(`${JSON.stringify(input)}:${Date.now()}`)
-    return await exec(
-      `
-        g.traversal()
-          .addV("post")
-          .property(id, "${id}")
-          .as("post")
-          .property("title", title)
-          .property("content", content)
-          .property("createAt", createAt)
-          .V("${input.userId}")
-          .addE("created_post")
-          .to("post")
-      `, {
-        title: input.title,
-        content: input.content,
-        createAt: input.createAt,
-    })
+    return this.g
+      .createPost(id)
+      .as('post')
+      .updatPostProps(input)
+      .V(input.creator)
+      .addE('created_post')
+      .to('post')
+      // .createdBy(input.creator)
+      .select('post')
+      .filterAllPostProps()
+      .toList()
+      .then(r => objectify(r[0]))
+  }
+  async getAPost(id: PostId) {
+    return await this.g
+      .post(id)
+      .filterAllPostProps()
+      .toList()
+      .then(r => objectify(r[0]));
+  }
+  async getUserByPostId(id: PostId) {
+    return await this.g
+      .post(id)
+      .hasLabel('post')
+      .in_('created_post')
+      .filterAllUserProps()      
+      .toList()
+      .then(r => objectify(r[0]))
   }
 
   async getAUserAllPost(input: GetAUserAllPostDto) {
-    return await exec<UserId, DbResponse<Post>>(`
-      g.traversal()
-        .V("${input.id}")
-        .hasLabel("user")
-        .out()
-        .hasLabel("post")
-        .order()
-        .by("createAt", ${input.range})
-        .valueMap(true)
-        .range(${input.skip + 1}, ${input.limit + input.skip + 1})
-      `, {}).then(r => {
-        r.result.data.map(r => {
-          delete r['label'];
-          r.title = r.title[0];
-          r.content = r.content[0];
-          r.createAt = r.createAt[0];
-        })
-        return r;
-      })
+    console.error(input);
+    console.error(gremlin.process.order.decr)
+    return await this.g
+      // .V(input.id)
+      .user(input.id)
+      .hasLabel('user'  )
+      .out('created_post')
+      .hasLabel('post')
+      .order()
+      .by('createAt', this.g.orderBy(input.orderBy))
+      .range(input.skip, input.skip + input.limit)
+      .filterAllPostProps()
+      .toList()
+      .then(r => {
+        return r.map(v => objectify(v));
+      });
+    // return await exec<UserId, DbResponse<Post>>(`
+    //   g.traversal()
+    //     .V("${input.id}")
+    //     .hasLabel("user")
+    //     .out()
+    //     .hasLabel("post")
+    //     .order()
+    //     .by("createAt", ${input.range})
+    //     .valueMap(true)
+    //     .range(${input.skip + 1}, ${input.limit + input.skip + 1})
+    //   `, {}).then(r => {
+    //     r.result.data.map(r => {
+    //       delete r['label'];
+    //       r.title = r.title[0];
+    //       r.content = r.content[0];
+    //       r.createAt = r.createAt[0];
+    //     })
+    //     return r;
+    //   })
   }
 
-  async getAPost(id: PostId) {
-    return await exec<PostId, DbResponse<Post>>(`
-      g.traversal()
-        .V("${id}")
-        .hasLabel("post")
-    `, {});
-  }
+
   async createACommentAtPost(input: CreateACommentDto) {
     const id = this.hash(`${JSON.stringify(input)}:${Date.now()}`);
     return await exec(
@@ -323,12 +331,12 @@ export class DbService {
     );
   }
 }
-
 export enum ERROR_NUMBER {
   _200 = 200,
   _400 = 400,
   _500 = 500,
 }
+
 
 export type DbResponse<T> = {
   requestId: string;
@@ -350,11 +358,12 @@ export type UserId = string;
 export type PostId = string;
 export type CommentId = string;
 export type Time = number;
+
 export class GetAUserAllPostDto {
   id: UserId;
   skip: number;
   limit: number;
-  range: RANGE;
+  orderBy: ORDERBY;
 }
 export enum RANGE {
   INCR = 'incr',
