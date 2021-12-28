@@ -1,5 +1,6 @@
 import { Field, InputType, Int, ObjectType } from '@nestjs/graphql';
 import { UserId } from 'src/db/db.service';
+import { UserPostsInput } from 'src/user/models/user.model';
 
 @ObjectType()
 export class Post {
@@ -11,6 +12,10 @@ export class Post {
   content: string;
   @Field()
   createAt: string;
+  @Field(type => Int)
+  voteCount: number;
+  @Field(type => Int)
+  commentCount: number;
 }
 
 @InputType()
@@ -22,3 +27,6 @@ export class CreateAPostInput {
   @Field()
   creator: UserId;
 }
+
+@InputType()
+export class PostsCommentsInput extends UserPostsInput {}

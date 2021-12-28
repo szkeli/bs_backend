@@ -13,8 +13,9 @@ export async function exec<T, U>(l: string, bindings: object, aliases?: object){
   }).then<U>(data => data.data as unknown as U);
 }
 
-export function hash(content: string) {
+export function hash(content: any) {
+  const v = `${JSON.stringify(content)}:${Date.now()}`
   const hash = crypto.createHash('sha256');
-  hash.update(content);
+  hash.update(v);
   return hash.digest('hex');
 }

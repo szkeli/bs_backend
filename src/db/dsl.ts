@@ -1,8 +1,10 @@
 import * as gremlin from 'gremlin';
+import { CommentId } from 'src/comment/models/comment.model';
 import { CreateAPostInput } from 'src/posts/models/post.model';
 import { ORDERBY, User, UserUpdateInput } from 'src/user/models/user.model';
 import { CreateAPostDto, CreateUserDto, PostId, UserId } from './db.service';
 const T = gremlin.process.t;
+const __ = gremlin.process.statics;
 
 export class SocialTraversal extends gremlin.process.GraphTraversal {
   constructor(
@@ -62,12 +64,16 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
         'id', 
         'title',
         'content',
-        'createAt'
+        'createAt',
+        'voteCount',
+        'commentCount',
       )
       .by(T.id)
       .by('title')
       .by('content')
       .by('createAt')
+      .by(__.in_('voted_post').hasLabel('user').count())
+      .by(__.in_('owned').hasLabel('comment').count())
   }
 
   updatPostProps(post: CreateAPostInput) {
@@ -75,6 +81,22 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
       .property('title', post.title)
       .property('content', post.content)
       .property('createAt', Date.now());
+  }
+
+  filterAllCommentProps() {
+    return this
+      .project(
+        'id',
+        'content',
+        'createAt',
+        'voteCount',
+        'commentCount',
+      )
+      .by(T.id)
+      .by('content')
+      .by('createAt')
+      .by(__.in_('voted_comment').hasLabel('user').count())
+      .by(__.in_('commented').hasLabel('comment').count())
   }
 }
 
@@ -94,6 +116,11 @@ export class SocialTraversalSource extends gremlin.process.GraphTraversalSource 
 
   createPost(id: PostId) {
     return this.addV('post')
+      .property(T.id, id) as unknown as SocialTraversal;
+  }
+
+  createComment(id: CommentId) {
+    return this.addV('comment')
       .property(T.id, id) as unknown as SocialTraversal;
   }
 
@@ -128,6 +155,10 @@ export class SocialTraversalSource extends gremlin.process.GraphTraversalSource 
   }
 
   post(id: PostId) {
+    return this.V(id) as unknown as SocialTraversal
+  }
+
+  comment(id: CommentId) {
     return this.V(id) as unknown as SocialTraversal
   }
 

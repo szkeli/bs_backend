@@ -9,6 +9,8 @@ import { UserModule } from './user/user.module';
 import { DbService } from './db/db.service';
 import { CommentService } from './comment/comment.service';
 import { CommentModule } from './comment/comment.module';
+import { VotesModule } from './votes/votes.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -21,6 +23,8 @@ import { CommentModule } from './comment/comment.module';
     PostsModule,
     UserModule,
     CommentModule,
+    VotesModule,
+    AdminModule,
   ],
   controllers: [AppController],
   providers: [AppService, PostsService, DbService, CommentService],

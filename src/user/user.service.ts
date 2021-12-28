@@ -4,8 +4,11 @@ import {
   ORDERBY,
   User,
   UserCreateInput,
+  UserFansInput,
   UserFollowOneInput,
+  UserMyFollowedsInput,
   UserPostsInput,
+  UserUnFollowOneInput,
   UserUpdateInput,
 } from "./models/user.model";
 import * as pretty from "prettyjson";
@@ -33,14 +36,26 @@ export class UserService {
       orderBy: input.orderBy,
       skip: input.skip,
       limit: input.limit,
-    }).then(r => {
-      console.error(r);
-      return r;
-    });
+    })
   }
 
   async followOne(input: UserFollowOneInput) {
-    throw new Error('Method not implemented.');
+    if(input.from === input.to) {
+      throw new ForbiddenException("禁止关注自己"); 
+    }
+    return await this.dbService.followAPerson(input);
+  }
+  async unFollowOne(input: UserUnFollowOneInput) {
+    if(input.from === input.to) {
+      throw new ForbiddenException("禁止取消关注自己")
+    }
+    return await this.dbService.unFollowAPerson(input);
+  }
+  async findFansByUserId(id: UserId, input: UserFansInput) {
+    return await this.dbService.findFansByUserId(id, input);
+  }
+  async findMyFollowedsByUserIf(id: UserId, input: UserMyFollowedsInput) {
+    return await this.dbService.findMyFollowedsByUserIf(id, input);
   }
 
   async createUser(input: UserCreateInput) {

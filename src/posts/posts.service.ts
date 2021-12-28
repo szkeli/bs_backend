@@ -1,9 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { DbService, PostId } from 'src/db/db.service';
-import { CreateAPostInput, Post } from './models/post.model';
+import { CreateAPostInput, Post, PostsCommentsInput } from './models/post.model';
 
 @Injectable()
 export class PostsService {
+  
  
   constructor(private readonly dbService: DbService) {}
   
@@ -21,9 +22,10 @@ export class PostsService {
     const { id: postId } = parent;
     return this.dbService.commentsPaging(postId, skip, limit).then(r => {
       console.error(r.result.data);
-
       return r.result.data
-
     });
+  }
+  async getCommentsByPostId(id: PostId, input: PostsCommentsInput) {
+    return await this.dbService.getCommentsByPostId(id, input);
   }
 }

@@ -1,29 +1,24 @@
 import { Injectable } from '@nestjs/common';
 import { DbService } from 'src/db/db.service';
-import { hash } from 'src/tool';
-import { AddACommentOnCommentInput, Comment } from './models/comment.model';
-import * as pretty from "prettyjson";
+import { AddACommentOnCommentInput, AddACommentOnPostInput, Comment, CommentId } from './models/comment.model';
 
 @Injectable()
 export class CommentService {
-  getCommentPaging(parent: Comment, skip: number, limit: number) {
+  constructor(private readonly dbService: DbService) {}
+  
+  async getCommentPaging(parent: Comment, skip: number, limit: number) {
     throw new Error('Method not implemented.');
   }
-  constructor(private readonly dbService: DbService) {}
 
   async addACommentOnComment(input: AddACommentOnCommentInput) {
-    console.error(input);
-    return await this.dbService.createACommentAtComment({
-      creator: input.creator,
-      createAt: Date.now(),
-      content: input.content,
-      commentId: input.to,
-    }).then(r => {
-      return r.result.data[0];
-    })
+    return await this.dbService.addACommentOnComment(input);
   }
 
-  async getACommentById(id: string) {
-    throw new Error('Method not implemented.');
+  async addACommentOnPost(input: AddACommentOnPostInput) {
+    return await this.dbService.addACommentOnPost(input);
+  }
+
+  async getACommentById(id: CommentId) {
+    return await this.dbService.getACommentById(id);
   }
 }

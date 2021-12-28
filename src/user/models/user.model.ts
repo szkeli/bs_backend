@@ -1,4 +1,5 @@
-import { Field, ObjectType, Int, registerEnumType, InputType } from "@nestjs/graphql";
+import { Field, ObjectType, Int, registerEnumType, InputType, } from "@nestjs/graphql";
+import { UserId } from "src/db/db.service";
 
 export enum ORDERBY {
   // 时间戳从大到小
@@ -64,13 +65,23 @@ export class UserUpdateInput {
 @InputType()
 export class UserFollowOneInput {
   @Field()
-  id: string;
+  from: UserId;
+  @Field()
+  to: UserId;
+}
+
+@InputType()
+export class UserUnFollowOneInput {
+  @Field()
+  from: UserId;
+  @Field()
+  to: UserId;
 }
 
 @ObjectType()
 export class User {
   @Field()
-  id?: string;
+  id?: UserId;
   @Field()
   openId: string;
   @Field()
@@ -100,3 +111,9 @@ export class UserPostsInput {
   @Field(type => ORDERBY, { defaultValue: ORDERBY.DESC })
   orderBy: ORDERBY;
 }
+
+@InputType()
+export class UserFansInput extends UserPostsInput {}
+
+@InputType()
+export class UserMyFollowedsInput extends UserPostsInput {}

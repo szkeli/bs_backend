@@ -14,6 +14,8 @@ type User {
   school: String!
   grade: String!
   posts(input: UserPostsInput!): [Post!]!
+  fans(input: UserFansInput!): [User!]!
+  myFolloweds(input: UserMyFollowedsInput!): [User!]!
 }
 
 enum GENDER {
@@ -34,10 +36,24 @@ enum ORDERBY {
   ASC
 }
 
+input UserFansInput {
+  skip: Int = 0
+  limit: Int = 10
+  orderBy: ORDERBY = DESC
+}
+
+input UserMyFollowedsInput {
+  skip: Int = 0
+  limit: Int = 10
+  orderBy: ORDERBY = DESC
+}
+
 type Comment {
   id: String!
   content: String!
   createAt: String!
+  voteCount: Int!
+  commentCount: Int!
   comments(limit: Float!, skip: Float!): [Comment!]!
 }
 
@@ -46,23 +62,36 @@ type Post {
   title: String!
   content: String!
   createAt: String!
+  voteCount: Int!
+  commentCount: Int!
   creator: User!
-  comments(limit: Float = 10, skip: Float = 0): [Comment!]!
+  comments(input: PostsCommentsInput!): [Comment!]!
+}
+
+input PostsCommentsInput {
+  skip: Int = 0
+  limit: Int = 10
+  orderBy: ORDERBY = DESC
 }
 
 type Query {
   post(id: String!): Post!
-  posts: [Post!]!
   user(id: String!): User!
-  getAComent(id: String!): Comment!
+  comment(id: String!): Comment!
 }
 
 type Mutation {
   createAPost(input: CreateAPostInput!): Post!
   createUser(input: UserCreateInput!): User!
   updateUser(input: UserUpdateInput!): User!
-  followOne(input: UserFollowOneInput!): User!
+  followOne(input: UserFollowOneInput!): Boolean!
+  unFollowOne(input: UserUnFollowOneInput!): Boolean!
   addACommentOnComment(input: AddACommentOnCommentInput!): Comment!
+  addACommentOnPost(input: AddACommentOnPostInput!): Comment!
+  voteAPost(input: VoteAPostInput!): Post!
+  voteAComment(input: VoteACommentInput!): Comment!
+  unvoteAComment(input: UnvoteACommentInput!): Boolean!
+  unvoteAPost(input: UnvoteAPostInput!): Boolean!
 }
 
 input CreateAPostInput {
@@ -93,11 +122,43 @@ input UserUpdateInput {
 }
 
 input UserFollowOneInput {
-  id: String!
+  from: String!
+  to: String!
+}
+
+input UserUnFollowOneInput {
+  from: String!
+  to: String!
 }
 
 input AddACommentOnCommentInput {
-  to: String!
   creator: String!
+  to: String!
   content: String!
+}
+
+input AddACommentOnPostInput {
+  creator: String!
+  to: String!
+  content: String!
+}
+
+input VoteAPostInput {
+  from: String!
+  to: String!
+}
+
+input VoteACommentInput {
+  from: String!
+  to: String!
+}
+
+input UnvoteACommentInput {
+  from: String!
+  to: String!
+}
+
+input UnvoteAPostInput {
+  from: String!
+  to: String!
 }

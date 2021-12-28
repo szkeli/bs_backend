@@ -1,7 +1,7 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
 import { Comment } from 'src/comment/models/comment.model';
 import { DbService, PostId } from 'src/db/db.service';
-import { CreateAPostInput, Post } from './models/post.model';
+import { CreateAPostInput, Post, PostsCommentsInput } from './models/post.model';
 import { PostsService } from './posts.service';
 import * as gremlin from 'gremlin';
 import * as pretty from "prettyjson";
@@ -30,26 +30,11 @@ export class PostsResolver {
     return await this.postsService.getUserByPostId(parent.id);
   }
 
-  @Query(returns => [Post])
-  async posts() {
-
-    console.error("test");
-    return [{
-      createAt: '',
-      title: 'title',
-      content: 'test content',
-      votes: 321093821312,
-      id: 'dasdsadasdas',
-    }]
-  }
-
-
   @ResolveField(returns => [Comment])
   async comments(
       @Parent() parent: Post, 
-      @Args("skip", { nullable: true, defaultValue: 0 }) skip: number,
-      @Args("limit", { nullable: true, defaultValue: 10 }) limit: number,
+      @Args('input') input: PostsCommentsInput
   ) {
-    return this.postsService.commentsPaging(parent, skip, limit);
+    return this.postsService.getCommentsByPostId(parent.id, input);
   }
 }
