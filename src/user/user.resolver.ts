@@ -5,8 +5,9 @@ import { CurrentUser } from 'src/auth/decorator';
 import { GqlAuthGuard } from 'src/auth/gql.strategy';
 import { LocalAuthGuard } from 'src/auth/local-auth.guard';
 import { Post } from 'src/posts/models/post.model';
+import { Subject, SubjectId } from 'src/subject/model/subject.model';
 import { hash, sign } from 'src/tool';
-import { CreateFollowRelationInput, DeleteFollowRelationInput, LoginResult, User, UserCreateInput, UserFansInput, UserFollowOneInput, UserLoginInput, UserMyFollowedsInput, UserPostsInput, UserRegisterInput, UserUnFollowOneInput, UserUpdateProfileInput } from './models/user.model';
+import { CreateFollowRelationInput, DeleteFollowRelationInput, LoginResult, User, UserCreateInput, UserFansInput, UserFollowASubjectInput, UserFollowOneInput, UserLoginInput, UserMyFollowedsInput, UserPostsInput, UserRegisterInput, UserUnFollowOneInput, UserUpdateProfileInput } from './models/user.model';
 import { UserService } from './user.service';
 
 @Resolver((_of: User) => User)
@@ -60,6 +61,19 @@ export class UserResolver {
       to: input.to,
     }
     return await this.userService.unFollowOne(v);
+  }
+
+  @Mutation(returns => Subject)
+  @UseGuards(GqlAuthGuard)
+  async followASubject(
+    @CurrentUser() user: User,
+    @Args('id') id: SubjectId,
+  ) {
+    const l: UserFollowASubjectInput = {
+      from: user.userId,
+      to: id,
+    }
+    return await this.userService.followASubject(l);
   }
 
   @ResolveField(returns => [Post])

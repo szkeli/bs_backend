@@ -7,6 +7,7 @@ import {
   User,
   UserCreateInput,
   UserFansInput,
+  UserFollowASubjectInput,
   UserMyFollowedsInput,
   UserPostsInput,
   UserRegisterInput,
@@ -174,18 +175,34 @@ export class DbService {
       .then((r) => objectify<User>(r[0]));
   }
   async createAPost(creator: UserId, input: CreateAPostInput) {
-    const id = hash(input);
+    const id = hash({ creator, input });
+    if(input.subject) {
+      return this.g
+        .createPost(id)
+        .as('p')
+        .updatePostProps(input)
+        .user(creator)
+        .addE('created_post')
+        .to('p')
+        .subject(input.subject)
+        .addE('owned_subject')
+        .from_('p')
+        .select('p')
+        .filterAllPostProps()
+        .toList()
+        .then(r => objectify<Post>(r[0]));
+    }
     return this.g
       .createPost(id)
       .as("post")
-      .updatPostProps(input)
+      .updatePostProps(input)
       .user(creator)
       .addE("created_post")
       .to("post")
       .select("post")
       .filterAllPostProps()
       .toList()
-      .then((r) => objectify<Post>(r[0]));
+      .then(r => objectify<Post>(r[0]));
   }
   async deleteAPost(creator: UserId, id: PostId) {
     // tips: 即使帖子不存在也返回删除成功
@@ -292,7 +309,7 @@ export class DbService {
       .toList()
       .then((r) => objectify<Comment>(r[0]));
   }
-  async addACommentOnComment(creator, input: AddACommentOnCommentInput) {
+  async addACommentOnComment(creator: UserId, input: AddACommentOnCommentInput) {
     const id = hash(input);
     return await this.g
       // 创建评论
@@ -460,10 +477,6 @@ export class DbService {
       .subject(id)
       .filterAllSubjectProps()
       .toList()
-      .then(r => {
-        console.error(r);
-        return r;
-      })
       .then(r => objectify<Subject>(r[0]));
   }
   async updateSubject(input: UpdateSubjectInput) {
@@ -476,6 +489,67 @@ export class DbService {
       .filterAllSubjectProps()
       .toList()
       .then((r) => objectify<Subject>(r[0]));
+  }
+  async getCreatorOfSubject(id: SubjectId) {
+    return await this.g
+      .subject(id)
+      .in_('created_subject')
+      .hasLabel('user')
+      .filterAllUserProps()
+      .toList()
+      .then(r => objectify<User>(r[0]));
+  }
+  async findASubjectByPostId(id: PostId) {
+    return await this.g
+      .post(id)
+      .out('owned_subject')
+      .hasLabel('subject')
+      .filterAllSubjectProps()
+      .toList()
+      .then(r => objectify<Subject>(r[0]));
+  }
+  async getPostsBySubjectId(id: SubjectId, input: PagingConfigInput) {
+    return await this.g
+      .subject(id)
+      .in_('owned_subject')
+      .hasLabel('post')
+      .order()
+      .by('createAt', this.g.orderBy(input.orderBy))
+      .range(input.skip, input.skip + input.limit)
+      .filterAllPostProps()
+      .toList()
+      .then(r => r.map(v => objectify<Post>(v)))
+  }
+  async getUsersBySubjectId(id: SubjectId, input: PagingConfigInput) {
+    return await this.g
+      .subject(id)
+      .in_('followed_subject')
+      .hasLabel('user')
+      .order()
+      .by('createAt', this.g.orderBy(input.orderBy))
+      .range(input.skip, input.skip + input.limit)
+      .filterAllUserProps()
+      .toList()
+      .then(r => {
+        console.error(r)
+        return r;
+      })
+      .then(r => r.map(v => objectify<User>(v)))
+  }
+
+  async userFollowASubject(l: UserFollowASubjectInput) {
+    // TODO 判断主题是否存在
+    return await this.g
+      .subject(l.to)
+      .as('s')
+      .user(l.from)
+      .addE('followed_subject')
+      .property('createAt', Date.now())
+      .to('s')
+      .select('s')
+      .filterAllSubjectProps()
+      .toList()
+      .then(r => objectify<Subject>(r[0]))
   }
 
   async dropAVertex(id: string) {
@@ -525,25 +599,3 @@ export class DbService {
     );
   }
 }
-export enum ERROR_NUMBER {
-  _200 = 200,
-  _400 = 400,
-  _500 = 500,
-}
-
-export type DbResponse<T> = {
-  requestId: string;
-  status: {
-    message: string;
-    code: ERROR_NUMBER;
-    attributes: {
-      [index: string]: string;
-    };
-  };
-  result: {
-    data: T[];
-  };
-  meta: {
-    [index: string]: string;
-  };
-};

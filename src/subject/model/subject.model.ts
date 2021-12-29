@@ -20,8 +20,6 @@ export class Subject {
   @Field()
   id: SubjectId;
   @Field()
-  creator: UserId;
-  @Field()
   createAt: string;
   @Field()
   title: string;

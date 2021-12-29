@@ -1,5 +1,6 @@
 import { Field, ObjectType, Int, registerEnumType, InputType, } from "@nestjs/graphql";
 import { SysId, UserId } from "src/db/model/db.model";
+import { SubjectId } from "src/subject/model/subject.model";
 
 export enum ORDERBY {
   // 时间戳从大到小
@@ -146,4 +147,9 @@ export class UserLoginInput {
   userId: UserId;
   @Field()
   sign: string;
+}
+
+export interface UserFollowASubjectInput {
+  from: UserId;
+  to: SubjectId;
 }

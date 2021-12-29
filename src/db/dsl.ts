@@ -112,7 +112,11 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
     return this.V(postId);
   }
 
-  updatPostProps(post: CreateAPostInput) {
+  subject(subjectId: SubjectId) {
+    return this.V(subjectId).hasLabel('subject')
+  }
+
+  updatePostProps(post: CreateAPostInput) {
     return this
       .property('title', post.title)
       .property('content', post.content)

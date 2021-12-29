@@ -97,6 +97,7 @@ type Post {
   commentCount: Int!
   creator: User!
   comments(input: PostsCommentsInput!): [Comment!]!
+  subject: Subject
 }
 
 input PostsCommentsInput {
@@ -107,12 +108,14 @@ input PostsCommentsInput {
 
 type Subject {
   id: String!
-  creator: String!
   createAt: String!
   title: String!
   subscription: String!
   avatarUrl: String!
   background: String!
+  creator: User!
+  users(input: PagingConfigInput!): [User!]!
+  posts(input: PagingConfigInput!): [Post!]!
 }
 
 type Query {
@@ -130,6 +133,7 @@ type Mutation {
   register(input: UserRegisterInput!): User!
   followOne(input: UserFollowOneInput!): Boolean!
   unFollowOne(input: UserUnFollowOneInput!): Boolean!
+  followASubject(id: String!): Subject!
   updateProfile(input: UserUpdateProfileInput!): User!
   createUser(input: UserCreateInput!): User!
   addACommentOnComment(input: AddACommentOnCommentInput!): Comment!
@@ -145,6 +149,7 @@ type Mutation {
 input CreateAPostInput {
   title: String!
   content: String!
+  subject: String
 }
 
 input UserLoginInput {
