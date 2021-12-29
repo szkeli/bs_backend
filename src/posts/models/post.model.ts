@@ -1,5 +1,5 @@
 import { Field, InputType, Int, ObjectType } from '@nestjs/graphql';
-import { UserId } from 'src/db/db.service';
+import { UserId } from 'src/db/model/db.model';
 import { UserPostsInput } from 'src/user/models/user.model';
 
 @ObjectType()
@@ -24,8 +24,6 @@ export class CreateAPostInput {
   title: string;
   @Field()
   content: string;
-  @Field()
-  creator: UserId;
 }
 
 @InputType()

@@ -5,6 +5,11 @@ import { PostsResolver } from './posts.resolver';
 import { PostsService } from './posts.service';
 
 @Module({
-  providers: [PostsResolver, DbService, PostsService, UserService]
+  providers: [
+    PostsResolver,
+    DbService, 
+    PostsService, 
+    UserService,
+  ]
 })
 export class PostsModule {}

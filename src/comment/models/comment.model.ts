@@ -1,5 +1,6 @@
 import { Field, InputType, Int, ObjectType } from "@nestjs/graphql";
-import { Time, UserId } from "src/db/db.service";
+import { UserId } from "src/db/model/db.model";
+import { ORDERBY } from "src/user/models/user.model";
 
 export type CommentId = string;
 
@@ -20,7 +21,13 @@ export class Comment {
 @InputType()
 export class AddACommentOnCommentInput {
   @Field()
-  creator: UserId;
+  to: CommentId;
+  @Field()
+  content: string;
+}
+
+@InputType()
+export class AddACommentOnPostInput {
   @Field()
   to: CommentId;
   @Field()
@@ -28,4 +35,11 @@ export class AddACommentOnCommentInput {
 }
 
 @InputType()
-export class AddACommentOnPostInput extends AddACommentOnCommentInput {}
+export class PagingConfigInput {
+  @Field(type => Int, { defaultValue: 0 })
+  skip: number;
+  @Field(type => Int, { defaultValue: 10 })
+  limit: number;
+  @Field(type => ORDERBY, { defaultValue: ORDERBY.DESC })
+  orderBy: ORDERBY;
+}

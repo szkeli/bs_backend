@@ -1,7 +1,10 @@
+import { UseGuards } from '@nestjs/common';
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
-import { CommentId } from 'src/db/db.service';
+import { CurrentUser } from 'src/auth/decorator';
+import { GqlAuthGuard } from 'src/auth/gql.strategy';
+import { User } from 'src/user/models/user.model';
 import { CommentService } from './comment.service';
-import { AddACommentOnCommentInput, AddACommentOnPostInput, Comment } from './models/comment.model';
+import { AddACommentOnCommentInput, AddACommentOnPostInput, Comment, CommentId, PagingConfigInput } from './models/comment.model';
 
 @Resolver(of => Comment)
 export class CommentResolver {
@@ -13,22 +16,30 @@ export class CommentResolver {
   }
 
   @Mutation(returns => Comment)
-  async addACommentOnComment(@Args('input') input: AddACommentOnCommentInput) {
-    return await this.commentService.addACommentOnComment(input);
+  @UseGuards(GqlAuthGuard)
+  async addACommentOnComment(
+    @CurrentUser() user: User,
+    @Args('input') input: AddACommentOnCommentInput,
+  ) {
+    return await this.commentService.addACommentOnComment(user.userId, input);
   }
 
   @Mutation(returns => Comment)
-  async addACommentOnPost(@Args('input') input: AddACommentOnPostInput) {
-    return await this.commentService.addACommentOnPost(input);
+  @UseGuards(GqlAuthGuard)
+  async addACommentOnPost(
+    @CurrentUser() user: User,
+    @Args('input') input: AddACommentOnPostInput,
+  ) {
+    return await this.commentService.addACommentOnPost(user.userId, input);
   }
 
   // 评论里搜索评论
   @ResolveField(returns => [Comment])
   async comments(
     @Parent() parent: Comment,
-    @Args("skip") skip: number, 
-    @Args("limit") limit: number ) {
-      return await this.commentService.getCommentPaging(parent, skip, limit);
+    @Args('input') input: PagingConfigInput,
+  ) {
+      return await this.commentService.getCommentsByCommentId(parent.id, input);
   }
 }
 

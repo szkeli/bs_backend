@@ -4,6 +4,8 @@
 
 type User {
   id: String!
+  userId: String!
+  sign: String!
   openId: String!
   unionId: String!
   nickName: String!
@@ -16,6 +18,8 @@ type User {
   posts(input: UserPostsInput!): [Post!]!
   fans(input: UserFansInput!): [User!]!
   myFolloweds(input: UserMyFollowedsInput!): [User!]!
+  myFollowedCount: Int!
+  fansCount: Int!
 }
 
 enum GENDER {
@@ -48,13 +52,40 @@ input UserMyFollowedsInput {
   orderBy: ORDERBY = DESC
 }
 
+type LoginResult {
+  id: String!
+  userId: String!
+  sign: String!
+  openId: String!
+  unionId: String!
+  nickName: String!
+  gender: GENDER!
+  createAt: String!
+  lastLoginAt: String!
+  avatarUrl: String!
+  school: String!
+  grade: String!
+  posts(input: UserPostsInput!): [Post!]!
+  fans(input: UserFansInput!): [User!]!
+  myFolloweds(input: UserMyFollowedsInput!): [User!]!
+  myFollowedCount: Int!
+  fansCount: Int!
+  token: String!
+}
+
 type Comment {
   id: String!
   content: String!
   createAt: String!
   voteCount: Int!
   commentCount: Int!
-  comments(limit: Float!, skip: Float!): [Comment!]!
+  comments(input: PagingConfigInput!): [Comment!]!
+}
+
+input PagingConfigInput {
+  skip: Int = 0
+  limit: Int = 10
+  orderBy: ORDERBY = DESC
 }
 
 type Post {
@@ -74,30 +105,80 @@ input PostsCommentsInput {
   orderBy: ORDERBY = DESC
 }
 
+type Subject {
+  id: String!
+  creator: String!
+  createAt: String!
+  title: String!
+  subscription: String!
+  avatarUrl: String!
+  background: String!
+}
+
 type Query {
   post(id: String!): Post!
+  whoAmI: User!
   user(id: String!): User!
   comment(id: String!): Comment!
+  subject(id: String!): Subject!
 }
 
 type Mutation {
   createAPost(input: CreateAPostInput!): Post!
-  createUser(input: UserCreateInput!): User!
-  updateUser(input: UserUpdateInput!): User!
+  deleteAPost(id: String!): Boolean!
+  login(input: UserLoginInput!): LoginResult!
+  register(input: UserRegisterInput!): User!
   followOne(input: UserFollowOneInput!): Boolean!
   unFollowOne(input: UserUnFollowOneInput!): Boolean!
+  updateProfile(input: UserUpdateProfileInput!): User!
+  createUser(input: UserCreateInput!): User!
   addACommentOnComment(input: AddACommentOnCommentInput!): Comment!
   addACommentOnPost(input: AddACommentOnPostInput!): Comment!
   voteAPost(input: VoteAPostInput!): Post!
   voteAComment(input: VoteACommentInput!): Comment!
   unvoteAComment(input: UnvoteACommentInput!): Boolean!
   unvoteAPost(input: UnvoteAPostInput!): Boolean!
+  addSubject(input: CreateSubjectInput!): Subject!
+  updateSubject(input: UpdateSubjectInput!): Subject!
 }
 
 input CreateAPostInput {
   title: String!
   content: String!
-  creator: String!
+}
+
+input UserLoginInput {
+  userId: String!
+  sign: String!
+}
+
+input UserRegisterInput {
+  openId: String!
+  unionId: String!
+  nickName: String!
+  gender: GENDER!
+  avatarUrl: String!
+  school: String!
+  grade: String!
+  userId: String!
+  sign: String!
+}
+
+input UserFollowOneInput {
+  to: String!
+}
+
+input UserUnFollowOneInput {
+  to: String!
+}
+
+input UserUpdateProfileInput {
+  nickName: String
+  gender: GENDER
+  avatarUrl: String
+  school: String
+  grade: String
+  sign: String
 }
 
 input UserCreateInput {
@@ -110,55 +191,43 @@ input UserCreateInput {
   grade: String!
 }
 
-input UserUpdateInput {
-  id: String!
-  openId: String
-  unionId: String
-  nickName: String
-  gender: GENDER
-  avatarUrl: String
-  school: String
-  grade: String
-}
-
-input UserFollowOneInput {
-  from: String!
-  to: String!
-}
-
-input UserUnFollowOneInput {
-  from: String!
-  to: String!
-}
-
 input AddACommentOnCommentInput {
-  creator: String!
   to: String!
   content: String!
 }
 
 input AddACommentOnPostInput {
-  creator: String!
   to: String!
   content: String!
 }
 
 input VoteAPostInput {
-  from: String!
   to: String!
 }
 
 input VoteACommentInput {
-  from: String!
   to: String!
 }
 
 input UnvoteACommentInput {
-  from: String!
   to: String!
 }
 
 input UnvoteAPostInput {
-  from: String!
   to: String!
+}
+
+input CreateSubjectInput {
+  title: String!
+  subscription: String!
+  avatarUrl: String!
+  background: String!
+}
+
+input UpdateSubjectInput {
+  id: String!
+  title: String
+  subscription: String
+  avatarUrl: String
+  background: String
 }

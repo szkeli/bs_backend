@@ -1,15 +1,65 @@
-import { Injectable } from '@nestjs/common';
-import axios from 'axios';
-import { GENDER, ORDERBY, User, UserCreateInput, UserFansInput, UserMyFollowedsInput, UserPostsInput, UserUnFollowOneInput, UserUpdateInput } from 'src/user/models/user.model';
-import * as crypto from 'crypto';
+import { ForbiddenException, Injectable } from "@nestjs/common";
+import axios from "axios";
+import {
+  DeleteFollowRelationInput,
+  GENDER,
+  ORDERBY,
+  User,
+  UserCreateInput,
+  UserFansInput,
+  UserMyFollowedsInput,
+  UserPostsInput,
+  UserRegisterInput,
+  UserUnFollowOneInput,
+  UserUpdateProfileInput,
+} from "src/user/models/user.model";
+import * as crypto from "crypto";
 import * as pretty from "prettyjson";
-import * as gremlin from 'gremlin';
-import { exec, hash } from 'src/tool';
-import { CreateAPostInput, Post, PostsCommentsInput } from 'src/posts/models/post.model';
-import { AddACommentOnCommentInput, AddACommentOnPostInput, Comment } from 'src/comment/models/comment.model';
-import { SocialTraversalSource, SocialTraversal, anonymous, objectify } from './dsl';
-import { skip } from 'rxjs';
-import { UnvoteACommentInput, UnvoteAPostInput, VoteACommentInput, VoteAPostInput } from 'src/votes/model/votes.model';
+import * as gremlin from "gremlin";
+import { exec, hash, sign } from "src/tool";
+import {
+  CreateAPostInput,
+  Post,
+  PostsCommentsInput,
+} from "src/posts/models/post.model";
+import {
+  AddACommentOnCommentInput,
+  AddACommentOnPostInput,
+  Comment,
+  CommentId,
+  PagingConfigInput,
+} from "src/comment/models/comment.model";
+import {
+  anonymous,
+  objectify,
+  SocialTraversal,
+  SocialTraversalSource,
+} from "./dsl";
+import { skip } from "rxjs";
+import {
+  UnvoteACommentInput,
+  UnvoteAPostInput,
+  VoteACommentInput,
+  VoteAPostInput,
+} from "src/votes/model/votes.model";
+import {
+  CARDINALITY,
+  CreateAAdminerDto,
+  CreateAPropertyKeyDTO,
+  CreateUserDto,
+  CreateVertexLabelDto,
+  DATA_TYPE,
+  DeleteVertexLabelByNameDto,
+  FollowAPersonDto,
+  GetAllPropertyKeyDto,
+  GetAllVertexLabel,
+  GetAUserAllPostDto,
+  PostId,
+  RANGE,
+  UserId,
+  VertexLabel,
+} from "./model/db.model";
+import { CreateSubjectInput, Subject, SubjectId, UpdateSubjectInput } from "src/subject/model/subject.model";
 
 const { unfold } = gremlin.process.statics;
 const T = gremlin.process.t;
@@ -17,320 +67,428 @@ const __ = gremlin.process.statics;
 
 @Injectable()
 export class DbService {
-  origin = 'http://w3.onism.cc:8084/graphs/hugegraph';
-  baseUrl = 'http://w3.onism.cc:8084/graphs/hugegraph/schema/propertykeys';
-  base = 'http://w3.onism.cc:8084/graphs/hugegraph/schema';
+  origin = "http://w3.onism.cc:8084/graphs/hugegraph";
+  baseUrl = "http://w3.onism.cc:8084/graphs/hugegraph/schema/propertykeys";
+  base = "http://w3.onism.cc:8084/graphs/hugegraph/schema";
   private readonly g: SocialTraversalSource;
 
   constructor() {
     const traversal = gremlin.process.AnonymousTraversalSource.traversal;
     const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection;
     this.g = traversal(SocialTraversalSource).withRemote(
-      new DriverRemoteConnection('ws://42.194.215.104:8182/gremlin', {
-        traversalSource: 'hugegraph',
-      })
+      new DriverRemoteConnection("ws://42.194.215.104:8182/gremlin", {
+        traversalSource: "hugegraph",
+      }),
     );
   }
   async init() {}
-  private hash(content: string) {
-    const hash = crypto.createHash('sha256');
-    hash.update(content);
-    return hash.digest('hex');
-  }
   // dealing with Property
   async createAPropertyKey(name: string, dataType: DATA_TYPE) {
     return await axios.post<any, any, CreateAPropertyKeyDTO>(this.baseUrl, {
       data_type: dataType,
       cardinality: CARDINALITY.SINGLE,
       name,
-    }).then<CreateAPropertyKeyDTO>(r => r.data);
+    }).then<CreateAPropertyKeyDTO>((r) => r.data);
   }
   async getAllPropertyKey() {
-    return await axios.get<GetAllPropertyKeyDto>(this.baseUrl).then(r => r.data);
+    return await axios.get<GetAllPropertyKeyDto>(this.baseUrl).then((r) =>
+      r.data
+    );
   }
   async getAPropertyKeyByName(name: string) {
-    return await axios.get<PropertyKey>(`${this.baseUrl}/${name}`).then(r => r.data);
+    return await axios.get<PropertyKey>(`${this.baseUrl}/${name}`).then((r) =>
+      r.data
+    );
   }
   async removeAPropertyKeyByName(name: string) {
-    return await axios.delete(`${this.baseUrl}/${name}`).then(r => r.data);
+    return await axios.delete(`${this.baseUrl}/${name}`).then((r) => r.data);
   }
   // dealing with VertexLabel
   async createAVertexLabel(vertexLabel: CreateVertexLabelDto) {
-    return await axios.post<any, any, CreateVertexLabelDto>(`${this.base}/vertexlabels`, {
-      ...vertexLabel
-    }).then<CreateVertexLabelDto>(r => r.data);
+    return await axios.post<any, any, CreateVertexLabelDto>(
+      `${this.base}/vertexlabels`,
+      {
+        ...vertexLabel,
+      },
+    ).then<CreateVertexLabelDto>((r) => r.data);
   }
   async removeVertexLabelByName(name: string) {
-    return await axios.delete<DeleteVertexLabelByNameDto>(`${this.base}/vertexlabels/${name}`).then(r => r.data);
+    return await axios.delete<DeleteVertexLabelByNameDto>(
+      `${this.base}/vertexlabels/${name}`,
+    ).then((r) => r.data);
   }
   async getAVertexLabelByName(name: string) {
-    return await axios.get<VertexLabel>(`${this.base}/vertexlabels/${name}`).then(r => r.data);
+    return await axios.get<VertexLabel>(`${this.base}/vertexlabels/${name}`)
+      .then((r) => r.data);
   }
   async getAllVertexLabel() {
-    return await axios.get<GetAllVertexLabel>(`${this.base}/vertexlabels`).then(r => r.data);
+    return await axios.get<GetAllVertexLabel>(`${this.base}/vertexlabels`).then(
+      (r) => r.data
+    );
   }
   // dealing with EdgeLabel
   async createAUser(input: CreateUserDto) {
-    const id = this.hash(`${JSON.stringify(input)}:${Date.now()}`);
     return await this.g
-      .createUser(id)
-      .as('user')
+      .createUser()
+      .as("user")
       .updateUserProps(input)
-      .select('user')
+      .select("user")
       .filterAllUserProps()
       .toList()
-      .then(r => objectify<User>(r[0]));
+      .then((r) => objectify<User>(r[0]));
   }
-  async getUser(id: UserId) {
-    // TODO: 实现属性按需查询
-    return await this.g
-      .userWithAllProps(id)
+
+  async registerAUser(input: UserRegisterInput) {
+    // TODO 更严谨地判断当前userId是否已经被使用
+    const isUserIdUsed = await this.g
+      .user(input.userId)
+      .count()
       .toList()
-      .then(r => objectify(r[0]));
+      .then((r) => r[0] === 1);
+    if (isUserIdUsed) {
+      throw new ForbiddenException("The UserId already has been used.");
+    }
+    return await this.g
+      .createUser()
+      .registerUserProps(input)
+      .filterAllUserProps()
+      .toList()
+      .then((r) => objectify<User>(r[0]));
   }
-  async updateAUser(input: UserUpdateInput) {
-    let u = this.g.user(input.id);
-    for(let props of Object.entries(input)) {
-      if(props[0] === 'id') continue;
+  async getUserById(id: UserId) {
+    return await this.g
+      .user(id)
+      .filterAllUserProps()
+      .toList()
+      .then((r) => objectify<User>(r[0]));
+  }
+  async updateAUser(userId: UserId, input: UserUpdateProfileInput) {
+    let u = this.g.user(userId);
+    for (let props of Object.entries(input)) {
+      if (props[0] === "id" || props[0] === "userId") continue;
       u = u.property(props[0], props[1]);
     }
     return await u
       .filterAllUserProps()
       .toList()
-      .then(r => objectify(r[0]))
+      .then((r) => objectify<User>(r[0]));
   }
-  async createAPost(input: CreateAPostInput) {
-    const id = this.hash(`${JSON.stringify(input)}:${Date.now()}`)
+  async createAPost(creator: UserId, input: CreateAPostInput) {
+    const id = hash(input);
     return this.g
       .createPost(id)
-      .as('post')
+      .as("post")
       .updatPostProps(input)
-      .V(input.creator)
-      .addE('created_post')
-      .to('post')
-      .select('post')
+      .user(creator)
+      .addE("created_post")
+      .to("post")
+      .select("post")
       .filterAllPostProps()
       .toList()
-      .then(r => objectify(r[0]))
+      .then((r) => objectify<Post>(r[0]));
+  }
+  async deleteAPost(creator: UserId, id: PostId) {
+    // tips: 即使帖子不存在也返回删除成功
+    return this.g
+      .user(creator)
+      .out('created_post')
+      .post(id)
+      .hasLabel('post')
+      .drop()
+      .next()
+      .then(r => r.done);
   }
   async getAPost(id: PostId) {
     return await this.g
       .post(id)
       .filterAllPostProps()
       .toList()
-      .then(r => objectify(r[0]));
+      .then((r) => objectify<Post>(r[0]));
   }
   async getUserByPostId(id: PostId) {
     return await this.g
       .post(id)
-      .hasLabel('post')
-      .in_('created_post')
-      .filterAllUserProps()      
+      .hasLabel("post")
+      .in_("created_post")
+      .filterAllUserProps()
       .toList()
-      .then(r => objectify(r[0]))
+      .then((r) => objectify<User>(r[0]));
   }
   async getAUserAllPost(input: GetAUserAllPostDto) {
     return await this.g
-      .user(input.id)
-      .hasLabel('user'  )
-      .out('created_post')
-      .hasLabel('post')
+      .user(input.userId)
+      .out("created_post")
+      .hasLabel("post")
       .order()
-      .by('createAt', this.g.orderBy(input.orderBy))
+      .by("createAt", this.g.orderBy(input.orderBy))
       .range(input.skip, input.skip + input.limit)
       .filterAllPostProps()
       .toList()
-      .then(r => r.map(v => objectify(v)));
+      .then((r) => r.map((v) => objectify<Post>(v)));
   }
-  async findFansByUserId(id: UserId, input: UserFansInput) {
+  async findFansByUserId(userId: UserId, input: UserFansInput) {
     // TODO v0.2对followed这条边执行一定的过滤操作
     // TODO orderBy
     return await this.g
-      .user(id)
-      .hasLabel('user')
-      .in_('followed')
-      .hasLabel('user')
+      .user(userId)
+      .in_("followed")
+      .hasLabel("user")
+      .order()
+      .by("createAt", this.g.orderBy(input.orderBy))
       .range(input.skip, input.skip + input.limit)
       .filterAllUserProps()
       .toList()
-      .then(r => r.map(v => objectify(v)));
+      .then((r) => r.map((v) => objectify<User>(v)));
   }
-  async findMyFollowedsByUserIf(id: UserId, input: UserMyFollowedsInput) {
+  async findMyFollowedsByUserId(userId: UserId, input: UserMyFollowedsInput) {
     return await this.g
-      .user(id)
-      .hasLabel('user')
-      .out('followed')
-      .hasLabel('user')
+      .user(userId)
+      .out("followed")
+      .hasLabel("user")
+      .order()
+      .by("createAt", this.g.orderBy(input.orderBy))
       .range(input.skip, input.skip + input.limit)
       .filterAllUserProps()
       .toList()
-      .then(r => r.map(v => objectify(v)));
+      .then((r) => r.map((v) => objectify<User>(v)));
   }
-  async addACommentOnPost(input: AddACommentOnPostInput) {
+  async findMyFollowedCount(userId: UserId) {
+    return await this.g
+      .user(userId)
+      .out("followed")
+      .hasLabel("user")
+      .count()
+      .toList()
+      .then((r) => r[0]);
+  }
+  async findMyFansCount(userId: UserId) {
+    return await this.g
+      .user(userId)
+      .in_("followed")
+      .hasLabel("user")
+      .count()
+      .toList()
+      .then((r) => r[0]);
+  }
+  async addACommentOnPost(creator: UserId, input: AddACommentOnPostInput) {
     const id = hash(input);
     return await this.g
       // 创建评论
       .createComment(id)
-      .as('c')
-      .property('content', input.content)
-      .property('createAt', Date.now())
+      .as("c")
+      .property("content", input.content)
+      .property("createAt", Date.now())
       // 关联到评论创作者
-      .V(input.creator)
-      .addE('created_comment')
-      .to('c')
+      .user(creator)
+      .addE("created_comment")
+      .to("c")
       // 关联到帖子
-      .select('c')
-      .addE('owned')
+      .select("c")
+      .addE("owned")
       .to(__.V(input.to))
       // 获取原评论信息返回
-      .select('c')
+      .select("c")
       .filterAllCommentProps()
       .toList()
-      .then(r => objectify(r[0]));
+      .then((r) => objectify<Comment>(r[0]));
   }
-  async addACommentOnComment(input: AddACommentOnCommentInput) {
+  async addACommentOnComment(creator, input: AddACommentOnCommentInput) {
     const id = hash(input);
     return await this.g
       // 创建评论
       .createComment(id)
-      .as('c')
-      .property('content', input.content)
-      .property('createAt', Date.now())
+      .as("c")
+      .property("content", input.content)
+      .property("createAt", Date.now())
       // 关联到创建者
-      .V(input.creator)
-      .addE('created_comment')
-      .to('c')
+      .user(creator)
+      .addE("created_comment")
+      .to("c")
       // 关联到评论
-      .select('c')
-      .addE('commented')
+      .select("c")
+      .addE("commented")
       .to(__.V(input.to))
       // 过滤原评论的属性
-      .select('c')
+      .select("c")
       .filterAllCommentProps()
       .toList()
-      .then(r => objectify(r[0]));
+      .then((r) => objectify<Comment>(r[0]));
   }
-  async getCommentsByPostId(id: PostId, input: PostsCommentsInput) {
+  async getCommentsByPostId(postId: PostId, input: PagingConfigInput) {
     return await this.g
-      .post(id)
-      .hasLabel('post')
-      .in_('owned')
-      .hasLabel('comment')
+      .post(postId)
+      .hasLabel("post")
+      .in_("owned")
+      .hasLabel("comment")
+      .order()
+      .by('createAt', this.g.orderBy(input.orderBy))
       .range(input.skip, input.skip + input.limit)
       .filterAllCommentProps()
       .toList()
-      .then(r => {
-        console.error(r)
-        return r;
-      })
-      .then(r => r.map(v => objectify(v)))
+      .then(r => r.map(v => objectify<Comment>(v)));
   }
+  async getCommentsByCommentId(commentId: CommentId, input: PagingConfigInput) {
+    return await this.g
+      .comment(commentId)
+      .hasLabel('comment')
+      .in_('commented')
+      .hasLabel('comment')
+      .order()
+      .by('createAt', this.g.orderBy(input.orderBy))
+      .range(input.skip, input.skip + input.limit)
+      .filterAllCommentProps()
+      .toList()
+      .then(r => r.map(v => objectify<Comment>(v)))
+  }
+
   async getACommentById(id: CommentId) {
     return await this.g
       .comment(id)
-      .hasLabel('comment')
+      .hasLabel("comment")
       .filterAllCommentProps()
       .toList()
-      .then(r => objectify(r[0]));
+      .then((r) => objectify<Comment>(r[0]));
   }
-  async voteAPost(input: VoteAPostInput) {
+  async voteAPost(voter: UserId, input: VoteAPostInput) {
     return await this.g
-      .user(input.from)
-      .addE('voted_post')
-      .property('createAt', Date.now())
+      .user(voter)
+      .addE("voted_post")
+      .property("createAt", Date.now())
       .to(__.V(input.to))
       .V(input.to)
-      .hasLabel('post')
+      .hasLabel("post")
       .filterAllPostProps()
       .toList()
-      .then(r => objectify(r[0]))
+      .then((r) => objectify<Post>(r[0]));
   }
-  async voteAComment(input: VoteACommentInput) {
+  async voteAComment(voter: UserId, input: VoteACommentInput) {
     return await this.g
-      .user(input.from)
-      .addE('voted_comment')
-      .property('createAt', Date.now())
-      .to(__.V(input.to).hasLabel('comment'))
+      .user(voter)
+      .addE("voted_comment")
+      .property("createAt", Date.now())
+      .to(__.V(input.to)
+      .hasLabel("comment"))
       .V(input.to)
-      .hasLabel('comment')
+      .hasLabel("comment")
       .filterAllCommentProps()
       .toList()
-      .then(r => objectify(r[0]))
+      .then((r) => objectify<Comment>(r[0]));
   }
-  async unvoteAPost(input: UnvoteAPostInput) {
+  async unvoteAPost(voter: UserId, input: UnvoteAPostInput) {
     return await this.g
-      .user(input.from)
-      .hasLabel('user')
-      .outE()
-      .outV()
-      .hasId(input.to)
-      .hasLabel('voted_post')
-      .drop()
-      .next()
-      .then(r => r.done);
-  }
-  async unvoteAComment(input: UnvoteACommentInput) {
-    return await this.g
-      .user(input.from)
-      .hasLabel('user')
-      .outE()
-      .outV()
-      .hasId(input.to)
-      .hasLabel('voted_comment')
-      .drop()
-      .next()
-      .then(r => r.done);
-  }
-  async followAPerson(input: FollowAPersonDto) {
-    return await this.g
-      .V(input.to)
-      .as('to')
-      .V(input.from)
-      .addE('followed')
-      .to('to')
-      .toList()
-      .then(r => r.length === 0 ? false : true);
-  }
-  async unFollowAPerson(input: UserUnFollowOneInput) {
-    return await this.g
-      .V(input.to)
-      .inE()
+      .user(voter)
+      .outE('voted_post')
       .as('e')
-      .outV()
-      .hasId(input.from)
+      .inV()
+      .hasId(input.to)
+      .hasLabel("post")
       .select('e')
       .drop()
       .next()
-      .then(r => r.done);
+      .then((r) => r.done);
   }
-  
+  async unvoteAComment(voter: UserId, input: UnvoteACommentInput) {
+    return await this.g
+      .user(voter)
+      .outE('voted_comment')
+      .as('e')
+      .inV()
+      .hasId(input.to)
+      .hasLabel("comment")
+      .select('e')
+      .drop()
+      .next()
+      .then((r) => r.done);
+  }
+  private async isUserExsit(userId: UserId) {
+    return await this.g
+      .user(userId)
+      .count()
+      .toList()
+      .then((r) => r[0] === 1);
+  }
+  async followAPerson(input: FollowAPersonDto) {
+    if(!await this.isUserExsit(input.to)) {
+      throw new ForbiddenException("被关注用户不存在");
+    }
+    return await this.g
+      .user(input.to)
+      .as("to")
+      .user(input.from)
+      .addE("followed")
+      .property("createAt", Date.now())
+      .to("to")
+      .toList()
+      .then((r) => r.length === 0 ? false : true);
+  }
+  async unFollowAPerson(input: DeleteFollowRelationInput) {
+    if(!await this.isUserExsit(input.to)) {
+      throw new ForbiddenException("被取消关注的用户不存在");
+    }
+    return await this.g
+      .user(input.to)
+      .inE("followed")
+      .as("e")
+      .outV()
+      .user(input.from)
+      .select("e")
+      .drop()
+      .next()
+      .then((r) => r.done);
+  }
+
+  async addSubject(creator: UserId, input: CreateSubjectInput) {
+    const id = hash({ creator, input });
+    return await this.g
+      .createSubject(id)
+      .as('s')
+      .property('title', input.title)
+      .property('createAt', Date.now())
+      .property('subscription', input.subscription)
+      .property('background', input.background)
+      .property('avatarUrl', input.avatarUrl)
+      .user(creator)
+      .addE('created_subject')
+      .to('s')
+      .select('s')
+      .filterAllSubjectProps()
+      .toList()
+      .then(r => objectify<Subject>(r[0]));
+  }
+  async subject(id: SubjectId) {
+    return await this.g
+      .subject(id)
+      .filterAllSubjectProps()
+      .toList()
+      .then(r => {
+        console.error(r);
+        return r;
+      })
+      .then(r => objectify<Subject>(r[0]));
+  }
+  async updateSubject(input: UpdateSubjectInput) {
+    let u = this.g.subject(input.id);
+    for (let props of Object.entries(input)) {
+      if (props[0] === "id") continue;
+      u = u.property(props[0], props[1]);
+    }
+    return await u
+      .filterAllSubjectProps()
+      .toList()
+      .then((r) => objectify<Subject>(r[0]));
+  }
+
   async dropAVertex(id: string) {
-    return await exec(
-      `
-        g.traversal().V("${id}").drop()
-      `, {}
-    );
+    return await this.g
+      .V(id)
+      .drop()
+      .next()
+      .then((r) => r.done);
   }
 
-  async commentsPaging(postId: PostId, skip: number, limit: number) {
-    return await exec<UserId, DbResponse<Comment>>(`
-      g.traversal()
-        .V("${postId}")
-        .hasLabel("post")
-        .in()
-        .hasLabel("comment")
-        .order()
-        .by("createAt", ${RANGE.DECR})
-        .valueMap(true)
-        .by(unfold())
-        .range(${skip + 1}, ${limit + skip + 1})
-    `, {}).then(r => {
-      return r;
-    });
-  }
-
+  // TODO
   async createAdminer(input: CreateAAdminerDto) {
-    const id = this.hash(`${JSON.stringify(input)}:${Date.now()}`);
+    const id = hash(input);
     return await exec(
       `
         g.traversal()
@@ -346,13 +504,14 @@ export class DbService {
           .select("pre")
           .addE("authorised")
           .to("newAdmin")
-      `, {
+      `,
+      {
         createAt: input.createAt,
         nickName: input.nickName,
         lastLoginAt: input.lastLoginAt,
         action: input.action,
-      }
-    )    
+      },
+    );
   }
   // TODO 修改管理员权限等属性的函数
   async deleteAdminer(id: UserId) {
@@ -361,7 +520,8 @@ export class DbService {
         g.traversal()
           .V("${id}")
           .drop()
-      `, {}
+      `,
+      {},
     );
   }
 }
@@ -371,198 +531,19 @@ export enum ERROR_NUMBER {
   _500 = 500,
 }
 
-
 export type DbResponse<T> = {
   requestId: string;
   status: {
     message: string;
     code: ERROR_NUMBER;
     attributes: {
-      [index: string]: string,
-    }
-  },
+      [index: string]: string;
+    };
+  };
   result: {
-    data: T[],
-  },
+    data: T[];
+  };
   meta: {
-    [index: string]: string,
-  }
-} 
-export type UserId = string; 
-export type PostId = string;
-export type CommentId = string;
-export type Time = number;
-
-export class GetAUserAllPostDto {
-  id: UserId;
-  skip: number;
-  limit: number;
-  orderBy: ORDERBY;
-}
-export enum RANGE {
-  INCR = 'incr',
-  DECR = 'decr',
-  // 随机排序
-  SHUFFLE = 'shuffle',
-}
-export class CreateUserDto {
-  nickName: string;
-  createAt: Time;
-  lastLoginAt: Time;
-  avatarUrl: string;
-  unionId: string;
-  openId: string;
-  school: string;
-  grade: string;
-  gender: string;
-}
-export class CreateAAdminerDto {
-  action: string[];
-  createAt: Time;
-  lastLoginAt: Time;
-  createBy: UserId;
-  privilege: PRIVILEGE;
-  nickName: string;
-}
-
-export enum PRIVILEGE {
-  NORMAL = 'ADMIN',
-}
-export class UnFollowAPersonDto {
-  from: UserId;
-  to: UserId;
-}
-export class FollowAPersonDto {
-  /**
-   * 关注者
-   */
-  from: UserId;
-  /**
-   * 被关注者
-   */
-  to: UserId;
-}
-export interface CreateACommentAtCommentDto {
-  creator: UserId;
-  commentId: CommentId;
-  content: string;
-  createAt: Time;
-}
-export class CreateAPostDto {
-  userId: UserId;
-  content: string;
-  title: string;
-  createAt: Time;
-}
-export class CreateACommentDto {
-  userId: UserId;
-  postId: PostId;
-  content: string;
-  createAt: Time;
-}
-
-export interface MyData {
-  [index: string]: string;
-}
-
-export class CreateVertexLabelDto {
-  name: string;
-  id_strategy: ID_STRATEGY;
-  properties?: string[];
-  primary_keys?: string[];
-  nullable_keys?: string[];
-  enable_label_index?: boolean;
-  // only hugegraph version >= v0.11.2
-  ttl?: number;
-  // only hugegraph version >= v0.11.2
-  ttl_start_time?: string;
-  user_data?: MyData;
-}
-
-export class CreateVertexLabelResponseDto {
-  id: number | string;
-  primary_keys: [string];
-  id_strategy: ID_STRATEGY;
-  name: string;
-  index_names: [string];
-  properties: [string]
-  nullable_keys: [string]
-  enable_label_index: boolean;
-  user_data: MyData;
-}
-
-export class GetAllVertexLabel {
-  vertexlabels: [VertexLabel];
-}
-
-export class VertexLabel {
-  id: number;
-  primary_keys: [string];
-  id_strategy: ID_STRATEGY;
-  name: string;
-  index_names: [string];
-  properties: [string];
-  nullable_keys: [string];
-  // 类型索引 开启会影响性能
-  enable_label_index: boolean;
-  user_data: MyData;
-  
-}
-
-export enum ICON_SIZE {
-  NORMAL = 'NORMAL',
-  HUGE = 'HUGE',
-  BIG = 'BIG',
-  SMALL = 'SMALL',
-  TINY = 'TINY',
-}
-
-export enum ID_STRATEGY {
-  DEFAULT = 'AUTOMATIC',
-  AUTOMATIC = 'AUTOMATIC',
-  CUSTOMIZE_STRING = 'CUSTOMIZE_STRING',
-  CUSTOMIZE_NUMBER = 'CUSTOMIZE_NUMBER',
-  CUSTOMIZE_UUID = 'CUSTOMIZE_UUID'
-}
-
-export class DeleteVertexLabelByNameDto {
-  task_id: number;
-}
-
-export class GetAllPropertyKeyDto {
-  propertykeys: [PropertyKey];
-}
-
-export class PropertyKey {
-  id: number;
-  name: string;
-  data_type: DATA_TYPE;
-  cardinality: CARDINALITY;
-  properties: [any];
-  user_data: MyData;
-}
-
-export class CreateAPropertyKeyDTO {
-  name: string;
-  data_type: DATA_TYPE;
-  cardinality: CARDINALITY;
-}
-
-export enum DATA_TYPE {
-  TEXT = 'TEXT',
-  INT = 'INT',
-  DOUBLE = 'DOUBLE',
-  BOOLEAN = 'BOOLEAN',
-  BYTE = 'BYTE',
-  LONG = 'LONG',
-  FLOAT = 'FLOAT',
-  DATE = 'DATE',
-  UUID = 'UUID',
-  BLOB = 'BLOB',
-}
-
-export enum CARDINALITY {
-  SINGLE = 'SINGLE',
-  LIST = 'LIST',
-  SET = 'SET',
-}
+    [index: string]: string;
+  };
+};

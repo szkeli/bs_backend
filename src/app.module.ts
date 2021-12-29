@@ -11,6 +11,11 @@ import { CommentService } from './comment/comment.service';
 import { CommentModule } from './comment/comment.module';
 import { VotesModule } from './votes/votes.module';
 import { AdminModule } from './admin/admin.module';
+import { AuthModule } from './auth/auth.module';
+import { AuthService } from './auth/auth.service';
+import { UserService } from './user/user.service';
+import { SharedModule } from './shared/shared.module';
+import { SubjectModule } from './subject/subject.module';
 
 @Module({
   imports: [
@@ -25,8 +30,17 @@ import { AdminModule } from './admin/admin.module';
     CommentModule,
     VotesModule,
     AdminModule,
+    AuthModule,
+    SharedModule,
+    SubjectModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PostsService, DbService, CommentService],
+  providers: [
+    AppService, 
+    PostsService, 
+    DbService, 
+    CommentService, 
+    UserService,
+  ],
 })
 export class AppModule {}

@@ -15,7 +15,17 @@ export async function exec<T, U>(l: string, bindings: object, aliases?: object){
 
 export function hash(content: any) {
   const v = `${JSON.stringify(content)}:${Date.now()}`
-  const hash = crypto.createHash('sha256');
-  hash.update(v);
-  return hash.digest('hex');
+  const h = crypto.createHash('sha256');
+  h.update(v);
+  return h.digest('hex');
+}
+
+export function sign(s: string) {
+  const h1 = crypto.createHash('sha512')
+    .update(s)
+    .digest('hex')
+  const h2 = crypto.createHash('sha512')
+    .update(h1)
+    .digest('hex')
+  return h2;
 }

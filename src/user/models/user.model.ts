@@ -1,5 +1,5 @@
 import { Field, ObjectType, Int, registerEnumType, InputType, } from "@nestjs/graphql";
-import { UserId } from "src/db/db.service";
+import { SysId, UserId } from "src/db/model/db.model";
 
 export enum ORDERBY {
   // 时间戳从大到小
@@ -43,13 +43,17 @@ export class UserCreateInput {
 }
 
 @InputType()
-export class UserUpdateInput {
+export class UserRegisterInput extends UserCreateInput {
   @Field()
-  id: string;
-  @Field({ nullable: true })
-  openId?: string;
-  @Field({ nullable: true })
-  unionId?: string;
+  userId: UserId;
+  @Field()
+  sign: RawSign;
+}
+
+export type RawSign = string;
+
+@InputType()
+export class UserUpdateProfileInput {
   @Field({ nullable: true })
   nickName?: string;
   @Field(type => GENDER, { nullable: true })
@@ -60,20 +64,18 @@ export class UserUpdateInput {
   school?: string;
   @Field({ nullable: true })
   grade?: string;
+  @Field({ nullable: true })
+  sign?: string;
 }
 
 @InputType()
 export class UserFollowOneInput {
-  @Field()
-  from: UserId;
   @Field()
   to: UserId;
 }
 
 @InputType()
 export class UserUnFollowOneInput {
-  @Field()
-  from: UserId;
   @Field()
   to: UserId;
 }
@@ -82,6 +84,10 @@ export class UserUnFollowOneInput {
 export class User {
   @Field()
   id?: UserId;
+  @Field()
+  userId: UserId;
+  @Field()
+  sign: string;
   @Field()
   openId: string;
   @Field()
@@ -100,6 +106,7 @@ export class User {
   school: string;
   @Field()
   grade: string;
+  
 }
 
 @InputType()
@@ -117,3 +124,26 @@ export class UserFansInput extends UserPostsInput {}
 
 @InputType()
 export class UserMyFollowedsInput extends UserPostsInput {}
+
+export class CreateFollowRelationInput {
+  from: UserId;
+  to: UserId;
+}
+export class DeleteFollowRelationInput {
+  from: UserId;
+  to: UserId;
+}
+
+@ObjectType()
+export class LoginResult extends User {
+  @Field()
+  token: string;
+}
+
+@InputType()
+export class UserLoginInput {
+  @Field()
+  userId: UserId;
+  @Field()
+  sign: string;
+}
