@@ -1,13 +1,15 @@
-import { Module } from '@nestjs/common';
-import { SubjectService } from './subject.service';
-import { SubjectResolver } from './subject.resolver';
-import { DbService } from 'src/db/db.service';
+import { Module } from '@nestjs/common'
+
+import { DbService } from 'src/db/db.service'
+
+import { SubjectResolver } from './subject.resolver'
+import { SubjectService } from './subject.service'
 
 @Module({
   providers: [
-    SubjectService, 
+    SubjectService,
     SubjectResolver,
-    DbService,
+    DbService
   ]
 })
 export class SubjectModule {}

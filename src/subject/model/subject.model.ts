@@ -1,34 +1,43 @@
-import { Field, InputType, ObjectType } from "@nestjs/graphql";
-import { UserId } from "src/db/model/db.model";
+import { Field, InputType, ObjectType } from '@nestjs/graphql'
 
-export type SubjectId = string;
+import { UserId } from 'src/db/model/db.model'
+
+export type SubjectId = string
 
 @InputType()
 export class SubjectBase {
   @Field()
-  title: string;
+    title: string
+
   @Field()
-  subscription: string;
+    subscription: string
+
   @Field()
-  avatarUrl: string;
+    avatarUrl: string
+
   @Field()
-  background: string;
+    background: string
 }
 
 @ObjectType()
 export class Subject {
   @Field()
-  id: SubjectId;
+    id: SubjectId
+
   @Field()
-  createAt: string;
+    createAt: string
+
   @Field()
-  title: string;
+    title: string
+
   @Field()
-  subscription: string;
+    subscription: string
+
   @Field()
-  avatarUrl: string;
+    avatarUrl: string
+
   @Field()
-  background: string;
+    background: string
 }
 
 @InputType()
@@ -37,13 +46,17 @@ export class CreateSubjectInput extends SubjectBase {}
 @InputType()
 export class UpdateSubjectInput {
   @Field()
-  id: SubjectId;
+    id: SubjectId
+
   @Field({ nullable: true })
-  title?: string;
+    title?: string
+
   @Field({ nullable: true })
-  subscription?: string;
+    subscription?: string
+
   @Field({ nullable: true })
-  avatarUrl?: string;
+    avatarUrl?: string
+
   @Field({ nullable: true })
-  background?: string;
+    background?: string
 }

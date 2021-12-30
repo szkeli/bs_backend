@@ -1,32 +1,40 @@
-import { Field, InputType, Int, ObjectType } from '@nestjs/graphql';
-import { UserId } from 'src/db/model/db.model';
-import { SubjectId } from 'src/subject/model/subject.model';
-import { UserPostsInput } from 'src/user/models/user.model';
+import { Field, InputType, Int, ObjectType } from '@nestjs/graphql'
+
+import { UserId } from 'src/db/model/db.model'
+import { SubjectId } from 'src/subject/model/subject.model'
+import { UserPostsInput } from 'src/user/models/user.model'
 
 @ObjectType()
 export class Post {
   @Field()
-  id?: string;
+    id?: string
+
   @Field()
-  title: string;
+    title: string
+
   @Field()
-  content: string;
+    content: string
+
   @Field()
-  createAt: string;
+    createAt: string
+
   @Field(type => Int)
-  voteCount: number;
+    voteCount: number
+
   @Field(type => Int)
-  commentCount: number;
+    commentCount: number
 }
 
 @InputType()
 export class CreateAPostInput {
   @Field()
-  title: string;
+    title: string
+
   @Field()
-  content: string;
+    content: string
+
   @Field({ nullable: true })
-  subject?: SubjectId;
+    subject?: SubjectId
 }
 
 @InputType()

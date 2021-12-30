@@ -1,10 +1,10 @@
-import { NestFactory } from "@nestjs/core";
-import axios from "axios";
-import { AppModule } from "./app.module";
-import * as pretty from "prettyjson";
+import { NestFactory } from '@nestjs/core'
+import axios from 'axios'
+import * as pretty from 'prettyjson'
 
+import { AppModule } from './app.module'
 
-async function bootstrap() {
+async function bootstrap () {
   // user a following user b
   // let doit = `
   //   a = hugegraph.traversal().V().has('name','famouscat').as('person')
@@ -39,7 +39,7 @@ async function bootstrap() {
   // add some users
   // let doit = `
   //   g.traversal().addV('person').property('name', '小宝测试').property('age', 20)
-      
+
   // `;
 
   // let doit = `
@@ -52,7 +52,6 @@ async function bootstrap() {
   //     .addE('created_post')
   //     .from(user_a)
   // `;
-
 
   // let a = await axios.post("http://127.0.0.1:8080/gremlin", {
   //   gremlin: doit,
@@ -67,8 +66,8 @@ async function bootstrap() {
   //     console.error(pretty.render(e));
   //   });
   // console.error(pretty.render(a));
-  const app = await NestFactory.create(AppModule);
-  await app.listen(3000);
+  const app = await NestFactory.create(AppModule)
+  await app.listen(3000)
 }
 
-bootstrap();
+bootstrap()

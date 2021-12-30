@@ -1,6 +1,7 @@
-import { Field, ObjectType, Int, registerEnumType, InputType, } from "@nestjs/graphql";
-import { SysId, UserId } from "src/db/model/db.model";
-import { SubjectId } from "src/subject/model/subject.model";
+import { Field, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+
+import { SysId, UserId } from 'src/db/model/db.model'
+import { SubjectId } from 'src/subject/model/subject.model'
 
 export enum ORDERBY {
   // 时间戳从大到小
@@ -28,96 +29,120 @@ registerEnumType(GENDER, {
 @InputType()
 export class UserCreateInput {
   @Field()
-  openId: string;
+    openId: string
+
   @Field()
-  unionId: string;
+    unionId: string
+
   @Field()
-  nickName: string;
+    nickName: string
+
   @Field(type => GENDER)
-  gender: GENDER
+    gender: GENDER
+
   @Field()
-  avatarUrl: string;
+    avatarUrl: string
+
   @Field()
-  school: string;
+    school: string
+
   @Field()
-  grade: string;
+    grade: string
 }
 
 @InputType()
 export class UserRegisterInput extends UserCreateInput {
   @Field()
-  userId: UserId;
+    userId: UserId
+
   @Field()
-  sign: RawSign;
+    sign: RawSign
 }
 
-export type RawSign = string;
+export type RawSign = string
 
 @InputType()
 export class UserUpdateProfileInput {
   @Field({ nullable: true })
-  nickName?: string;
+    nickName?: string
+
   @Field(type => GENDER, { nullable: true })
-  gender?: GENDER;
+    gender?: GENDER
+
   @Field({ nullable: true })
-  avatarUrl?: string;
+    avatarUrl?: string
+
   @Field({ nullable: true })
-  school?: string;
+    school?: string
+
   @Field({ nullable: true })
-  grade?: string;
+    grade?: string
+
   @Field({ nullable: true })
-  sign?: string;
+    sign?: string
 }
 
 @InputType()
 export class UserFollowOneInput {
   @Field()
-  to: UserId;
+    to: UserId
 }
 
 @InputType()
 export class UserUnFollowOneInput {
   @Field()
-  to: UserId;
+    to: UserId
 }
 
 @ObjectType()
 export class User {
   @Field()
-  id?: UserId;
+    id?: UserId
+
   @Field()
-  userId: UserId;
+    userId: UserId
+
   @Field()
-  sign: string;
+    sign: string
+
   @Field()
-  openId: string;
+    openId: string
+
   @Field()
-  unionId: string;
+    unionId: string
+
   @Field()
-  nickName: string;
-  @Field(type => GENDER, { defaultValue: GENDER.NONE})
-  gender: GENDER;
+    nickName: string
+
+  @Field(type => GENDER, { defaultValue: GENDER.NONE })
+    gender: GENDER
+
   @Field()
-  createAt: string;
+    createAt: string
+
   @Field()
-  lastLoginAt: string;
+    lastLoginAt: string
+
   @Field()
-  avatarUrl: string;
+    avatarUrl: string
+
   @Field()
-  school: string;
+    school: string
+
   @Field()
-  grade: string;
-  
+    grade: string
 }
 
 @InputType()
 export class UserPostsInput {
   @Field(type => Int, { nullable: true, defaultValue: 0 })
-  skip: number;
+    skip: number
+
   @Field(type => Int, { nullable: true, defaultValue: 10 })
-  limit: number;
+    limit: number
+
   @Field(type => ORDERBY, { defaultValue: ORDERBY.DESC })
-  orderBy: ORDERBY;
+    orderBy: ORDERBY
 }
 
 @InputType()
@@ -127,29 +152,30 @@ export class UserFansInput extends UserPostsInput {}
 export class UserMyFollowedsInput extends UserPostsInput {}
 
 export class CreateFollowRelationInput {
-  from: UserId;
-  to: UserId;
+  from: UserId
+  to: UserId
 }
 export class DeleteFollowRelationInput {
-  from: UserId;
-  to: UserId;
+  from: UserId
+  to: UserId
 }
 
 @ObjectType()
 export class LoginResult extends User {
   @Field()
-  token: string;
+    token: string
 }
 
 @InputType()
 export class UserLoginInput {
   @Field()
-  userId: UserId;
+    userId: UserId
+
   @Field()
-  sign: string;
+    sign: string
 }
 
 export interface UserFollowASubjectInput {
-  from: UserId;
-  to: SubjectId;
+  from: UserId
+  to: SubjectId
 }

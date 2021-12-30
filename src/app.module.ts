@@ -1,22 +1,23 @@
-import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { GraphQLModule } from '@nestjs/graphql';
-import { join } from 'path';
-import { PostsService } from './posts/posts.service';
-import { PostsModule } from './posts/posts.module';
-import { UserModule } from './user/user.module';
-import { DbService } from './db/db.service';
-import { CommentService } from './comment/comment.service';
-import { CommentModule } from './comment/comment.module';
-import { VotesModule } from './votes/votes.module';
-import { AdminModule } from './admin/admin.module';
-import { AuthModule } from './auth/auth.module';
-import { AuthService } from './auth/auth.service';
-import { UserService } from './user/user.service';
-import { SharedModule } from './shared/shared.module';
-import { SubjectModule } from './subject/subject.module';
-import { SearchModule } from './search/search.module';
+import { Module } from '@nestjs/common'
+import { GraphQLModule } from '@nestjs/graphql'
+import { join } from 'path'
+
+import { AdminModule } from './admin/admin.module'
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
+import { AuthModule } from './auth/auth.module'
+import { AuthService } from './auth/auth.service'
+import { CommentModule } from './comment/comment.module'
+import { CommentService } from './comment/comment.service'
+import { DbService } from './db/db.service'
+import { PostsModule } from './posts/posts.module'
+import { PostsService } from './posts/posts.service'
+import { SearchModule } from './search/search.module'
+import { SharedModule } from './shared/shared.module'
+import { SubjectModule } from './subject/subject.module'
+import { UserModule } from './user/user.module'
+import { UserService } from './user/user.service'
+import { VotesModule } from './votes/votes.module'
 
 @Module({
   imports: [
@@ -24,7 +25,7 @@ import { SearchModule } from './search/search.module';
       debug: true,
       playground: true,
       sortSchema: false,
-      autoSchemaFile: join(process.cwd(), 'src/schema.gql'),
+      autoSchemaFile: join(process.cwd(), 'src/schema.gql')
     }),
     PostsModule,
     UserModule,
@@ -34,15 +35,15 @@ import { SearchModule } from './search/search.module';
     AuthModule,
     SharedModule,
     SubjectModule,
-    SearchModule,
+    SearchModule
   ],
   controllers: [AppController],
   providers: [
-    AppService, 
-    PostsService, 
-    DbService, 
-    CommentService, 
-    UserService,
-  ],
+    AppService,
+    PostsService,
+    DbService,
+    CommentService,
+    UserService
+  ]
 })
 export class AppModule {}

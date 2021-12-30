@@ -1,45 +1,54 @@
-import { Field, InputType, Int, ObjectType } from "@nestjs/graphql";
-import { UserId } from "src/db/model/db.model";
-import { ORDERBY } from "src/user/models/user.model";
+import { Field, InputType, Int, ObjectType } from '@nestjs/graphql'
 
-export type CommentId = string;
+import { UserId } from 'src/db/model/db.model'
+import { ORDERBY } from 'src/user/models/user.model'
+
+export type CommentId = string
 
 @ObjectType()
 export class Comment {
   @Field()
-  id: CommentId;
+    id: CommentId
+
   @Field()
-  content: string;
+    content: string
+
   @Field()
-  createAt: string;
+    createAt: string
+
   @Field(type => Int)
-  voteCount: number;
+    voteCount: number
+
   @Field(type => Int)
-  commentCount: number;
+    commentCount: number
 }
 
 @InputType()
 export class AddACommentOnCommentInput {
   @Field()
-  to: CommentId;
+    to: CommentId
+
   @Field()
-  content: string;
+    content: string
 }
 
 @InputType()
 export class AddACommentOnPostInput {
   @Field()
-  to: CommentId;
+    to: CommentId
+
   @Field()
-  content: string;
+    content: string
 }
 
 @InputType()
 export class PagingConfigInput {
   @Field(type => Int, { defaultValue: 0 })
-  skip: number;
+    skip: number
+
   @Field(type => Int, { defaultValue: 10 })
-  limit: number;
+    limit: number
+
   @Field(type => ORDERBY, { defaultValue: ORDERBY.DESC })
-  orderBy: ORDERBY;
+    orderBy: ORDERBY
 }

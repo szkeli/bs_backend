@@ -1,40 +1,42 @@
-import * as gremlin from 'gremlin';
-import { CommentId } from 'src/comment/models/comment.model';
-import { CreateAPostInput } from 'src/posts/models/post.model';
-import { SubjectId, UpdateSubjectInput } from 'src/subject/model/subject.model';
-import { ORDERBY, User, UserRegisterInput, UserUpdateProfileInput } from 'src/user/models/user.model';
-import { CreateUserDto, UserId, PostId } from './model/db.model';
-const T = gremlin.process.t;
-const __ = gremlin.process.statics;
+import * as gremlin from 'gremlin'
+
+import { CommentId } from 'src/comment/models/comment.model'
+import { CreateAPostInput } from 'src/posts/models/post.model'
+import { SubjectId, UpdateSubjectInput } from 'src/subject/model/subject.model'
+import { ORDERBY, User, UserRegisterInput, UserUpdateProfileInput } from 'src/user/models/user.model'
+
+import { CreateUserDto, PostId, UserId } from './model/db.model'
+const T = gremlin.process.t
+const __ = gremlin.process.statics
 
 export class SocialTraversal extends gremlin.process.GraphTraversal {
-  constructor(
-    graph: gremlin.structure.Graph, 
+  constructor (
+    graph: gremlin.structure.Graph,
     traversalStrategies: gremlin.process.TraversalStrategies,
-    bytecode: gremlin.process.Bytecode,
+    bytecode: gremlin.process.Bytecode
   ) {
-    super(graph, traversalStrategies, bytecode);
+    super(graph, traversalStrategies, bytecode)
   }
 
-  aged(age: number) {
-    return this.has('user', 'age', age);
+  aged (age: number) {
+    return this.has('user', 'age', age)
   }
 
-  filterAllUserProps() {
+  filterAllUserProps () {
     return this
       .project(
-        'id', 
+        'id',
         'userId',
-        'nickName', 
-        'openId', 
-        'unionId', 
-        'gender', 
-        'createAt', 
-        'lastLoginAt', 
-        'avatarUrl', 
-        'school', 
+        'nickName',
+        'openId',
+        'unionId',
+        'gender',
+        'createAt',
+        'lastLoginAt',
+        'avatarUrl',
+        'school',
         'grade',
-        'sign',
+        'sign'
       )
       .by(T.id)
       .by('userId')
@@ -50,7 +52,7 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
       .by('sign')
   }
 
-  updateUserProps(user: CreateUserDto) {
+  updateUserProps (user: CreateUserDto) {
     return this
       .property('createAt', user.createAt)
       .property('nickName', user.nickName)
@@ -63,14 +65,14 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
       .property('avatarUrl', user.avatarUrl)
   }
 
-  updateSubjectProps(subjectPatch: UpdateSubjectInput) {
+  updateSubjectProps (subjectPatch: UpdateSubjectInput) {
     return this
       .property
   }
 
-  registerUserProps(userPatch: UserRegisterInput) {
+  registerUserProps (userPatch: UserRegisterInput) {
     const t = Date.now()
-    return this 
+    return this
       .property('userId', userPatch.userId)
       .property('unionId', userPatch.unionId)
       .property('openId', userPatch.openId)
@@ -84,15 +86,15 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
       .property('gender', userPatch.gender)
   }
 
-  filterAllPostProps() {
+  filterAllPostProps () {
     return this
       .project(
-        'id', 
+        'id',
         'title',
         'content',
         'createAt',
         'voteCount',
-        'commentCount',
+        'commentCount'
       )
       .by(T.id)
       .by('title')
@@ -102,35 +104,35 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
       .by(__.in_('owned').hasLabel('comment').count())
   }
 
-  user(userId: UserId) {
+  user (userId: UserId) {
     return this.V()
       .hasLabel('user')
       .has('userId', userId)
   }
 
-  post(postId: PostId) {
-    return this.V(postId);
+  post (postId: PostId) {
+    return this.V(postId)
   }
 
-  subject(subjectId: SubjectId) {
+  subject (subjectId: SubjectId) {
     return this.V(subjectId).hasLabel('subject')
   }
 
-  updatePostProps(post: CreateAPostInput) {
+  updatePostProps (post: CreateAPostInput) {
     return this
       .property('title', post.title)
       .property('content', post.content)
-      .property('createAt', Date.now());
+      .property('createAt', Date.now())
   }
 
-  filterAllCommentProps() {
+  filterAllCommentProps () {
     return this
       .project(
         'id',
         'content',
         'createAt',
         'voteCount',
-        'commentCount',
+        'commentCount'
       )
       .by(T.id)
       .by('content')
@@ -139,7 +141,7 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
       .by(__.in_('commented').hasLabel('comment').count())
   }
 
-  filterAllSubjectProps() {
+  filterAllSubjectProps () {
     return this
       .project(
         'id',
@@ -147,7 +149,7 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
         'createAt',
         'subscription',
         'background',
-        'avatarUrl',
+        'avatarUrl'
       )
       .by(T.id)
       .by('title')
@@ -159,45 +161,45 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
 }
 
 export class SocialTraversalSource extends gremlin.process.GraphTraversalSource {
-  constructor(
+  constructor (
     graph: gremlin.structure.Graph,
     traversalStrategies: gremlin.process.TraversalStrategies,
-    bytecode: gremlin.process.Bytecode,
+    bytecode: gremlin.process.Bytecode
   ) {
-    super(graph, traversalStrategies, bytecode, SocialTraversalSource, SocialTraversal);
+    super(graph, traversalStrategies, bytecode, SocialTraversalSource, SocialTraversal)
   }
 
-  createUser() {
+  createUser () {
     return this.addV('user') as unknown as SocialTraversal
   }
 
-  createPost(id: PostId) {
+  createPost (id: PostId) {
     return this.addV('post')
-      .property(T.id, id) as unknown as SocialTraversal;
+      .property(T.id, id) as unknown as SocialTraversal
   }
 
-  createComment(id: CommentId) {
+  createComment (id: CommentId) {
     return this.addV('comment')
-      .property(T.id, id) as unknown as SocialTraversal;
+      .property(T.id, id) as unknown as SocialTraversal
   }
 
-  createSubject(id: SubjectId) {
+  createSubject (id: SubjectId) {
     return this.addV('subject')
-      .property(T.id, id) as unknown as SocialTraversal;
+      .property(T.id, id) as unknown as SocialTraversal
   }
 
-  userWithAllProps(id: UserId) {
+  userWithAllProps (id: UserId) {
     return this.user(id)
       .project(
-        'id', 
-        'nickName', 
-        'openId', 
-        'unionId', 
-        'gender', 
-        'createAt', 
-        'lastLoginAt', 
-        'avatarUrl', 
-        'school', 
+        'id',
+        'nickName',
+        'openId',
+        'unionId',
+        'gender',
+        'createAt',
+        'lastLoginAt',
+        'avatarUrl',
+        'school',
         'grade'
       )
       .by(T.id)
@@ -212,49 +214,50 @@ export class SocialTraversalSource extends gremlin.process.GraphTraversalSource 
       .by('grade') as unknown as SocialTraversal
   }
 
-  user(userId: UserId) {
+  user (userId: UserId) {
     return this.V()
       .hasLabel('user')
       .has('userId', userId) as unknown as SocialTraversal
-      // return this.V(id) as unknown as SocialTraversal
+    // return this.V(id) as unknown as SocialTraversal
   }
 
-  post(id: PostId) {
+  post (id: PostId) {
     return this.V(id) as unknown as SocialTraversal
   }
 
-  comment(id: CommentId) {
+  comment (id: CommentId) {
     return this.V(id) as unknown as SocialTraversal
   }
 
-  subject(id: SubjectId) {
-    return this.V(id).hasLabel('subject') as unknown as SocialTraversal;
+  subject (id: SubjectId) {
+    return this.V(id).hasLabel('subject') as unknown as SocialTraversal
   }
 
-  orderBy(orderBy: ORDERBY) {
-    return orderBy === ORDERBY.DESC ? gremlin.process.order.desc
-      : orderBy === ORDERBY.ASC ? gremlin.process.order.asc
-      : orderBy === ORDERBY.SHUFFLE ? gremlin.process.order.shuffle
-      : gremlin.process.order.desc;
+  orderBy (orderBy: ORDERBY) {
+    return orderBy === ORDERBY.DESC
+      ? gremlin.process.order.desc
+      : orderBy === ORDERBY.ASC
+        ? gremlin.process.order.asc
+        : orderBy === ORDERBY.SHUFFLE
+          ? gremlin.process.order.shuffle
+          : gremlin.process.order.desc
   }
 
-  v(id?: any) {
-    if(id) 
-      return this.V(id) as unknown as SocialTraversal;
-    else return this.V() as unknown as SocialTraversal;
+  v (id?: any) {
+    if (id) { return this.V(id) as unknown as SocialTraversal } else return this.V() as unknown as SocialTraversal
   }
 }
 
-export function anonymous() {
-  const Bytecode = gremlin.process.Bytecode;
-  return new SocialTraversal(null, null, new Bytecode());
+export function anonymous () {
+  const Bytecode = gremlin.process.Bytecode
+  return new SocialTraversal(null, null, new Bytecode())
 }
 
-export function aged(age: number) {
-  return anonymous().aged(age);
+export function aged (age: number) {
+  return anonymous().aged(age)
 }
 
-export function objectify<T>(u: any) {
-  const v = new Map(u as unknown as Map<string, string>);
-  return Object.fromEntries<string>(v.entries()) as unknown as T;
+export function objectify<T> (u: any) {
+  const v = new Map(u as unknown as Map<string, string>)
+  return Object.fromEntries<string>(v.entries()) as unknown as T
 }
