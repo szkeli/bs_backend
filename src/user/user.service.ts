@@ -15,10 +15,9 @@ import {
   UserUnFollowOneInput,
   UserUpdateProfileInput,
 } from "./models/user.model";
-import * as pretty from "prettyjson";
-import { exec } from "src/tool";
 import { DbService } from "src/db/db.service";
 import { UserId, PRIVILEGE } from "src/db/model/db.model";
+import { PagingConfigInput } from "src/comment/models/comment.model";
 
 @Injectable()
 export class UserService {
@@ -97,5 +96,12 @@ export class UserService {
 
   async followASubject(l: UserFollowASubjectInput) {
     return await this.dbService.userFollowASubject(l);
+  }
+
+  async getMySubjectCount(userId: UserId) {
+    return await this.dbService.getMySubjectCount(userId);
+  }
+  async findMySubjects(userId: UserId, input: PagingConfigInput) {
+    return await this.dbService.findMySubjects(userId, input);
   }
 }

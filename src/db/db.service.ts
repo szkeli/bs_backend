@@ -530,10 +530,6 @@ export class DbService {
       .range(input.skip, input.skip + input.limit)
       .filterAllUserProps()
       .toList()
-      .then(r => {
-        console.error(r)
-        return r;
-      })
       .then(r => r.map(v => objectify<User>(v)))
   }
 
@@ -550,6 +546,27 @@ export class DbService {
       .filterAllSubjectProps()
       .toList()
       .then(r => objectify<Subject>(r[0]))
+  }
+  async findMySubjects(userId: UserId, input: PagingConfigInput) {
+    return await this.g
+      .user(userId)
+      .out('followed_subject')
+      .hasLabel('subject')
+      .order()
+      .by('createAt', this.g.orderBy(input.orderBy))
+      .range(input.skip, input.skip + input.limit)
+      .filterAllSubjectProps()
+      .toList()
+      .then(r => r.map(v => objectify<Subject>(v)))
+  }
+  async getMySubjectCount(userId: UserId) {
+    return await this.g
+      .user(userId)
+      .out('followed_subject')
+      .hasLabel('subject')
+      .count()
+      .next()
+      .then(r => r.value)
   }
 
   async dropAVertex(id: string) {

@@ -3,9 +3,9 @@ import { Args, Resolver, Query, Mutation, ResolveField, Parent, InputType, Int }
 import { AuthService } from 'src/auth/auth.service';
 import { CurrentUser } from 'src/auth/decorator';
 import { GqlAuthGuard } from 'src/auth/gql.strategy';
-import { LocalAuthGuard } from 'src/auth/local-auth.guard';
+import { PagingConfigInput } from 'src/comment/models/comment.model';
 import { Post } from 'src/posts/models/post.model';
-import { Subject, SubjectId } from 'src/subject/model/subject.model';
+import { Subject, SubjectBase, SubjectId } from 'src/subject/model/subject.model';
 import { hash, sign } from 'src/tool';
 import { CreateFollowRelationInput, DeleteFollowRelationInput, LoginResult, User, UserCreateInput, UserFansInput, UserFollowASubjectInput, UserFollowOneInput, UserLoginInput, UserMyFollowedsInput, UserPostsInput, UserRegisterInput, UserUnFollowOneInput, UserUpdateProfileInput } from './models/user.model';
 import { UserService } from './user.service';
@@ -110,6 +110,19 @@ export class UserResolver {
     return await this.userService.findMyFansCount(user.userId);
   }
 
+  @ResolveField(returns => [Subject])
+  async subjects(
+    @Parent() user: User,
+    @Args('input') input: PagingConfigInput,
+  ) {
+    return await this.userService.findMySubjects(user.userId, input);
+  }
+
+  @ResolveField(returns => Int)
+  async subjectCount(@Parent() user: User) {
+    return await this.userService.getMySubjectCount(user.userId);
+  }
+
   @Mutation(returns => User)
   @UseGuards(GqlAuthGuard)
   async updateProfile(
@@ -124,15 +137,21 @@ export class UserResolver {
 
 
   // TODO admin
-  @Query(returns => User || null, { name: 'user' })
-  async getUser(@Args('id') id: string) {
-    return await this.userService.getUser(id);
-  }
 
-  @Mutation(returns => User)
-  async createUser(@Args('input') input: UserCreateInput) {
-    return await this.userService.createUser(input);
-  }
+  // @Query(returns => [User])
+  // async users(@Args('input') input: PagingConfigInput) {
+
+  // }
+
+  // @Query(returns => User || null, { name: 'user' })
+  // async getUser(@Args('id') id: string) {
+  //   return await this.userService.getUser(id);
+  // }
+
+  // @Mutation(returns => User)
+  // async createUser(@Args('input') input: UserCreateInput) {
+  //   return await this.userService.createUser(input);
+  // }
 
   // @Mutation(returns => User)
   // async updateUser(@Args('input') input: UserUpdateProfileInput) {

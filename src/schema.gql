@@ -20,6 +20,8 @@ type User {
   myFolloweds(input: UserMyFollowedsInput!): [User!]!
   myFollowedCount: Int!
   fansCount: Int!
+  subjects(input: PagingConfigInput!): [Subject!]!
+  subjectCount: Int!
 }
 
 enum GENDER {
@@ -52,6 +54,12 @@ input UserMyFollowedsInput {
   orderBy: ORDERBY = DESC
 }
 
+input PagingConfigInput {
+  skip: Int = 0
+  limit: Int = 10
+  orderBy: ORDERBY = DESC
+}
+
 type LoginResult {
   id: String!
   userId: String!
@@ -70,6 +78,8 @@ type LoginResult {
   myFolloweds(input: UserMyFollowedsInput!): [User!]!
   myFollowedCount: Int!
   fansCount: Int!
+  subjects(input: PagingConfigInput!): [Subject!]!
+  subjectCount: Int!
   token: String!
 }
 
@@ -80,12 +90,6 @@ type Comment {
   voteCount: Int!
   commentCount: Int!
   comments(input: PagingConfigInput!): [Comment!]!
-}
-
-input PagingConfigInput {
-  skip: Int = 0
-  limit: Int = 10
-  orderBy: ORDERBY = DESC
 }
 
 type Post {
@@ -121,7 +125,6 @@ type Subject {
 type Query {
   post(id: String!): Post!
   whoAmI: User!
-  user(id: String!): User!
   comment(id: String!): Comment!
   subject(id: String!): Subject!
 }
@@ -135,7 +138,6 @@ type Mutation {
   unFollowOne(input: UserUnFollowOneInput!): Boolean!
   followASubject(id: String!): Subject!
   updateProfile(input: UserUpdateProfileInput!): User!
-  createUser(input: UserCreateInput!): User!
   addACommentOnComment(input: AddACommentOnCommentInput!): Comment!
   addACommentOnPost(input: AddACommentOnPostInput!): Comment!
   voteAPost(input: VoteAPostInput!): Post!
@@ -184,16 +186,6 @@ input UserUpdateProfileInput {
   school: String
   grade: String
   sign: String
-}
-
-input UserCreateInput {
-  openId: String!
-  unionId: String!
-  nickName: String!
-  gender: GENDER!
-  avatarUrl: String!
-  school: String!
-  grade: String!
 }
 
 input AddACommentOnCommentInput {
