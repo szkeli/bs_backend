@@ -92,6 +92,18 @@ type Comment {
   comments(input: PagingConfigInput!): [Comment!]!
 }
 
+type Subject {
+  id: String!
+  createAt: String!
+  title: String!
+  subscription: String!
+  avatarUrl: String!
+  background: String!
+  creator: User!
+  users(input: PagingConfigInput!): [User!]!
+  posts(input: PagingConfigInput!): [Post!]!
+}
+
 type Post {
   id: String!
   title: String!
@@ -110,18 +122,6 @@ input PostsCommentsInput {
   orderBy: ORDERBY = DESC
 }
 
-type Subject {
-  id: String!
-  createAt: String!
-  title: String!
-  subscription: String!
-  avatarUrl: String!
-  background: String!
-  creator: User!
-  users(input: PagingConfigInput!): [User!]!
-  posts(input: PagingConfigInput!): [Post!]!
-}
-
 type Query {
   post(id: String!): Post!
   posts(input: PagingConfigInput!): [Post!]!
@@ -136,7 +136,7 @@ type Mutation {
   login(input: UserLoginInput!): LoginResult!
   register(input: UserRegisterInput!): User!
   followOne(input: UserFollowOneInput!): Boolean!
-  unFollowOne(input: UserUnFollowOneInput!): Boolean!
+  unfollowOne(input: UserUnfollowOneInput!): Boolean!
   followASubject(id: String!): Subject!
   updateProfile(input: UserUpdateProfileInput!): User!
   addACommentOnComment(input: AddACommentOnCommentInput!): Comment!
@@ -176,7 +176,7 @@ input UserFollowOneInput {
   to: String!
 }
 
-input UserUnFollowOneInput {
+input UserUnfollowOneInput {
   to: String!
 }
 

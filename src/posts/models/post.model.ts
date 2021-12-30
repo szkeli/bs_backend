@@ -1,6 +1,5 @@
 import { Field, InputType, Int, ObjectType } from '@nestjs/graphql'
 
-import { UserId } from 'src/db/model/db.model'
 import { SubjectId } from 'src/subject/model/subject.model'
 import { UserPostsInput } from 'src/user/models/user.model'
 

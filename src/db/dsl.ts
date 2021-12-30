@@ -3,20 +3,20 @@ import * as gremlin from 'gremlin'
 import { CommentId } from 'src/comment/models/comment.model'
 import { CreateAPostInput } from 'src/posts/models/post.model'
 import { SubjectId, UpdateSubjectInput } from 'src/subject/model/subject.model'
-import { ORDERBY, User, UserRegisterInput, UserUpdateProfileInput } from 'src/user/models/user.model'
+import { ORDERBY, UserRegisterInput } from 'src/user/models/user.model'
 
 import { CreateUserDto, PostId, UserId } from './model/db.model'
 const T = gremlin.process.t
 const __ = gremlin.process.statics
 
 export class SocialTraversal extends gremlin.process.GraphTraversal {
-  constructor (
-    graph: gremlin.structure.Graph,
-    traversalStrategies: gremlin.process.TraversalStrategies,
-    bytecode: gremlin.process.Bytecode
-  ) {
-    super(graph, traversalStrategies, bytecode)
-  }
+  // constructor (
+  //   graph: gremlin.structure.Graph,
+  //   traversalStrategies: gremlin.process.TraversalStrategies,
+  //   bytecode: gremlin.process.Bytecode
+  // ) {
+  //   super(graph, traversalStrategies, bytecode)
+  // }
 
   aged (age: number) {
     return this.has('user', 'age', age)
@@ -66,8 +66,7 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
   }
 
   updateSubjectProps (subjectPatch: UpdateSubjectInput) {
-    return this
-      .property
+    return this.property
   }
 
   registerUserProps (userPatch: UserRegisterInput) {
@@ -102,6 +101,10 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
       .by('createAt')
       .by(__.in_('voted_post').hasLabel('user').count())
       .by(__.in_('owned').hasLabel('comment').count())
+  }
+
+  createAtNow () {
+    return this.property('createAt', Date.now())
   }
 
   user (userId: UserId) {

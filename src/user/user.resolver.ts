@@ -1,15 +1,15 @@
 import { UseGuards } from '@nestjs/common'
-import { Args, InputType, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Int, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { AuthService } from 'src/auth/auth.service'
 import { CurrentUser } from 'src/auth/decorator'
 import { GqlAuthGuard } from 'src/auth/gql.strategy'
 import { PagingConfigInput } from 'src/comment/models/comment.model'
 import { Post } from 'src/posts/models/post.model'
-import { Subject, SubjectBase, SubjectId } from 'src/subject/model/subject.model'
-import { hash, sign } from 'src/tool'
+import { Subject, SubjectId } from 'src/subject/model/subject.model'
+import { sign } from 'src/tool'
 
-import { CreateFollowRelationInput, DeleteFollowRelationInput, LoginResult, User, UserCreateInput, UserFansInput, UserFollowASubjectInput, UserFollowOneInput, UserLoginInput, UserMyFollowedsInput, UserPostsInput, UserRegisterInput, UserUnFollowOneInput, UserUpdateProfileInput } from './models/user.model'
+import { CreateFollowRelationInput, DeleteFollowRelationInput, LoginResult, User, UserFansInput, UserFollowASubjectInput, UserFollowOneInput, UserLoginInput, UserMyFollowedsInput, UserPostsInput, UserRegisterInput, UserUnfollowOneInput, UserUpdateProfileInput } from './models/user.model'
 import { UserService } from './user.service'
 
 @Resolver((_of: User) => User)
@@ -54,15 +54,15 @@ export class UserResolver {
 
   @Mutation(returns => Boolean)
   @UseGuards(GqlAuthGuard)
-  async unFollowOne (
+  async unfollowOne (
   @CurrentUser() user: User,
-    @Args('input') input: UserUnFollowOneInput
+    @Args('input') input: UserUnfollowOneInput
   ) {
     const v: DeleteFollowRelationInput = {
       from: user.userId,
       to: input.to
     }
-    return await this.userService.unFollowOne(v)
+    return await this.userService.unfollowOne(v)
   }
 
   @Mutation(returns => Subject)

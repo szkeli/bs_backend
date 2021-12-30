@@ -4,12 +4,10 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { CurrentUser } from 'src/auth/decorator'
 import { GqlAuthGuard } from 'src/auth/gql.strategy'
 import { Comment, PagingConfigInput } from 'src/comment/models/comment.model'
-import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 import { Subject } from 'src/subject/model/subject.model'
 import { SubjectService } from 'src/subject/subject.service'
 import { User } from 'src/user/models/user.model'
-import { UserService } from 'src/user/user.service'
 
 import { CreateAPostInput, Post, PostsCommentsInput } from './models/post.model'
 import { PostsService } from './posts.service'

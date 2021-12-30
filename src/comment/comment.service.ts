@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { DbService } from 'src/db/db.service'
 import { UserId } from 'src/db/model/db.model'
 
-import { AddACommentOnCommentInput, AddACommentOnPostInput, Comment, CommentId, PagingConfigInput } from './models/comment.model'
+import { AddACommentOnCommentInput, AddACommentOnPostInput, CommentId, PagingConfigInput } from './models/comment.model'
 
 @Injectable()
 export class CommentService {

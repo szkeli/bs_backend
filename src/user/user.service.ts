@@ -1,23 +1,20 @@
-import { ForbiddenException, Injectable, Module } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { PagingConfigInput } from 'src/comment/models/comment.model'
 import { DbService } from 'src/db/db.service'
-import { PRIVILEGE, UserId } from 'src/db/model/db.model'
+import { UserId } from 'src/db/model/db.model'
 
 import {
   CreateFollowRelationInput,
   DeleteFollowRelationInput,
-  GENDER,
   ORDERBY,
   User,
   UserCreateInput,
   UserFansInput,
   UserFollowASubjectInput,
-  UserFollowOneInput,
   UserMyFollowedsInput,
   UserPostsInput,
   UserRegisterInput,
-  UserUnFollowOneInput,
   UserUpdateProfileInput
 } from './models/user.model'
 
@@ -52,11 +49,11 @@ export class UserService {
     return await this.dbService.followAPerson(input)
   }
 
-  async unFollowOne (input: DeleteFollowRelationInput) {
+  async unfollowOne (input: DeleteFollowRelationInput) {
     if (input.from === input.to) {
       throw new ForbiddenException('禁止取消关注自己')
     }
-    return await this.dbService.unFollowAPerson(input)
+    return await this.dbService.unfollowAPerson(input)
   }
 
   async findFansByUserId (id: UserId, input: UserFansInput) {

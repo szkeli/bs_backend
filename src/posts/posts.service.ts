@@ -4,7 +4,7 @@ import { PagingConfigInput } from 'src/comment/models/comment.model'
 import { DbService } from 'src/db/db.service'
 import { PostId, UserId } from 'src/db/model/db.model'
 
-import { CreateAPostInput, Post, PostsCommentsInput } from './models/post.model'
+import { CreateAPostInput, PostsCommentsInput } from './models/post.model'
 
 @Injectable()
 export class PostsService {

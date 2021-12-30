@@ -1,6 +1,6 @@
 import { Field, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
-import { SysId, UserId } from 'src/db/model/db.model'
+import { UserId } from 'src/db/model/db.model'
 import { SubjectId } from 'src/subject/model/subject.model'
 
 export enum ORDERBY {
@@ -89,7 +89,7 @@ export class UserFollowOneInput {
 }
 
 @InputType()
-export class UserUnFollowOneInput {
+export class UserUnfollowOneInput {
   @Field()
     to: UserId
 }

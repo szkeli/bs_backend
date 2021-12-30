@@ -1,6 +1,5 @@
 import { Field, InputType, Int, ObjectType } from '@nestjs/graphql'
 
-import { UserId } from 'src/db/model/db.model'
 import { ORDERBY } from 'src/user/models/user.model'
 
 export type CommentId = string

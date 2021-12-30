@@ -1,9 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import axios from 'axios'
-import * as crypto from 'crypto'
 import * as gremlin from 'gremlin'
-import * as pretty from 'prettyjson'
-import { skip } from 'rxjs'
 
 import {
   AddACommentOnCommentInput,
@@ -14,23 +11,17 @@ import {
 } from 'src/comment/models/comment.model'
 import {
   CreateAPostInput,
-  Post,
-  PostsCommentsInput
+  Post
 } from 'src/posts/models/post.model'
 import { CreateSubjectInput, Subject, SubjectId, UpdateSubjectInput } from 'src/subject/model/subject.model'
-import { exec, hash, sign } from 'src/tool'
+import { exec, hash } from 'src/tool'
 import {
   DeleteFollowRelationInput,
-  GENDER,
-  ORDERBY,
   User,
-  UserCreateInput,
   UserFansInput,
   UserFollowASubjectInput,
   UserMyFollowedsInput,
-  UserPostsInput,
   UserRegisterInput,
-  UserUnFollowOneInput,
   UserUpdateProfileInput
 } from 'src/user/models/user.model'
 import {
@@ -41,9 +32,7 @@ import {
 } from 'src/votes/model/votes.model'
 
 import {
-  anonymous,
   objectify,
-  SocialTraversal,
   SocialTraversalSource
 } from './dsl'
 import {
@@ -59,13 +48,10 @@ import {
   GetAllVertexLabel,
   GetAUserAllPostDto,
   PostId,
-  RANGE,
   UserId,
   VertexLabel
 } from './model/db.model'
 
-const { unfold } = gremlin.process.statics
-const T = gremlin.process.t
 const __ = gremlin.process.statics
 
 @Injectable()
@@ -79,7 +65,7 @@ export class DbService {
     const traversal = gremlin.process.AnonymousTraversalSource.traversal
     const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection
     this.g = traversal(SocialTraversalSource).withRemote(
-      new DriverRemoteConnection('ws://42.194.215.104:8182/gremlin', {
+      new DriverRemoteConnection('ws://api.szlikeyou.com:8182/gremlin', {
         traversalSource: 'hugegraph'
       })
     )
@@ -190,7 +176,10 @@ export class DbService {
 
   async createAPost (creator: UserId, input: CreateAPostInput) {
     const id = hash({ creator, input })
+    const now = Date.now()
+
     if (input.subject) {
+      // TODO 判断subject是否存在
       return await this.g
         .createPost(id)
         .as('p')
@@ -200,6 +189,7 @@ export class DbService {
         .to('p')
         .subject(input.subject)
         .addE('owned_subject')
+        .property('createAt', now)
         .from_('p')
         .select('p')
         .filterAllPostProps()
@@ -312,12 +302,13 @@ export class DbService {
 
   async addACommentOnPost (creator: UserId, input: AddACommentOnPostInput) {
     const id = hash(input)
+    const now = Date.now()
     return await this.g
       // 创建评论
       .createComment(id)
       .as('c')
       .property('content', input.content)
-      .property('createAt', Date.now())
+      .property('createAt', now)
       // 关联到评论创作者
       .user(creator)
       .addE('created_comment')
@@ -325,6 +316,7 @@ export class DbService {
       // 关联到帖子
       .select('c')
       .addE('owned')
+      .property('createAt', now)
       .to(__.V(input.to))
       // 获取原评论信息返回
       .select('c')
@@ -335,12 +327,13 @@ export class DbService {
 
   async addACommentOnComment (creator: UserId, input: AddACommentOnCommentInput) {
     const id = hash(input)
+    const now = Date.now()
     return await this.g
       // 创建评论
       .createComment(id)
       .as('c')
       .property('content', input.content)
-      .property('createAt', Date.now())
+      .property('createAt', now)
       // 关联到创建者
       .user(creator)
       .addE('created_comment')
@@ -348,6 +341,7 @@ export class DbService {
       // 关联到评论
       .select('c')
       .addE('commented')
+      .property('createAt', now)
       .to(__.V(input.to))
       // 过滤原评论的属性
       .select('c')
@@ -471,7 +465,7 @@ export class DbService {
       .then(r => r.length !== 0)
   }
 
-  async unFollowAPerson (input: DeleteFollowRelationInput) {
+  async unfollowAPerson (input: DeleteFollowRelationInput) {
     if (!await this.isUserExsit(input.to)) {
       throw new ForbiddenException('被取消关注的用户不存在')
     }
@@ -499,6 +493,7 @@ export class DbService {
       .property('avatarUrl', input.avatarUrl)
       .user(creator)
       .addE('created_subject')
+      .createAtNow()
       .to('s')
       .select('s')
       .filterAllSubjectProps()

@@ -1,7 +1,5 @@
 import { Field, InputType, ObjectType } from '@nestjs/graphql'
 
-import { UserId } from 'src/db/model/db.model'
-
 export type SubjectId = string
 
 @InputType()
