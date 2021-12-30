@@ -520,6 +520,17 @@ export class DbService {
       .toList()
       .then(r => r.map(v => objectify<Post>(v)))
   }
+  async getPosts(input: PagingConfigInput) {
+    return await this.g
+      .v()
+      .hasLabel('post')
+      .order()
+      .by('createAt', this.g.orderBy(input.orderBy))
+      .range(input.skip, input.skip + input.limit)
+      .filterAllPostProps()
+      .toList()
+      .then(r => r.map(v => objectify<Post>(v)))
+  }
   async getUsersBySubjectId(id: SubjectId, input: PagingConfigInput) {
     return await this.g
       .subject(id)

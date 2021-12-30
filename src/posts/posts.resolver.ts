@@ -1,5 +1,5 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql';
-import { Comment } from 'src/comment/models/comment.model';
+import { Comment, PagingConfigInput } from 'src/comment/models/comment.model';
 import { CreateAPostInput, Post, PostsCommentsInput } from './models/post.model';
 import { PostsService } from './posts.service';
 import { User } from 'src/user/models/user.model';
@@ -19,6 +19,18 @@ export class PostsResolver {
     private readonly subjectService: SubjectService,
   ) {}
 
+  @Query(returns => Post)
+  async post(@Args("id") id: PostId) {
+    return await this.postsService.getAPost(id);
+  }
+
+  @Query(returns => [Post])
+  async posts(@Args('input') input: PagingConfigInput) {
+    return await this.postsService.getPosts(input);
+  }
+
+  // TODO 个性推荐帖子
+
   @Mutation(returns => Post)
   @UseGuards(GqlAuthGuard)
   async createAPost(
@@ -35,11 +47,6 @@ export class PostsResolver {
     @Args('id') id: PostId,
   ) {
    return await this.postsService.deleteAPost(user.userId, id);
-  }
-
-  @Query(returns => Post)
-  async post(@Args("id") id: PostId) {
-    return await this.postsService.getAPost(id);
   }
 
   @ResolveField(returns => User)

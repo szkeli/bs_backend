@@ -124,6 +124,7 @@ type Subject {
 
 type Query {
   post(id: String!): Post!
+  posts(input: PagingConfigInput!): [Post!]!
   whoAmI: User!
   comment(id: String!): Comment!
   subject(id: String!): Subject!

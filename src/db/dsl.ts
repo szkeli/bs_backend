@@ -237,6 +237,12 @@ export class SocialTraversalSource extends gremlin.process.GraphTraversalSource 
       : orderBy === ORDERBY.SHUFFLE ? gremlin.process.order.shuffle
       : gremlin.process.order.desc;
   }
+
+  v(id?: any) {
+    if(id) 
+      return this.V(id) as unknown as SocialTraversal;
+    else return this.V() as unknown as SocialTraversal;
+  }
 }
 
 export function anonymous() {
