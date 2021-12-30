@@ -16,6 +16,7 @@ import { AuthService } from './auth/auth.service';
 import { UserService } from './user/user.service';
 import { SharedModule } from './shared/shared.module';
 import { SubjectModule } from './subject/subject.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { SubjectModule } from './subject/subject.module';
     AuthModule,
     SharedModule,
     SubjectModule,
+    SearchModule,
   ],
   controllers: [AppController],
   providers: [
