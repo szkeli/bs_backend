@@ -1,4 +1,4 @@
-import { Field, InputType, ObjectType } from '@nestjs/graphql'
+import { Field, InputType, Int, ObjectType } from '@nestjs/graphql'
 
 export type SubjectId = string
 
@@ -11,10 +11,10 @@ export class SubjectBase {
     subscription: string
 
   @Field()
-    avatarUrl: string
+    avatarImageUrl: string
 
   @Field()
-    background: string
+    backgroundImageUrl: string
 }
 
 @ObjectType()
@@ -23,7 +23,7 @@ export class Subject {
     id: SubjectId
 
   @Field()
-    createAt: string
+    createdAt: string
 
   @Field()
     title: string
@@ -32,10 +32,10 @@ export class Subject {
     subscription: string
 
   @Field()
-    avatarUrl: string
+    avatarImageUrl: string
 
   @Field()
-    background: string
+    backgroundImageUrl: string
 }
 
 @InputType()
@@ -57,4 +57,28 @@ export class UpdateSubjectInput {
 
   @Field({ nullable: true })
     background?: string
+}
+
+@ObjectType()
+export class SubjectsConnection {
+  // @Field(type => [SubjectEdge])
+  //   edges: [SubjectEdge]
+
+  // @Field(type => PageInfo)
+  //   pageInfo: PageInfo
+
+  @Field(type => [Subject])
+    nodes: [Subject]
+
+  @Field(type => Int)
+    totalCount: number
+}
+
+@ObjectType()
+export class SubjectEdge {
+  @Field(type => String)
+    cursor: string
+
+  @Field(type => Subject)
+    node: Subject
 }

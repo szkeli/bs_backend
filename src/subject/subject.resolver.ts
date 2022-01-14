@@ -1,13 +1,26 @@
 import { UseGuards } from '@nestjs/common'
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import {
+  Args,
+  Int,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver
+} from '@nestjs/graphql'
 
 import { CurrentUser } from 'src/auth/decorator'
 import { GqlAuthGuard } from 'src/auth/gql.strategy'
-import { PagingConfigInput } from 'src/comment/models/comment.model'
-import { Post } from 'src/posts/models/post.model'
-import { User } from 'src/user/models/user.model'
+import { PostsConnection } from 'src/posts/models/post.model'
+import { FollowersConnection, User } from 'src/user/models/user.model'
 
-import { CreateSubjectInput, Subject, SubjectId, UpdateSubjectInput } from './model/subject.model'
+import {
+  CreateSubjectInput,
+  Subject,
+  SubjectId,
+  SubjectsConnection,
+  UpdateSubjectInput
+} from './model/subject.model'
 import { SubjectService } from './subject.service'
 
 @Resolver((_of: Subject) => Subject)
@@ -19,13 +32,21 @@ export class SubjectResolver {
     return await this.subjectService.subject(id)
   }
 
+  @Query(returns => SubjectsConnection)
+  async subjects (
+    @Args('first', { nullable: true, type: () => Int, defaultValue: 0 }) first: number,
+      @Args('offset', { nullable: true, type: () => Int, defaultValue: 0 }) offset: number
+  ): Promise<SubjectsConnection> {
+    return await this.subjectService.subjects(first, offset)
+  }
+
   @Mutation(returns => Subject)
   @UseGuards(GqlAuthGuard)
-  async addSubject (
-  @CurrentUser() user: User,
-    @Args('input') input: CreateSubjectInput
-  ) {
-    return await this.subjectService.addSubject(user.userId, input)
+  async createSubject (
+    @CurrentUser() user: User,
+      @Args('input') input: CreateSubjectInput
+  ): Promise<Subject> {
+    return await this.subjectService.createASubject(user.id, input)
   }
 
   @Mutation(returns => Subject)
@@ -38,23 +59,31 @@ export class SubjectResolver {
   }
 
   @ResolveField(returns => User)
-  async creator (@Parent() subject: Subject) {
+  async creator (@Parent() subject: Subject): Promise<User> {
     return await this.subjectService.getCreatorOfSubject(subject.id)
   }
 
-  @ResolveField(returns => [User])
-  async users (
+  @ResolveField(returns => FollowersConnection)
+  async followers (
   @Parent() subject: Subject,
-    @Args('input') input: PagingConfigInput
+    @Args('after') after: String,
+    @Args('before') before: String,
+    @Args('first') first: Number,
+    @Args('last') last: Number
   ) {
-    return await this.subjectService.getUsersBySubjectId(subject.id, input)
+    throw new Error('undefined')
+    // return await this.userService.findFansByUserId(
+    //   user.userId,
+    //   input
+    // )
   }
 
-  @ResolveField(returns => [Post])
+  @ResolveField(returns => PostsConnection)
   async posts (
-  @Parent() subject: Subject,
-    @Args('input') input: PagingConfigInput
-  ) {
-    return await this.subjectService.getPostsBySubjectId(subject.id, input)
+    @Parent() subject: Subject,
+      @Args('first', { nullable: true, type: () => Int, defaultValue: 2 }) first: number,
+      @Args('offset', { nullable: true, type: () => Int, defaultValue: 0 }) offset: number
+  ): Promise<PostsConnection> {
+    return await this.subjectService.findPostsBySubjectId(subject.id, first, offset)
   }
 }

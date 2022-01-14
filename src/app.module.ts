@@ -6,10 +6,10 @@ import { AdminModule } from './admin/admin.module'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { AuthModule } from './auth/auth.module'
-import { AuthService } from './auth/auth.service'
 import { CommentModule } from './comment/comment.module'
 import { CommentService } from './comment/comment.service'
 import { DbService } from './db/db.service'
+import { NodeModule } from './node/node.module'
 import { PostsModule } from './posts/posts.module'
 import { PostsService } from './posts/posts.service'
 import { SearchModule } from './search/search.module'
@@ -35,7 +35,8 @@ import { VotesModule } from './votes/votes.module'
     AuthModule,
     SharedModule,
     SubjectModule,
-    SearchModule
+    SearchModule,
+    NodeModule
   ],
   controllers: [AppController],
   providers: [

@@ -3,7 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { DbService } from 'src/db/db.service'
 import { UserId } from 'src/db/model/db.model'
 
-import { UnvoteACommentInput, UnvoteAPostInput, VoteACommentInput, VoteAPostInput } from './model/votes.model'
+import { UnvoteACommentInput, UnvoteAPostInput, VoteACommentInput } from './model/votes.model'
 
 @Injectable()
 export class VotesService {
@@ -13,8 +13,8 @@ export class VotesService {
     return await this.dbService.voteAComment(voter, input)
   }
 
-  async voteAPost (voter: UserId, input: VoteAPostInput) {
-    return await this.dbService.voteAPost(voter, input)
+  async voteAPost (voter: UserId, to: string) {
+    return await this.dbService.voteAPost(voter, to)
   }
 
   async unvoteAComment (voter: UserId, input: UnvoteACommentInput): Promise<boolean> {

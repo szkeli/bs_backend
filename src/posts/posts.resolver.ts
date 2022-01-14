@@ -1,15 +1,28 @@
 import { UseGuards } from '@nestjs/common'
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import {
+  Args,
+  Int,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver
+} from '@nestjs/graphql'
 
 import { CurrentUser } from 'src/auth/decorator'
 import { GqlAuthGuard } from 'src/auth/gql.strategy'
-import { Comment, PagingConfigInput } from 'src/comment/models/comment.model'
+import {
+  CommentsConnection
+} from 'src/comment/models/comment.model'
 import { PostId } from 'src/db/model/db.model'
-import { Subject } from 'src/subject/model/subject.model'
+import { Subject, SubjectId } from 'src/subject/model/subject.model'
 import { SubjectService } from 'src/subject/subject.service'
 import { User } from 'src/user/models/user.model'
 
-import { CreateAPostInput, Post, PostsCommentsInput } from './models/post.model'
+import {
+  Post,
+  PostsConnection
+} from './models/post.model'
 import { PostsService } from './posts.service'
 
 @Resolver((_of: Post) => Post)
@@ -20,29 +33,42 @@ export class PostsResolver {
   ) {}
 
   @Query(returns => Post)
-  async post (@Args('id') id: PostId) {
-    return await this.postsService.getAPost(id)
+  async post (@Args('id') id: PostId): Promise<Post> {
+    return await this.postsService.getPost(id)
   }
 
-  @Query(returns => [Post])
-  async posts (@Args('input') input: PagingConfigInput) {
-    return await this.postsService.getPosts(input)
+  @Query(returns => PostsConnection)
+  async posts (
+  @Args('first', { nullable: true, type: () => Int, defaultValue: 0 }) first: number,
+    @Args('offset', { nullable: true, type: () => Int, defaultValue: 0 }) offset: number
+  ) {
+    return await this.postsService.getPosts(
+      first,
+      offset
+    )
   }
-
-  // TODO 个性推荐帖子
 
   @Mutation(returns => Post)
   @UseGuards(GqlAuthGuard)
-  async createAPost (
+  async createPost (
   @CurrentUser() user: User,
-    @Args('input') input: CreateAPostInput
+    @Args('title') title: string,
+    @Args('content') content: string,
+    @Args('images', { type: () => [String] }) images: [string],
+    @Args('subjectId', { nullable: true }) subjectId: SubjectId
   ) {
-    return await this.postsService.createAPost(user.userId, input)
+    return await this.postsService.createAPost(
+      user.id,
+      title,
+      content,
+      images,
+      subjectId
+    )
   }
 
   @Mutation(returns => Boolean)
   @UseGuards(GqlAuthGuard)
-  async deleteAPost (
+  async deletePost (
   @CurrentUser() user: User,
     @Args('id') id: PostId
   ) {
@@ -50,21 +76,25 @@ export class PostsResolver {
   }
 
   @ResolveField(returns => User)
-  async creator (@Parent() parent: Post) {
-    return await this.postsService.getUserByPostId(parent.id)
+  async creator (@Parent() post: Post): Promise<User> {
+    return await this.postsService.getUserByPostId(post.id)
   }
 
-  @ResolveField(returns => [Comment])
+  @ResolveField(returns => CommentsConnection)
   async comments (
-  @Parent() parent: Post,
-    @Args('input') input: PostsCommentsInput
+  @Parent() post: Post,
+    @Args('first', { type: () => Int, nullable: true, defaultValue: 0 }) first: number,
+    @Args('offset', { type: () => Int, nullable: true, defaultValue: 2 }) offset: number
   ) {
-    return await this.postsService.getCommentsByPostId(parent.id, input)
+    return await this.postsService.getCommentsByPostId(
+      post.id,
+      first,
+      offset
+    )
   }
 
   @ResolveField(returns => Subject, { nullable: true })
-  async subject (@Parent() post: Post) {
-    const v = await this.subjectService.findASubjectByPostId(post.id)
-    return v.id ? v : null
+  async subject (@Parent() post: Post): Promise<Subject | null> {
+    return await this.subjectService.findASubjectByPostId(post.id)
   }
 }

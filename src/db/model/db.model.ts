@@ -1,4 +1,3 @@
-import { ORDERBY } from 'src/user/models/user.model'
 
 export type UserId = string
 export type PostId = string
@@ -8,9 +7,6 @@ export type Time = number
 
 export class GetAUserAllPostDto {
   userId: UserId
-  skip: number
-  limit: number
-  orderBy: ORDERBY
 }
 export enum RANGE {
   INCR = 'incr',
@@ -19,7 +15,7 @@ export enum RANGE {
   SHUFFLE = 'shuffle',
 }
 export class CreateUserDto {
-  nickName: string
+  name: string
   createAt: Time
   lastLoginAt: Time
   avatarUrl: string

@@ -1,7 +1,9 @@
-import { Field, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { Field, InputType, Int, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 import { UserId } from 'src/db/model/db.model'
 import { SubjectId } from 'src/subject/model/subject.model'
+
+import { Node } from '../../node/models/node.model'
 
 export enum ORDERBY {
   // 时间戳从大到小
@@ -35,13 +37,13 @@ export class UserCreateInput {
     unionId: string
 
   @Field()
-    nickName: string
+    name: string
 
   @Field(type => GENDER)
     gender: GENDER
 
   @Field()
-    avatarUrl: string
+    avatarImageUrl: string
 
   @Field()
     school: string
@@ -64,7 +66,7 @@ export type RawSign = string
 @InputType()
 export class UserUpdateProfileInput {
   @Field({ nullable: true })
-    nickName?: string
+    name?: string
 
   @Field(type => GENDER, { nullable: true })
     gender?: GENDER
@@ -82,28 +84,53 @@ export class UserUpdateProfileInput {
     sign?: string
 }
 
-@InputType()
-export class UserFollowOneInput {
+@ObjectType({
+  implements: () => [Person, Node]
+})
+export class Admin implements Person, Node {
   @Field()
-    to: UserId
+    name: string
+
+  @Field()
+    userId: string
+
+  @Field()
+    id: string
 }
 
-@InputType()
-export class UserUnfollowOneInput {
-  @Field()
-    to: UserId
+export interface UserDataBaseType {
+  userId: string
+  sign: string
+  name: string
+  avatarImageUrl: string
+  gender: GENDER
+  school: string
+  grade: string
+  openId: string
+  unionId: string
+  createdAt: string
+  updatedAt: string
+  lastLoginedAt: string
+  'dgraph.type': string
+  uid?: string
 }
 
-@ObjectType()
-export class User {
+@ObjectType({
+  implements: () => [Person, Node]
+})
+export class User implements Person, Node {
+  constructor (user: User) {
+    Object.assign(this, user)
+  }
+
   @Field()
-    id?: UserId
+    id: string
+
+  @Field()
+    name: string
 
   @Field()
     userId: UserId
-
-  @Field()
-    sign: string
 
   @Field()
     openId: string
@@ -111,20 +138,20 @@ export class User {
   @Field()
     unionId: string
 
-  @Field()
-    nickName: string
-
   @Field(type => GENDER, { defaultValue: GENDER.NONE })
     gender: GENDER
 
   @Field()
-    createAt: string
+    createdAt: string
 
   @Field()
-    lastLoginAt: string
+    updatedAt: string
 
   @Field()
-    avatarUrl: string
+    lastLoginedAt: string
+
+  @Field()
+    avatarImageUrl: string
 
   @Field()
     school: string
@@ -132,24 +159,6 @@ export class User {
   @Field()
     grade: string
 }
-
-@InputType()
-export class UserPostsInput {
-  @Field(type => Int, { nullable: true, defaultValue: 0 })
-    skip: number
-
-  @Field(type => Int, { nullable: true, defaultValue: 10 })
-    limit: number
-
-  @Field(type => ORDERBY, { defaultValue: ORDERBY.DESC })
-    orderBy: ORDERBY
-}
-
-@InputType()
-export class UserFansInput extends UserPostsInput {}
-
-@InputType()
-export class UserMyFollowedsInput extends UserPostsInput {}
 
 export class CreateFollowRelationInput {
   from: UserId
@@ -160,8 +169,10 @@ export class DeleteFollowRelationInput {
   to: UserId
 }
 
-@ObjectType()
-export class LoginResult extends User {
+@ObjectType({
+  implements: () => [Node]
+})
+export class LoginResult extends User implements Node {
   @Field()
     token: string
 }
@@ -178,4 +189,87 @@ export class UserLoginInput {
 export interface UserFollowASubjectInput {
   from: UserId
   to: SubjectId
+}
+
+@InterfaceType({
+  implements: () => [Node]
+})
+export abstract class Person implements Node {
+  @Field(type => String)
+    userId: UserId
+
+  @Field()
+    name: string
+
+  @Field()
+    id: string
+}
+
+@ObjectType()
+export class PageInfo {
+  @Field()
+    endCursor: string
+
+  @Field(type => Boolean)
+    hasNextPage: boolean
+
+  @Field(type => Boolean)
+    hasPreviousPage: boolean
+
+  @Field(type => String)
+    startCursor: string
+}
+
+@ObjectType()
+export class UsersConnection {
+  @Field(type => [UserEdge])
+    edges: [UserEdge]
+
+  @Field(type => [User])
+    nodes: [User]
+
+  @Field(type => PageInfo)
+    pageInfo: PageInfo
+
+  @Field(type => Int)
+    totalCount: number
+}
+
+@ObjectType()
+export class FollowersConnection {
+  @Field(type => [UserEdge])
+    edges: [UserEdge]
+
+  @Field(type => [User])
+    nodes: [User]
+
+  @Field(type => PageInfo)
+    pageInfo: PageInfo
+
+  @Field(type => Int)
+    totalCount: number
+}
+
+@ObjectType()
+export class UserEdge {
+  @Field()
+    cursor: string
+
+  @Field(type => User)
+    node: User
+}
+
+@ObjectType()
+export class FolloweringsConnection {
+  @Field(type => [UserEdge])
+    edges: [UserEdge]
+
+  @Field(type => [User])
+    nodes: [User]
+
+  @Field(type => PageInfo)
+    pageInfo: PageInfo
+
+  @Field(type => Int)
+    totalCount: number
 }

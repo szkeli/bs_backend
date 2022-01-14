@@ -55,7 +55,7 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
   updateUserProps (user: CreateUserDto) {
     return this
       .property('createAt', user.createAt)
-      .property('nickName', user.nickName)
+      .property('nickName', user.name)
       .property('lastLoginAt', user.lastLoginAt)
       .property('unionId', user.unionId)
       .property('openId', user.openId)
@@ -75,8 +75,8 @@ export class SocialTraversal extends gremlin.process.GraphTraversal {
       .property('userId', userPatch.userId)
       .property('unionId', userPatch.unionId)
       .property('openId', userPatch.openId)
-      .property('avatarUrl', userPatch.avatarUrl)
-      .property('nickName', userPatch.nickName)
+      .property('avatarUrl', userPatch.avatarImageUrl)
+      .property('nickName', userPatch.name)
       .property('createAt', t)
       .property('lastLoginAt', t)
       .property('sign', userPatch.sign)
@@ -177,13 +177,13 @@ export class SocialTraversalSource extends gremlin.process.GraphTraversalSource 
   }
 
   createPost (id: PostId) {
-    return this.addV('post')
-      .property(T.id, id) as unknown as SocialTraversal
+    return this.addV('post') as unknown as SocialTraversal
+    // .property(T.id, id) as unknown as SocialTraversal
   }
 
   createComment (id: CommentId) {
-    return this.addV('comment')
-      .property(T.id, id) as unknown as SocialTraversal
+    return this.addV('comment') as unknown as SocialTraversal
+    // .property(T.id, id)
   }
 
   createSubject (id: SubjectId) {

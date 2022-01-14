@@ -1,45 +1,55 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
+import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
-import { PagingConfigInput } from 'src/comment/models/comment.model'
 import { DbService } from 'src/db/db.service'
 import { UserId } from 'src/db/model/db.model'
 
+import { PostsConnection } from '../posts/models/post.model'
 import {
   CreateFollowRelationInput,
   DeleteFollowRelationInput,
-  ORDERBY,
   User,
-  UserCreateInput,
-  UserFansInput,
+  UserDataBaseType,
   UserFollowASubjectInput,
-  UserMyFollowedsInput,
-  UserPostsInput,
   UserRegisterInput,
   UserUpdateProfileInput
 } from './models/user.model'
 
 @Injectable()
 export class UserService {
-  constructor (private readonly dbService: DbService) {}
-
-  async findPostById (userId: UserId) {
-    return await this.dbService.getAUserAllPost({
-      userId,
-      orderBy: ORDERBY.DESC,
-      skip: 2,
-      limit: 3
-    }).then(r => {
-      return r
-    })
+  private readonly dgraph: DgraphClient
+  constructor (private readonly dbService: DbService) {
+    this.dgraph = dbService.getDgraphIns()
   }
 
-  async findPostsByUserId (userId: UserId, input: UserPostsInput) {
-    return await this.dbService.getAUserAllPost({
-      userId,
-      orderBy: input.orderBy,
-      skip: input.skip,
-      limit: input.limit
-    })
+  async findPostsByUid (id: string, first: number, offset: number) {
+    const txn = this.dgraph.newTxn()
+    try {
+      const query = `
+        query v($uid: string) {
+          me(func: uid($uid)) {
+            postsCount: count(posts)
+            posts (orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+              id: uid
+              title
+              content
+              createdAt
+            }
+          }
+        }
+      `
+      const res = await this.dgraph
+        .newTxn({ readOnly: true })
+        .queryWithVars(query, { $uid: id })
+      const v = res.getJson().me[0]
+      const u: PostsConnection = {
+        nodes: v.posts,
+        totalCount: v.postsCount
+      }
+      return u
+    } finally {
+      await txn.discard()
+    }
   }
 
   async followOne (input: CreateFollowRelationInput) {
@@ -56,58 +66,104 @@ export class UserService {
     return await this.dbService.unfollowAPerson(input)
   }
 
-  async findFansByUserId (id: UserId, input: UserFansInput) {
-    return await this.dbService.findFansByUserId(id, input)
-  }
-
-  async findMyFollowedsByUserId (userId: UserId, input: UserMyFollowedsInput) {
-    return await this.dbService.findMyFollowedsByUserId(userId, input)
-  }
-
-  async findMyFansCount (userId: UserId) {
-    return await this.dbService.findMyFansCount(userId)
-  }
-
-  async findMyFollowedCount (userId: UserId) {
-    return await this.dbService.findMyFollowedCount(userId)
-  }
-
-  async createUser (input: UserCreateInput) {
-    const createAt = Date.now()
-    return await this.dbService.createAUser({
-      ...input,
-      createAt: createAt,
-      lastLoginAt: createAt
-    })
+  async getUserByUid (id: string) {
+    const txn = this.dgraph.newTxn()
+    try {
+      const query = `
+        query v($uid: string) {
+          user(func: uid($uid)) {
+            id: uid
+            userId
+            name
+            avatarImageUrl
+            gender
+            school
+            grade
+            openId
+            unionId
+            createdAt
+            updatedAt
+            lastLoginedAt
+          }
+        }
+      `
+      const res = await this.dgraph
+        .newTxn({ readOnly: true })
+        .queryWithVars(query, { $uid: id })
+      const user = res.getJson().user[0]
+      if (!user) {
+        throw new Error('Can not find the user')
+      }
+      return user
+    } finally {
+      await txn.discard()
+    }
   }
 
   async registerAUser (input: UserRegisterInput) {
-    return await this.dbService.registerAUser(input)
+    const txn = this.dgraph.newTxn()
+    try {
+      const query = `
+        query {
+          q(func: eq(userId, "${input.userId}")) { v as uid }
+        }
+      `
+      const now = new Date().toISOString()
+      const user: UserDataBaseType = {
+        uid: '_:user',
+        'dgraph.type': 'User',
+        userId: input.userId,
+        sign: input.sign,
+        name: input.name,
+        avatarImageUrl: input.avatarImageUrl,
+        gender: input.gender,
+        school: input.school,
+        grade: input.grade,
+        openId: input.openId,
+        unionId: input.unionId,
+        createdAt: now,
+        updatedAt: now,
+        lastLoginedAt: now
+      }
+      const conditions = '@if( eq(len(v), 0) )'
+      const mu = new Mutation()
+      mu.setSetJson(user)
+      mu.setCond(conditions)
+
+      const req = new Request()
+      req.setQuery(query)
+      req.addMutations(mu)
+      req.setCommitNow(true)
+      const res = await txn.doRequest(req)
+      const success = res.getUidsMap().get('user')
+      if (!success) {
+        throw new ForbiddenException('该userId已被使用')
+      }
+      const v: User = {
+        id: success,
+        name: input.name,
+        userId: input.userId,
+        openId: input.openId,
+        unionId: input.unionId,
+        gender: input.gender,
+        createdAt: now,
+        updatedAt: now,
+        lastLoginedAt: now,
+        avatarImageUrl: input.avatarImageUrl,
+        school: input.school,
+        grade: input.grade
+      }
+      return v
+    } finally {
+      await txn.discard()
+    }
   }
 
   async updateUser (userId: UserId, input: UserUpdateProfileInput) {
     return await this.dbService.updateAUser(userId, input)
   }
 
-  async getUser (userId: UserId): Promise<User> {
-    return await this.dbService.getUserById(userId).then(user => {
-      // TODO: 更严格的判断用户是否存在
-      if (!user || Object.entries(user).length === 0) {
-        throw new ForbiddenException('该用户不存在')
-      }
-      return user
-    })
-  }
-
   async followASubject (l: UserFollowASubjectInput) {
     return await this.dbService.userFollowASubject(l)
-  }
-
-  async getMySubjectCount (userId: UserId) {
-    return await this.dbService.getMySubjectCount(userId)
-  }
-
-  async findMySubjects (userId: UserId, input: PagingConfigInput) {
-    return await this.dbService.findMySubjects(userId, input)
   }
 }

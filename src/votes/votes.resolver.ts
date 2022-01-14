@@ -3,50 +3,50 @@ import { Args, Mutation, Resolver } from '@nestjs/graphql'
 
 import { CurrentUser } from 'src/auth/decorator'
 import { GqlAuthGuard } from 'src/auth/gql.strategy'
-import { Comment } from 'src/comment/models/comment.model'
-import { Post } from 'src/posts/models/post.model'
 import { User } from 'src/user/models/user.model'
 
-import { UnvoteACommentInput, UnvoteAPostInput, VoteACommentInput, VoteAPostInput } from './model/votes.model'
+import {
+  Votable
+} from './model/votes.model'
 import { VotesService } from './votes.service'
 
 @Resolver()
 export class VotesResolver {
   constructor (private readonly votesService: VotesService) {}
 
-  @Mutation(returns => Post)
+  @Mutation(returns => Votable)
   @UseGuards(GqlAuthGuard)
-  async voteAPost (
+  async addUpvoteOnPost (
   @CurrentUser() user: User,
-    @Args('input') input: VoteAPostInput
+    @Args('to') to: string
   ) {
-    return await this.votesService.voteAPost(user.userId, input)
+    return await this.votesService.voteAPost(user.userId, to)
   }
 
-  @Mutation(returns => Comment)
+  @Mutation(returns => Votable)
   @UseGuards(GqlAuthGuard)
-  async voteAComment (
+  async addUpvoteOnComment (
   @CurrentUser() user: User,
-    @Args('input') input: VoteACommentInput
+    @Args('to') to: string
   ) {
-    return await this.votesService.voteAComment(user.userId, input)
+    // return await this.votesService.voteAComment(user.userId, input)
   }
 
-  @Mutation(returns => Boolean)
+  @Mutation(returns => Votable)
   @UseGuards(GqlAuthGuard)
-  async unvoteAComment (
+  async removeUpvoteOnComment (
   @CurrentUser() user: User,
-    @Args('input') input: UnvoteACommentInput
+    @Args('to') to: string
   ) {
-    return await this.votesService.unvoteAComment(user.userId, input)
+    // return await this.votesService.unvoteAComment(user.userId, input)
   }
 
-  @Mutation(returns => Boolean)
+  @Mutation(returns => Votable)
   @UseGuards(GqlAuthGuard)
-  async unvoteAPost (
+  async removeUpvoteOnPost (
   @CurrentUser() user: User,
-    @Args('input') input: UnvoteAPostInput
+    @Args('to') to: string
   ) {
-    return await this.votesService.unvoteAPost(user.userId, input)
+    // return await this.votesService.unvoteAPost(user.userId, input)
   }
 }

@@ -2,26 +2,65 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type User {
+interface Node {
+  id: String!
+}
+
+interface Person implements Node {
+  userId: String!
+  name: String!
+  id: String!
+}
+
+interface Votable {
+  """Number of upvotes that this node has received."""
+  upvoteCount: Int!
+
+  """
+  Whether or not the current user can add or remove an upvote on this node.
+  """
+  viewerCanUpvote: Boolean!
+
+  """Whether or not the current user has already upvoted this node."""
+  viewerHasUpvoted: Boolean!
+}
+
+type NodesConnection {
+  edges: [NodeEdge!]!
+  nodes: [Node!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type NodeEdge {
+  cursor: String!
+  node: Node!
+}
+
+type Admin implements Person & Node {
   id: String!
   userId: String!
-  sign: String!
+  name: String!
+}
+
+type User implements Person & Node {
+  id: String!
+  userId: String!
+  name: String!
   openId: String!
   unionId: String!
-  nickName: String!
   gender: GENDER!
-  createAt: String!
-  lastLoginAt: String!
-  avatarUrl: String!
+  createdAt: String!
+  updatedAt: String!
+  lastLoginedAt: String!
+  avatarImageUrl: String!
   school: String!
   grade: String!
-  posts(input: UserPostsInput!): [Post!]!
-  fans(input: UserFansInput!): [User!]!
-  myFolloweds(input: UserMyFollowedsInput!): [User!]!
-  myFollowedCount: Int!
-  fansCount: Int!
-  subjects(input: PagingConfigInput!): [Subject!]!
-  subjectCount: Int!
+  posts(offset: Int = 0, first: Int = 2): PostsConnection!
+  followers(last: Float!, first: Float!, before: String!, after: String!): FollowersConnection!
+  followings(last: Float!, first: Float!, before: String!, after: String!): FolloweringsConnection!
+  subjects(last: Float!, first: Float!, before: String!, after: String!): SubjectsConnection!
+  comments(last: Float!, first: Float!, before: String!, after: String!): CommentsConnection!
 }
 
 enum GENDER {
@@ -30,158 +69,187 @@ enum GENDER {
   FEMALE
 }
 
-input UserPostsInput {
-  skip: Int = 0
-  limit: Int = 10
-  orderBy: ORDERBY = DESC
-}
-
-enum ORDERBY {
-  DESC
-  SHUFFLE
-  ASC
-}
-
-input UserFansInput {
-  skip: Int = 0
-  limit: Int = 10
-  orderBy: ORDERBY = DESC
-}
-
-input UserMyFollowedsInput {
-  skip: Int = 0
-  limit: Int = 10
-  orderBy: ORDERBY = DESC
-}
-
-input PagingConfigInput {
-  skip: Int = 0
-  limit: Int = 10
-  orderBy: ORDERBY = DESC
-}
-
-type LoginResult {
+type LoginResult implements Node & Person {
   id: String!
   userId: String!
-  sign: String!
+  name: String!
   openId: String!
   unionId: String!
-  nickName: String!
   gender: GENDER!
-  createAt: String!
-  lastLoginAt: String!
-  avatarUrl: String!
+  createdAt: String!
+  updatedAt: String!
+  lastLoginedAt: String!
+  avatarImageUrl: String!
   school: String!
   grade: String!
-  posts(input: UserPostsInput!): [Post!]!
-  fans(input: UserFansInput!): [User!]!
-  myFolloweds(input: UserMyFollowedsInput!): [User!]!
-  myFollowedCount: Int!
-  fansCount: Int!
-  subjects(input: PagingConfigInput!): [Subject!]!
-  subjectCount: Int!
+  posts(offset: Int = 0, first: Int = 2): PostsConnection!
+  followers(last: Float!, first: Float!, before: String!, after: String!): FollowersConnection!
+  followings(last: Float!, first: Float!, before: String!, after: String!): FolloweringsConnection!
+  subjects(last: Float!, first: Float!, before: String!, after: String!): SubjectsConnection!
+  comments(last: Float!, first: Float!, before: String!, after: String!): CommentsConnection!
   token: String!
 }
 
-type Comment {
+type PageInfo {
+  endCursor: String!
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String!
+}
+
+type UsersConnection {
+  edges: [UserEdge!]!
+  nodes: [User!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type FollowersConnection {
+  edges: [UserEdge!]!
+  nodes: [User!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type UserEdge {
+  cursor: String!
+  node: User!
+}
+
+type FolloweringsConnection {
+  edges: [UserEdge!]!
+  nodes: [User!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type Comment implements Node {
   id: String!
   content: String!
-  createAt: String!
-  voteCount: Int!
-  commentCount: Int!
-  comments(input: PagingConfigInput!): [Comment!]!
+  createdAt: String!
+  comments(offset: Int = 2, first: Int = 0): CommentsConnection!
+}
+
+type CommentsConnection {
+  nodes: [Comment!]!
+  totalCount: Int!
 }
 
 type Subject {
   id: String!
-  createAt: String!
+  createdAt: String!
   title: String!
   subscription: String!
-  avatarUrl: String!
-  background: String!
+  avatarImageUrl: String!
+  backgroundImageUrl: String!
   creator: User!
-  users(input: PagingConfigInput!): [User!]!
-  posts(input: PagingConfigInput!): [Post!]!
+  followers(last: Float!, first: Float!, before: String!, after: String!): FollowersConnection!
+  posts(offset: Int = 0, first: Int = 2): PostsConnection!
+}
+
+type SubjectsConnection {
+  nodes: [Subject!]!
+  totalCount: Int!
 }
 
 type Post {
   id: String!
   title: String!
   content: String!
-  createAt: String!
-  voteCount: Int!
-  commentCount: Int!
+  createdAt: String!
+  images: [String!]!
   creator: User!
-  comments(input: PostsCommentsInput!): [Comment!]!
+  comments(offset: Int = 2, first: Int = 0): CommentsConnection!
   subject: Subject
 }
 
-input PostsCommentsInput {
-  skip: Int = 0
-  limit: Int = 10
-  orderBy: ORDERBY = DESC
+type PostsConnection {
+  nodes: [Post!]!
+  totalCount: Int!
 }
+
+type SearchResultItemConnection {
+  """搜索用户时，返回的结果中的用户总数"""
+  userCount: Int
+
+  """搜索帖子时，返回的结果中帖子的总数"""
+  postCount: Int
+
+  """搜索评论时，返回的结果中评论的总数"""
+  commentCount: Int
+  nodes: [SearchResultItem!]!
+}
+
+union SearchResultItem = Post | User | Comment
 
 type Query {
   post(id: String!): Post!
-  posts(input: PagingConfigInput!): [Post!]!
+  posts(offset: Int = 0, first: Int = 0): PostsConnection!
+  login(sign: String!, userId: String!): LoginResult!
   whoAmI: User!
+  users(last: Float!, first: Float!, before: String!, after: String!): UsersConnection!
   comment(id: String!): Comment!
   subject(id: String!): Subject!
+  subjects(offset: Int = 0, first: Int = 0): SubjectsConnection!
+  search(
+    offset: Int = 0
+    first: Int = 0
+
+    """待检索的关键字"""
+    query: String!
+    type: SEARCHTYPE!
+  ): SearchResultItemConnection!
+  node(id: String!): Node!
+  nodes(ids: [String!]!): NodesConnection!
+}
+
+enum SEARCHTYPE {
+  USER
+  COMMENT
+  POST
 }
 
 type Mutation {
-  createAPost(input: CreateAPostInput!): Post!
-  deleteAPost(id: String!): Boolean!
-  login(input: UserLoginInput!): LoginResult!
+  createPost(subjectId: String, images: [String!]!, content: String!, title: String!): Post!
+  deletePost(id: String!): Boolean!
+  authenticate(userId: String!): LoginResult!
   register(input: UserRegisterInput!): User!
-  followOne(input: UserFollowOneInput!): Boolean!
-  unfollowOne(input: UserUnfollowOneInput!): Boolean!
-  followASubject(id: String!): Subject!
-  updateProfile(input: UserUpdateProfileInput!): User!
-  addACommentOnComment(input: AddACommentOnCommentInput!): Comment!
-  addACommentOnPost(input: AddACommentOnPostInput!): Comment!
-  voteAPost(input: VoteAPostInput!): Post!
-  voteAComment(input: VoteACommentInput!): Comment!
-  unvoteAComment(input: UnvoteACommentInput!): Boolean!
-  unvoteAPost(input: UnvoteAPostInput!): Boolean!
-  addSubject(input: CreateSubjectInput!): Subject!
+  followUser(to: String!): Boolean!
+  unfollowUser(to: String!): Boolean!
+  followSubject(id: String!): Subject!
+  updateUser(input: UserUpdateProfileInput!): User!
+  addACommentOnComment(
+    """相应的评论的id"""
+    to: String!
+    content: String!
+  ): Comment!
+  addACommentOnPost(
+    """相应的帖子的id"""
+    to: String!
+    content: String!
+  ): Comment!
+  addUpvoteOnPost(to: String!): Votable!
+  addUpvoteOnComment(to: String!): Votable!
+  removeUpvoteOnComment(to: String!): Votable!
+  removeUpvoteOnPost(to: String!): Votable!
+  createSubject(input: CreateSubjectInput!): Subject!
   updateSubject(input: UpdateSubjectInput!): Subject!
-}
-
-input CreateAPostInput {
-  title: String!
-  content: String!
-  subject: String
-}
-
-input UserLoginInput {
-  userId: String!
-  sign: String!
 }
 
 input UserRegisterInput {
   openId: String!
   unionId: String!
-  nickName: String!
+  name: String!
   gender: GENDER!
-  avatarUrl: String!
+  avatarImageUrl: String!
   school: String!
   grade: String!
   userId: String!
   sign: String!
 }
 
-input UserFollowOneInput {
-  to: String!
-}
-
-input UserUnfollowOneInput {
-  to: String!
-}
-
 input UserUpdateProfileInput {
-  nickName: String
+  name: String
   gender: GENDER
   avatarUrl: String
   school: String
@@ -189,37 +257,11 @@ input UserUpdateProfileInput {
   sign: String
 }
 
-input AddACommentOnCommentInput {
-  to: String!
-  content: String!
-}
-
-input AddACommentOnPostInput {
-  to: String!
-  content: String!
-}
-
-input VoteAPostInput {
-  to: String!
-}
-
-input VoteACommentInput {
-  to: String!
-}
-
-input UnvoteACommentInput {
-  to: String!
-}
-
-input UnvoteAPostInput {
-  to: String!
-}
-
 input CreateSubjectInput {
   title: String!
   subscription: String!
-  avatarUrl: String!
-  background: String!
+  avatarImageUrl: String!
+  backgroundImageUrl: String!
 }
 
 input UpdateSubjectInput {

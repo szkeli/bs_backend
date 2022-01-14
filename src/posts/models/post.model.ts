@@ -1,10 +1,13 @@
 import { Field, InputType, Int, ObjectType } from '@nestjs/graphql'
 
 import { SubjectId } from 'src/subject/model/subject.model'
-import { UserPostsInput } from 'src/user/models/user.model'
 
 @ObjectType()
 export class Post {
+  constructor (post: Post) {
+    Object.assign(this, post)
+  }
+
   @Field()
     id?: string
 
@@ -15,13 +18,10 @@ export class Post {
     content: string
 
   @Field()
-    createAt: string
+    createdAt: string
 
-  @Field(type => Int)
-    voteCount: number
-
-  @Field(type => Int)
-    commentCount: number
+  @Field(type => [String])
+    images: [string]
 }
 
 @InputType()
@@ -36,5 +36,26 @@ export class CreateAPostInput {
     subject?: SubjectId
 }
 
-@InputType()
-export class PostsCommentsInput extends UserPostsInput {}
+@ObjectType()
+export class PostsConnection {
+  // @Field(type => [PostEdge])
+  //   edges: [PostEdge]
+
+  // @Field(type => PageInfo)
+  //   pageInfo: PageInfo
+
+  @Field(type => [Post])
+    nodes: [Post?]
+
+  @Field(type => Int)
+    totalCount: number
+}
+
+@ObjectType()
+export class PostEdge {
+  @Field(type => String)
+    cursor: string
+
+  @Field(type => Post)
+    node: Post
+}

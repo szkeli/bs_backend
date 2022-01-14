@@ -1,12 +1,24 @@
 import { UseGuards } from '@nestjs/common'
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import {
+  Args,
+  Int,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver
+} from '@nestjs/graphql'
 
 import { CurrentUser } from 'src/auth/decorator'
 import { GqlAuthGuard } from 'src/auth/gql.strategy'
 import { User } from 'src/user/models/user.model'
 
 import { CommentService } from './comment.service'
-import { AddACommentOnCommentInput, AddACommentOnPostInput, Comment, CommentId, PagingConfigInput } from './models/comment.model'
+import {
+  Comment,
+  CommentId,
+  CommentsConnection
+} from './models/comment.model'
 
 @Resolver(of => Comment)
 export class CommentResolver {
@@ -14,33 +26,43 @@ export class CommentResolver {
 
   @Query(returns => Comment)
   async comment (@Args('id') id: CommentId) {
-    return await this.commentService.getACommentById(id)
+    return await this.commentService.comment(id)
   }
 
   @Mutation(returns => Comment)
   @UseGuards(GqlAuthGuard)
   async addACommentOnComment (
   @CurrentUser() user: User,
-    @Args('input') input: AddACommentOnCommentInput
+    @Args('content') content: string,
+    @Args('to', { description: '相应的评论的id' }) to: string
   ) {
-    return await this.commentService.addACommentOnComment(user.userId, input)
+    return await this.commentService.addACommentOnComment(
+      user.id,
+      content,
+      to
+    )
   }
 
   @Mutation(returns => Comment)
   @UseGuards(GqlAuthGuard)
   async addACommentOnPost (
-  @CurrentUser() user: User,
-    @Args('input') input: AddACommentOnPostInput
-  ) {
-    return await this.commentService.addACommentOnPost(user.userId, input)
+    @CurrentUser() user: User,
+      @Args('content') content: string,
+      @Args('to', { description: '相应的帖子的id' }) to: string
+  ): Promise<Comment> {
+    return await this.commentService.addACommentOnPost(user.id, content, to)
   }
 
-  // 评论里搜索评论
-  @ResolveField(returns => [Comment])
+  @ResolveField(returns => CommentsConnection)
   async comments (
-  @Parent() parent: Comment,
-    @Args('input') input: PagingConfigInput
+  @Parent() comment: Comment,
+    @Args('first', { nullable: true, type: () => Int, defaultValue: 0 }) first: number,
+    @Args('offset', { nullable: true, type: () => Int, defaultValue: 2 }) offset: number
   ) {
-    return await this.commentService.getCommentsByCommentId(parent.id, input)
+    return await this.commentService.getCommentsByCommentId(
+      comment.id,
+      first,
+      offset
+    )
   }
 }

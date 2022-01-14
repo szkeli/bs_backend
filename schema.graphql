@@ -1,0 +1,193 @@
+"""
+接口描述和服务生成
+"""
+
+enum GENDER {
+  NONE
+  FEMALE
+  MALE
+}
+
+enum PersonType {
+  USER 
+  ADMIN
+}
+
+interface Creatable @generate(
+  query: {
+    get: false,
+    query: false,
+    aggregate: false,
+  },
+  mutation: {
+    add: false,
+    delete: false,
+  },
+  subscription: false,
+) {
+  createdBy: [Create!]
+}
+
+
+interface Likable @generate(
+  query: {
+    get: false,
+    query: false,
+    aggregate: false,
+  },
+  mutation: {
+    add: false,
+    delete: false,
+  },
+  subscription: false,
+) {
+  likedBy: [Like!]
+}
+
+interface Followable @generate(
+  query: {
+    get: false,
+    query: false,
+    aggregate: false,
+  },
+  mutation: {
+    add: false,
+    delete: false,
+  },
+  subscription: false,
+) {
+  followedBy: [Follow!]
+}
+
+interface Person @generate(
+  query: {
+    get: false,
+    query: false,
+    aggregate: false,
+  },
+  mutation: {
+    add: false,
+    delete: false,
+  },
+  subscription: false,
+) {
+  userId: String! @id @search(by: [exact])
+  type: PersonType! @search
+}
+
+type ACL {
+  id: ID!
+  level: AccessLevel!
+  grants:
+}
+type Like {
+  id: ID!
+  createAt: DateTime!
+  from: User!
+  it: Likable! @hasInverse(field: likedBy)
+}
+
+type Create {
+  id: ID!
+  createAt: DateTime!
+  from: User!
+  it: Creatable! @hasInverse(field: createdBy)
+}
+
+type Follow {
+  id: ID!
+  createAt: DateTime!
+  from: User!
+  it: Followable! @hasInverse(field: followedBy)
+}
+
+# 帖子的评论 评论的评论
+type Comment implements Likable & Creatable {
+  id: ID!
+  content: String! @search(by: [fulltext, regexp])
+  createAt: DateTime! @search
+}
+
+type Post implements Likable & Creatable {
+  id: ID!
+  title: String! @search(by: [term])
+  content: String! @search(by: [fulltext, regexp])
+}
+
+type User implements Person & Followable @secret(field: "sign") {
+  nickName: String! @search(by: [term])
+  openId: String!
+  unionId: String!
+  gender: GENDER! @search(by: [regexp])
+  createAt: DateTime! @search
+  updateAt: DateTime! @search
+  lastLoginAt: DateTime! @search
+  avatarUrl: String!
+  school: String! @search(by: [term])
+  grade: String! @search(by: [term])
+
+  liked: [Like!] @hasInverse(field: from)
+  created: [Create!] @hasInverse(field: from)
+  followed: [Follow!] @hasInverse(field: from)
+}
+
+type Admin implements Person @secret(field: "sign") {
+  avatarUrl: String!
+}
+
+# 帖子属于的主题
+type Subject implements Creatable & Followable {
+  id: ID!
+  title: String! @search(by: [fulltext, regexp])
+  createAt: DateTime! @search
+  subscription: String! @search(by: [fulltext, regexp])
+  avatarUrl: String!
+  backgroundImageUrl: String!
+}
+
+# The tags for Post
+type Hashtag implements Creatable {
+  id: ID!
+  title: String! @search(by: [term])
+  createAt: DateTime! @search
+}
+
+type s {
+  id: ID!
+  userId: String!
+  nickName: String!
+}
+
+
+# custom Query 
+type Query {
+  queryTweetsSortedByAuthorFollowers: [s!] @custom(dql: """
+    query a{
+      queryTweetsSortedByAuthorFollowers(func: type(User))  {
+        userId: Person.userId
+        nickName: User.nickName 
+      }
+    }
+  """)
+}
+
+# custom Mutations
+type Mutation {
+  authenticate(userId: String!, sign: String!): AuthenResponse! @lambda
+}
+
+type AuthenResponse @remote {
+  error: AuthenResponseError
+  result: AuthenResponseResult
+}
+
+type AuthenResponseError @remote {
+  message: String!
+  errno: Int!
+}
+type AuthenResponseResult @remote {
+  token: String!
+  userId: String!
+}
+
+# Dgraph.Authorization {"VerificationKey":"15218356470","Namespace": "http://api.szlikeyou.com", "Header":"Authenticate","Algo":"HS256"}

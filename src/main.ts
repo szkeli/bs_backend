@@ -1,6 +1,4 @@
 import { NestFactory } from '@nestjs/core'
-import axios from 'axios'
-import * as pretty from 'prettyjson'
 
 import { AppModule } from './app.module'
 
@@ -67,7 +65,11 @@ async function bootstrap () {
   //   });
   // console.error(pretty.render(a));
   const app = await NestFactory.create(AppModule)
-  await app.listen(3000)
+  await app.listen(3001)
 }
 
-bootstrap()
+bootstrap().then(r => {
+
+}).catch(e => {
+  throw e
+})

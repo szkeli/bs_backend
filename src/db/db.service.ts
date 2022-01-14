@@ -1,34 +1,34 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
-import axios from 'axios'
+import {
+  DgraphClient,
+  DgraphClientStub,
+  Mutation,
+  Operation
+} from 'dgraph-js'
 import * as gremlin from 'gremlin'
 
 import {
-  AddACommentOnCommentInput,
-  AddACommentOnPostInput,
   Comment,
-  CommentId,
   PagingConfigInput
 } from 'src/comment/models/comment.model'
 import {
-  CreateAPostInput,
   Post
 } from 'src/posts/models/post.model'
-import { CreateSubjectInput, Subject, SubjectId, UpdateSubjectInput } from 'src/subject/model/subject.model'
-import { exec, hash } from 'src/tool'
+import {
+  Subject,
+  SubjectId,
+  UpdateSubjectInput
+} from 'src/subject/model/subject.model'
 import {
   DeleteFollowRelationInput,
   User,
-  UserFansInput,
   UserFollowASubjectInput,
-  UserMyFollowedsInput,
-  UserRegisterInput,
   UserUpdateProfileInput
 } from 'src/user/models/user.model'
 import {
   UnvoteACommentInput,
   UnvoteAPostInput,
-  VoteACommentInput,
-  VoteAPostInput
+  VoteACommentInput
 } from 'src/votes/model/votes.model'
 
 import {
@@ -36,130 +36,355 @@ import {
   SocialTraversalSource
 } from './dsl'
 import {
-  CARDINALITY,
-  CreateAAdminerDto,
-  CreateAPropertyKeyDTO,
-  CreateUserDto,
-  CreateVertexLabelDto,
-  DATA_TYPE,
-  DeleteVertexLabelByNameDto,
   FollowAPersonDto,
-  GetAllPropertyKeyDto,
-  GetAllVertexLabel,
-  GetAUserAllPostDto,
   PostId,
-  UserId,
-  VertexLabel
+  UserId
 } from './model/db.model'
 
 const __ = gremlin.process.statics
 
 @Injectable()
 export class DbService {
-  origin = 'http://w3.onism.cc:8084/graphs/hugegraph'
-  baseUrl = 'http://w3.onism.cc:8084/graphs/hugegraph/schema/propertykeys'
-  base = 'http://w3.onism.cc:8084/graphs/hugegraph/schema'
   private readonly g: SocialTraversalSource
-
+  private readonly dgraphStub: DgraphClientStub
+  private readonly dgraph: DgraphClient
   constructor () {
     const traversal = gremlin.process.AnonymousTraversalSource.traversal
-    const DriverRemoteConnection = gremlin.driver.DriverRemoteConnection
     this.g = traversal(SocialTraversalSource).withRemote(
-      new DriverRemoteConnection('ws://api.szlikeyou.com:8182/gremlin', {
-        traversalSource: 'hugegraph'
-      })
+      null
     )
+    this.dgraphStub = new DgraphClientStub('api.szlikeyou.com:9080')
+    this.dgraph = new DgraphClient(this.dgraphStub)
+  }
+
+  getDgraphIns () {
+    return this.dgraph
   }
 
   async init () {}
-  // dealing with Property
-  async createAPropertyKey (name: string, dataType: DATA_TYPE) {
-    return await axios.post<any, any, CreateAPropertyKeyDTO>(this.baseUrl, {
-      data_type: dataType,
-      cardinality: CARDINALITY.SINGLE,
-      name
-    }).then<CreateAPropertyKeyDTO>(r => r.data)
+
+  // testetstssssssssssssssssssssssssssssssssssss
+  async dropAll (q: DgraphClient) {
+    const op = new Operation()
+    op.setDropAll(true)
+    await q.alter(op)
   }
 
-  async getAllPropertyKey () {
-    return await axios.get<GetAllPropertyKeyDto>(this.baseUrl).then(r =>
-      r.data
-    )
+  async dropData (q: DgraphClient) {
+    const op = new Operation()
+    op.setDropOp(Operation.DropOp.DATA)
+    await q.alter(op)
   }
 
-  async getAPropertyKeyByName (name: string) {
-    return await axios.get<PropertyKey>(`${this.baseUrl}/${name}`).then(r =>
-      r.data
-    )
-  }
+  async setSchema () {
+    const schema = `
+      
+      userId: string @index(exact, hash, fulltext) .
+      sign: password .
+      name: string @index(exact, fulltext) .
+      avatarImageUrl: string @index(exact) .
+      backgroundImageUrl: string @index(exact) .
+      images: [string] .
+      posts: [uid] @count @reverse . 
+      comments: [uid] @count @reverse .
+      stargazers: [uid] @count @reverse .
+      blocker: uid @reverse .
+      creator: uid @reverse .
+      folder: uid @reverse .
+      location: geo .
+      title: string @index(fulltext) .
+      content: string @index(fulltext) .
+      reports: [uid] @reverse .
+      description: string @index(fulltext) .
+      type: string @index(term) .
+      createdAt: dateTime @index(hour) .
+      updatedAt: dateTime @index(hour) .
+      lastLoginedAt: dateTime @index(hour) .
+      gender: string @index(term) .
+      school: string @index(term) .
+      grade: string @index(term) .
+      openId: string @index(hash) .
+      unionId: string @index(hash) .
+      subjects: [uid] @reverse .
+      subject: uid @reverse .
+      comment: uid @reverse .
+      post: uid @reverse .
+      handler: uid @reverse .
 
-  async removeAPropertyKeyByName (name: string) {
-    return await axios.delete(`${this.baseUrl}/${name}`).then(r => r.data)
-  }
-
-  // dealing with VertexLabel
-  async createAVertexLabel (vertexLabel: CreateVertexLabelDto) {
-    return await axios.post<any, any, CreateVertexLabelDto>(
-      `${this.base}/vertexlabels`,
-      {
-        ...vertexLabel
+      # 用户
+      type User {
+        # 唯一用户 id
+        userId
+        # 用户的密码
+        sign
+        # 用户的名字
+        name
+        # 用户的头像链接
+        avatarImageUrl
+        # 用户性别
+        gender
+        # 用户的学校
+        school
+        # 用户的年级
+        grade
+        # 用户的openId
+        openId
+        # 用户的unionId
+        unionId
+        # 用户注册时间
+        createdAt
+        # 用户上一次更新信息时间
+        updatedAt
+        # 用户上一次登录时间
+        lastLoginedAt
+        # 用户发布的帖子
+        posts
+        # 用户创建的主题 用于存放帖子
+        subjects
       }
-    ).then<CreateVertexLabelDto>(r => r.data)
+
+      # 帖子
+      type Post {
+        # 帖子的名字
+        title
+        # 帖子的内容
+        content
+        # 帖子的图片
+        images
+        # 帖子的创建者
+        creator
+        # 帖子的创建时间
+        createdAt
+        # 帖子的封禁者
+        blocker
+        # 帖子的点赞者
+        stargazers
+        # 帖子的举报
+        reports
+        # 帖子的位置
+        location
+        # 帖子的评论
+        comments
+        # 所属主题
+        subject
+      }
+
+      # 帖子和评论的评论
+      type Comment {
+        # 评论的创建时间
+        createdAt
+        # 评论的内容
+        content
+        # 评论的创建者
+        creator
+        # 评论的点赞者
+        stargazers
+        # 评论的折叠者
+        folder
+        # 评论的举报
+        reports
+        # 评论的评论
+        comments
+        # 评论所属的帖子
+        post
+        # 评论所属的评论
+        comment
+      }
+
+      # 帖子的主题
+      type Subject {
+        # 创建时间
+        createdAt
+        # 标题
+        title
+        # 主题描述
+        subscription
+        # 头像
+        avatarImageUrl
+        # 背景
+        backgroundImageUrl
+        # 创建者
+        creator
+        # 包含的帖子
+        posts
+      }
+
+      # 帖子的举报
+      type Report {
+        # 举报者
+        creator
+        # 举报类型
+        type
+        # 举报的具体描述
+        description
+        # 举报的创建时间
+        createdAt
+        # 举报的处理者
+        handler
+      }
+    `
+    const op = new Operation()
+    op.setSchema(schema)
+    await this.dgraph.alter(op)
   }
 
-  async removeVertexLabelByName (name: string) {
-    return await axios.delete<DeleteVertexLabelByNameDto>(
-      `${this.base}/vertexlabels/${name}`
-    ).then(r => r.data)
-  }
+  async addData () {
+    const txn = this.dgraph.newTxn()
+    try {
+      const createAPost = {
+        uid: '0xeb67',
+        posts: [{
+          uid: '_:post',
+          'dgraph.type': 'Post',
+          title: '测试帖子',
+          content: '测试帖子',
+          creator: {
+            uid: '0xeb67'
+          }
+        }]
+      }
+      const _createAPost = {
+        uid: '_:post',
+        'dgraph.type': 'Post',
+        title: '哈哈哈',
+        content: '测试内容',
+        images: ['dsioajdsa', 'dsaiojdsai', 'dsaokdsa'],
+        creator: {
+          uid: '0xeb67'
+        },
+        comments: [{
+          uid: '_:comment',
+          'dgraph.type': 'Comment',
+          content: 'hahhaha',
+          creator: {
+            uid: '0xeb67'
+          }
+        }]
+      }
+      const p = {
+        uid: '_:alice',
+        'dgraph.type': 'User',
+        name: 'Aliceuid(d)',
+        passworld: 'dsadsa',
+        avatarImageUrl: 'dsadsa'
+      }
 
-  async getAVertexLabelByName (name: string) {
-    return await axios.get<VertexLabel>(`${this.base}/vertexlabels/${name}`)
-      .then(r => r.data)
-  }
+      const mu = new Mutation()
+      mu.setSetJson(createAPost)
+      const response = await txn.mutate(mu)
+      // const response = await txn.doRequest(req)
+      await txn.commit()
 
-  async getAllVertexLabel () {
-    return await axios.get<GetAllVertexLabel>(`${this.base}/vertexlabels`).then(
-      r => r.data
-    )
-  }
+      console.error(`
+        Created person named "Alice" with uid = ${response.getUidsMap().get('alice')}
+      `)
 
-  // dealing with EdgeLabel
-  async createAUser (input: CreateUserDto) {
-    return await this.g
-      .createUser()
-      .as('user')
-      .updateUserProps(input)
-      .select('user')
-      .filterAllUserProps()
-      .toList()
-      .then(r => objectify<User>(r[0]))
-  }
-
-  async registerAUser (input: UserRegisterInput) {
-    // TODO 更严谨地判断当前userId是否已经被使用
-    const isUserIdUsed = await this.g
-      .user(input.userId)
-      .count()
-      .toList()
-      .then(r => r[0] === 1)
-    if (isUserIdUsed) {
-      throw new ForbiddenException('The UserId already has been used.')
+      console.error('All created nodes (map from blank node names to uids):')
+      response.getUidsMap().forEach((uid, key) => console.error(`${key} => ${uid}`))
+      console.error()
+    } finally {
+      await txn.discard()
     }
-    return await this.g
-      .createUser()
-      .registerUserProps(input)
-      .filterAllUserProps()
-      .toList()
-      .then(r => objectify<User>(r[0]))
   }
 
-  async getUserById (id: UserId) {
-    return await this.g
-      .user(id)
-      .filterAllUserProps()
-      .toList()
-      .then(r => objectify<User>(r[0]))
+  async queryData () {
+    const query = `
+      query all($a: string) {
+        all(func: eq(name, $a)) {
+          uid
+          name
+          age
+          married
+          loc
+          dob
+          friend {
+            uid
+            name
+            age
+          } 
+          school {
+            uid
+            name
+          }
+        }
+      }
+    `
+    const vars = { $a: 'Alice' }
+    const res = await this.dgraph
+      .newTxn({ readOnly: true })
+      .queryWithVars(query, vars)
+    const ppl = res.getJson() as unknown as any
+
+    // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
+    console.error(`Number of people named Alice: ${ppl.all.length}`)
+    ppl.all.forEach(p => console.error(p))
+  }
+
+  async test () {
+    // const a = await this.dropAll(this.dgraph)
+    // const b = await this.setSchema(this.dgraph)
+    // console.error({ a, b })
+    // await this.addData()
+    // await this.queryData()
+    // await this.dropAll(this.dgraph)
+    await this.setSchema()
+    await this.addData()
+    await this.queryData()
+  }
+
+  // teststsssssssssssssssssssssssssssssssssssssssssssssssssss
+
+  async checkUserPasswordAndGetUser (userId: string, sign: string) {
+    const txn = this.dgraph.newTxn()
+    try {
+      const query = `
+      query v($sign: string, $userId: string){
+        check(func: eq(userId, $userId)) {
+          uid
+          name
+          avatarImageUrl
+          gender
+          school
+          grade
+          openId
+          unionId
+          createdAt
+          updatedAt
+          lastLoginedAt
+          success: checkpwd(sign, $sign)
+        }
+      }
+      `
+      const res = await this.dgraph
+        .newTxn({ readOnly: true })
+        .queryWithVars(query, {
+          $userId: userId,
+          $sign: sign
+        })
+
+      const v = res.getJson() as unknown as any
+      const u = v.check[0]
+      if (!u || !u.success) {
+        throw new ForbiddenException('用户名或密码错误')
+      }
+      const user: User = {
+        id: u.uid,
+        userId: u.userId,
+        name: u.name,
+        avatarImageUrl: u.avatarImageUrl,
+        gender: u.gender,
+        school: u.school,
+        grade: u.grade,
+        openId: u.openId,
+        unionId: u.unionId,
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt,
+        lastLoginedAt: u.lastLoginedAt
+      }
+      return user
+    } finally {
+      await txn.discard()
+    }
   }
 
   async updateAUser (userId: UserId, input: UserUpdateProfileInput) {
@@ -174,41 +399,6 @@ export class DbService {
       .then(r => objectify<User>(r[0]))
   }
 
-  async createAPost (creator: UserId, input: CreateAPostInput) {
-    const id = hash({ creator, input })
-    const now = Date.now()
-
-    if (input.subject) {
-      // TODO 判断subject是否存在
-      return await this.g
-        .createPost(id)
-        .as('p')
-        .updatePostProps(input)
-        .user(creator)
-        .addE('created_post')
-        .to('p')
-        .subject(input.subject)
-        .addE('owned_subject')
-        .property('createAt', now)
-        .from_('p')
-        .select('p')
-        .filterAllPostProps()
-        .toList()
-        .then(r => objectify<Post>(r[0]))
-    }
-    return await this.g
-      .createPost(id)
-      .as('post')
-      .updatePostProps(input)
-      .user(creator)
-      .addE('created_post')
-      .to('post')
-      .select('post')
-      .filterAllPostProps()
-      .toList()
-      .then(r => objectify<Post>(r[0]))
-  }
-
   async deleteAPost (creator: UserId, id: PostId) {
     // tips: 即使帖子不存在也返回删除成功
     return await this.g
@@ -221,179 +411,13 @@ export class DbService {
       .then(r => r.done)
   }
 
-  async getAPost (id: PostId) {
-    return await this.g
-      .post(id)
-      .filterAllPostProps()
-      .toList()
-      .then(r => objectify<Post>(r[0]))
-  }
-
-  async getUserByPostId (id: PostId) {
-    return await this.g
-      .post(id)
-      .hasLabel('post')
-      .in_('created_post')
-      .filterAllUserProps()
-      .toList()
-      .then(r => objectify<User>(r[0]))
-  }
-
-  async getAUserAllPost (input: GetAUserAllPostDto) {
-    return await this.g
-      .user(input.userId)
-      .out('created_post')
-      .hasLabel('post')
-      .order()
-      .by('createAt', this.g.orderBy(input.orderBy))
-      .range(input.skip, input.skip + input.limit)
-      .filterAllPostProps()
-      .toList()
-      .then(r => r.map(v => objectify<Post>(v)))
-  }
-
-  async findFansByUserId (userId: UserId, input: UserFansInput) {
-    // TODO v0.2对followed这条边执行一定的过滤操作
-    // TODO orderBy
-    return await this.g
-      .user(userId)
-      .in_('followed')
-      .hasLabel('user')
-      .order()
-      .by('createAt', this.g.orderBy(input.orderBy))
-      .range(input.skip, input.skip + input.limit)
-      .filterAllUserProps()
-      .toList()
-      .then(r => r.map(v => objectify<User>(v)))
-  }
-
-  async findMyFollowedsByUserId (userId: UserId, input: UserMyFollowedsInput) {
-    return await this.g
-      .user(userId)
-      .out('followed')
-      .hasLabel('user')
-      .order()
-      .by('createAt', this.g.orderBy(input.orderBy))
-      .range(input.skip, input.skip + input.limit)
-      .filterAllUserProps()
-      .toList()
-      .then(r => r.map(v => objectify<User>(v)))
-  }
-
-  async findMyFollowedCount (userId: UserId) {
-    return await this.g
-      .user(userId)
-      .out('followed')
-      .hasLabel('user')
-      .count()
-      .toList()
-      .then(r => r[0])
-  }
-
-  async findMyFansCount (userId: UserId) {
-    return await this.g
-      .user(userId)
-      .in_('followed')
-      .hasLabel('user')
-      .count()
-      .toList()
-      .then(r => r[0])
-  }
-
-  async addACommentOnPost (creator: UserId, input: AddACommentOnPostInput) {
-    const id = hash(input)
-    const now = Date.now()
-    return await this.g
-      // 创建评论
-      .createComment(id)
-      .as('c')
-      .property('content', input.content)
-      .property('createAt', now)
-      // 关联到评论创作者
-      .user(creator)
-      .addE('created_comment')
-      .to('c')
-      // 关联到帖子
-      .select('c')
-      .addE('owned')
-      .property('createAt', now)
-      .to(__.V(input.to))
-      // 获取原评论信息返回
-      .select('c')
-      .filterAllCommentProps()
-      .toList()
-      .then(r => objectify<Comment>(r[0]))
-  }
-
-  async addACommentOnComment (creator: UserId, input: AddACommentOnCommentInput) {
-    const id = hash(input)
-    const now = Date.now()
-    return await this.g
-      // 创建评论
-      .createComment(id)
-      .as('c')
-      .property('content', input.content)
-      .property('createAt', now)
-      // 关联到创建者
-      .user(creator)
-      .addE('created_comment')
-      .to('c')
-      // 关联到评论
-      .select('c')
-      .addE('commented')
-      .property('createAt', now)
-      .to(__.V(input.to))
-      // 过滤原评论的属性
-      .select('c')
-      .filterAllCommentProps()
-      .toList()
-      .then(r => objectify<Comment>(r[0]))
-  }
-
-  async getCommentsByPostId (postId: PostId, input: PagingConfigInput) {
-    return await this.g
-      .post(postId)
-      .hasLabel('post')
-      .in_('owned')
-      .hasLabel('comment')
-      .order()
-      .by('createAt', this.g.orderBy(input.orderBy))
-      .range(input.skip, input.skip + input.limit)
-      .filterAllCommentProps()
-      .toList()
-      .then(r => r.map(v => objectify<Comment>(v)))
-  }
-
-  async getCommentsByCommentId (commentId: CommentId, input: PagingConfigInput) {
-    return await this.g
-      .comment(commentId)
-      .hasLabel('comment')
-      .in_('commented')
-      .hasLabel('comment')
-      .order()
-      .by('createAt', this.g.orderBy(input.orderBy))
-      .range(input.skip, input.skip + input.limit)
-      .filterAllCommentProps()
-      .toList()
-      .then(r => r.map(v => objectify<Comment>(v)))
-  }
-
-  async getACommentById (id: CommentId) {
-    return await this.g
-      .comment(id)
-      .hasLabel('comment')
-      .filterAllCommentProps()
-      .toList()
-      .then(r => objectify<Comment>(r[0]))
-  }
-
-  async voteAPost (voter: UserId, input: VoteAPostInput) {
+  async voteAPost (voter: UserId, to: string) {
     return await this.g
       .user(voter)
       .addE('voted_post')
       .property('createAt', Date.now())
-      .to(__.V(input.to))
-      .V(input.to)
+      .to(__.V(to))
+      .V(to)
       .hasLabel('post')
       .filterAllPostProps()
       .toList()
@@ -481,34 +505,6 @@ export class DbService {
       .then(r => r.done)
   }
 
-  async addSubject (creator: UserId, input: CreateSubjectInput) {
-    const id = hash({ creator, input })
-    return await this.g
-      .createSubject(id)
-      .as('s')
-      .property('title', input.title)
-      .property('createAt', Date.now())
-      .property('subscription', input.subscription)
-      .property('background', input.background)
-      .property('avatarUrl', input.avatarUrl)
-      .user(creator)
-      .addE('created_subject')
-      .createAtNow()
-      .to('s')
-      .select('s')
-      .filterAllSubjectProps()
-      .toList()
-      .then(r => objectify<Subject>(r[0]))
-  }
-
-  async subject (id: SubjectId) {
-    return await this.g
-      .subject(id)
-      .filterAllSubjectProps()
-      .toList()
-      .then(r => objectify<Subject>(r[0]))
-  }
-
   async updateSubject (input: UpdateSubjectInput) {
     let u = this.g.subject(input.id)
     for (const props of Object.entries(input)) {
@@ -519,51 +515,6 @@ export class DbService {
       .filterAllSubjectProps()
       .toList()
       .then(r => objectify<Subject>(r[0]))
-  }
-
-  async getCreatorOfSubject (id: SubjectId) {
-    return await this.g
-      .subject(id)
-      .in_('created_subject')
-      .hasLabel('user')
-      .filterAllUserProps()
-      .toList()
-      .then(r => objectify<User>(r[0]))
-  }
-
-  async findASubjectByPostId (id: PostId) {
-    return await this.g
-      .post(id)
-      .out('owned_subject')
-      .hasLabel('subject')
-      .filterAllSubjectProps()
-      .toList()
-      .then(r => objectify<Subject>(r[0]))
-  }
-
-  async getPostsBySubjectId (id: SubjectId, input: PagingConfigInput) {
-    return await this.g
-      .subject(id)
-      .in_('owned_subject')
-      .hasLabel('post')
-      .order()
-      .by('createAt', this.g.orderBy(input.orderBy))
-      .range(input.skip, input.skip + input.limit)
-      .filterAllPostProps()
-      .toList()
-      .then(r => r.map(v => objectify<Post>(v)))
-  }
-
-  async getPosts (input: PagingConfigInput) {
-    return await this.g
-      .v()
-      .hasLabel('post')
-      .order()
-      .by('createAt', this.g.orderBy(input.orderBy))
-      .range(input.skip, input.skip + input.limit)
-      .filterAllPostProps()
-      .toList()
-      .then(r => r.map(v => objectify<Post>(v)))
   }
 
   async getUsersBySubjectId (id: SubjectId, input: PagingConfigInput) {
@@ -594,74 +545,16 @@ export class DbService {
       .then(r => objectify<Subject>(r[0]))
   }
 
-  async findMySubjects (userId: UserId, input: PagingConfigInput) {
+  async search () {
     return await this.g
-      .user(userId)
-      .out('followed_subject')
-      .hasLabel('subject')
-      .order()
-      .by('createAt', this.g.orderBy(input.orderBy))
-      .range(input.skip, input.skip + input.limit)
-      .filterAllSubjectProps()
+      .v()
+      // .V()
+      .hasLabel('user')
+      .has('nickName', gremlin.process.TextP.containing('测 试'))
+      .filterAllUserProps()
       .toList()
-      .then(r => r.map(v => objectify<Subject>(v)))
-  }
-
-  async getMySubjectCount (userId: UserId) {
-    return await this.g
-      .user(userId)
-      .out('followed_subject')
-      .hasLabel('subject')
-      .count()
-      .next()
-      .then(r => r.value)
-  }
-
-  async dropAVertex (id: string) {
-    return await this.g
-      .V(id)
-      .drop()
-      .next()
-      .then(r => r.done)
-  }
-
-  // TODO
-  async createAdminer (input: CreateAAdminerDto) {
-    const id = hash(input)
-    return await exec(
-      `
-        g.traversal()
-          .V("${input.createBy}")
-          .as("pre")
-          .addV("admin")
-          .property(id, "${id}")
-          .as("newAdmin")
-          .property("createAt", createAt)
-          .property("nickName", nickName)
-          .property("lastLoginAt", lastLoginAt)
-          .property("action", action)
-          .select("pre")
-          .addE("authorised")
-          .to("newAdmin")
-      `,
-      {
-        createAt: input.createAt,
-        nickName: input.nickName,
-        lastLoginAt: input.lastLoginAt,
-        action: input.action
-      }
-    )
-  }
-
-  // TODO 修改管理员权限等属性的函数
-  async deleteAdminer (id: UserId) {
-    return await exec(
-      `
-        g.traversal()
-          .V("${id}")
-          .drop()
-      `,
-      {}
-    )
+      .then(r => {
+        return r
+      })
   }
 }
