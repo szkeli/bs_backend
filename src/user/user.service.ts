@@ -4,7 +4,8 @@ import { DgraphClient, Mutation, Request } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 import { UserId } from 'src/db/model/db.model'
 
-import { PostsConnection } from '../posts/models/post.model'
+import { Post, PostsConnection } from '../posts/models/post.model'
+import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import {
   CreateFollowRelationInput,
   DeleteFollowRelationInput,
@@ -12,6 +13,7 @@ import {
   UserDataBaseType,
   UserFollowASubjectInput,
   UserRegisterInput,
+  UsersConnection,
   UserUpdateProfileInput
 } from './models/user.model'
 
@@ -20,6 +22,82 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async findSubjectsByUid (id: string, first: number, offset: number) {
+    const txn = this.dgraph.newTxn()
+    try {
+      const query = `
+        query v($uid: string) {
+          totalCount(func: uid($uid)) {
+            subjects {
+              count(uid)
+            }
+          }
+          subjects(func: uid($uid)) {
+            subjects (orderdesc: createdAt, first: ${first}, offset: ${offset}){
+              id: uid
+              createdAt
+              title
+              description
+              avatarImageUrl
+              backgroundImageUrl
+            }
+          }
+        }
+      `
+      const res = await this.dgraph
+        .newTxn({ readOnly: true })
+        .queryWithVars(query, { $uid: id })
+
+      const v = res.getJson() as unknown as { subjects?: Array<{subjects: [Subject]}>, totalCount?: Array<{subjects: Array<{count: number}>}>}
+
+      const u: SubjectsConnection = {
+        totalCount: v.totalCount[0]?.subjects[0]?.count || 0,
+        nodes: v?.subjects[0]?.subjects || []
+      }
+      return u
+    } finally {
+      await txn.discard()
+    }
+  }
+
+  async users (first: number, offset: number) {
+    const txn = this.dgraph.newTxn()
+    try {
+      const query = `
+        query {
+          totalCount(func: type(User)) {
+            count(uid)
+          }
+          users(func: type(User), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+            id: uid
+            userId
+            name
+            avatarImageUrl
+            gender
+            school
+            grade
+            openId
+            unionId
+            createdAt
+            updatedAt
+            lastLoginedAt
+          }
+        }
+      `
+      const res = await this.dgraph
+        .newTxn({ readOnly: true })
+        .query(query)
+      const v = res.getJson() as unknown as { users?: [User], totalCount?: Array<{count: number}>}
+      const u: UsersConnection = {
+        nodes: v.users || [],
+        totalCount: v.totalCount[0].count || 0
+      }
+      return u
+    } finally {
+      await txn.discard()
+    }
   }
 
   async findPostsByUid (id: string, first: number, offset: number) {
@@ -34,6 +112,9 @@ export class UserService {
               title
               content
               createdAt
+              votes @filter(uid_in(creator, $uid)) {
+                count(uid)
+              }
             }
           }
         }
@@ -41,10 +122,13 @@ export class UserService {
       const res = await this.dgraph
         .newTxn({ readOnly: true })
         .queryWithVars(query, { $uid: id })
-      const v = res.getJson().me[0]
+      const v = res.getJson() as unknown as { me?: Array<{postsCount: number, posts?: Array<(Post & { votes: Array<{ count: number}>})>}>}
+      v.me[0].posts.forEach(p => {
+        p.viewerCanUpvote = (p?.votes?.length ?? 0) === 0
+      })
       const u: PostsConnection = {
-        nodes: v.posts,
-        totalCount: v.postsCount
+        nodes: v.me[0].posts as unknown as [Post] || [],
+        totalCount: v.me[0].postsCount || 0
       }
       return u
     } finally {
@@ -90,11 +174,11 @@ export class UserService {
       const res = await this.dgraph
         .newTxn({ readOnly: true })
         .queryWithVars(query, { $uid: id })
-      const user = res.getJson().user[0]
-      if (!user) {
-        throw new Error('Can not find the user')
+      const { user } = res.getJson() as unknown as { user: [User]}
+      if (!user[0]) {
+        throw new ForbiddenException(`用户 ${id} 不存在`)
       }
-      return user
+      return user[0]
     } finally {
       await txn.discard()
     }

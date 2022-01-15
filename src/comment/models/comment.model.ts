@@ -10,6 +10,10 @@ export type CommentId = string
   implements: () => [Node]
 })
 export class Comment implements Node {
+  constructor (comment: Comment) {
+    Object.assign(this, comment)
+  }
+
   @Field()
     id: CommentId
 

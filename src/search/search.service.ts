@@ -3,7 +3,9 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
+import { Comment } from '../comment/models/comment.model'
 import { Post } from '../posts/models/post.model'
+import { Subject } from '../subject/model/subject.model'
 import { User } from '../user/models/user.model'
 import { SearchResultItemConnection } from './model/search.model'
 
@@ -14,18 +16,75 @@ export class SearchService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async searchComment (query: string, first: number, offset: number) {
-    const u: SearchResultItemConnection = {
-      nodes: [{
-        id: '',
-        content: '',
-        createdAt: ''
-      }],
-      userCount: 21,
-      postCount: 0,
-      commentCount: 0
+  async searchSubject (q: string, first: number, offset: number) {
+    const txn = this.dgraph.newTxn()
+    try {
+      const query = `
+        query v($query: string) {
+          totalCount(func: type(Subject)) @filter(alloftext(title, $query) OR alloftext(description, $query)) {
+            count(uid)
+          }
+          search(func: type(Subject), first: ${first}, offset: ${offset}) @filter(alloftext(title, $query) OR alloftext(description, $query)) {
+            id: uid
+            createdAt
+            title
+            description
+            avatarImageUrl
+            backgroundImageUrl
+          }
+        }
+      `
+      const res = await this.dgraph
+        .newTxn({ readOnly: true })
+        .queryWithVars(query, { $query: q })
+
+      const result = res.getJson() as unknown as { search: [Subject], totalCount: Array<{count: number}>}
+      const v = []
+      result.search.forEach(subject => {
+        v.push(new Subject(subject))
+      })
+      const u: SearchResultItemConnection = {
+        nodes: v,
+        totalCount: result.totalCount[0].count
+      }
+      return u
+    } finally {
+      await txn.discard()
     }
-    return u
+  }
+
+  async searchComment (q: string, first: number, offset: number) {
+    const txn = this.dgraph.newTxn()
+    try {
+      const query = `
+        query v($query: string) {
+          totalCount(func: type(Comment)) @filter(alloftext(content, $query)) {
+            count(uid)
+          }
+          search(func: type(Comment), first: ${first}, offset: ${offset}) @filter(alloftext(content, $query)) {
+            id: uid
+            createdAt
+            content
+          }
+        }
+      `
+      const res = await this.dgraph
+        .newTxn({ readOnly: true })
+        .queryWithVars(query, { $query: q })
+
+      const result = res.getJson() as unknown as { search: [Comment], totalCount: Array<{count: number}>}
+      const v = []
+      result.search.forEach(comment => {
+        v.push(new Comment(comment))
+      })
+      const u: SearchResultItemConnection = {
+        nodes: v,
+        totalCount: result.totalCount[0].count
+      }
+      return u
+    } finally {
+      await txn.discard()
+    }
   }
 
   async searchUser (q: string, first: number, offset: number) {
@@ -36,7 +95,7 @@ export class SearchService {
           totalCount(func: type(User)) @filter(alloftext(name, $query) OR alloftext(userId, $query)) {
             count(uid)
           }
-          search(func: type(User)) @filter(alloftext(name, $query) OR alloftext(userId, $query)) {
+          search(func: type(User), first: ${first}, offset: ${offset}) @filter(alloftext(name, $query) OR alloftext(userId, $query)) {
             id: uid
             userId
             name
@@ -63,7 +122,7 @@ export class SearchService {
       })
       const u: SearchResultItemConnection = {
         nodes: v,
-        userCount: result.totalCount[0].count
+        totalCount: result.totalCount[0].count
       }
       return u
     } finally {
@@ -100,7 +159,7 @@ export class SearchService {
       })
       const u: SearchResultItemConnection = {
         nodes: v,
-        postCount: result.totalCount[0].count
+        totalCount: result.totalCount[0].count
       }
       return u
     } finally {

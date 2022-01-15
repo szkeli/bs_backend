@@ -30,11 +30,11 @@ export class PostsService {
       if (subjectId) {
         conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) )'
         query = `
-        query {
-          v(func: uid(${creator})) { v as uid }
-          u(func: uid(${subjectId})) { u as uid }
-        }
-      `
+          query {
+            v(func: uid(${creator})) { v as uid }
+            u(func: uid(${subjectId})) { u as uid }
+          }
+        `
         mutation = {
           uid: creator,
           posts: {
@@ -90,6 +90,7 @@ export class PostsService {
       req.addMutations(mu)
       req.setCommitNow(true)
       const res = await txn.doRequest(req)
+      console.error(res.getJson())
       if (!subjectId) {
         const v = res.getJson().q[0]
         if (!v) {
@@ -112,6 +113,7 @@ export class PostsService {
         title,
         content,
         images,
+        viewerCanUpvote: true,
         createdAt: new Date(now).toISOString()
       }
 

@@ -8,7 +8,7 @@ export class SubjectBase {
     title: string
 
   @Field()
-    subscription: string
+    description: string
 
   @Field()
     avatarImageUrl: string
@@ -19,6 +19,10 @@ export class SubjectBase {
 
 @ObjectType()
 export class Subject {
+  constructor (subject: Subject) {
+    Object.assign(this, subject)
+  }
+
   @Field()
     id: SubjectId
 
@@ -29,7 +33,7 @@ export class Subject {
     title: string
 
   @Field()
-    subscription: string
+    description: string
 
   @Field()
     avatarImageUrl: string
@@ -50,7 +54,7 @@ export class UpdateSubjectInput {
     title?: string
 
   @Field({ nullable: true })
-    subscription?: string
+    description?: string
 
   @Field({ nullable: true })
     avatarUrl?: string
@@ -68,7 +72,7 @@ export class SubjectsConnection {
   //   pageInfo: PageInfo
 
   @Field(type => [Subject])
-    nodes: [Subject]
+    nodes: [Subject?]
 
   @Field(type => Int)
     totalCount: number

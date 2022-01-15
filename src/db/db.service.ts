@@ -79,22 +79,28 @@ export class DbService {
   async setSchema () {
     const schema = `
       
+      posts: [uid] @count @reverse . 
+      comments: [uid] @count @reverse .
+      reports: [uid] @reverse .
+      subjects: [uid] @reverse .
+      votes: [uid] @reverse .
+      subject: uid @reverse .
+      comment: uid @reverse .
+      post: uid @reverse .
+      handler: uid @reverse .
+      to: uid @reverse .
+      blocker: uid @reverse .
+      creator: uid @reverse .
+      folder: uid @reverse .
       userId: string @index(exact, hash, fulltext) .
       sign: password .
       name: string @index(exact, fulltext) .
       avatarImageUrl: string @index(exact) .
       backgroundImageUrl: string @index(exact) .
       images: [string] .
-      posts: [uid] @count @reverse . 
-      comments: [uid] @count @reverse .
-      stargazers: [uid] @count @reverse .
-      blocker: uid @reverse .
-      creator: uid @reverse .
-      folder: uid @reverse .
       location: geo .
       title: string @index(fulltext) .
       content: string @index(fulltext) .
-      reports: [uid] @reverse .
       description: string @index(fulltext) .
       type: string @index(term) .
       createdAt: dateTime @index(hour) .
@@ -105,11 +111,27 @@ export class DbService {
       grade: string @index(term) .
       openId: string @index(hash) .
       unionId: string @index(hash) .
-      subjects: [uid] @reverse .
-      subject: uid @reverse .
-      comment: uid @reverse .
-      post: uid @reverse .
-      handler: uid @reverse .
+      
+
+      # 管理员
+      type Admin {
+        # 唯一用户 id
+        userId
+        # 密码
+        sign
+        # 名字
+        name
+        # 头像链接
+        avatarImageUrl
+        # 注册时间
+        createdAt
+        # 用户信息更新时间
+        updatedAt
+        # 上一次登录时间
+        lastLoginedAt
+        # 当前管理员的创建者
+        creator
+      }
 
       # 用户
       type User {
@@ -141,6 +163,8 @@ export class DbService {
         posts
         # 用户创建的主题 用于存放帖子
         subjects
+        # 用户的点赞
+        votes
       }
 
       # 帖子
@@ -157,8 +181,8 @@ export class DbService {
         createdAt
         # 帖子的封禁者
         blocker
-        # 帖子的点赞者
-        stargazers
+        # 帖子的点赞
+        votes
         # 帖子的举报
         reports
         # 帖子的位置
@@ -169,6 +193,15 @@ export class DbService {
         subject
       }
 
+
+      # 点赞
+      type Vote {
+        createdAt
+        creator
+        to
+        type
+      }
+
       # 帖子和评论的评论
       type Comment {
         # 评论的创建时间
@@ -177,8 +210,8 @@ export class DbService {
         content
         # 评论的创建者
         creator
-        # 评论的点赞者
-        stargazers
+        # 评论的点赞
+        votes
         # 评论的折叠者
         folder
         # 评论的举报
@@ -198,7 +231,7 @@ export class DbService {
         # 标题
         title
         # 主题描述
-        subscription
+        description
         # 头像
         avatarImageUrl
         # 背景
@@ -328,8 +361,8 @@ export class DbService {
     // await this.queryData()
     // await this.dropAll(this.dgraph)
     await this.setSchema()
-    await this.addData()
-    await this.queryData()
+    // await this.addData()
+    // await this.queryData()
   }
 
   // teststsssssssssssssssssssssssssssssssssssssssssssssssssss

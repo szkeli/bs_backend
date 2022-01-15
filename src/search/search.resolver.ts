@@ -23,5 +23,8 @@ export class SearchResolver {
     if (type === SEARCHTYPE.COMMENT) {
       return await this.searchService.searchComment(query, first, offset)
     }
+    if (type === SEARCHTYPE.SUBJECT) {
+      return await this.searchService.searchSubject(query, first, offset)
+    }
   }
 }

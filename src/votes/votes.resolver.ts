@@ -20,7 +20,7 @@ export class VotesResolver {
   @CurrentUser() user: User,
     @Args('to') to: string
   ) {
-    return await this.votesService.voteAPost(user.userId, to)
+    return await this.votesService.voteAPost(user.id, to)
   }
 
   @Mutation(returns => Votable)
@@ -29,24 +29,24 @@ export class VotesResolver {
   @CurrentUser() user: User,
     @Args('to') to: string
   ) {
-    // return await this.votesService.voteAComment(user.userId, input)
+    return await this.votesService.voteAComment(user.id, to)
   }
 
   @Mutation(returns => Votable)
   @UseGuards(GqlAuthGuard)
   async removeUpvoteOnComment (
   @CurrentUser() user: User,
-    @Args('to') to: string
+    @Args('from') from: string
   ) {
-    // return await this.votesService.unvoteAComment(user.userId, input)
+    return await this.votesService.unvoteAComment(user.id, from)
   }
 
   @Mutation(returns => Votable)
   @UseGuards(GqlAuthGuard)
   async removeUpvoteOnPost (
   @CurrentUser() user: User,
-    @Args('to') to: string
+    @Args('from') from: string
   ) {
-    // return await this.votesService.unvoteAPost(user.userId, input)
+    return await this.votesService.unvoteAPost(user.id, from)
   }
 }

@@ -1,4 +1,4 @@
-import { Field, InputType, Int, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { ArgsType, Field, InputType, Int, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 import { UserId } from 'src/db/model/db.model'
 import { SubjectId } from 'src/subject/model/subject.model'
@@ -27,6 +27,15 @@ export enum GENDER {
 registerEnumType(GENDER, {
   name: 'GENDER'
 })
+
+@ArgsType()
+export class PersonLoginArgs {
+  @Field({ description: '用户 userId，注意不是 id' })
+    userId: string
+
+  @Field()
+    sign: string
+}
 
 @InputType()
 export class UserCreateInput {
@@ -82,20 +91,6 @@ export class UserUpdateProfileInput {
 
   @Field({ nullable: true })
     sign?: string
-}
-
-@ObjectType({
-  implements: () => [Person, Node]
-})
-export class Admin implements Person, Node {
-  @Field()
-    name: string
-
-  @Field()
-    userId: string
-
-  @Field()
-    id: string
 }
 
 export interface UserDataBaseType {
@@ -222,14 +217,14 @@ export class PageInfo {
 
 @ObjectType()
 export class UsersConnection {
-  @Field(type => [UserEdge])
-    edges: [UserEdge]
+  // @Field(type => [UserEdge])
+  //   edges: [UserEdge]
+
+  // @Field(type => PageInfo)
+  //   pageInfo: PageInfo
 
   @Field(type => [User])
-    nodes: [User]
-
-  @Field(type => PageInfo)
-    pageInfo: PageInfo
+    nodes: [User?]
 
   @Field(type => Int)
     totalCount: number
@@ -272,4 +267,13 @@ export class FolloweringsConnection {
 
   @Field(type => Int)
     totalCount: number
+}
+
+@ArgsType()
+export class PagingConfigArgs {
+  @Field(type => Int, { nullable: true, defaultValue: 10 })
+    first: number
+
+  @Field(type => Int, { nullable: true, defaultValue: 0 })
+    offset: number
 }

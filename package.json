@@ -38,6 +38,7 @@
     "@types/protobufjs": "^6.0.0",
     "apollo-server-express": "^3.5.0",
     "axios": "^0.24.0",
+    "class-validator": "^0.13.2",
     "dgraph-js": "^21.3.1",
     "graphql": "^15",
     "gremlin": "^3.5.1",

@@ -22,6 +22,9 @@ export class Post {
 
   @Field(type => [String])
     images: [string]
+
+  @Field(type => Boolean)
+    viewerCanUpvote: boolean
 }
 
 @InputType()

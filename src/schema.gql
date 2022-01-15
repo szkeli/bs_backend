@@ -2,51 +2,20 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-interface Node {
-  id: String!
-}
-
 interface Person implements Node {
   userId: String!
   name: String!
   id: String!
 }
 
-interface Votable {
-  """Number of upvotes that this node has received."""
-  upvoteCount: Int!
-
-  """
-  Whether or not the current user can add or remove an upvote on this node.
-  """
-  viewerCanUpvote: Boolean!
-
-  """Whether or not the current user has already upvoted this node."""
-  viewerHasUpvoted: Boolean!
-}
-
-type NodesConnection {
-  edges: [NodeEdge!]!
-  nodes: [Node!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-type NodeEdge {
-  cursor: String!
-  node: Node!
-}
-
-type Admin implements Person & Node {
+interface Node {
   id: String!
-  userId: String!
-  name: String!
 }
 
 type User implements Person & Node {
-  id: String!
   userId: String!
   name: String!
+  id: String!
   openId: String!
   unionId: String!
   gender: GENDER!
@@ -56,11 +25,11 @@ type User implements Person & Node {
   avatarImageUrl: String!
   school: String!
   grade: String!
-  posts(offset: Int = 0, first: Int = 2): PostsConnection!
-  followers(last: Float!, first: Float!, before: String!, after: String!): FollowersConnection!
-  followings(last: Float!, first: Float!, before: String!, after: String!): FolloweringsConnection!
-  subjects(last: Float!, first: Float!, before: String!, after: String!): SubjectsConnection!
-  comments(last: Float!, first: Float!, before: String!, after: String!): CommentsConnection!
+  posts(first: Int = 10, offset: Int = 0): PostsConnection!
+  followers(first: Int = 10, offset: Int = 0): FollowersConnection!
+  followings(first: Int = 10, offset: Int = 0): FolloweringsConnection!
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+  comments(first: Float!): CommentsConnection!
 }
 
 enum GENDER {
@@ -70,9 +39,9 @@ enum GENDER {
 }
 
 type LoginResult implements Node & Person {
-  id: String!
   userId: String!
   name: String!
+  id: String!
   openId: String!
   unionId: String!
   gender: GENDER!
@@ -82,11 +51,11 @@ type LoginResult implements Node & Person {
   avatarImageUrl: String!
   school: String!
   grade: String!
-  posts(offset: Int = 0, first: Int = 2): PostsConnection!
-  followers(last: Float!, first: Float!, before: String!, after: String!): FollowersConnection!
-  followings(last: Float!, first: Float!, before: String!, after: String!): FolloweringsConnection!
-  subjects(last: Float!, first: Float!, before: String!, after: String!): SubjectsConnection!
-  comments(last: Float!, first: Float!, before: String!, after: String!): CommentsConnection!
+  posts(first: Int = 10, offset: Int = 0): PostsConnection!
+  followers(first: Int = 10, offset: Int = 0): FollowersConnection!
+  followings(first: Int = 10, offset: Int = 0): FolloweringsConnection!
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+  comments(first: Float!): CommentsConnection!
   token: String!
 }
 
@@ -98,9 +67,7 @@ type PageInfo {
 }
 
 type UsersConnection {
-  edges: [UserEdge!]!
   nodes: [User!]!
-  pageInfo: PageInfo!
   totalCount: Int!
 }
 
@@ -123,6 +90,32 @@ type FolloweringsConnection {
   totalCount: Int!
 }
 
+type NodesConnection {
+  edges: [NodeEdge!]!
+  nodes: [Node!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type NodeEdge {
+  cursor: String!
+  node: Node!
+}
+
+type Admin implements Node & Person {
+  userId: String!
+  name: String!
+  id: String!
+  avatarImageUrl: String!
+  createdAt: String!
+  updatedAt: String!
+  lastLoginedAt: String!
+}
+
+type InviteTokenResult {
+  token: String!
+}
+
 type Comment implements Node {
   id: String!
   content: String!
@@ -139,7 +132,7 @@ type Subject {
   id: String!
   createdAt: String!
   title: String!
-  subscription: String!
+  description: String!
   avatarImageUrl: String!
   backgroundImageUrl: String!
   creator: User!
@@ -158,6 +151,7 @@ type Post {
   content: String!
   createdAt: String!
   images: [String!]!
+  viewerCanUpvote: Boolean!
   creator: User!
   comments(offset: Int = 2, first: Int = 0): CommentsConnection!
   subject: Subject
@@ -169,26 +163,38 @@ type PostsConnection {
 }
 
 type SearchResultItemConnection {
-  """搜索用户时，返回的结果中的用户总数"""
-  userCount: Int
-
-  """搜索帖子时，返回的结果中帖子的总数"""
-  postCount: Int
-
-  """搜索评论时，返回的结果中评论的总数"""
-  commentCount: Int
+  totalCount: Int!
   nodes: [SearchResultItem!]!
 }
 
-union SearchResultItem = Post | User | Comment
+union SearchResultItem = Post | User | Comment | Subject
+
+type Votable {
+  """Number of upvotes that this node has received."""
+  upvoteCount: Int!
+
+  """
+  Whether or not the current user can add or remove an upvote on this node.
+  """
+  viewerCanUpvote: Boolean!
+
+  """Whether or not the current user has already upvoted this node."""
+  viewerHasUpvoted: Boolean!
+}
 
 type Query {
   post(id: String!): Post!
   posts(offset: Int = 0, first: Int = 0): PostsConnection!
-  login(sign: String!, userId: String!): LoginResult!
+  login(
+    """用户 userId，注意不是 id"""
+    userId: String!
+    sign: String!
+  ): LoginResult!
+  authenticate(userId: String!): LoginResult!
   whoAmI: User!
-  users(last: Float!, first: Float!, before: String!, after: String!): UsersConnection!
+  users(first: Int = 10, offset: Int = 0): UsersConnection!
   comment(id: String!): Comment!
+  createInviteToken: InviteTokenResult!
   subject(id: String!): Subject!
   subjects(offset: Int = 0, first: Int = 0): SubjectsConnection!
   search(
@@ -207,12 +213,12 @@ enum SEARCHTYPE {
   USER
   COMMENT
   POST
+  SUBJECT
 }
 
 type Mutation {
   createPost(subjectId: String, images: [String!]!, content: String!, title: String!): Post!
   deletePost(id: String!): Boolean!
-  authenticate(userId: String!): LoginResult!
   register(input: UserRegisterInput!): User!
   followUser(to: String!): Boolean!
   unfollowUser(to: String!): Boolean!
@@ -230,8 +236,9 @@ type Mutation {
   ): Comment!
   addUpvoteOnPost(to: String!): Votable!
   addUpvoteOnComment(to: String!): Votable!
-  removeUpvoteOnComment(to: String!): Votable!
-  removeUpvoteOnPost(to: String!): Votable!
+  removeUpvoteOnComment(from: String!): Votable!
+  removeUpvoteOnPost(from: String!): Votable!
+  createAdmin(input: CreateAdminInput!, inviteToken: String!): Admin!
   createSubject(input: CreateSubjectInput!): Subject!
   updateSubject(input: UpdateSubjectInput!): Subject!
 }
@@ -257,9 +264,15 @@ input UserUpdateProfileInput {
   sign: String
 }
 
+input CreateAdminInput {
+  userId: String!
+  name: String!
+  avatarImageUrl: String!
+}
+
 input CreateSubjectInput {
   title: String!
-  subscription: String!
+  description: String!
   avatarImageUrl: String!
   backgroundImageUrl: String!
 }
@@ -267,7 +280,7 @@ input CreateSubjectInput {
 input UpdateSubjectInput {
   id: String!
   title: String
-  subscription: String
+  description: String
   avatarUrl: String
   background: String
 }

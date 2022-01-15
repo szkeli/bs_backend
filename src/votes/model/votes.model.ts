@@ -1,4 +1,4 @@
-import { Field, InputType, Int, InterfaceType } from '@nestjs/graphql'
+import { Field, InputType, Int, ObjectType } from '@nestjs/graphql'
 
 import { CommentId } from 'src/comment/models/comment.model'
 import { PostId } from 'src/db/model/db.model'
@@ -20,8 +20,12 @@ export class UnvoteACommentInput extends VoteACommentInput {}
 @InputType()
 export class UnvoteAPostInput extends VoteAPostInput {}
 
-@InterfaceType()
-export abstract class Votable {
+@ObjectType()
+export class Votable {
+  constructor (votable: Votable) {
+    Object.assign(this, votable)
+  }
+
   @Field(type => Int, { description: 'Number of upvotes that this node has received.' })
     upvoteCount: number
 

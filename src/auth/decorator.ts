@@ -7,3 +7,10 @@ export const CurrentUser = createParamDecorator(
     return ctx.getContext().req.user
   }
 )
+
+export const CurrentJwtToken = createParamDecorator(
+  (data: unknown, context: ExecutionContext) => {
+    const ctx = GqlExecutionContext.create(context)
+    return ctx.getContext().req.header('authorization')
+  }
+)

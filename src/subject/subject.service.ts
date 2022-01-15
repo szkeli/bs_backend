@@ -1,7 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
-import { PagingConfigInput } from 'src/comment/models/comment.model'
 import { DbService } from 'src/db/db.service'
 
 import { PostsConnection } from '../posts/models/post.model'
@@ -30,7 +29,7 @@ export class SubjectService {
           id: uid
           createdAt
           title
-          subscription
+          description
           avatarImageUrl
           backgroundIMageUrl
         }
@@ -57,7 +56,7 @@ export class SubjectService {
             id: uid
             createdAt
             title
-            subscription
+            description
             avatarImageUrl
             backgroundImageUrl
           }
@@ -67,17 +66,13 @@ export class SubjectService {
         .newTxn({ readOnly: true })
         .query(query)
       const u: SubjectsConnection = {
-        nodes: res.getJson().v,
+        nodes: res.getJson().v || [],
         totalCount: res.getJson().totalCount[0].count
       }
       return u
     } finally {
       await txn.discard()
     }
-  }
-
-  async getUsersBySubjectId (id: SubjectId, input: PagingConfigInput) {
-    return await this.dbService.getUsersBySubjectId(id, input)
   }
 
   async updateSubject (input: UpdateSubjectInput) {
@@ -101,7 +96,7 @@ export class SubjectService {
           uid: '_:subject',
           'dgraph.type': 'Subject',
           title: input.title,
-          subscription: input.subscription,
+          description: input.description,
           avatarImageUrl: input.avatarImageUrl,
           backgroundImageUrl: input.backgroundImageUrl,
           createdAt: now,
@@ -131,7 +126,7 @@ export class SubjectService {
         id: res.getUidsMap().get('subject'),
         createdAt: now,
         title: input.title,
-        subscription: input.subscription,
+        description: input.description,
         avatarImageUrl: input.avatarImageUrl,
         backgroundImageUrl: input.backgroundImageUrl
       }
@@ -204,7 +199,7 @@ export class SubjectService {
               id: uid
               createdAt
               title
-              subscription
+              description
               avatarImageUrl
               backgorundImageeUrl
             }
