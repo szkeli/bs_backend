@@ -52,8 +52,8 @@ export class CommentService {
       const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) )'
       const query = `
         query {
-          v(func: uid(${creator})) { v as uid }
-          u(func: uid(${commentId})) { u as uid }
+          v(func: uid(${creator})) @filter(type(User)) { v as uid }
+          u(func: uid(${commentId})) @filter(type(Comment)) { u as uid }
         }
       `
       const mutation = {
@@ -153,8 +153,7 @@ export class CommentService {
       const x: Comment = {
         content,
         createdAt: now,
-        id: u.getUidsMap().get('comment'),
-        viewerCanUpvote: true
+        id: u.getUidsMap().get('comment')
       }
       return x
     } finally {

@@ -1,6 +1,4 @@
-import { Field, InputType, Int, ObjectType } from '@nestjs/graphql'
-
-import { ORDERBY } from 'src/user/models/user.model'
+import { Field, Int, ObjectType } from '@nestjs/graphql'
 
 import { Node } from '../../node/models/node.model'
 
@@ -22,39 +20,6 @@ export class Comment implements Node {
 
   @Field()
     createdAt: string
-
-  @Field(type => Boolean, { nullable: true })
-    viewerCanUpvote?: boolean
-}
-
-@InputType()
-export class AddACommentOnCommentInput {
-  @Field()
-    to: CommentId
-
-  @Field()
-    content: string
-}
-
-@InputType()
-export class AddACommentOnPostInput {
-  @Field()
-    to: CommentId
-
-  @Field()
-    content: string
-}
-
-@InputType()
-export class PagingConfigInput {
-  @Field(type => Int, { defaultValue: 0 })
-    skip: number
-
-  @Field(type => Int, { defaultValue: 10 })
-    limit: number
-
-  @Field(type => ORDERBY, { defaultValue: ORDERBY.DESC })
-    orderBy: ORDERBY
 }
 
 @ObjectType()

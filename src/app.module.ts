@@ -20,6 +20,9 @@ import { SubjectModule } from './subject/subject.module'
 import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { VotesModule } from './votes/votes.module'
+import { ReportsModule } from './reports/reports.module';
+import { MessagesModule } from './messages/messages.module';
+import { ConversationsModule } from './conversations/conversations.module';
 
 @Module({
   imports: [
@@ -38,7 +41,10 @@ import { VotesModule } from './votes/votes.module'
     SharedModule,
     SubjectModule,
     SearchModule,
-    NodeModule
+    NodeModule,
+    ReportsModule,
+    MessagesModule,
+    ConversationsModule
   ],
   controllers: [AppController],
   providers: [
