@@ -271,7 +271,7 @@ export class FolloweringsConnection {
 
 @ArgsType()
 export class PagingConfigArgs {
-  @Field(type => Int, { nullable: true, defaultValue: 10 })
+  @Field(type => Int, { nullable: true, defaultValue: 0 })
     first: number
 
   @Field(type => Int, { nullable: true, defaultValue: 0 })

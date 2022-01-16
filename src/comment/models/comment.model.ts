@@ -23,8 +23,8 @@ export class Comment implements Node {
   @Field()
     createdAt: string
 
-  @Field(type => Boolean)
-    viewerCanUpvote: boolean
+  @Field(type => Boolean, { nullable: true })
+    viewerCanUpvote?: boolean
 }
 
 @InputType()
@@ -66,7 +66,7 @@ export class CommentsConnection {
   //   pageInfo: PageInfo
 
   @Field(type => [Comment])
-    nodes: [Comment]
+    nodes: Comment[]
 
   @Field(type => Int)
     totalCount: number

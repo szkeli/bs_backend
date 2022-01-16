@@ -1,6 +1,21 @@
-import { Field, InputType, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, InputType, Int, ObjectType } from '@nestjs/graphql'
 
 import { SubjectId } from 'src/subject/model/subject.model'
+
+@ArgsType()
+export class CreatePostArgs {
+  @Field({ description: '帖子标题' })
+    title: string
+
+  @Field({ description: '帖子内容' })
+    content: string
+
+  @Field(type => [String], { description: '帖子图片', nullable: true })
+    images: [string]
+
+  @Field({ nullable: true, description: '帖子所属的主题' })
+    subjectId: string
+}
 
 @ObjectType()
 export class Post {
@@ -22,9 +37,6 @@ export class Post {
 
   @Field(type => [String])
     images: [string]
-
-  @Field(type => Boolean)
-    viewerCanUpvote: boolean
 }
 
 @InputType()
@@ -48,7 +60,7 @@ export class PostsConnection {
   //   pageInfo: PageInfo
 
   @Field(type => [Post])
-    nodes: [Post?]
+    nodes: Post[]
 
   @Field(type => Int)
     totalCount: number

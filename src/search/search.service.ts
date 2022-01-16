@@ -17,9 +17,7 @@ export class SearchService {
   }
 
   async searchSubject (q: string, first: number, offset: number) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
+    const query = `
         query v($query: string) {
           totalCount(func: type(Subject)) @filter(alloftext(title, $query) OR alloftext(description, $query)) {
             count(uid)
@@ -34,29 +32,24 @@ export class SearchService {
           }
         }
       `
-      const res = await this.dgraph
-        .newTxn({ readOnly: true })
-        .queryWithVars(query, { $query: q })
+    const res = await this.dgraph
+      .newTxn({ readOnly: true })
+      .queryWithVars(query, { $query: q })
 
-      const result = res.getJson() as unknown as { search: [Subject], totalCount: Array<{count: number}>}
-      const v = []
-      result.search.forEach(subject => {
-        v.push(new Subject(subject))
-      })
-      const u: SearchResultItemConnection = {
-        nodes: v,
-        totalCount: result.totalCount[0].count
-      }
-      return u
-    } finally {
-      await txn.discard()
+    const result = res.getJson() as unknown as { search: [Subject], totalCount: Array<{count: number}>}
+    const v = []
+    result.search.forEach(subject => {
+      v.push(new Subject(subject))
+    })
+    const u: SearchResultItemConnection = {
+      nodes: v,
+      totalCount: result.totalCount[0].count
     }
+    return u
   }
 
   async searchComment (q: string, first: number, offset: number) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
+    const query = `
         query v($query: string) {
           totalCount(func: type(Comment)) @filter(alloftext(content, $query)) {
             count(uid)
@@ -68,29 +61,24 @@ export class SearchService {
           }
         }
       `
-      const res = await this.dgraph
-        .newTxn({ readOnly: true })
-        .queryWithVars(query, { $query: q })
+    const res = await this.dgraph
+      .newTxn({ readOnly: true })
+      .queryWithVars(query, { $query: q })
 
-      const result = res.getJson() as unknown as { search: [Comment], totalCount: Array<{count: number}>}
-      const v = []
-      result.search.forEach(comment => {
-        v.push(new Comment(comment))
-      })
-      const u: SearchResultItemConnection = {
-        nodes: v,
-        totalCount: result.totalCount[0].count
-      }
-      return u
-    } finally {
-      await txn.discard()
+    const result = res.getJson() as unknown as { search: [Comment], totalCount: Array<{count: number}>}
+    const v = []
+    result.search.forEach(comment => {
+      v.push(new Comment(comment))
+    })
+    const u: SearchResultItemConnection = {
+      nodes: v,
+      totalCount: result.totalCount[0].count
     }
+    return u
   }
 
   async searchUser (q: string, first: number, offset: number) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
+    const query = `
         query v($query: string) {
           totalCount(func: type(User)) @filter(alloftext(name, $query) OR alloftext(userId, $query)) {
             count(uid)
@@ -111,59 +99,51 @@ export class SearchService {
           }
         }
       `
-      const res = await this.dgraph
-        .newTxn({ readOnly: true })
-        .queryWithVars(query, { $query: q })
+    const res = await this.dgraph
+      .newTxn({ readOnly: true })
+      .queryWithVars(query, { $query: q })
 
-      const result = res.getJson() as unknown as { search: [User], totalCount: Array<{count: number}>}
-      const v = []
-      result.search.forEach(user => {
-        v.push(new User(user))
-      })
-      const u: SearchResultItemConnection = {
-        nodes: v,
-        totalCount: result.totalCount[0].count
-      }
-      return u
-    } finally {
-      await txn.discard()
+    const result = res.getJson() as unknown as { search: [User], totalCount: Array<{count: number}>}
+    const v = []
+    result.search.forEach(user => {
+      v.push(new User(user))
+    })
+    const u: SearchResultItemConnection = {
+      nodes: v,
+      totalCount: result.totalCount[0].count
     }
+    return u
   }
 
   async searchPost (q: string, first: number, offset: number) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
-        query v($query: string) {
-          totalCount(func: type(Post)) @filter(alloftext(title, $query) OR alloftext(content, $query)) {
-            count(uid)
-          }
-          search(func: type(Post), first: ${first}, offset: ${offset}) @filter(alloftext(title, $query) OR alloftext(content, $query)) {
-            id: uid
-            title
-            content
-            images
-            createdAt
-          }
-        }
-      `
-      const res = await this.dgraph
-        .newTxn({ readOnly: true })
-        .queryWithVars(query, { $query: q })
-
-      const result = res.getJson() as unknown as { search: [Post], totalCount: Array<{count: number}> }
-
-      const v = []
-      result.search.forEach(post => {
-        v.push(new Post(post))
-      })
-      const u: SearchResultItemConnection = {
-        nodes: v,
-        totalCount: result.totalCount[0].count
+    const query = `
+    query v($query: string) {
+      totalCount(func: type(Post)) @filter(alloftext(title, $query) OR alloftext(content, $query)) {
+        count(uid)
       }
-      return u
-    } finally {
-      await txn.discard()
+      search(func: type(Post), first: ${first}, offset: ${offset}) @filter(alloftext(title, $query) OR alloftext(content, $query)) {
+        id: uid
+        title
+        content
+        images
+        createdAt
+      }
     }
+  `
+    const res = await this.dgraph
+      .newTxn({ readOnly: true })
+      .queryWithVars(query, { $query: q })
+
+    const result = res.getJson() as unknown as { search: [Post], totalCount: Array<{count: number}> }
+
+    const v = []
+    result.search.forEach(post => {
+      v.push(new Post(post))
+    })
+    const u: SearchResultItemConnection = {
+      nodes: v,
+      totalCount: result.totalCount[0].count
+    }
+    return u
   }
 }

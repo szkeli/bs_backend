@@ -1,10 +1,11 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
-import { CommentsConnection } from 'src/comment/models/comment.model'
+import { Comment, CommentsConnection } from 'src/comment/models/comment.model'
 import { DbService } from 'src/db/db.service'
 import { PostId, UserId } from 'src/db/model/db.model'
 
+import { Vote, VotesConnection } from '../votes/model/votes.model'
 import { Post, PostsConnection } from './models/post.model'
 
 @Injectable()
@@ -113,7 +114,6 @@ export class PostsService {
         title,
         content,
         images,
-        viewerCanUpvote: true,
         createdAt: new Date(now).toISOString()
       }
 
@@ -124,13 +124,11 @@ export class PostsService {
   }
 
   async deleteAPost (creator: UserId, id: PostId) {
-    return await this.dbService.deleteAPost(creator, id)
+    // return await this.dbService.deleteAPost(creator, id)
   }
 
-  async getPost (id: PostId) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
+  async post (id: PostId) {
+    const query = `
         query v($uid: string) {
           post(func: uid($uid)) {
             id: uid
@@ -141,23 +139,21 @@ export class PostsService {
           }
         }
       `
-      const res = await this.dgraph
-        .newTxn({ readOnly: true })
-        .queryWithVars(query, { $uid: id })
-      const post = res.getJson().post[0]
-      if (!post) {
-        throw new ForbiddenException(`帖子 ${id} 不存在`)
-      }
-      return post
-    } finally {
-      await txn.discard()
+    const res = (await this.dgraph
+      .newTxn({ readOnly: true })
+      .queryWithVars(query, { $uid: id }))
+      .getJson() as unknown as {
+      post: Post[]
     }
+
+    if (!res || !res.post || res.post.length !== 1) {
+      throw new ForbiddenException(`帖子 ${id} 不存在`)
+    }
+    return res.post[0]
   }
 
-  async getPosts (first: number, offset: number) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
+  async posts (first: number, offset: number) {
+    const query = `
         query {
           totalCount(func: type(Post)) {
             count(uid)
@@ -170,19 +166,18 @@ export class PostsService {
           }
         }
       `
-      const res = await this.dgraph
-        .newTxn({ readOnly: true })
-        .query(query)
-      const v = res.getJson().v
-      console.error(v)
-      const u: PostsConnection = {
-        nodes: v || [],
-        totalCount: res.getJson().totalCount[0].count
-      }
-      return u
-    } finally {
-      await txn.discard()
+    const res = (await this.dgraph
+      .newTxn({ readOnly: true })
+      .query(query))
+      .getJson() as unknown as {
+      totalCount: Array<{count: number}>
+      v: Post[]
     }
+    const u: PostsConnection = {
+      nodes: res.v || [],
+      totalCount: res.totalCount[0].count
+    }
+    return u
   }
 
   async getUserByPostId (id: PostId) {
@@ -224,11 +219,18 @@ export class PostsService {
     }
   }
 
-  async getCommentsByPostId (id: PostId, first: number, offset: number) {
+  /**
+   * 返回对应帖子id下的评论
+   * @param id 帖子id
+   * @param first 前first条帖子
+   * @param offset 偏移量
+   * @returns {Promise<CommentsConnection>} CommentsConnection
+   */
+  async getCommentsByPostId (id: PostId, first: number, offset: number): Promise<CommentsConnection> {
     const txn = this.dgraph.newTxn()
     try {
       const query = `
-        query v($uid: string) {
+        query v($uid: string, $viewer: string) {
           post(func: uid($uid)) {
             commentsCount: count(comments)
             comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) {
@@ -239,13 +241,19 @@ export class PostsService {
           }
         }
       `
-      const res = await this.dgraph
+      const res = (await this.dgraph
         .newTxn({ readOnly: true })
-        .queryWithVars(query, { $uid: id })
-      const v = res.getJson().post[0]
+        .queryWithVars(query, { $uid: id }))
+        .getJson() as unknown as {
+        post: Array<{ commentsCount: number, comments?: Comment[]}>
+      }
+
+      const v = res.post[0]
       if (!v) {
         throw new ForbiddenException(`帖子 ${id} 不存在`)
       }
+
+      // v.comments?.forEach(c => c?.a && (c.viewerCanUpvote = false))
       const u: CommentsConnection = {
         nodes: v.comments ? v.comments : [],
         totalCount: v.commentsCount
@@ -254,5 +262,45 @@ export class PostsService {
     } finally {
       await txn.discard()
     }
+  }
+
+  /**
+   * 返回帖子的点赞 并计算当前浏览者是否点赞
+   * @param viewerId 浏览者id
+   * @param postId 帖子id
+   * @returns { Promise<VotesConnection> }
+   */
+  async getVotesByPostId (viewerId: string, postId: string, first: number, offset: number): Promise<VotesConnection> {
+    const query = `
+      query v($viewerId: string, $postId: string) {
+        q(func: uid($postId)) {
+          v: votes @filter(uid_in(creator, $viewerId)){
+            uid
+          }
+          totalCount: count(votes)
+        }
+        v(func: uid($postId)) {
+          votes (orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+            id: uid
+            createdAt
+          }
+        }
+      }
+    `
+    const res = (await this.dgraph
+      .newTxn({ readOnly: true })
+      .queryWithVars(query, { $viewerId: viewerId, $postId: postId }))
+      .getJson() as unknown as {
+      q: Array<{v?: Array<{uid: string}>, totalCount: number}>
+      v: Array<{votes?: Vote[]}>
+    }
+
+    const u: VotesConnection = {
+      nodes: res.v[0]?.votes || [],
+      totalCount: res.q[0].totalCount,
+      viewerHasUpvoted: res.q[0].v !== undefined,
+      viewerCanUpvote: res.q[0].v === undefined
+    }
+    return u
   }
 }

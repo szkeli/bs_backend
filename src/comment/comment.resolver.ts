@@ -1,7 +1,6 @@
 import { UseGuards } from '@nestjs/common'
 import {
   Args,
-  Int,
   Mutation,
   Parent,
   Query,
@@ -11,8 +10,9 @@ import {
 
 import { CurrentUser } from 'src/auth/decorator'
 import { GqlAuthGuard } from 'src/auth/gql.strategy'
-import { User } from 'src/user/models/user.model'
+import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
+import { VotesConnection } from '../votes/model/votes.model'
 import { CommentService } from './comment.service'
 import {
   Comment,
@@ -20,7 +20,7 @@ import {
   CommentsConnection
 } from './models/comment.model'
 
-@Resolver(of => Comment)
+@Resolver(_of => Comment)
 export class CommentResolver {
   constructor (private readonly commentService: CommentService) {}
 
@@ -54,15 +54,16 @@ export class CommentResolver {
   }
 
   @ResolveField(returns => CommentsConnection)
-  async comments (
-  @Parent() comment: Comment,
-    @Args('first', { nullable: true, type: () => Int, defaultValue: 0 }) first: number,
-    @Args('offset', { nullable: true, type: () => Int, defaultValue: 2 }) offset: number
-  ) {
+  async comments (@Parent() comment: Comment, @Args() args: PagingConfigArgs) {
     return await this.commentService.getCommentsByCommentId(
       comment.id,
-      first,
-      offset
+      args.first,
+      args.offset
     )
+  }
+
+  @ResolveField(returns => VotesConnection)
+  async votes (@CurrentUser() user: User, @Parent() comment: Comment, @Args() args: PagingConfigArgs) {
+    return await this.commentService.getVotesByCommentId(user.id, comment.id, args.first, args.offset)
   }
 }

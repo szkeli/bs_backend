@@ -76,7 +76,7 @@ export class SubjectService {
   }
 
   async updateSubject (input: UpdateSubjectInput) {
-    return await this.dbService.updateSubject(input)
+    // return await this.dbService.updateSubject(input)
   }
 
   async createASubject (creator: string, input: CreateSubjectInput) {

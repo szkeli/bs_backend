@@ -25,11 +25,11 @@ type User implements Person & Node {
   avatarImageUrl: String!
   school: String!
   grade: String!
-  posts(first: Int = 10, offset: Int = 0): PostsConnection!
-  followers(first: Int = 10, offset: Int = 0): FollowersConnection!
-  followings(first: Int = 10, offset: Int = 0): FolloweringsConnection!
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+  posts(first: Int = 0, offset: Int = 0): PostsConnection!
+  followers(first: Int = 0, offset: Int = 0): FollowersConnection!
+  followings(first: Int = 0, offset: Int = 0): FolloweringsConnection!
+  subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
+  comments(first: Int = 0, offset: Int = 0): CommentsConnection!
 }
 
 enum GENDER {
@@ -51,11 +51,11 @@ type LoginResult implements Node & Person {
   avatarImageUrl: String!
   school: String!
   grade: String!
-  posts(first: Int = 10, offset: Int = 0): PostsConnection!
-  followers(first: Int = 10, offset: Int = 0): FollowersConnection!
-  followings(first: Int = 10, offset: Int = 0): FolloweringsConnection!
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+  posts(first: Int = 0, offset: Int = 0): PostsConnection!
+  followers(first: Int = 0, offset: Int = 0): FollowersConnection!
+  followings(first: Int = 0, offset: Int = 0): FolloweringsConnection!
+  subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
+  comments(first: Int = 0, offset: Int = 0): CommentsConnection!
   token: String!
 }
 
@@ -116,12 +116,38 @@ type InviteTokenResult {
   token: String!
 }
 
+type Votable {
+  """Number of upvotes that this node has received."""
+  upvoteCount: Int!
+
+  """
+  Whether or not the current user can add or remove an upvote on this node.
+  """
+  viewerCanUpvote: Boolean!
+
+  """Whether or not the current user has already upvoted this node."""
+  viewerHasUpvoted: Boolean!
+}
+
+type VotesConnection {
+  totalCount: Int!
+  viewerCanUpvote: Boolean!
+  viewerHasUpvoted: Boolean!
+  nodes: [Vote!]!
+}
+
+type Vote {
+  id: String!
+  createdAt: String!
+}
+
 type Comment implements Node {
   id: String!
   content: String!
   createdAt: String!
-  viewerCanUpvote: Boolean!
-  comments(offset: Int = 2, first: Int = 0): CommentsConnection!
+  viewerCanUpvote: Boolean
+  comments(first: Int = 0, offset: Int = 0): CommentsConnection!
+  votes(first: Int = 0, offset: Int = 0): VotesConnection!
 }
 
 type CommentsConnection {
@@ -152,10 +178,10 @@ type Post {
   content: String!
   createdAt: String!
   images: [String!]!
-  viewerCanUpvote: Boolean!
   creator: User!
-  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+  comments(first: Int = 0, offset: Int = 0): CommentsConnection!
   subject: Subject
+  votes(first: Int = 0, offset: Int = 0): VotesConnection!
 }
 
 type PostsConnection {
@@ -170,22 +196,9 @@ type SearchResultItemConnection {
 
 union SearchResultItem = Post | User | Comment | Subject
 
-type Votable {
-  """Number of upvotes that this node has received."""
-  upvoteCount: Int!
-
-  """
-  Whether or not the current user can add or remove an upvote on this node.
-  """
-  viewerCanUpvote: Boolean!
-
-  """Whether or not the current user has already upvoted this node."""
-  viewerHasUpvoted: Boolean!
-}
-
 type Query {
   post(id: String!): Post!
-  posts(first: Int = 10, offset: Int = 0): PostsConnection!
+  posts(first: Int = 0, offset: Int = 0): PostsConnection!
   login(
     """用户 userId，注意不是 id"""
     userId: String!
@@ -193,7 +206,7 @@ type Query {
   ): LoginResult!
   authenticate(userId: String!): LoginResult!
   whoAmI: User!
-  users(first: Int = 10, offset: Int = 0): UsersConnection!
+  users(first: Int = 0, offset: Int = 0): UsersConnection!
   comment(id: String!): Comment!
   createInviteToken: InviteTokenResult!
   subject(id: String!): Subject!
@@ -218,7 +231,19 @@ enum SEARCHTYPE {
 }
 
 type Mutation {
-  createPost(subjectId: String, images: [String!]!, content: String!, title: String!): Post!
+  createPost(
+    """帖子标题"""
+    title: String!
+
+    """帖子内容"""
+    content: String!
+
+    """帖子图片"""
+    images: [String!]
+
+    """帖子所属的主题"""
+    subjectId: String
+  ): Post!
   deletePost(id: String!): Boolean!
   register(input: UserRegisterInput!): User!
   followUser(to: String!): Boolean!

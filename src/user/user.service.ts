@@ -166,9 +166,6 @@ export class UserService {
               title
               content
               createdAt
-              votes @filter(uid_in(creator, $uid)) {
-                count(uid)
-              }
             }
           }
         }
@@ -176,10 +173,8 @@ export class UserService {
       const res = await this.dgraph
         .newTxn({ readOnly: true })
         .queryWithVars(query, { $uid: id })
-      const v = res.getJson() as unknown as { me?: Array<{postsCount: number, posts?: Array<(Post & { votes: Array<{ count: number}>})>}>}
-      v.me[0].posts.forEach(p => {
-        p.viewerCanUpvote = (p?.votes?.length ?? 0) === 0
-      })
+      const v = res.getJson() as unknown as { me?: Array<{postsCount: number, posts?: Post[]}>}
+
       const u: PostsConnection = {
         nodes: v.me[0].posts as unknown as [Post] || [],
         totalCount: v.me[0].postsCount || 0
@@ -194,14 +189,14 @@ export class UserService {
     if (input.from === input.to) {
       throw new ForbiddenException('禁止关注自己')
     }
-    return await this.dbService.followAPerson(input)
+    // return await this.dbService.followAPerson(input)
   }
 
   async unfollowOne (input: DeleteFollowRelationInput) {
     if (input.from === input.to) {
       throw new ForbiddenException('禁止取消关注自己')
     }
-    return await this.dbService.unfollowAPerson(input)
+    // return await this.dbService.unfollowAPerson(input)
   }
 
   async getUserByUid (id: string) {
@@ -298,10 +293,10 @@ export class UserService {
   }
 
   async updateUser (userId: UserId, input: UserUpdateProfileInput) {
-    return await this.dbService.updateAUser(userId, input)
+    // return await this.dbService.updateAUser(userId, input)
   }
 
   async followASubject (l: UserFollowASubjectInput) {
-    return await this.dbService.userFollowASubject(l)
+    // return await this.dbService.userFollowASubject(l)
   }
 }

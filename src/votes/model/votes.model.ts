@@ -1,24 +1,4 @@
-import { Field, InputType, Int, ObjectType } from '@nestjs/graphql'
-
-import { CommentId } from 'src/comment/models/comment.model'
-import { PostId } from 'src/db/model/db.model'
-
-@InputType()
-export class VoteAPostInput {
-  @Field()
-    to?: PostId
-}
-
-@InputType()
-export class VoteACommentInput {
-  @Field()
-    to: CommentId
-}
-
-@InputType()
-export class UnvoteACommentInput extends VoteACommentInput {}
-@InputType()
-export class UnvoteAPostInput extends VoteAPostInput {}
+import { Field, Int, ObjectType } from '@nestjs/graphql'
 
 @ObjectType()
 export class Votable {
@@ -34,4 +14,28 @@ export class Votable {
 
   @Field(type => Boolean, { description: 'Whether or not the current user has already upvoted this node.' })
     viewerHasUpvoted: boolean
+}
+
+@ObjectType()
+export class VotesConnection {
+  @Field(type => Int)
+    totalCount: number
+
+  @Field(type => Boolean)
+    viewerCanUpvote: boolean
+
+  @Field(type => Boolean)
+    viewerHasUpvoted: boolean
+
+  @Field(type => [Vote])
+    nodes: Vote[]
+}
+
+@ObjectType()
+export class Vote {
+  @Field()
+    id: string
+
+  @Field()
+    createdAt: string
 }
