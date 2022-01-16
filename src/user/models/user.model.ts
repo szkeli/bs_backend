@@ -72,7 +72,7 @@ export class UserRegisterInput extends UserCreateInput {
 
 export type RawSign = string
 
-@InputType()
+@ArgsType()
 export class UserUpdateProfileInput {
   @Field({ nullable: true })
     name?: string

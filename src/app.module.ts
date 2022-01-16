@@ -1,10 +1,12 @@
 import { Module } from '@nestjs/common'
+import { APP_GUARD } from '@nestjs/core'
 import { GraphQLModule } from '@nestjs/graphql'
 import { join } from 'path'
 
 import { AdminModule } from './admin/admin.module'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
+import { RoleAuthGuard } from './auth/auth.guard'
 import { AuthModule } from './auth/auth.module'
 import { CommentModule } from './comment/comment.module'
 import { CommentService } from './comment/comment.service'
@@ -44,7 +46,11 @@ import { VotesModule } from './votes/votes.module'
     PostsService,
     DbService,
     CommentService,
-    UserService
+    UserService,
+    {
+      provide: APP_GUARD,
+      useClass: RoleAuthGuard
+    }
   ]
 })
 export class AppModule {}

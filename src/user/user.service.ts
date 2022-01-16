@@ -24,6 +24,60 @@ export class UserService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async checkUserPasswordAndGetUser (userId: string, sign: string) {
+    const txn = this.dgraph.newTxn()
+    try {
+      const query = `
+      query v($sign: string, $userId: string){
+        check(func: eq(userId, $userId)) {
+          uid
+          name
+          userId
+          avatarImageUrl
+          gender
+          school
+          grade
+          openId
+          unionId
+          createdAt
+          updatedAt
+          lastLoginedAt
+          success: checkpwd(sign, $sign)
+        }
+      }
+      `
+      const res = await this.dgraph
+        .newTxn({ readOnly: true })
+        .queryWithVars(query, {
+          $userId: userId,
+          $sign: sign
+        })
+
+      const v = res.getJson() as unknown as any
+      const u = v.check[0]
+      if (!u || !u.success) {
+        throw new ForbiddenException('用户名或密码错误')
+      }
+      const user: User = {
+        id: u.uid,
+        userId: u.userId,
+        name: u.name,
+        avatarImageUrl: u.avatarImageUrl,
+        gender: u.gender,
+        school: u.school,
+        grade: u.grade,
+        openId: u.openId,
+        unionId: u.unionId,
+        createdAt: u.createdAt,
+        updatedAt: u.updatedAt,
+        lastLoginedAt: u.lastLoginedAt
+      }
+      return user
+    } finally {
+      await txn.discard()
+    }
+  }
+
   async findSubjectsByUid (id: string, first: number, offset: number) {
     const txn = this.dgraph.newTxn()
     try {

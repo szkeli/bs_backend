@@ -4,17 +4,19 @@ import { JwtService } from '@nestjs/jwt'
 import { DbService } from 'src/db/db.service'
 import { LoginResult, User } from 'src/user/models/user.model'
 
+import { UserService } from '../user/user.service'
 import { Payload } from './model/auth.model'
 
 @Injectable()
 export class AuthService {
   constructor (
     private readonly jwtService: JwtService,
-    private readonly dbService: DbService
+    private readonly dbService: DbService,
+    private readonly userService: UserService
   ) {}
 
   async validateUser<T>(userId: string, sign: string): Promise<T | null> {
-    const user = await this.dbService.checkUserPasswordAndGetUser(userId, sign)
+    const user = await this.userService.checkUserPasswordAndGetUser(userId, sign)
     return user as unknown as T
   }
 

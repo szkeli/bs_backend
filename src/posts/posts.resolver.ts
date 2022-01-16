@@ -1,7 +1,6 @@
 import { UseGuards } from '@nestjs/common'
 import {
   Args,
-  Int,
   Mutation,
   Parent,
   Query,
@@ -17,7 +16,7 @@ import {
 import { PostId } from 'src/db/model/db.model'
 import { Subject, SubjectId } from 'src/subject/model/subject.model'
 import { SubjectService } from 'src/subject/subject.service'
-import { User } from 'src/user/models/user.model'
+import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import {
   Post,
@@ -38,18 +37,14 @@ export class PostsResolver {
   }
 
   @Query(returns => PostsConnection)
-  async posts (
-  @Args('first', { nullable: true, type: () => Int, defaultValue: 0 }) first: number,
-    @Args('offset', { nullable: true, type: () => Int, defaultValue: 0 }) offset: number
-  ) {
+  async posts (@Args() args: PagingConfigArgs) {
     return await this.postsService.getPosts(
-      first,
-      offset
+      args.first,
+      args.offset
     )
   }
 
   @Mutation(returns => Post)
-  @UseGuards(GqlAuthGuard)
   async createPost (
   @CurrentUser() user: User,
     @Args('title') title: string,
@@ -68,9 +63,7 @@ export class PostsResolver {
 
   @Mutation(returns => Boolean)
   @UseGuards(GqlAuthGuard)
-  async deletePost (
-  @CurrentUser() user: User,
-    @Args('id') id: PostId
+  async deletePost (@CurrentUser() user: User, @Args('id') id: PostId
   ) {
     return await this.postsService.deleteAPost(user.userId, id)
   }
@@ -81,15 +74,11 @@ export class PostsResolver {
   }
 
   @ResolveField(returns => CommentsConnection)
-  async comments (
-  @Parent() post: Post,
-    @Args('first', { type: () => Int, nullable: true, defaultValue: 0 }) first: number,
-    @Args('offset', { type: () => Int, nullable: true, defaultValue: 2 }) offset: number
-  ) {
+  async comments (@CurrentUser() user: User, @Parent() post: Post, @Args() args: PagingConfigArgs) {
     return await this.postsService.getCommentsByPostId(
       post.id,
-      first,
-      offset
+      args.first,
+      args.offset
     )
   }
 

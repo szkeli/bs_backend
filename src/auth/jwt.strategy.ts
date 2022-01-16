@@ -4,7 +4,6 @@ import { ExtractJwt, Strategy } from 'passport-jwt'
 
 import { UserService } from 'src/user/user.service'
 
-import { User } from '../user/models/user.model'
 import { jwtConstants } from './constants'
 import { Payload } from './model/auth.model'
 
@@ -20,8 +19,13 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     })
   }
 
-  async validate (payload: Payload) {
-    const user = await this.userService.getUserByUid(payload.id) as unknown as User
+  async validate<T> (payload: Payload) {
+    const user = await this.userService.getUserByUid(payload.id) as unknown as T
+    console.error({
+      m: '请求认证信息',
+      p: 'auth/jwt.strategy.ts',
+      user
+    })
     if (!user) {
       throw new UnauthorizedException('用户不存在')
     }

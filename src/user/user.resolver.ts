@@ -1,9 +1,7 @@
-import { UseGuards } from '@nestjs/common'
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { AuthService } from 'src/auth/auth.service'
 import { CurrentJwtToken, CurrentUser } from 'src/auth/decorator'
-import { GqlAuthGuard } from 'src/auth/gql.strategy'
 import { PostsConnection } from 'src/posts/models/post.model'
 import { Subject, SubjectId, SubjectsConnection } from 'src/subject/model/subject.model'
 import { sign as sign_calculus } from 'src/tool'
@@ -60,24 +58,17 @@ export class UserResolver {
   }
 
   @Query(returns => User)
-  @UseGuards(GqlAuthGuard)
   async whoAmI (@CurrentUser() user: User, @CurrentJwtToken() token: string) {
     return user
   }
 
   @Query(returns => UsersConnection)
-  async users (
-  @Args() args: PagingConfigArgs
-  ) {
+  async users (@Args() args: PagingConfigArgs) {
     return await this.userService.users(args.first, args.offset)
   }
 
   @Mutation(returns => Boolean)
-  @UseGuards(GqlAuthGuard)
-  async followUser (
-  @CurrentUser() user: User,
-    @Args('to') to: string
-  ) {
+  async followUser (@CurrentUser() user: User, @Args('to') to: string) {
     const v: CreateFollowRelationInput = {
       to,
       from: user.userId
@@ -86,11 +77,7 @@ export class UserResolver {
   }
 
   @Mutation(returns => Boolean)
-  @UseGuards(GqlAuthGuard)
-  async unfollowUser (
-  @CurrentUser() user: User,
-    @Args('to') to: string
-  ) {
+  async unfollowUser (@CurrentUser() user: User, @Args('to') to: string) {
     const v: DeleteFollowRelationInput = {
       from: user.userId,
       to
@@ -99,11 +86,7 @@ export class UserResolver {
   }
 
   @Mutation(returns => Subject)
-  @UseGuards(GqlAuthGuard)
-  async followSubject (
-  @CurrentUser() user: User,
-    @Args('id') id: SubjectId
-  ) {
+  async followSubject (@CurrentUser() user: User, @Args('id') id: SubjectId) {
     const l: UserFollowASubjectInput = {
       from: user.userId,
       to: id
@@ -112,11 +95,7 @@ export class UserResolver {
   }
 
   @ResolveField(returns => PostsConnection)
-  @UseGuards(GqlAuthGuard)
-  async posts (
-  @Parent() user: User,
-    @Args() args: PagingConfigArgs
-  ) {
+  async posts (@Parent() user: User, @Args() args: PagingConfigArgs) {
     return await this.userService.findPostsByUid(
       user.id,
       args.first,
@@ -125,11 +104,7 @@ export class UserResolver {
   }
 
   @ResolveField(returns => FollowersConnection)
-  @UseGuards(GqlAuthGuard)
-  async followers (
-  @Parent() user: User,
-    @Args() args: PagingConfigArgs
-  ) {
+  async followers (@Parent() user: User, @Args() args: PagingConfigArgs) {
     throw new Error('undefined')
     // return await this.userService.findFansByUserId(
     //   user.userId,
@@ -138,11 +113,7 @@ export class UserResolver {
   }
 
   @ResolveField(returns => FolloweringsConnection)
-  @UseGuards(GqlAuthGuard)
-  async followings (
-  @Parent() user: User,
-    @Args() args: PagingConfigArgs
-  ) {
+  async followings (@Parent() user: User, @Args() args: PagingConfigArgs) {
     throw new Error('undefined')
     // return await this.userService.findMyFollowedsByUserId(
     //   user.userId,
@@ -151,34 +122,23 @@ export class UserResolver {
   }
 
   @ResolveField(returns => SubjectsConnection)
-  @UseGuards(GqlAuthGuard)
-  async subjects (
-  @Parent() user: User,
-    @Args() args: PagingConfigArgs
-  ) {
+  async subjects (@Parent() user: User, @Args() args: PagingConfigArgs) {
     return await this.userService.findSubjectsByUid(user.id, args.first, args.offset)
   }
 
   @ResolveField(returns => CommentsConnection)
-  @UseGuards(GqlAuthGuard)
-  async comments (
-  @Parent() user: User,
-    @Args('first') first: Number
-  ) {
-    // 返回我创建的主题
+  async comments (@Parent() user: User, @Args() args: PagingConfigArgs) {
+    // 返回我的评论
     throw new Error('undefined')
     // return await this.userService.findMySubjects(user.userId, input)
   }
 
-  @Mutation(returns => User)
-  @UseGuards(GqlAuthGuard)
-  async updateUser (
-  @CurrentUser() user: User,
-    @Args('input') input: UserUpdateProfileInput
+  @Mutation(returns => User, { description: '更新当前用户' })
+  async updateUser (@CurrentUser() user: User, @Args() args: UserUpdateProfileInput
   ) {
-    if (input.sign) {
-      input.sign = sign_calculus(input.sign)
+    if (args.sign) {
+      args.sign = sign_calculus(args.sign)
     }
-    return await this.userService.updateUser(user.userId, input)
+    return await this.userService.updateUser(user.userId, args)
   }
 }

@@ -1,4 +1,4 @@
-import { createParamDecorator, ExecutionContext } from '@nestjs/common'
+import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common'
 import { GqlExecutionContext } from '@nestjs/graphql'
 
 export const CurrentUser = createParamDecorator(
@@ -14,3 +14,5 @@ export const CurrentJwtToken = createParamDecorator(
     return ctx.getContext().req.header('authorization')
   }
 )
+
+export const NoAuth = () => SetMetadata('no-auth', true)

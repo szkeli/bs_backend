@@ -22,6 +22,9 @@ export class Comment implements Node {
 
   @Field()
     createdAt: string
+
+  @Field(type => Boolean)
+    viewerCanUpvote: boolean
 }
 
 @InputType()

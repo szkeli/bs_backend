@@ -4,6 +4,7 @@ import { DgraphClient, Mutation, Request } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 
 import {
+  Comment,
   CommentId,
   CommentsConnection
 } from './models/comment.model'
@@ -147,11 +148,13 @@ export class CommentService {
       throw new ForbiddenException(`帖子 ${postId} 不存在`)
     }
 
-    return {
+    const x: Comment = {
       content,
       createdAt: now,
-      id: u.getUidsMap().get('comment')
+      id: u.getUidsMap().get('comment'),
+      viewerCanUpvote: true
     }
+    return x
   }
 
   async comment (id: CommentId) {

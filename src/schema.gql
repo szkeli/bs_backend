@@ -29,7 +29,7 @@ type User implements Person & Node {
   followers(first: Int = 10, offset: Int = 0): FollowersConnection!
   followings(first: Int = 10, offset: Int = 0): FolloweringsConnection!
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-  comments(first: Float!): CommentsConnection!
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
 }
 
 enum GENDER {
@@ -55,7 +55,7 @@ type LoginResult implements Node & Person {
   followers(first: Int = 10, offset: Int = 0): FollowersConnection!
   followings(first: Int = 10, offset: Int = 0): FolloweringsConnection!
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-  comments(first: Float!): CommentsConnection!
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
   token: String!
 }
 
@@ -120,6 +120,7 @@ type Comment implements Node {
   id: String!
   content: String!
   createdAt: String!
+  viewerCanUpvote: Boolean!
   comments(offset: Int = 2, first: Int = 0): CommentsConnection!
 }
 
@@ -153,7 +154,7 @@ type Post {
   images: [String!]!
   viewerCanUpvote: Boolean!
   creator: User!
-  comments(offset: Int = 2, first: Int = 0): CommentsConnection!
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
   subject: Subject
 }
 
@@ -184,7 +185,7 @@ type Votable {
 
 type Query {
   post(id: String!): Post!
-  posts(offset: Int = 0, first: Int = 0): PostsConnection!
+  posts(first: Int = 10, offset: Int = 0): PostsConnection!
   login(
     """用户 userId，注意不是 id"""
     userId: String!
@@ -223,7 +224,9 @@ type Mutation {
   followUser(to: String!): Boolean!
   unfollowUser(to: String!): Boolean!
   followSubject(id: String!): Subject!
-  updateUser(input: UserUpdateProfileInput!): User!
+
+  """更新当前用户"""
+  updateUser(name: String, gender: GENDER, avatarUrl: String, school: String, grade: String, sign: String): User!
   addACommentOnComment(
     """相应的评论的id"""
     to: String!
@@ -253,15 +256,6 @@ input UserRegisterInput {
   grade: String!
   userId: String!
   sign: String!
-}
-
-input UserUpdateProfileInput {
-  name: String
-  gender: GENDER
-  avatarUrl: String
-  school: String
-  grade: String
-  sign: String
 }
 
 input CreateAdminInput {
