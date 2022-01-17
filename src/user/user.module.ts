@@ -5,6 +5,8 @@ import { JwtStrategy } from 'src/auth/jwt.strategy'
 import { DbService } from 'src/db/db.service'
 import { SharedModule } from 'src/shared/shared.module'
 
+import { ConversationsService } from '../conversations/conversations.service'
+import { ReportsService } from '../reports/reports.service'
 import { UserResolver } from './user.resolver'
 import { UserService } from './user.service'
 
@@ -14,7 +16,9 @@ import { UserService } from './user.service'
     UserService,
     AuthService,
     DbService,
-    JwtStrategy
+    JwtStrategy,
+    ConversationsService,
+    ReportsService
   ],
   imports: [
     SharedModule

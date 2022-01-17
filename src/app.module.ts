@@ -23,6 +23,7 @@ import { VotesModule } from './votes/votes.module'
 import { ReportsModule } from './reports/reports.module';
 import { MessagesModule } from './messages/messages.module';
 import { ConversationsModule } from './conversations/conversations.module';
+import { DbModule } from './db/db.module';
 
 @Module({
   imports: [
@@ -44,7 +45,8 @@ import { ConversationsModule } from './conversations/conversations.module';
     NodeModule,
     ReportsModule,
     MessagesModule,
-    ConversationsModule
+    ConversationsModule,
+    DbModule
   ],
   controllers: [AppController],
   providers: [

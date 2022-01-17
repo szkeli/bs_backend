@@ -24,11 +24,7 @@ export class SearchService {
           }
           search(func: type(Subject), first: ${first}, offset: ${offset}) @filter(alloftext(title, $query) OR alloftext(description, $query)) {
             id: uid
-            createdAt
-            title
-            description
-            avatarImageUrl
-            backgroundImageUrl
+            expand(_all_)
           }
         }
       `
@@ -56,8 +52,7 @@ export class SearchService {
           }
           search(func: type(Comment), first: ${first}, offset: ${offset}) @filter(alloftext(content, $query)) {
             id: uid
-            createdAt
-            content
+            expand(_all_)
           }
         }
       `
@@ -85,17 +80,7 @@ export class SearchService {
           }
           search(func: type(User), first: ${first}, offset: ${offset}) @filter(alloftext(name, $query) OR alloftext(userId, $query)) {
             id: uid
-            userId
-            name
-            avatarImageUrl
-            gender
-            school
-            grade
-            openId
-            unionId
-            createdAt
-            updatedAt
-            lastLoginedAt
+            expand(_all_)
           }
         }
       `
@@ -123,10 +108,7 @@ export class SearchService {
       }
       search(func: type(Post), first: ${first}, offset: ${offset}) @filter(alloftext(title, $query) OR alloftext(content, $query)) {
         id: uid
-        title
-        content
-        images
-        createdAt
+        expand(_all_)
       }
     }
   `

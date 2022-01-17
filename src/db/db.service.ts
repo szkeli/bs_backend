@@ -21,16 +21,16 @@ export class DbService {
   async init () {}
 
   // testetstssssssssssssssssssssssssssssssssssss
-  async dropAll (q: DgraphClient) {
+  async dropAll () {
     const op = new Operation()
     op.setDropAll(true)
-    await q.alter(op)
+    await this.dgraph.alter(op)
   }
 
-  async dropData (q: DgraphClient) {
+  async dropData () {
     const op = new Operation()
     op.setDropOp(Operation.DropOp.DATA)
-    await q.alter(op)
+    await this.dgraph.alter(op)
   }
 
   async setSchema () {

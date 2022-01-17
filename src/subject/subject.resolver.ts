@@ -1,7 +1,5 @@
-import { UseGuards } from '@nestjs/common'
 import {
   Args,
-  Int,
   Mutation,
   Parent,
   Query,
@@ -10,9 +8,8 @@ import {
 } from '@nestjs/graphql'
 
 import { CurrentUser } from 'src/auth/decorator'
-import { GqlAuthGuard } from 'src/auth/gql.strategy'
 import { PostsConnection } from 'src/posts/models/post.model'
-import { FollowersConnection, User } from 'src/user/models/user.model'
+import { FollowersConnection, PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import {
   CreateSubjectInput,
@@ -33,27 +30,18 @@ export class SubjectResolver {
   }
 
   @Query(returns => SubjectsConnection)
-  async subjects (
-    @Args('first', { nullable: true, type: () => Int, defaultValue: 0 }) first: number,
-      @Args('offset', { nullable: true, type: () => Int, defaultValue: 0 }) offset: number
-  ): Promise<SubjectsConnection> {
-    return await this.subjectService.subjects(first, offset)
+  async subjects (@Args() args: PagingConfigArgs): Promise<SubjectsConnection> {
+    return await this.subjectService.subjects(args.first, args.offset)
   }
 
   @Mutation(returns => Subject)
-  @UseGuards(GqlAuthGuard)
-  async createSubject (
-    @CurrentUser() user: User,
-      @Args('input') input: CreateSubjectInput
+  async createSubject (@CurrentUser() user: User, @Args('input') input: CreateSubjectInput
   ): Promise<Subject> {
     return await this.subjectService.createASubject(user.id, input)
   }
 
   @Mutation(returns => Subject)
-  @UseGuards(GqlAuthGuard)
-  async updateSubject (
-  @CurrentUser() user: User,
-    @Args('input') input: UpdateSubjectInput
+  async updateSubject (@CurrentUser() user: User, @Args('input') input: UpdateSubjectInput
   ) {
     return await this.subjectService.updateSubject(input)
   }
@@ -64,26 +52,12 @@ export class SubjectResolver {
   }
 
   @ResolveField(returns => FollowersConnection)
-  async followers (
-  @Parent() subject: Subject,
-    @Args('after') after: String,
-    @Args('before') before: String,
-    @Args('first') first: Number,
-    @Args('last') last: Number
-  ) {
+  async followers (@Parent() subject: Subject, @Args() args: PagingConfigArgs) {
     throw new Error('undefined')
-    // return await this.userService.findFansByUserId(
-    //   user.userId,
-    //   input
-    // )
   }
 
   @ResolveField(returns => PostsConnection)
-  async posts (
-    @Parent() subject: Subject,
-      @Args('first', { nullable: true, type: () => Int, defaultValue: 2 }) first: number,
-      @Args('offset', { nullable: true, type: () => Int, defaultValue: 0 }) offset: number
-  ): Promise<PostsConnection> {
-    return await this.subjectService.findPostsBySubjectId(subject.id, first, offset)
+  async posts (@Parent() subject: Subject, @Args() args: PagingConfigArgs): Promise<PostsConnection> {
+    return await this.subjectService.findPostsBySubjectId(subject.id, args.first, args.offset)
   }
 }

@@ -1,4 +1,4 @@
-import { createUnionType, Field, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { createUnionType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 import { Time } from 'src/db/model/db.model'
 
@@ -17,30 +17,6 @@ export enum SEARCHTYPE {
 registerEnumType(SEARCHTYPE, {
   name: 'SEARCHTYPE'
 })
-
-@InputType()
-export class SearchInput {
-  @Field(type => Int)
-    startTime: Time
-
-  @Field(type => Int)
-    endTime: Time
-
-  @Field()
-    keys: string
-}
-
-@ObjectType()
-export class SearchResult {
-  @Field(type => Int)
-    startTime: Time
-
-  @Field(type => Int)
-    endTime: Time
-
-  @Field()
-    keys: string
-}
 
 @ObjectType()
 export class SearchResultItemEdge {

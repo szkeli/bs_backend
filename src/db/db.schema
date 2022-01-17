@@ -35,7 +35,6 @@ grade: string @index(term) .
 openId: string @index(hash) .
 unionId: string @index(hash) .
 state: string @index(hash) .
-report.type: string @index(hash) .
 
 # 管理员
 type Admin {
@@ -91,6 +90,8 @@ type User {
   votes
   # 用户创建的会话
   conversations
+  # 收到的举报
+  reports
 }
 
 # 帖子
@@ -183,8 +184,8 @@ type Report {
   to
   # 所属的会话
   conversation
-  # 举报的类型
-  report.type
+  # 举报的状态
+  state
 }
 
 # 会话

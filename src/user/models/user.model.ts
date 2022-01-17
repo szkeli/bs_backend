@@ -172,15 +172,6 @@ export class LoginResult extends User implements Node {
     token: string
 }
 
-@InputType()
-export class UserLoginInput {
-  @Field()
-    userId: UserId
-
-  @Field()
-    sign: string
-}
-
 export interface UserFollowASubjectInput {
   from: UserId
   to: SubjectId

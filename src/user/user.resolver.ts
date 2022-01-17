@@ -1,14 +1,17 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { AuthService } from 'src/auth/auth.service'
-import { CurrentJwtToken, CurrentUser } from 'src/auth/decorator'
+import { CurrentJwtToken, CurrentUser, NoAuth } from 'src/auth/decorator'
 import { PostsConnection } from 'src/posts/models/post.model'
 import { Subject, SubjectId, SubjectsConnection } from 'src/subject/model/subject.model'
 import { sign as sign_calculus } from 'src/tool'
 
 import { CommentsConnection } from '../comment/models/comment.model'
+import { ConversationsService } from '../conversations/conversations.service'
+import { ConversationsConnection } from '../conversations/models/conversations.model'
 import { DbService } from '../db/db.service'
-import { UserId } from '../db/model/db.model'
+import { ReportsConnection } from '../reports/models/reports.model'
+import { ReportsService } from '../reports/reports.service'
 import {
   CreateFollowRelationInput,
   DeleteFollowRelationInput,
@@ -29,11 +32,14 @@ export class UserResolver {
   constructor (
     private readonly userService: UserService,
     private readonly authService: AuthService,
-    private readonly dbService: DbService
+    private readonly dbService: DbService,
+    private readonly conversationsService: ConversationsService,
+    private readonly reportsService: ReportsService
   ) {}
 
   // 验证并签名用户 返回token
   @Query(returns => LoginResult, { name: 'login' })
+  @NoAuth()
   async login (
     @Args() args: PersonLoginArgs
   ): Promise<LoginResult> {
@@ -41,17 +47,9 @@ export class UserResolver {
     return await this.authService.login(args.userId, v)
   }
 
-  @Query(returns => LoginResult)
-  async authenticate (@Args('userId') userId: UserId, sign: String) {
-    const r = await this.dbService.test()
-    console.error(r)
-    return {
-      token: 'dsadsaokdsaoi'
-    }
-  }
-
   // 注册用户
   @Mutation(returns => User)
+  @NoAuth()
   async register (@Args('input') input: UserRegisterInput) {
     input.sign = sign_calculus(input.sign)
     return await this.userService.registerAUser(input)
@@ -131,6 +129,16 @@ export class UserResolver {
     // 返回我的评论
     throw new Error('undefined')
     // return await this.userService.findMySubjects(user.userId, input)
+  }
+
+  @ResolveField(returns => ConversationsConnection)
+  async conversations (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.conversationsService.findConversationsByUid(user.id, first, offset)
+  }
+
+  @ResolveField(returns => ReportsConnection, { description: '当前用户收到的举报' })
+  async reports (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.reportsService.findReportsByUid(user.id, first, offset)
   }
 
   @Mutation(returns => User, { description: '更新当前用户' })

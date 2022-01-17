@@ -40,16 +40,16 @@ export class VotesService {
       }
       const query = `
         query {
-          v(func: uid(${voter})) { v as uid }
-          u(func: uid(${to})) { u as uid }
-          x(func: uid(${voter})) {
+          v(func: uid(${voter})) @filter(type(User)) { v as uid }
+          u(func: uid(${to})) @filter(type(Comment)) { u as uid }
+          x(func: uid(${voter})) @filter(type(User)) {
             votes {
-              to @filter(uid(${to})) {
+              to @filter(uid(${to}) AND type(Comment)) {
                 x as uid
               }
             }
           }
-          voteCountOfComment(func: uid(${to})) { voteCount: count(votes) }
+          voteCountOfComment(func: uid(${to})) @filter(type(Comment)) { voteCount: count(votes) }
         }
       `
       const mu = new Mutation()
@@ -69,6 +69,13 @@ export class VotesService {
 
       if (res.x?.length !== 0) {
         throw new ForbiddenException('不能重复点赞')
+      }
+
+      if (res.v.length !== 1) {
+        throw new ForbiddenException(`用户 ${voter} 不存在`)
+      }
+      if (res.u.length !== 1) {
+        throw new ForbiddenException(`评论 ${to} 不存在`)
       }
 
       const u: Votable = {
@@ -110,16 +117,16 @@ export class VotesService {
       }
       const query = `
         query {
-          v(func: uid(${voter})) { v as uid }
-          u(func: uid(${to})) { u as uid }
-          x(func: uid(${voter})) {
+          v(func: uid(${voter})) @filter(type(User)) { v as uid }
+          u(func: uid(${to})) @filter(type(Post)) { u as uid }
+          x(func: uid(${voter})) @filter(type(Uer)) {
             votes {
               to @filter(uid(${to})) {
                 x as uid
               }
             }
           }
-          voteCountOfPost(func: uid(${to})) { voteCount: count(votes) }
+          voteCountOfPost(func: uid(${to})) @filter(type(Post)) { voteCount: count(votes) }
         }
       `
       const mu = new Mutation()
@@ -138,6 +145,13 @@ export class VotesService {
       }
       if (res.x?.length !== 0) {
         throw new ForbiddenException('不能重复点赞')
+      }
+
+      if (res.v.length !== 1) {
+        throw new ForbiddenException(`用户 ${voter} 不存在`)
+      }
+      if (res.u.length !== 1) {
+        throw new ForbiddenException(`帖子 ${to} 不存在`)
       }
 
       const u: Votable = {
@@ -171,12 +185,12 @@ export class VotesService {
       }
       const query = `
         query v($user: string, $comment: string){
-          v(func: uid(${voter})) { v as uid }
-          u(func: uid(${to})) {
+          v(func: uid(${voter})) @filter(type(User)) { v as uid }
+          u(func: uid(${to})) @filter(type(Comment)) {
             u as uid 
             totalCount: count(votes)
           }
-          x(func:uid($user)) {
+          x(func:uid($user)) @filter(type(User)) {
             votes @filter(uid_in(to, $comment)) {
               q as uid
             }
@@ -204,6 +218,12 @@ export class VotesService {
       }
       if (res.x.length === 0) {
         throw new ForbiddenException('取消点赞失败')
+      }
+      if (res.v.length !== 1) {
+        throw new ForbiddenException(`用户 ${voter} 不存在`)
+      }
+      if (res.u.length !== 1) {
+        throw new ForbiddenException(`评论 ${to} 不存在`)
       }
       const u: Votable = {
         viewerHasUpvoted: false,
@@ -235,13 +255,13 @@ export class VotesService {
         }
       }
       const query = `
-        query v($user: string, $post: string){
-          v(func: uid(${voter})) { v as uid }
-          u(func: uid(${to})) {
+        query v($user: string, $post: string) {
+          v(func: uid(${voter})) @filter(type(User)) { v as uid }
+          u(func: uid(${to})) @filter(Post) {
             u as uid 
             totalCount: count(votes)
           }
-          x(func:uid($user)) {
+          x(func:uid($user)) @filter(User) {
             votes @filter(uid_in(to, $post)) {
               q as uid
             }
@@ -269,6 +289,12 @@ export class VotesService {
       }
       if (res.x.length === 0) {
         throw new ForbiddenException('取消点赞失败')
+      }
+      if (res.v.length !== 1) {
+        throw new ForbiddenException(`用户 ${voter} 不存在`)
+      }
+      if (res.u.length !== 1) {
+        throw new ForbiddenException(`帖子 ${to} 不存在`)
       }
       const u: Votable = {
         viewerHasUpvoted: false,

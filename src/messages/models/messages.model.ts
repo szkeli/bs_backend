@@ -1,7 +1,18 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql'
 
-@ObjectType()
-export class Message {
+import { Node } from '../../node/models/node.model'
+
+@ObjectType({
+  implements: [Node]
+})
+export class Message implements Node {
+  constructor (message: Message) {
+    Object.assign(this, message)
+  }
+
+  @Field()
+    id: string
+
   @Field()
     createdAt: string
 

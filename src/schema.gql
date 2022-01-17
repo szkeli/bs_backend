@@ -30,6 +30,10 @@ type User implements Person & Node {
   followings(first: Int = 0, offset: Int = 0): FolloweringsConnection!
   subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
   comments(first: Int = 0, offset: Int = 0): CommentsConnection!
+  conversations(first: Int = 0, offset: Int = 0): ConversationsConnection!
+
+  """当前用户收到的举报"""
+  reports(first: Int = 0, offset: Int = 0): ReportsConnection!
 }
 
 enum GENDER {
@@ -56,6 +60,10 @@ type LoginResult implements Node & Person {
   followings(first: Int = 0, offset: Int = 0): FolloweringsConnection!
   subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
   comments(first: Int = 0, offset: Int = 0): CommentsConnection!
+  conversations(first: Int = 0, offset: Int = 0): ConversationsConnection!
+
+  """当前用户收到的举报"""
+  reports(first: Int = 0, offset: Int = 0): ReportsConnection!
   token: String!
 }
 
@@ -162,8 +170,8 @@ type Subject {
   avatarImageUrl: String!
   backgroundImageUrl: String!
   creator: User!
-  followers(last: Float!, first: Float!, before: String!, after: String!): FollowersConnection!
-  posts(offset: Int = 0, first: Int = 2): PostsConnection!
+  followers(first: Int = 0, offset: Int = 0): FollowersConnection!
+  posts(first: Int = 0, offset: Int = 0): PostsConnection!
 }
 
 type SubjectsConnection {
@@ -195,12 +203,25 @@ type SearchResultItemConnection {
 
 union SearchResultItem = Post | User | Comment | Subject
 
-type Report {
+type Message implements Node {
+  id: String!
+  createdAt: String!
+  content: String!
+}
+
+type MessagesConnection {
+  nodes: [Message!]!
+  totalCount: Int!
+}
+
+type Report implements Node {
   id: String!
   createdAt: String!
   type: REPORT_TYPE!
   description: String!
   state: REPORT_STATE!
+  to: Report2Union!
+  conversation: Conversation!
 }
 
 enum REPORT_TYPE {
@@ -215,13 +236,10 @@ enum REPORT_STATE {
   CLOSE
 }
 
-type Message {
-  createdAt: String!
-  content: String!
-}
+union Report2Union = User | Post | Comment
 
-type MessagesConnection {
-  nodes: [Message!]!
+type ReportsConnection {
+  nodes: [Report!]!
   totalCount: Int!
 }
 
@@ -231,11 +249,30 @@ type Conversation implements Node {
   title: String!
   description: String!
   state: CONVERSATION_STATE!
+  messages(first: Int = 0, offset: Int = 0): MessageItemConnection!
+  participants(first: Int = 0, offset: Int = 0): ParticipantsConnection!
 }
 
 enum CONVERSATION_STATE {
   RUNNING
   CLOSE
+}
+
+type MessageItemConnection {
+  nodes: [MessageItem!]!
+  totalCount: Int!
+}
+
+union MessageItem = Message | Report
+
+type ParticipantsConnection {
+  nodes: [User!]!
+  totalCount: Int!
+}
+
+type ConversationsConnection {
+  nodes: [Conversation!]!
+  totalCount: Int!
 }
 
 type Query {
@@ -246,16 +283,15 @@ type Query {
     userId: String!
     sign: String!
   ): LoginResult!
-  authenticate(userId: String!): LoginResult!
   whoAmI: User!
   users(first: Int = 0, offset: Int = 0): UsersConnection!
   comment(id: String!): Comment!
   createInviteToken: InviteTokenResult!
   subject(id: String!): Subject!
-  subjects(offset: Int = 0, first: Int = 0): SubjectsConnection!
+  subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
   search(
-    offset: Int = 0
     first: Int = 0
+    offset: Int = 0
 
     """待检索的关键字"""
     query: String!
@@ -265,7 +301,7 @@ type Query {
   nodes(ids: [String!]!): NodesConnection!
   messages(first: Int = 0, offset: Int = 0): MessagesConnection!
   message: Message!
-  conversation: Conversation!
+  conversation(id: String!): Conversation!
 }
 
 enum SEARCHTYPE {
@@ -316,8 +352,12 @@ type Mutation {
   updateSubject(input: UpdateSubjectInput!): Subject!
   addReportOnComment(id: String!): Report!
   addReportOnPost(id: String!): Report!
-  addReportOnUser(id: String!): Report!
+  addReportOnUser(type: REPORT_TYPE!, description: String!, userId: String!): Report!
+  addMessageOnConversation(content: String!, id: String!): Message!
   createConversation(title: String!, description: String!, participants: [String!]!): Conversation!
+  setSchema: Boolean!
+  dropAllData: Boolean!
+  dropData: Boolean!
 }
 
 input UserRegisterInput {

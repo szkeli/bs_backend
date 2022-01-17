@@ -1,4 +1,9 @@
-import { Field, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { ArgsType, createUnionType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+
+import { Comment } from '../../comment/models/comment.model'
+import { Node } from '../../node/models/node.model'
+import { Post } from '../../posts/models/post.model'
+import { User } from '../../user/models/user.model'
 
 export enum REPORT_STATE {
   // 未处理的举报
@@ -26,8 +31,14 @@ registerEnumType(REPORT_TYPE, {
   name: 'REPORT_TYPE'
 })
 
-@ObjectType()
-export class Report {
+@ObjectType({
+  implements: [Node]
+})
+export class Report implements Node {
+  constructor (report: Report) {
+    Object.assign(this, report)
+  }
+
   @Field()
     id: string
 
@@ -44,4 +55,30 @@ export class Report {
     state: REPORT_STATE
   // to: string
   // creator: string
+}
+
+@ArgsType()
+export class AddReportOnUserArgs {
+  @Field(type => REPORT_TYPE)
+    type: REPORT_TYPE
+
+  @Field()
+    description: string
+
+  @Field()
+    userId: string
+}
+
+export const Report2Union = createUnionType({
+  name: 'Report2Union',
+  types: () => [User, Post, Comment]
+})
+
+@ObjectType()
+export class ReportsConnection {
+  @Field(type => [Report])
+    nodes: Report[]
+
+  @Field(type => Int)
+    totalCount: number
 }

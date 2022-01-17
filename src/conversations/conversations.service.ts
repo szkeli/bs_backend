@@ -1,9 +1,8 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
-import { ForbiddenError } from 'apollo-server-express'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
 import { DbService } from '../db/db.service'
-import { Conversation, CONVERSATION_STATE } from './models/conversations.model'
+import { Conversation, CONVERSATION_STATE, ConversationsConnection } from './models/conversations.model'
 
 @Injectable()
 export class ConversationsService {
@@ -18,7 +17,6 @@ export class ConversationsService {
       const now = new Date().toISOString()
       const participantsLength = participants.length
       const participantsString = `[${participants.toString()}]`
-      console.error({ participants, participantsLength, participantsString })
       const conditions = `@if( eq(len(v), 1) AND eq(len(u), ${participantsLength}) )`
       const query = `
         query v($participants: string){
@@ -27,6 +25,15 @@ export class ConversationsService {
         }
       `
 
+      participants.push(creator)
+      const _participants = participants.map(p => {
+        return {
+          uid: p,
+          conversations: {
+            uid: '_:conversation'
+          }
+        }
+      })
       const mutation = {
         uid: '_:conversation',
         'dgraph.type': 'Conversation',
@@ -40,12 +47,7 @@ export class ConversationsService {
           }
         },
         state: CONVERSATION_STATE.RUNNING,
-        participants: {
-          uid: creator,
-          conversations: {
-            uid: '_:conversation'
-          }
-        }
+        participants: _participants
       }
 
       const mu = new Mutation()
@@ -65,12 +67,7 @@ export class ConversationsService {
         u: Array<{uid: string}>
       }
       const v = res.getUidsMap().get('conversation') as unknown as string
-      // ?      { json: { v: [ [Object] ], u: [ [Object], [Object] ] }, v: undefined }
 
-      console.error({
-        json: json.u,
-        v
-      })
       if (!v) {
         if (json.v.length !== 1) {
           throw new ForbiddenException(`用户 ${creator} 不存在`)
@@ -78,7 +75,7 @@ export class ConversationsService {
         if (json.u.length !== participantsLength) {
           throw new ForbiddenException(`只存在 ${(json.u.map(x => x.uid)).toString()} 用户`)
         }
-        throw new ForbiddenException('会话创建失败，位置错误')
+        throw new ForbiddenException('会话创建失败，未知错误')
       }
       const c: Conversation = {
         id: v,
@@ -94,6 +91,57 @@ export class ConversationsService {
   }
 
   async conversation (id: string) {
-    throw new Error('Method not implemented.')
+    const query = `
+      query v($uid: string) {
+        conversation(func: uid($uid)) @filter(type(Conversation)) {
+          id: uid
+          createdAt
+          state
+          description
+          title
+        }
+      }
+    `
+    const res = (await this.dgraph
+      .newTxn({ readOnly: true })
+      .queryWithVars(query, { $uid: id }))
+      .getJson() as unknown as {
+      conversation: Conversation[]
+    }
+    if (!res || !res.conversation || res.conversation.length !== 1) {
+      throw new ForbiddenException(`会话 ${id} 不存在`)
+    }
+    return res.conversation[0]
+  }
+
+  async findConversationsByUid (id: string, first: number, offset: number) {
+    const query = `
+      query v($uid: string) {
+        totalCount(func: uid($uid)) {
+          count: count(conversations)
+        }
+        user(func: uid($uid)) {
+          conversations (orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+            id: uid
+            state
+            createdAt
+            description
+            title
+          }
+        }
+      }
+    `
+    const res = (await this.dgraph
+      .newTxn({ readOnly: true })
+      .queryWithVars(query, { $uid: id }))
+      .getJson() as unknown as {
+      user: Array<{conversations: Conversation[]}>
+      totalCount: Array<{count: number}>
+    }
+    const u: ConversationsConnection = {
+      totalCount: res.totalCount[0].count,
+      nodes: res.user[0]?.conversations || []
+    }
+    return u
   }
 }

@@ -1,9 +1,10 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
-import { AuthGuard, IAuthGuard } from '@nestjs/passport'
+import { IAuthGuard } from '@nestjs/passport'
 import { Observable } from 'rxjs'
 
 import { GqlAuthGuard } from './gql.strategy'
+import { LocalAuthGuard } from './local-auth.guard'
 
 @Injectable()
 export class RoleAuthGuard implements CanActivate {
@@ -12,12 +13,14 @@ export class RoleAuthGuard implements CanActivate {
     const noAuth = this.reflector.get<boolean>('no-auth', context.getHandler())
     const guard = RoleAuthGuard.getAuthGuard(noAuth)
 
+    if (noAuth) return true
     return guard.canActivate(context)
   }
 
   private static getAuthGuard (noAuth: boolean): IAuthGuard {
     if (noAuth) {
-      return new (AuthGuard('local'))()
+      return new (LocalAuthGuard)()
+      // return new (AuthGuard('local'))()
     } else {
       return new (GqlAuthGuard)()
     }
