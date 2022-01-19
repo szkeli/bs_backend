@@ -16,3 +16,7 @@ export const CurrentJwtToken = createParamDecorator(
 )
 
 export const NoAuth = () => SetMetadata('no-auth', true)
+export const Roles = (...roles: string[]) => SetMetadata('roles', roles)
+
+export const ROLES_KEY = 'roles'
+export const NO_AUTH_KEY = 'no-auth'

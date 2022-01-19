@@ -58,15 +58,15 @@ export class Report implements Node {
 }
 
 @ArgsType()
-export class AddReportOnUserArgs {
-  @Field(type => REPORT_TYPE)
+export class AddReportToArgs {
+  @Field(type => REPORT_TYPE, { description: '举报的类型，枚举值' })
     type: REPORT_TYPE
 
-  @Field()
+  @Field({ description: '举报的描述' })
     description: string
 
-  @Field()
-    userId: string
+  @Field({ description: '被举报对象的id' })
+    to: string
 }
 
 export const Report2Union = createUnionType({

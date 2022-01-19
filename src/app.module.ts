@@ -10,24 +10,26 @@ import { RoleAuthGuard } from './auth/auth.guard'
 import { AuthModule } from './auth/auth.module'
 import { CommentModule } from './comment/comment.module'
 import { CommentService } from './comment/comment.service'
+import { ConversationsModule } from './conversations/conversations.module'
+import { DbModule } from './db/db.module'
 import { DbService } from './db/db.service'
+import { MessagesModule } from './messages/messages.module'
 import { NodeModule } from './node/node.module'
 import { PostsModule } from './posts/posts.module'
 import { PostsService } from './posts/posts.service'
+import { ReportsModule } from './reports/reports.module'
 import { SearchModule } from './search/search.module'
 import { SharedModule } from './shared/shared.module'
 import { SubjectModule } from './subject/subject.module'
 import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { VotesModule } from './votes/votes.module'
-import { ReportsModule } from './reports/reports.module';
-import { MessagesModule } from './messages/messages.module';
-import { ConversationsModule } from './conversations/conversations.module';
-import { DbModule } from './db/db.module';
+import { DeletesModule } from './deletes/deletes.module';
 
 @Module({
   imports: [
     GraphQLModule.forRoot({
+      context: ({ req }) => ({ req }),
       debug: true,
       playground: true,
       sortSchema: false,
@@ -46,7 +48,8 @@ import { DbModule } from './db/db.module';
     ReportsModule,
     MessagesModule,
     ConversationsModule,
-    DbModule
+    DbModule,
+    DeletesModule
   ],
   controllers: [AppController],
   providers: [

@@ -32,8 +32,10 @@ export class PostsService {
         conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) )'
         query = `
           query {
-            v(func: uid(${creator})) { v as uid }
-            u(func: uid(${subjectId})) { u as uid }
+            # 创建者存在
+            v(func: uid(${creator})) @filter(type(User)) { v as uid }
+            # 主题存在
+            u(func: uid(${subjectId})) @filter(type(Subject)) { u as uid }
           }
         `
         mutation = {
@@ -63,7 +65,7 @@ export class PostsService {
         conditions = '@if( eq(len(v), 1) )'
         query = `
         query {
-          q(func: uid(${creator})) { v as uid }
+          q(func: uid(${creator})) @filter(type(User)) { v as uid }
         }
       `
         mutation = {
@@ -130,12 +132,9 @@ export class PostsService {
   async post (id: PostId) {
     const query = `
         query v($uid: string) {
-          post(func: uid($uid)) {
+          post(func: uid($uid)) @filter(type(Post)) {
             id: uid
-            title
-            content
-            images
-            createdAt
+            expand(_all_)
           }
         }
       `
@@ -155,14 +154,12 @@ export class PostsService {
   async posts (first: number, offset: number) {
     const query = `
         query {
-          totalCount(func: type(Post)) {
+          totalCount(func: type(Post)) @filter(type(Post)) {
             count(uid)
           }
-          v(func: type(Post), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          v(func: type(Post), orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Post)) {
             id: uid
-            title
-            content
-            createdAt
+            expand(_all_)
           }
         }
       `
@@ -185,20 +182,10 @@ export class PostsService {
     try {
       const query = `
         query v($uid: string) {
-          post(func: uid($uid)) {
-            creator {
+          post(func: uid($uid)) @filter(type(Post)) {
+            creator @filter(type(User)) {
               id: uid
-              userId
-              name
-              avatarImageUrl
-              gender
-              school
-              grade
-              openId
-              unionId
-              createdAt
-              updatedAt
-              lastLoginedAt
+              expand(_all_)
             }
           }
         }
@@ -231,12 +218,11 @@ export class PostsService {
     try {
       const query = `
         query v($uid: string, $viewer: string) {
-          post(func: uid($uid)) {
+          post(func: uid($uid)) @filter(type(Post)) {
             commentsCount: count(comments)
-            comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+            comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Comment)) {
               id: uid
-              content
-              createdAt
+              expand(_all_)
             }
           }
         }
@@ -273,16 +259,16 @@ export class PostsService {
   async getVotesByPostId (viewerId: string, postId: string, first: number, offset: number): Promise<VotesConnection> {
     const query = `
       query v($viewerId: string, $postId: string) {
-        q(func: uid($postId)) {
-          v: votes @filter(uid_in(creator, $viewerId)){
+        q(func: uid($postId)) @filter(type(Post)) {
+          v: votes @filter(uid_in(creator, $viewerId) AND type(Vote)) {
             uid
           }
           totalCount: count(votes)
         }
-        v(func: uid($postId)) {
-          votes (orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+        v(func: uid($postId)) @filter(type(Post)) {
+          votes (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Vote)) {
             id: uid
-            createdAt
+            expand(_all_)
           }
         }
       }

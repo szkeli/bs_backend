@@ -3,6 +3,7 @@ import { ArgsType, Field, InputType, Int, InterfaceType, ObjectType, registerEnu
 import { UserId } from 'src/db/model/db.model'
 import { SubjectId } from 'src/subject/model/subject.model'
 
+import { Role } from '../../auth/model/auth.model'
 import { Node } from '../../node/models/node.model'
 
 export enum ORDERBY {
@@ -172,6 +173,12 @@ export class LoginResult extends User implements Node {
     token: string
 }
 
+@ObjectType()
+export class InviteTokenResult {
+  @Field()
+    token: string
+}
+
 export interface UserFollowASubjectInput {
   from: UserId
   to: SubjectId
@@ -268,3 +275,5 @@ export class PagingConfigArgs {
   @Field(type => Int, { nullable: true, defaultValue: 0 })
     offset: number
 }
+
+export type CheckUserResult = User & {success: boolean, roles: Role[]}

@@ -16,6 +16,8 @@ import { Subject } from 'src/subject/model/subject.model'
 import { SubjectService } from 'src/subject/subject.service'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
+import { ReportsConnection } from '../reports/models/reports.model'
+import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
@@ -28,7 +30,8 @@ import { PostsService } from './posts.service'
 export class PostsResolver {
   constructor (
     private readonly postsService: PostsService,
-    private readonly subjectService: SubjectService
+    private readonly subjectService: SubjectService,
+    private readonly reportsService: ReportsService
   ) {}
 
   @Query(returns => Post)
@@ -82,5 +85,10 @@ export class PostsResolver {
   @ResolveField(returns => VotesConnection)
   async votes (@CurrentUser() user: User, @Parent() post: Post, @Args() args: PagingConfigArgs) {
     return await this.postsService.getVotesByPostId(user.id, post.id, args.first, args.offset)
+  }
+
+  @ResolveField(returns => ReportsConnection)
+  async reports (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.reportsService.findReportsByPostId(post.id, first, offset)
   }
 }

@@ -4,6 +4,7 @@ import { DbService } from 'src/db/db.service'
 import { SharedModule } from 'src/shared/shared.module'
 import { UserService } from 'src/user/user.service'
 
+import { AdminService } from '../admin/admin.service'
 import { AuthResolver } from './auth.resolver'
 import { AuthService } from './auth.service'
 
@@ -15,7 +16,8 @@ import { AuthService } from './auth.service'
     UserService,
     DbService,
     AuthService,
-    AuthResolver
+    AuthResolver,
+    AdminService
   ],
   exports: [AuthService]
 })

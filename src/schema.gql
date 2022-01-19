@@ -118,35 +118,33 @@ type Admin implements Node & Person {
   createdAt: String!
   updatedAt: String!
   lastLoginedAt: String!
+  privileges: [PRIVILEGE!]!
+  credential: Credential
+  credentials(first: Int = 0, offset: Int = 0): CredentialsConnection!
 }
 
-type InviteTokenResult {
-  token: String!
+enum PRIVILEGE {
+  ROOT
+  CAN_CREATE_ADMIN
+  CAN_DELETE_ADMIN
+  CAN_DELETE_USER
+  CAN_CREATE_USER
+  CAN_UPDATE_USER
 }
 
-type Votable {
-  """Number of upvotes that this node has received."""
-  upvoteCount: Int!
-
-  """
-  Whether or not the current user can add or remove an upvote on this node.
-  """
-  viewerCanUpvote: Boolean!
-
-  """Whether or not the current user has already upvoted this node."""
-  viewerHasUpvoted: Boolean!
-}
-
-type VotesConnection {
+type AdminsConnection {
+  nodes: [Admin!]!
   totalCount: Int!
-  viewerCanUpvote: Boolean!
-  viewerHasUpvoted: Boolean!
-  nodes: [Vote!]!
 }
 
-type Vote {
+type Credential {
   id: String!
   createdAt: String!
+}
+
+type CredentialsConnection {
+  nodes: [Credential!]!
+  totalCount: Int!
 }
 
 type Comment implements Node {
@@ -155,6 +153,7 @@ type Comment implements Node {
   createdAt: String!
   comments(first: Int = 0, offset: Int = 0): CommentsConnection!
   votes(first: Int = 0, offset: Int = 0): VotesConnection!
+  reports(first: Int = 0, offset: Int = 0): ReportsConnection!
 }
 
 type CommentsConnection {
@@ -162,20 +161,14 @@ type CommentsConnection {
   totalCount: Int!
 }
 
-type Subject {
+type Message implements Node {
   id: String!
   createdAt: String!
-  title: String!
-  description: String!
-  avatarImageUrl: String!
-  backgroundImageUrl: String!
-  creator: User!
-  followers(first: Int = 0, offset: Int = 0): FollowersConnection!
-  posts(first: Int = 0, offset: Int = 0): PostsConnection!
+  content: String!
 }
 
-type SubjectsConnection {
-  nodes: [Subject!]!
+type MessagesConnection {
+  nodes: [Message!]!
   totalCount: Int!
 }
 
@@ -189,28 +182,11 @@ type Post {
   comments(first: Int = 0, offset: Int = 0): CommentsConnection!
   subject: Subject
   votes(first: Int = 0, offset: Int = 0): VotesConnection!
+  reports(first: Int = 0, offset: Int = 0): ReportsConnection!
 }
 
 type PostsConnection {
   nodes: [Post!]!
-  totalCount: Int!
-}
-
-type SearchResultItemConnection {
-  totalCount: Int!
-  nodes: [SearchResultItem!]!
-}
-
-union SearchResultItem = Post | User | Comment | Subject
-
-type Message implements Node {
-  id: String!
-  createdAt: String!
-  content: String!
-}
-
-type MessagesConnection {
-  nodes: [Message!]!
   totalCount: Int!
 }
 
@@ -221,6 +197,7 @@ type Report implements Node {
   description: String!
   state: REPORT_STATE!
   to: Report2Union!
+  creator: User!
   conversation: Conversation!
 }
 
@@ -275,6 +252,60 @@ type ConversationsConnection {
   totalCount: Int!
 }
 
+type Votable {
+  """Number of upvotes that this node has received."""
+  upvoteCount: Int!
+
+  """
+  Whether or not the current user can add or remove an upvote on this node.
+  """
+  viewerCanUpvote: Boolean!
+
+  """Whether or not the current user has already upvoted this node."""
+  viewerHasUpvoted: Boolean!
+}
+
+type VotesConnection {
+  totalCount: Int!
+  viewerCanUpvote: Boolean!
+  viewerHasUpvoted: Boolean!
+  nodes: [Vote!]!
+}
+
+type Vote {
+  id: String!
+  createdAt: String!
+}
+
+type Subject {
+  id: String!
+  createdAt: String!
+  title: String!
+  description: String!
+  avatarImageUrl: String!
+  backgroundImageUrl: String!
+  creator: User!
+  followers(first: Int = 0, offset: Int = 0): FollowersConnection!
+  posts(first: Int = 0, offset: Int = 0): PostsConnection!
+}
+
+type SubjectsConnection {
+  nodes: [Subject!]!
+  totalCount: Int!
+}
+
+type SearchResultItemConnection {
+  totalCount: Int!
+  nodes: [SearchResultItem!]!
+}
+
+union SearchResultItem = Post | User | Comment | Subject
+
+type Delete {
+  id: String!
+  createdAt: String!
+}
+
 type Query {
   post(id: String!): Post!
   posts(first: Int = 0, offset: Int = 0): PostsConnection!
@@ -286,7 +317,8 @@ type Query {
   whoAmI: User!
   users(first: Int = 0, offset: Int = 0): UsersConnection!
   comment(id: String!): Comment!
-  createInviteToken: InviteTokenResult!
+  admins(first: Int = 0, offset: Int = 0): AdminsConnection!
+  admin(id: String!): Admin!
   subject(id: String!): Subject!
   subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
   search(
@@ -325,7 +357,7 @@ type Mutation {
     """帖子所属的主题"""
     subjectId: String
   ): Post!
-  deletePost(id: String!): Boolean!
+  deletePost(postId: String!): Delete!
   register(input: UserRegisterInput!): User!
   followUser(to: String!): Boolean!
   unfollowUser(to: String!): Boolean!
@@ -347,12 +379,47 @@ type Mutation {
   addUpvoteOnComment(to: String!): Votable!
   removeUpvoteOnComment(from: String!): Votable!
   removeUpvoteOnPost(from: String!): Votable!
-  createAdmin(input: CreateAdminInput!, inviteToken: String!): Admin!
+  registerAdmin(
+    userId: String!
+    name: String!
+    avatarImageUrl: String!
+
+    """管理员密码"""
+    sign: String!
+  ): Admin!
+  authenAdmin(to: String!): Admin!
   createSubject(input: CreateSubjectInput!): Subject!
   updateSubject(input: UpdateSubjectInput!): Subject!
-  addReportOnComment(id: String!): Report!
-  addReportOnPost(id: String!): Report!
-  addReportOnUser(type: REPORT_TYPE!, description: String!, userId: String!): Report!
+  addReportOnComment(
+    """举报的类型，枚举值"""
+    type: REPORT_TYPE!
+
+    """举报的描述"""
+    description: String!
+
+    """被举报对象的id"""
+    to: String!
+  ): Report!
+  addReportOnPost(
+    """举报的类型，枚举值"""
+    type: REPORT_TYPE!
+
+    """举报的描述"""
+    description: String!
+
+    """被举报对象的id"""
+    to: String!
+  ): Report!
+  addReportOnUser(
+    """举报的类型，枚举值"""
+    type: REPORT_TYPE!
+
+    """举报的描述"""
+    description: String!
+
+    """被举报对象的id"""
+    to: String!
+  ): Report!
   addMessageOnConversation(content: String!, id: String!): Message!
   createConversation(title: String!, description: String!, participants: [String!]!): Conversation!
   setSchema: Boolean!
@@ -370,12 +437,6 @@ input UserRegisterInput {
   grade: String!
   userId: String!
   sign: String!
-}
-
-input CreateAdminInput {
-  userId: String!
-  name: String!
-  avatarImageUrl: String!
 }
 
 input CreateSubjectInput {

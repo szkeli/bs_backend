@@ -1,11 +1,9 @@
 import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { CurrentUser } from '../auth/decorator'
-import { CommentId } from '../comment/models/comment.model'
 import { Conversation } from '../conversations/models/conversations.model'
-import { PostId } from '../db/model/db.model'
 import { User } from '../user/models/user.model'
-import { AddReportOnUserArgs, Report, Report2Union } from './models/reports.model'
+import { AddReportToArgs, Report, Report2Union } from './models/reports.model'
 import { ReportsService } from './reports.service'
 
 // 1. 创建一个会话
@@ -18,23 +16,28 @@ export class ReportsResolver {
   constructor (private readonly reportsService: ReportsService) {}
 
   @Mutation(returns => Report)
-  async addReportOnComment (@CurrentUser() user: User, @Args('id') id: CommentId) {
-    return await this.reportsService.addReportOnComment(user.id, id)
+  async addReportOnComment (@CurrentUser() user: User, @Args() { type, description, to }: AddReportToArgs) {
+    return await this.reportsService.addReportOnComment(user.id, to, type, description)
   }
 
   @Mutation(returns => Report)
-  async addReportOnPost (@CurrentUser() user: User, @Args('id') id: PostId) {
-    return await this.reportsService.addReportOnPost(user.id, id)
+  async addReportOnPost (@CurrentUser() user: User, @Args() { type, description, to }: AddReportToArgs) {
+    return await this.reportsService.addReportOnPost(user.id, to, type, description)
   }
 
   @Mutation(returns => Report)
-  async addReportOnUser (@CurrentUser() user: User, @Args() { type, description, userId }: AddReportOnUserArgs) {
-    return await this.reportsService.addReportOnUser(user.id, userId, type, description)
+  async addReportOnUser (@CurrentUser() user: User, @Args() { type, description, to }: AddReportToArgs) {
+    return await this.reportsService.addReportOnUser(user.id, to, type, description)
   }
 
   @ResolveField(returns => Report2Union)
   async to (@Parent() report: Report) {
     return await this.reportsService.findReport2ByReportId(report.id)
+  }
+
+  @ResolveField(returns => User)
+  async creator (@Parent() report: Report) {
+    return await this.reportsService.findCreatorOfReport(report.id)
   }
 
   @ResolveField(returns => Conversation)

@@ -38,11 +38,9 @@ export class UserResolver {
   ) {}
 
   // 验证并签名用户 返回token
-  @Query(returns => LoginResult, { name: 'login' })
+  @Query(returns => LoginResult)
   @NoAuth()
-  async login (
-    @Args() args: PersonLoginArgs
-  ): Promise<LoginResult> {
+  async login (@Args() args: PersonLoginArgs): Promise<LoginResult> {
     const v = sign_calculus(args.sign)
     return await this.authService.login(args.userId, v)
   }

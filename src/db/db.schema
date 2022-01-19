@@ -5,36 +5,47 @@ subjects: [uid] @reverse .
 votes: [uid] @reverse .
 conversations: [uid] @reverse .
 participants: [uid] @reverse .
+credentials: [uid] @reverse .
 messages: [uid] @reverse .
+deletes: [uid] @reverse .
+folds: [uid] @reverse .
+blocks: [uid] @reverse .
+
+credential: uid @reverse .
 subject: uid @reverse .
 comment: uid @reverse .
 post: uid @reverse .
 handler: uid @reverse .
 to: uid @reverse .
 conversation: uid @reverse .
-blocker: uid @reverse .
 creator: uid @reverse .
-folder: uid @reverse .
+delete: uid @reverse .
+fold: uid @reverse .
+
+privileges: [string] @index(exact) .
+images: [string] .
+
 userId: string @index(exact, hash, fulltext) .
-sign: password .
 name: string @index(exact, fulltext) .
 avatarImageUrl: string @index(exact) .
 backgroundImageUrl: string @index(exact) .
-images: [string] .
-location: geo .
 title: string @index(fulltext) .
 content: string @index(fulltext) .
 description: string @index(fulltext) .
 type: string @index(term) .
-createdAt: dateTime @index(hour) .
-updatedAt: dateTime @index(hour) .
-lastLoginedAt: dateTime @index(hour) .
 gender: string @index(term) .
 school: string @index(term) .
 grade: string @index(term) .
 openId: string @index(hash) .
 unionId: string @index(hash) .
 state: string @index(hash) .
+
+lastLoginedAt: dateTime @index(hour) .
+createdAt: dateTime @index(hour) .
+updatedAt: dateTime @index(hour) .
+
+location: geo .
+sign: password .
 
 # 管理员
 type Admin {
@@ -52,7 +63,27 @@ type Admin {
   updatedAt
   # 上一次登录时间
   lastLoginedAt
-  # 当前管理员的创建者
+  # 当前管理员的认证凭证
+  credential
+  # 当前管理员对外分发的授权凭证
+  credentials
+  # 当前管理员的权限
+  privileges
+  # 删除 (删除用户 帖子 评论)
+  deletes
+  # 折叠 (折叠评论)
+  folds
+  # 拉黑 (拉黑用户)
+  blocks
+}
+
+# 管理员授权凭证
+type Credential {
+  # 创建时间
+  createdAt
+  # 授权对象
+  to
+  # 创建者
   creator
 }
 
@@ -92,6 +123,8 @@ type User {
   conversations
   # 收到的举报
   reports
+  # 用户的删除 (删除帖子 评论)
+  deletes
 }
 
 # 帖子
@@ -106,11 +139,11 @@ type Post {
   creator
   # 帖子的创建时间
   createdAt
-  # 帖子的封禁者
-  blocker
+  # 帖子收到的删除
+  delete
   # 帖子的点赞
   votes
-  # 帖子的举报
+  # 帖子的收到的举报
   reports
   # 帖子的位置
   location
@@ -118,6 +151,36 @@ type Post {
   comments
   # 所属主题
   subject
+}
+
+# 拉黑
+type Block {
+  # 拉黑的时间
+  createdAt
+  # 被拉黑的对象
+  to
+  # 拉黑的创建者 一般是管理员
+  creator
+}
+
+# 折叠
+type Fold {
+  # 折叠的创建时间
+  createdAt
+  # 被折叠的对象
+  to
+  # 折叠的创建者
+  creator
+}
+
+# 删除
+type Delete {
+  # 删除的创建时间
+  createdAt
+  # 被删除的对象
+  to
+  # 删除的创建者
+  creator
 }
 
 # 点赞
@@ -140,7 +203,7 @@ type Comment {
   votes
   # 评论的折叠者
   folder
-  # 评论的举报
+  # 评论收到的举报
   reports
   # 评论的评论
   comments
@@ -148,6 +211,10 @@ type Comment {
   post
   # 评论所属的评论
   comment
+  # 评论收到的折叠
+  fold
+  # 评论收到的删除
+  delete
 }
 
 # 帖子的主题

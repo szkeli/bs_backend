@@ -4,9 +4,11 @@ import { DgraphClient, Mutation, Request } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 import { UserId } from 'src/db/model/db.model'
 
+import { UserWithRoles } from '../auth/model/auth.model'
 import { Post, PostsConnection } from '../posts/models/post.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import {
+  CheckUserResult,
   CreateFollowRelationInput,
   DeleteFollowRelationInput,
   User,
@@ -27,10 +29,11 @@ export class UserService {
   async checkUserPasswordAndGetUser (userId: string, sign: string) {
     const query = `
       query v($sign: string, $userId: string) {
-        user(func: eq(userId, $userId)) @filter(type(User)) {
+        user(func: eq(userId, $userId)) @filter(type(User) OR type(Admin)) {
           id: uid
           expand(_all_)
           success: checkpwd(sign, $sign)
+          roles: dgraph.type
         }
       }
       `
@@ -40,13 +43,12 @@ export class UserService {
         $userId: userId,
         $sign: sign
       })).getJson() as unknown as {
-      user: Array<User & {success: boolean}>
+      user: CheckUserResult[]
     }
 
     if (!res || !res.user || res.user.length !== 1 || !res.user[0].success) {
       throw new ForbiddenException('用户名或密码错误')
     }
-
     return res.user[0]
   }
 
@@ -140,12 +142,13 @@ export class UserService {
     // return await this.dbService.unfollowAPerson(input)
   }
 
-  async getUserByUid (id: string) {
+  async getUserOrAdminWithRolesByUid (id: string): Promise<UserWithRoles> {
     const query = `
         query v($uid: string) {
-          user(func: uid($uid)) @filter(type(User)) {
+          user(func: uid($uid)) @filter(type(User) OR type(Admin)) {
             id: uid
             expand(_all_)
+            roles: dgraph.type
           }
         }
       `
@@ -153,10 +156,10 @@ export class UserService {
       .newTxn({ readOnly: true })
       .queryWithVars(query, { $uid: id }))
       .getJson() as unknown as {
-      user: User[]
+      user: UserWithRoles[]
     }
     if (!res || !res.user || res.user.length !== 1) {
-      throw new ForbiddenException(`用户 ${id} 不存在`)
+      throw new ForbiddenException(`用户或管理员 ${id} 不存在`)
     }
     return res.user[0]
   }
@@ -166,7 +169,7 @@ export class UserService {
     try {
       const query = `
         query v($userId: string) {
-          q(func: eq(userId, $userId)) @filter(type(User)) { v as uid }
+          q(func: eq(userId, $userId)) @filter(type(User) OR type(Admin)) { v as uid }
         }
       `
       const now = new Date().toISOString()
