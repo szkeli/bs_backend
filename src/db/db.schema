@@ -21,6 +21,7 @@ conversation: uid @reverse .
 creator: uid @reverse .
 delete: uid @reverse .
 fold: uid @reverse .
+block: uid @reverse .
 
 privileges: [string] @index(exact) .
 images: [string] .
@@ -125,6 +126,8 @@ type User {
   reports
   # 用户的删除 (删除帖子 评论)
   deletes
+  # 用户被拉黑
+  block
 }
 
 # 帖子

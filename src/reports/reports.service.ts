@@ -49,7 +49,14 @@ export class ReportsService {
   //     }
   //   }
   // },
-  async discardReport (id: string, reportId: string, content: string) {
+  /**
+   * 丢弃一个举报 认为一个举报无效
+   * @param id 管理员id
+   * @param reportId 举报id
+   * @param content 为什么认为举报无效
+   * @returns {Promise<boolean>}
+   */
+  async discardReport (id: string, reportId: string, content: string): Promise<boolean> {
     const query = `
       query v($adminId: string, $reportId: string, $reportState: string) {
         # 管理员存在
@@ -127,7 +134,7 @@ export class ReportsService {
     if (res.json.u.length !== 1) {
       throw new ForbiddenException(`举报 ${reportId} 不存在`)
     }
-    console.error(res)
+    return !!res.uids.get('message')
   }
 
   async findReportsByCommentId (id: string, first: number, offset: number): Promise<ReportsConnection> {
@@ -299,6 +306,7 @@ export class ReportsService {
    * @param uid 被举报者id
    * @param {REPORT_TYPE} type 举报类型
    * @param description 举报描述
+   * @returns {Promise<Report>}
    */
   async addReportOnUser (id: string, uid: string, type: REPORT_TYPE, description: string): Promise<Report> {
     if (id === uid) {

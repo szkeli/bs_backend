@@ -36,11 +36,6 @@ export const RoleGuard = memoize((roles: Role[]) => {
       if (notIncludes.length !== 0) {
         throw new UnauthorizedException(`${user.id} not in [${notIncludes.toString()}] roles.`)
       }
-      // const isAdmin = roles
-      //   .filter(v => user.roles.includes(v))
-      //   .includes(Role.Admin)
-
-      // if (!isAdmin) throw new UnauthorizedException(` ${user.id} 不是管理员`)
 
       return user as unknown as any
     }

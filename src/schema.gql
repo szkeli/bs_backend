@@ -26,10 +26,7 @@ type User implements Person & Node {
   school: String!
   grade: String!
   posts(first: Int = 0, offset: Int = 0): PostsConnection!
-  followers(first: Int = 0, offset: Int = 0): FollowersConnection!
-  followings(first: Int = 0, offset: Int = 0): FolloweringsConnection!
   subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
-  comments(first: Int = 0, offset: Int = 0): CommentsConnection!
   conversations(first: Int = 0, offset: Int = 0): ConversationsConnection!
 
   """当前用户收到的举报"""
@@ -56,10 +53,7 @@ type LoginResult implements Node & Person {
   school: String!
   grade: String!
   posts(first: Int = 0, offset: Int = 0): PostsConnection!
-  followers(first: Int = 0, offset: Int = 0): FollowersConnection!
-  followings(first: Int = 0, offset: Int = 0): FolloweringsConnection!
   subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
-  comments(first: Int = 0, offset: Int = 0): CommentsConnection!
   conversations(first: Int = 0, offset: Int = 0): ConversationsConnection!
 
   """当前用户收到的举报"""
@@ -89,13 +83,6 @@ type FollowersConnection {
 type UserEdge {
   cursor: String!
   node: User!
-}
-
-type FolloweringsConnection {
-  edges: [UserEdge!]!
-  nodes: [User!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
 }
 
 type NodesConnection {
@@ -392,12 +379,6 @@ type Mutation {
     subjectId: String
   ): Post!
   register(input: UserRegisterInput!): User!
-  followUser(to: String!): Boolean!
-  unfollowUser(to: String!): Boolean!
-  followSubject(id: String!): Subject!
-
-  """更新当前用户"""
-  updateUser(name: String, gender: GENDER, avatarUrl: String, school: String, grade: String, sign: String): User!
   addCommentOnComment(
     """相应的评论的id"""
     to: String!
@@ -455,7 +436,7 @@ type Mutation {
   ): Report!
 
   """管理员接口：认为举报无效"""
-  discardReport(content: String!, reportId: String!): Delete!
+  discardReport(content: String!, reportId: String!): Boolean!
 
   """管理员接口：认为举报有效"""
   acceptReport(content: String!, reportId: String!): Delete!

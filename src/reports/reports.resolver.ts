@@ -37,7 +37,7 @@ export class ReportsResolver {
     return await this.reportsService.addReportOnUser(user.id, to, type, description)
   }
 
-  @Mutation(() => Delete, { description: '管理员接口：认为举报无效' })
+  @Mutation(() => Boolean, { description: '管理员接口：认为举报无效' })
   @Roles(Role.Admin)
   async discardReport (@Args('reportId') reportId: string, @Args('content') content: string, @CurrentUser() user: User) {
     return await this.reportsService.discardReport(user.id, reportId, content)
