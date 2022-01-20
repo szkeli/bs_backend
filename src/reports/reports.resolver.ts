@@ -43,6 +43,11 @@ export class ReportsResolver {
     return await this.reportsService.discardReport(user.id, reportId, content)
   }
 
+  @Mutation(() => Delete, { description: '管理员接口：认为举报有效' })
+  async acceptReport (@Args('reportId') reportId: string, @Args('content') content: string, @CurrentUser() user: User) {
+    return await this.reportsService.acceptReport(user.id, reportId, content)
+  }
+
   @ResolveField(returns => Report2Union)
   async to (@Parent() report: Report) {
     return await this.reportsService.findReport2ByReportId(report.id)

@@ -456,6 +456,9 @@ type Mutation {
 
   """管理员接口：认为举报无效"""
   discardReport(content: String!, reportId: String!): Delete!
+
+  """管理员接口：认为举报有效"""
+  acceptReport(content: String!, reportId: String!): Delete!
   addMessageOnConversation(content: String!, id: String!): Message!
   createConversation(title: String!, description: String!, participants: [String!]!): Conversation!
   setSchema: Boolean!

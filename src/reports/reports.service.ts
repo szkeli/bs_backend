@@ -26,26 +26,37 @@ export class ReportsService {
         }
       }
     `
-    // {
-    //   report: [
-    //     {
-    //       id: '0xed1c',
-    //       state: 'CLOSE',
-    //       type: 'LEWD_HARASS',
-    //       description: '涉黄评论2',
-    //       createdAt: '2022-01-19T21:33:43.978Z'
-    //     }
-    //   ]
-    // }
     const res = await this.dbService.commitQuery<{report: Report[]}>({ query, vars: { $reportId: id } })
     return res.report[0]
   }
 
+  async acceptReport (id: string, reportId: string, content: string) {
+    throw new Error('Method not implemented.')
+  }
+
+  // to: {
+  //   uid: 'uid(to)',
+  //   delete: {
+  //     // 删除被举报的对象
+  //     uid: '_:delete',
+  //     'dgraph.type': 'Delete',
+  //     createdAt: now,
+  //     creator: {
+  //       uid: id
+  //     },
+  //     to: {
+  //       uid: 'uid(to)'
+  //     }
+  //   }
+  // },
   async discardReport (id: string, reportId: string, content: string) {
     const query = `
       query v($adminId: string, $reportId: string, $reportState: string) {
+        # 管理员存在
         v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
+        # 该举报存在
         u(func: uid($reportId)) @filter(type(Report)) { u as uid }
+        # 举报未被处理
         x(func: uid($reportId)) @filter(type(Report) AND eq(state, $reportState)) { x as uid }
         q(func: uid($reportId)) @filter(type(Report)) {
           # 举报所在的会话id
@@ -296,7 +307,7 @@ export class ReportsService {
     const now = new Date().toISOString()
     const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
     const query = `
-      query v($reporter: string, $uid: string) {
+      query v($reporter: string, $uid: string, $reportState: string) {
         # 举报者是否存在
         v(func: uid($reporter)) @filter(type(User)) { v as uid }
         # 被举报者是否存在
@@ -304,7 +315,7 @@ export class ReportsService {
         # 一次对一个用户在一个时间只能举报一次
         x(func: uid($reporter)) @filter(type(User)) {
           conversations {
-            messages @filter(type(Report) AND uid_in(to, $uid)) {
+            messages @filter(type(Report) AND uid_in(to, $uid) AND eq(state, $reportState)) {
               x as uid
             }
           }
@@ -360,7 +371,8 @@ export class ReportsService {
       mutation,
       vars: {
         $reporter: id,
-        $uid: uid
+        $uid: uid,
+        $reportState: REPORT_STATE.OPEN
       }
     })
     if (!res.json.v || res.json.v.length !== 1) {
@@ -484,7 +496,7 @@ export class ReportsService {
     const now = new Date().toISOString()
     const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
     const query = `
-        query v($reporter: string, $uid: string) {
+        query v($reporter: string, $uid: string, $reportState: string) {
           # 举报者是否存在
           v(func: uid($reporter)) @filter(type(User)) { v as uid }
           # 被举报的评论是否存在
@@ -492,7 +504,7 @@ export class ReportsService {
           # 一次对一个评论在一个时间只能举报一次
           x(func: uid($reporter)) @filter(type(User)) {
             conversations {
-              messages @filter(type(Report) AND uid_in(to, $uid)) {
+              messages @filter(type(Report) AND uid_in(to, $uid) AND eq(state, $reportState)) {
                 x as uid
               }
             }
@@ -549,7 +561,8 @@ export class ReportsService {
       mutation,
       vars: {
         $reporter: id,
-        $uid: commentId
+        $uid: commentId,
+        $reportState: REPORT_STATE.OPEN
       }
     })
     if (!res.json.v || res.json.v.length !== 1) {
