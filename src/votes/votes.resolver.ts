@@ -13,19 +13,13 @@ export class VotesResolver {
   constructor (private readonly votesService: VotesService) {}
 
   @Mutation(returns => Votable)
-  async addUpvoteOnPost (
-  @CurrentUser() user: User,
-    @Args('to') to: string
-  ) {
-    return await this.votesService.voteAPost(user.id, to)
+  async addUpvoteOnPost (@CurrentUser() user: User, @Args('postId') postId: string) {
+    return await this.votesService.addUpvoteOnPost(user.id, postId)
   }
 
   @Mutation(returns => Votable)
-  async addUpvoteOnComment (
-  @CurrentUser() user: User,
-    @Args('to') to: string
-  ) {
-    return await this.votesService.voteAComment(user.id, to)
+  async addUpvoteOnComment (@CurrentUser() user: User, @Args('commentId') commentId: string) {
+    return await this.votesService.addUpvoteOnComment(user.id, commentId)
   }
 
   @Mutation(returns => Votable)

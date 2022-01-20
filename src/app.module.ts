@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common'
+import { ConfigModule } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import { GraphQLModule } from '@nestjs/graphql'
 import { join } from 'path'
@@ -13,6 +14,7 @@ import { CommentService } from './comment/comment.service'
 import { ConversationsModule } from './conversations/conversations.module'
 import { DbModule } from './db/db.module'
 import { DbService } from './db/db.service'
+import { DeletesModule } from './deletes/deletes.module'
 import { MessagesModule } from './messages/messages.module'
 import { NodeModule } from './node/node.module'
 import { PostsModule } from './posts/posts.module'
@@ -20,11 +22,11 @@ import { PostsService } from './posts/posts.service'
 import { ReportsModule } from './reports/reports.module'
 import { SearchModule } from './search/search.module'
 import { SharedModule } from './shared/shared.module'
+import { StsModule } from './sts/sts.module'
 import { SubjectModule } from './subject/subject.module'
 import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { VotesModule } from './votes/votes.module'
-import { DeletesModule } from './deletes/deletes.module';
 
 @Module({
   imports: [
@@ -34,6 +36,9 @@ import { DeletesModule } from './deletes/deletes.module';
       playground: true,
       sortSchema: false,
       autoSchemaFile: join(process.cwd(), 'src/schema.gql')
+    }),
+    ConfigModule.forRoot({
+      isGlobal: true
     }),
     PostsModule,
     UserModule,
@@ -49,7 +54,8 @@ import { DeletesModule } from './deletes/deletes.module';
     MessagesModule,
     ConversationsModule,
     DbModule,
-    DeletesModule
+    DeletesModule,
+    StsModule
   ],
   controllers: [AppController],
   providers: [

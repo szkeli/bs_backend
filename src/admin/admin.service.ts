@@ -163,12 +163,16 @@ export class AdminService {
         }
       }
     `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $uid: id }))
-      .getJson() as unknown as {
+
+    const res = await this.dbService.commitQuery<{
       admin: Admin[]
-    }
+    }>({
+      query,
+      vars: {
+        $uid: id
+      }
+    })
+
     return res.admin[0]
   }
 
@@ -184,13 +188,10 @@ export class AdminService {
         }
       }
     `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .query(query))
-      .getJson() as unknown as {
+    const res = await this.dbService.commitQuery<{
       admin: Admin[]
       totalCount: Array<{count: number}>
-    }
+    }>({ query })
 
     return {
       nodes: res.admin || [],

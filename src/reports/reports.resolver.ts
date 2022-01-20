@@ -1,7 +1,9 @@
-import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
-import { CurrentUser } from '../auth/decorator'
+import { CurrentUser, Roles } from '../auth/decorator'
+import { Role } from '../auth/model/auth.model'
 import { Conversation } from '../conversations/models/conversations.model'
+import { Delete } from '../deletes/models/deletes.model'
 import { User } from '../user/models/user.model'
 import { AddReportToArgs, Report, Report2Union } from './models/reports.model'
 import { ReportsService } from './reports.service'
@@ -14,6 +16,11 @@ import { ReportsService } from './reports.service'
 @Resolver(_of => Report)
 export class ReportsResolver {
   constructor (private readonly reportsService: ReportsService) {}
+
+  @Query(() => Report)
+  async report (@Args('id')id: string) {
+    return await this.reportsService.report(id)
+  }
 
   @Mutation(returns => Report)
   async addReportOnComment (@CurrentUser() user: User, @Args() { type, description, to }: AddReportToArgs) {
@@ -28,6 +35,12 @@ export class ReportsResolver {
   @Mutation(returns => Report)
   async addReportOnUser (@CurrentUser() user: User, @Args() { type, description, to }: AddReportToArgs) {
     return await this.reportsService.addReportOnUser(user.id, to, type, description)
+  }
+
+  @Mutation(() => Delete, { description: '管理员接口：认为举报无效' })
+  @Roles(Role.Admin)
+  async discardReport (@Args('reportId') reportId: string, @Args('content') content: string, @CurrentUser() user: User) {
+    return await this.reportsService.discardReport(user.id, reportId, content)
   }
 
   @ResolveField(returns => Report2Union)

@@ -17,6 +17,36 @@ export class CommentService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async findCreatorByCommentId (id: string) {
+    const query = `
+      query v($commentId: string) {
+        comment (func: uid($commentId)) @filter(type(Comment)) {
+          creator @filter(type(User)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{comment: Array<{creator: object}>}>({ query, vars: { $commentId: id } })
+    return res.comment[0]?.creator
+  }
+
+  async findPostByCommentId (id: string) {
+    const query = `
+      query v($commentId: string) {
+        comment (func: uid($commentId)) @filter(type(Comment)) {
+          post @filter(type(Post)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{comment: Array<{post: object}>}>({ query, vars: { $commentId: id } })
+    return res.comment[0]?.post
+  }
+
   async getCommentsByCommentId (id: CommentId, first: number, offset: number) {
     const query = `
         query v($uid: string) {

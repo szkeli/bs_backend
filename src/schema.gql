@@ -154,21 +154,12 @@ type Comment implements Node {
   comments(first: Int = 0, offset: Int = 0): CommentsConnection!
   votes(first: Int = 0, offset: Int = 0): VotesConnection!
   reports(first: Int = 0, offset: Int = 0): ReportsConnection!
+  post: Post!
+  creator: User!
 }
 
 type CommentsConnection {
   nodes: [Comment!]!
-  totalCount: Int!
-}
-
-type Message implements Node {
-  id: String!
-  createdAt: String!
-  content: String!
-}
-
-type MessagesConnection {
-  nodes: [Message!]!
   totalCount: Int!
 }
 
@@ -252,6 +243,17 @@ type ConversationsConnection {
   totalCount: Int!
 }
 
+type Message implements Node {
+  id: String!
+  createdAt: String!
+  content: String!
+}
+
+type MessagesConnection {
+  nodes: [Message!]!
+  totalCount: Int!
+}
+
 type Votable {
   """Number of upvotes that this node has received."""
   upvoteCount: Int!
@@ -273,6 +275,11 @@ type VotesConnection {
 }
 
 type Vote {
+  id: String!
+  createdAt: String!
+}
+
+type Delete {
   id: String!
   createdAt: String!
 }
@@ -301,9 +308,28 @@ type SearchResultItemConnection {
 
 union SearchResultItem = Post | User | Comment | Subject
 
-type Delete {
-  id: String!
-  createdAt: String!
+type PostImagesUploadCredentialInfo {
+  startTime: Int!
+  expiredTime: Int!
+  expiration: String!
+  sessionToken: String!
+  tmpSecretId: String!
+  tmpSecretKey: String!
+  bucket: String!
+  region: String!
+  keys: [String!]!
+}
+
+type AvatarImageUploadCredentialInfo {
+  startTime: Int!
+  expiredTime: Int!
+  expiration: String!
+  sessionToken: String!
+  tmpSecretId: String!
+  tmpSecretKey: String!
+  bucket: String!
+  region: String!
+  key: String!
 }
 
 type Query {
@@ -331,9 +357,17 @@ type Query {
   ): SearchResultItemConnection!
   node(id: String!): Node!
   nodes(ids: [String!]!): NodesConnection!
+  report(id: String!): Report!
   messages(first: Int = 0, offset: Int = 0): MessagesConnection!
   message: Message!
   conversation(id: String!): Conversation!
+  conversations(first: Int = 0, offset: Int = 0): ConversationsConnection!
+
+  """用户上传头像时，先根据文件名获取临时上传凭证信息"""
+  getAvatarImageUploadCredentialInfo(fileName: String!): AvatarImageUploadCredentialInfo!
+
+  """用户上传帖子图片时，先根据文件名获取临时上传凭证信息"""
+  getPostImagesUploadCredentialInfo(fileNames: [String!]!): PostImagesUploadCredentialInfo!
 }
 
 enum SEARCHTYPE {
@@ -365,18 +399,18 @@ type Mutation {
 
   """更新当前用户"""
   updateUser(name: String, gender: GENDER, avatarUrl: String, school: String, grade: String, sign: String): User!
-  addACommentOnComment(
+  addCommentOnComment(
     """相应的评论的id"""
     to: String!
     content: String!
   ): Comment!
-  addACommentOnPost(
+  addCommentOnPost(
     """相应的帖子的id"""
     to: String!
     content: String!
   ): Comment!
-  addUpvoteOnPost(to: String!): Votable!
-  addUpvoteOnComment(to: String!): Votable!
+  addUpvoteOnPost(postId: String!): Votable!
+  addUpvoteOnComment(commentId: String!): Votable!
   removeUpvoteOnComment(from: String!): Votable!
   removeUpvoteOnPost(from: String!): Votable!
   registerAdmin(
@@ -420,11 +454,15 @@ type Mutation {
     """被举报对象的id"""
     to: String!
   ): Report!
+
+  """管理员接口：认为举报无效"""
+  discardReport(content: String!, reportId: String!): Delete!
   addMessageOnConversation(content: String!, id: String!): Message!
   createConversation(title: String!, description: String!, participants: [String!]!): Conversation!
   setSchema: Boolean!
   dropAllData: Boolean!
   dropData: Boolean!
+  deleteComment(commentId: String!): Delete!
 }
 
 input UserRegisterInput {

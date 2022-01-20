@@ -4,7 +4,6 @@ import { ExtractJwt, Strategy } from 'passport-jwt'
 
 import { UserService } from 'src/user/user.service'
 
-import { jwtConstants } from './constants'
 import { Payload, UserWithRoles } from './model/auth.model'
 
 @Injectable()
@@ -15,7 +14,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: jwtConstants.secret
+      secretOrKey: process.env.JWT_SECRET
     })
   }
 

@@ -10,6 +10,7 @@ import {
 import { CurrentUser } from 'src/auth/decorator'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
+import { Post } from '../posts/models/post.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -33,7 +34,7 @@ export class CommentResolver {
   }
 
   @Mutation(returns => Comment)
-  async addACommentOnComment (
+  async addCommentOnComment (
   @CurrentUser() user: User,
     @Args('content') content: string,
     @Args('to', { description: '相应的评论的id' }) to: string
@@ -46,7 +47,7 @@ export class CommentResolver {
   }
 
   @Mutation(returns => Comment)
-  async addACommentOnPost (
+  async addCommentOnPost (
     @CurrentUser() user: User,
       @Args('content') content: string,
       @Args('to', { description: '相应的帖子的id' }) to: string
@@ -71,5 +72,15 @@ export class CommentResolver {
   @ResolveField(() => ReportsConnection)
   async reports (@Parent() comment: Comment, @Args() { first, offset }: PagingConfigArgs) {
     return await this.reportsService.findReportsByCommentId(comment.id, first, offset)
+  }
+
+  @ResolveField(() => Post)
+  async post (@Parent() comment: Comment) {
+    return await this.commentService.findPostByCommentId(comment.id)
+  }
+
+  @ResolveField(() => User)
+  async creator (@Parent() comment: Comment) {
+    return await this.commentService.findCreatorByCommentId(comment.id)
   }
 }

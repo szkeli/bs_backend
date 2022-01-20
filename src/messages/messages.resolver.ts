@@ -6,7 +6,7 @@ import { PagingConfigArgs, User } from '../user/models/user.model'
 import { MessagesService } from './messages.service'
 import { Message, MessagesConnection } from './models/messages.model'
 
-@Resolver()
+@Resolver(() => Message)
 export class MessagesResolver {
   constructor (private readonly messagesService: MessagesService) {}
   @Query(returns => MessagesConnection)

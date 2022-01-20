@@ -9,6 +9,22 @@ import { Message } from './models/messages.model'
 
 @Injectable()
 export class MessagesService {
+  async to (id: string) {
+    const query = `
+      query v($messageId: string) {
+        message(func: uid($messageId)) @filter(type(Message)) {
+          to @filter(type(User) OR type(Conversation)) {
+            id: uid
+            expand(_all_)
+            dgraph.type
+          }
+        } 
+      }
+    `
+    const res = await this.dbService.commitQuery({ query, vars: { $messageId: id } })
+    console.error(res)
+  }
+
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()

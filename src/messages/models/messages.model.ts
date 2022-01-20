@@ -1,6 +1,19 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql'
+import { createUnionType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
+import { Conversation } from '../../conversations/models/conversations.model'
 import { Node } from '../../node/models/node.model'
+import { User } from '../../user/models/user.model'
+
+export enum MESSAGE_TYPE {
+  TEXT = 'TEXT',
+  IMAGE = 'IMAGE',
+  VOICE = 'VOICE',
+  RICH_TEXT = 'RICH_TEXT'
+}
+
+registerEnumType(MESSAGE_TYPE, {
+  name: 'MESSAGE_TYPE'
+})
 
 @ObjectType({
   implements: [Node]
@@ -28,3 +41,8 @@ export class MessagesConnection {
   @Field(type => Int)
     totalCount: number
 }
+
+export const MessageReciverUnion = createUnionType({
+  name: 'MessageRevicerUnion',
+  types: () => [User, Conversation]
+})

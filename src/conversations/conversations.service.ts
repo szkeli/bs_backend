@@ -90,15 +90,29 @@ export class ConversationsService {
     }
   }
 
+  async conversations (first: number, offset: number): Promise<ConversationsConnection> {
+    const query = `
+      query {
+        totalCount(func: type(Conversation)) { count: count(uid) }
+        conversations(func: type(Conversation), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{conversations: Conversation[], totalCount: Array<{count: number}>}>({ query })
+    return {
+      nodes: res.conversations || [],
+      totalCount: res.totalCount[0].count
+    }
+  }
+
   async conversation (id: string) {
     const query = `
       query v($uid: string) {
         conversation(func: uid($uid)) @filter(type(Conversation)) {
           id: uid
-          createdAt
-          state
-          description
-          title
+          expand(_all_)
         }
       }
     `
@@ -117,16 +131,13 @@ export class ConversationsService {
   async findConversationsByUid (id: string, first: number, offset: number) {
     const query = `
       query v($uid: string) {
-        totalCount(func: uid($uid)) {
+        totalCount(func: uid($uid)) @filter(type(User)) {
           count: count(conversations)
         }
-        user(func: uid($uid)) {
-          conversations (orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+        user(func: uid($uid)) @filter(type(User)) {
+          conversations (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Conversation)) {
             id: uid
-            state
-            createdAt
-            description
-            title
+            expand(_all_)
           }
         }
       }

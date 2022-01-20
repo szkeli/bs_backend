@@ -283,6 +283,6 @@ type Message {
   content
   # 创建时间
   createdAt
-  # 消息接收者
-  to
+  # 消息所属的会话
+  conversation
 }

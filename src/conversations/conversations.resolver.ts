@@ -4,7 +4,13 @@ import { CurrentUser } from '../auth/decorator'
 import { MessagesService } from '../messages/messages.service'
 import { PagingConfigArgs, User } from '../user/models/user.model'
 import { ConversationsService } from './conversations.service'
-import { Conversation, CreateConversationArgs, MessageItemConnection, ParticipantsConnection } from './models/conversations.model'
+import {
+  Conversation,
+  ConversationsConnection,
+  CreateConversationArgs,
+  MessageItemConnection,
+  ParticipantsConnection
+} from './models/conversations.model'
 
 // message 和 report 的负载
 @Resolver((_of: Conversation) => Conversation)
@@ -17,6 +23,11 @@ export class ConversationsResolver {
   @Query(returns => Conversation)
   async conversation (@Args('id') id: string) {
     return await this.conversationsService.conversation(id)
+  }
+
+  @Query(() => ConversationsConnection)
+  async conversations (@Args() { first, offset }: PagingConfigArgs) {
+    return await this.conversationsService.conversations(first, offset)
   }
 
   @Mutation(returns => Conversation)

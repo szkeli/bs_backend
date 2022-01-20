@@ -12,38 +12,36 @@ export class VotesService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async voteAComment (voter: string, to: string) {
+  async addUpvoteOnComment (voter: string, to: string): Promise<Votable> {
     const now = new Date().toISOString()
-    const txn = this.dgraph.newTxn()
-    try {
-      // 1. 用户存在
-      // 2. 评论存在
-      // 3. 用户没有为评论点过赞
-      const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
-      const mutation = {
-        uid: '_:vote',
-        'dgraph.type': 'Vote',
-        createdAt: now,
-        type: 'VOTE2COMMENT',
-        to: {
-          uid: to,
-          votes: {
-            uid: '_:vote'
-          }
-        },
-        creator: {
-          uid: voter,
-          votes: {
-            uid: '_:vote'
-          }
+    // 1. 用户存在
+    // 2. 评论存在
+    // 3. 用户没有为评论点过赞
+    const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
+    const mutation = {
+      uid: '_:vote',
+      'dgraph.type': 'Vote',
+      createdAt: now,
+      type: 'VOTE2COMMENT',
+      to: {
+        uid: to,
+        votes: {
+          uid: '_:vote'
+        }
+      },
+      creator: {
+        uid: voter,
+        votes: {
+          uid: '_:vote'
         }
       }
-      const query = `
+    }
+    const query = `
         query {
           v(func: uid(${voter})) @filter(type(User)) { v as uid }
           u(func: uid(${to})) @filter(type(Comment)) { u as uid }
           x(func: uid(${voter})) @filter(type(User)) {
-            votes {
+            votes @filter(type(Comment)) {
               to @filter(uid(${to}) AND type(Comment)) {
                 x as uid
               }
@@ -52,76 +50,62 @@ export class VotesService {
           voteCountOfComment(func: uid(${to})) @filter(type(Comment)) { voteCount: count(votes) }
         }
       `
-      const mu = new Mutation()
-      mu.setSetJson(mutation)
-      mu.setCond(conditions)
+    const res = await this.dbService.commitConditionalUpsertWithVars<Map<string, string>, {
+      v?: [{uid: string}]
+      u?: [{uid: string}]
+      x?: Array<{votes: any}>
+      voteCountOfComment: [{ voteCount: number }]
+    }>({ conditions, mutation, query, vars: {} })
 
-      const req = new Request()
-      req.setQuery(query)
-      req.addMutations(mu)
-      req.setCommitNow(true)
-      const res = await (await txn.doRequest(req)).getJson() as unknown as {
-        v?: [{uid: string}]
-        u?: [{uid: string}]
-        x?: Array<{votes: any}>
-        voteCountOfComment: [{ voteCount: number }]
-      }
+    if (res.json.x?.length !== 0) {
+      throw new ForbiddenException('不能重复点赞')
+    }
 
-      if (res.x?.length !== 0) {
-        throw new ForbiddenException('不能重复点赞')
-      }
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`用户 ${voter} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`评论 ${to} 不存在`)
+    }
 
-      if (res.v.length !== 1) {
-        throw new ForbiddenException(`用户 ${voter} 不存在`)
-      }
-      if (res.u.length !== 1) {
-        throw new ForbiddenException(`评论 ${to} 不存在`)
-      }
-
-      const u: Votable = {
-        viewerCanUpvote: res?.x?.length !== 0,
-        upvoteCount: res?.voteCountOfComment[0]?.voteCount + 1 || 0,
-        viewerHasUpvoted: res?.x?.length === 0
-      }
-      return u
-    } finally {
-      await txn.discard()
+    return {
+      viewerCanUpvote: res?.json.x?.length !== 0,
+      upvoteCount: res?.json.voteCountOfComment[0]?.voteCount + 1 || 0,
+      viewerHasUpvoted: res?.json.x?.length === 0
     }
   }
 
-  async voteAPost (voter: string, to: string) {
+  async addUpvoteOnPost (voter: string, to: string): Promise<Votable> {
     const now = new Date().toISOString()
-    const txn = this.dgraph.newTxn()
-    try {
-      // 1. 用户存在
-      // 2. 帖子存在
-      // 3. 用户没有为帖子点过赞
-      const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
-      const mutation = {
-        uid: '_:vote',
-        'dgraph.type': 'Vote',
-        createdAt: now,
-        type: 'VOTE2POST',
-        to: {
-          uid: to,
-          votes: {
-            uid: '_:vote'
-          }
-        },
-        creator: {
-          uid: voter,
-          votes: {
-            uid: '_:vote'
-          }
+    // 1. 用户存在
+    // 2. 帖子存在
+    // 3. 用户没有为帖子点过赞
+    const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
+    const mutation = {
+      uid: '_:vote',
+      'dgraph.type': 'Vote',
+      createdAt: now,
+      type: 'VOTE2POST',
+      to: {
+        uid: to,
+        votes: {
+          uid: '_:vote'
+        }
+      },
+      creator: {
+        uid: voter,
+        votes: {
+          uid: '_:vote'
         }
       }
-      const query = `
+    }
+    const query = `
         query {
           v(func: uid(${voter})) @filter(type(User)) { v as uid }
           u(func: uid(${to})) @filter(type(Post)) { u as uid }
-          x(func: uid(${voter})) @filter(type(Uer)) {
-            votes {
-              to @filter(uid(${to})) {
+          x(func: uid(${voter})) @filter(type(User)) {
+            votes @filter(type(Vote)) {
+              to @filter(uid(${to}) AND type(Post)) {
                 x as uid
               }
             }
@@ -129,39 +113,28 @@ export class VotesService {
           voteCountOfPost(func: uid(${to})) @filter(type(Post)) { voteCount: count(votes) }
         }
       `
-      const mu = new Mutation()
-      mu.setSetJson(mutation)
-      mu.setCond(conditions)
+    const res = await this.dbService.commitConditionalUpsertWithVars<Map<string, string>, {
+      v?: [{uid: string}]
+      u?: [{uid: string}]
+      x?: Array<{votes: any}>
+      voteCountOfPost: [{ voteCount: number }]
+    }>({ conditions, mutation, query, vars: {} })
 
-      const req = new Request()
-      req.setQuery(query)
-      req.addMutations(mu)
-      req.setCommitNow(true)
-      const res = await (await txn.doRequest(req)).getJson() as unknown as {
-        v?: [{uid: string}]
-        u?: [{uid: string}]
-        x?: Array<{votes: any}>
-        voteCountOfPost: [{ voteCount: number }]
-      }
-      if (res.x?.length !== 0) {
-        throw new ForbiddenException('不能重复点赞')
-      }
+    if (res.json.x?.length !== 0) {
+      throw new ForbiddenException('不能重复点赞')
+    }
 
-      if (res.v.length !== 1) {
-        throw new ForbiddenException(`用户 ${voter} 不存在`)
-      }
-      if (res.u.length !== 1) {
-        throw new ForbiddenException(`帖子 ${to} 不存在`)
-      }
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`用户 ${voter} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`帖子 ${to} 不存在`)
+    }
 
-      const u: Votable = {
-        viewerCanUpvote: res?.x?.length !== 0,
-        upvoteCount: res?.voteCountOfPost[0]?.voteCount + 1 || 0,
-        viewerHasUpvoted: res?.x?.length === 0
-      }
-      return u
-    } finally {
-      await txn.discard()
+    return {
+      viewerCanUpvote: res?.json.x?.length !== 0,
+      upvoteCount: res?.json.voteCountOfPost[0]?.voteCount + 1 || 0,
+      viewerHasUpvoted: res?.json.x?.length === 0
     }
   }
 

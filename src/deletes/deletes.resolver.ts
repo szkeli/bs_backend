@@ -15,4 +15,10 @@ export class DeletesResolver {
   async deletePost (@CurrentUser() user: User, @Args('postId') postId: string) {
     return await this.deletesService.deletePost(user.id, postId)
   }
+
+  @Mutation(() => Delete)
+  @Roles(Role.Admin)
+  async deleteComment (@CurrentUser() user: User, @Args('commentId') commentId: string) {
+    return await this.deletesService.deleteComment(user.id, commentId)
+  }
 }
