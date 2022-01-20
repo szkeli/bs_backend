@@ -391,7 +391,6 @@ type Mutation {
     """帖子所属的主题"""
     subjectId: String
   ): Post!
-  deletePost(postId: String!): Delete!
   register(input: UserRegisterInput!): User!
   followUser(to: String!): Boolean!
   unfollowUser(to: String!): Boolean!
@@ -462,6 +461,7 @@ type Mutation {
   setSchema: Boolean!
   dropAllData: Boolean!
   dropData: Boolean!
+  deletePost(postId: String!): Delete!
   deleteComment(commentId: String!): Delete!
 }
 

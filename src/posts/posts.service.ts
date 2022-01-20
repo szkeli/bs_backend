@@ -125,10 +125,6 @@ export class PostsService {
     }
   }
 
-  async deleteAPost (creator: UserId, id: PostId) {
-    // return await this.dbService.deleteAPost(creator, id)
-  }
-
   async post (id: PostId) {
     const query = `
         query v($uid: string) {
@@ -154,10 +150,10 @@ export class PostsService {
   async posts (first: number, offset: number) {
     const query = `
         query {
-          totalCount(func: type(Post)) @filter(type(Post)) {
+          totalCount(func: type(Post)) @filter(type(Post) AND NOT has(delete)) {
             count(uid)
           }
-          v(func: type(Post), orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Post)) {
+          v(func: type(Post), orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Post) AND NOT has(delete)) {
             id: uid
             expand(_all_)
           }
@@ -214,39 +210,33 @@ export class PostsService {
    * @returns {Promise<CommentsConnection>} CommentsConnection
    */
   async getCommentsByPostId (id: PostId, first: number, offset: number): Promise<CommentsConnection> {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
-        query v($uid: string, $viewer: string) {
+    const query = `
+        query v($uid: string) {
+          totalCount(func: uid($uid)) @filter(type(Post)) {
+            comments @filter(type(Comment) AND NOT has(delete)) {
+              count: count(uid)
+            }
+          }
           post(func: uid($uid)) @filter(type(Post)) {
-            commentsCount: count(comments)
-            comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Comment)) {
+            comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Comment) AND NOT has(delete)) {
               id: uid
               expand(_all_)
             }
           }
         }
       `
-      const res = (await this.dgraph
-        .newTxn({ readOnly: true })
-        .queryWithVars(query, { $uid: id }))
-        .getJson() as unknown as {
-        post: Array<{ commentsCount: number, comments?: Comment[]}>
-      }
+    const res = await this.dbService.commitQuery<{
+      post: Array<{ comments?: Comment[]}>
+      totalCount: Array<{comments: Array<{count: number}>}>
+    }>({ query, vars: { $uid: id } })
 
-      const v = res.post[0]
-      if (!v) {
-        throw new ForbiddenException(`帖子 ${id} 不存在`)
-      }
+    if (!res.post) {
+      throw new ForbiddenException(`帖子 ${id} 不存在`)
+    }
 
-      // v.comments?.forEach(c => c?.a && (c.viewerCanUpvote = false))
-      const u: CommentsConnection = {
-        nodes: v.comments ? v.comments : [],
-        totalCount: v.commentsCount
-      }
-      return u
-    } finally {
-      await txn.discard()
+    return {
+      nodes: res.post[0]?.comments || [],
+      totalCount: res?.totalCount[0]?.comments[0]?.count || 0
     }
   }
 

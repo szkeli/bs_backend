@@ -40,11 +40,8 @@ export class PostsResolver {
   }
 
   @Query(returns => PostsConnection)
-  async posts (@Args() args: PagingConfigArgs) {
-    return await this.postsService.posts(
-      args.first,
-      args.offset
-    )
+  async posts (@Args() { first, offset }: PagingConfigArgs) {
+    return await this.postsService.posts(first, offset)
   }
 
   @Mutation(returns => Post)
@@ -56,11 +53,6 @@ export class PostsResolver {
       args.images,
       args.subjectId
     )
-  }
-
-  @Mutation(returns => Boolean)
-  async deletePost (@CurrentUser() user: User, @Args('id') id: PostId) {
-    return await this.postsService.deleteAPost(user.userId, id)
   }
 
   @ResolveField(returns => User)
