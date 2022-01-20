@@ -41,7 +41,7 @@ export class VotesService {
           v(func: uid(${voter})) @filter(type(User)) { v as uid }
           u(func: uid(${to})) @filter(type(Comment)) { u as uid }
           x(func: uid(${voter})) @filter(type(User)) {
-            votes @filter(type(Comment)) {
+            votes @filter(type(Vote)) {
               to @filter(uid(${to}) AND type(Comment)) {
                 x as uid
               }
