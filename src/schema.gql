@@ -259,6 +259,9 @@ type Message implements Node {
   id: String!
   createdAt: String!
   content: String!
+
+  """返回消息所属的会话"""
+  conversation: Conversation!
 }
 
 type Votable {

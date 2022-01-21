@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
-import { MessageItem, MessageItemConnection, ParticipantsConnection } from '../conversations/models/conversations.model'
+import { Conversation, MessageItem, MessageItemConnection, ParticipantsConnection } from '../conversations/models/conversations.model'
 import { DbService } from '../db/db.service'
 import { Report } from '../reports/models/reports.model'
 import { User } from '../user/models/user.model'
@@ -9,25 +9,35 @@ import { Message } from './models/messages.model'
 
 @Injectable()
 export class MessagesService {
-  async to (id: string) {
-    const query = `
-      query v($messageId: string) {
-        message(func: uid($messageId)) @filter(type(Message)) {
-          to @filter(type(User) OR type(Conversation)) {
-            id: uid
-            expand(_all_)
-            dgraph.type
-          }
-        } 
-      }
-    `
-    const res = await this.dbService.commitQuery({ query, vars: { $messageId: id } })
-    console.error(res)
-  }
-
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async findConversationByMessageId (id: string) {
+    const query = `
+      query v($messageId: string) {
+        message(func: uid($messageId)) @filter(type(Message)) {
+          conversation @filter(type(Conversation)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{message: Array<{conversation: Conversation}>}>({
+      query,
+      vars: {
+        $messageId: id
+      }
+    })
+    if (res.message.length !== 1) {
+      throw new ForbiddenException(`消息 ${id} 不存在`)
+    }
+    if (!res.message[0].conversation) {
+      throw new ForbiddenException(`消息 ${id} 没有会话`)
+    }
+    return res.message[0].conversation
   }
 
   async addMessageOnConversation (id: string, conversationId: string, content: string) {
