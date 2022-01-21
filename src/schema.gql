@@ -266,6 +266,15 @@ type Vote {
   createdAt: String!
 }
 
+type SetDbSchema {
+  arrayIndexOffset: Int!
+  array: [String!]!
+  pivot_: Float!
+  wrappers_: String
+  messageId_: String
+  convertedPrimitiveFields_: String!
+}
+
 type Delete {
   id: String!
   createdAt: String!
@@ -439,10 +448,10 @@ type Mutation {
   discardReport(content: String!, reportId: String!): Boolean!
 
   """管理员接口：认为举报有效"""
-  acceptReport(content: String!, reportId: String!): Delete!
+  acceptReport(content: String!, reportId: String!): Boolean!
   addMessageOnConversation(content: String!, id: String!): Message!
   createConversation(title: String!, description: String!, participants: [String!]!): Conversation!
-  setSchema: Boolean!
+  setSchema: SetDbSchema!
   dropAllData: Boolean!
   dropData: Boolean!
   deletePost(postId: String!): Delete!

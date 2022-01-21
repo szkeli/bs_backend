@@ -31,24 +31,120 @@ export class ReportsService {
   }
 
   async acceptReport (id: string, reportId: string, content: string) {
-    throw new Error('Method not implemented.')
+    const now = new Date().toISOString()
+    const query = `
+      query v($adminId: string, $reportId: string, $reportState: string) {
+        a(func: uid($adminId)) @filter(type(Admin)) { a as uid }
+        r(func: uid($reportId)) @filter(type(Report)) { r as uid }
+        # 举报未被处理
+        x(func: uid($reportId)) @filter(type(Report) AND eq(state, $reportState)) { x as uid }
+        q(func: uid($reportId)) @filter(type(Report)) {
+          # 举报所在的会话id
+          conversation as conversation
+          # 被举报的对象
+          to as to
+          # 被举报的对象的类型
+        }
+      }
+    `
+    const conditions = '@if( eq(len(a), 1) AND eq(len(r), 1) AND eq(len(x), 1) )'
+    const mutation = {
+      uid: reportId,
+      // 关闭该举报
+      state: REPORT_STATE.CLOSE,
+      to: {
+        uid: 'uid(to)',
+        // 尝试添加一个删除
+        delete: {
+          uid: '_:delete',
+          'dgraph.type': 'Delete',
+          createdAt: now,
+          creator: {
+            uid: id
+          },
+          to: {
+            uid: 'uid(to)'
+          }
+        },
+        // 尝试添加一个拉黑
+        block: {
+          uid: '_:block',
+          'dgraph.type': 'Block',
+          createdAt: now,
+          creator: {
+            uid: id
+          },
+          to: {
+            uid: 'uid(to)'
+          }
+        }
+      },
+      conversation: {
+        uid: 'uid(conversation)',
+        state: CONVERSATION_STATE.CLOSE,
+        messages: [
+          {
+            // 创建一个新消息
+            uid: '_:message',
+            'dgraph.type': 'Message',
+            type: MESSAGE_TYPE.TEXT,
+            content,
+            createdAt: now,
+            creator: {
+              uid: id
+            },
+            conversation: {
+              uid: 'uid(conversation)'
+            }
+          }, {
+            uid: '_:sys_message',
+            'dgraph.type': 'Message',
+            type: MESSAGE_TYPE.TEXT,
+            content: '举报已处理完成，系统自动关闭会话',
+            createdAt: new Date().toISOString(),
+            creator: {
+              uid: id
+            },
+            conversation: {
+              uid: 'uid(conversation)'
+            }
+          }
+        ]
+      }
+    }
+
+    const res = await this.dbService.commitConditionalUpsertWithVars<Map<string, string>, {
+      a: Array<{uid: string}>
+      r: Array<{uid: string}>
+      x: Array<{uid: string}>
+    }>({
+      conditions,
+      mutation,
+      query,
+      vars: {
+        $adminId: id,
+        $reportId: reportId,
+        $reportState: REPORT_STATE.OPEN
+      }
+    })
+
+    if (res.json.x.length !== 1) {
+      throw new ForbiddenException(`举报 ${reportId} 已被关闭`)
+    }
+
+    if (res.json.a.length !== 1) {
+      throw new ForbiddenException(`管理员 ${id} 不存在`)
+    }
+
+    if (res.json.r.length !== 1) {
+      throw new ForbiddenException(`举报 ${reportId} 不存在`)
+    }
+
+    console.error(res)
+
+    return !!res.uids.get('message')
   }
 
-  // to: {
-  //   uid: 'uid(to)',
-  //   delete: {
-  //     // 删除被举报的对象
-  //     uid: '_:delete',
-  //     'dgraph.type': 'Delete',
-  //     createdAt: now,
-  //     creator: {
-  //       uid: id
-  //     },
-  //     to: {
-  //       uid: 'uid(to)'
-  //     }
-  //   }
-  // },
   /**
    * 丢弃一个举报 认为一个举报无效
    * @param id 管理员id

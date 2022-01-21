@@ -38,11 +38,20 @@ export class DbService {
   async setSchema () {
     const schema = readFileSync('src/db/db.schema', 'utf8').toString()
 
-    console.error(schema)
     const op = new Operation()
     op.setSchema(schema)
     const res = await this.dgraph.alter(op)
+    // Payload {
+    //   wrappers_: null,
+    //   messageId_: undefined,
+    //   arrayIndexOffset_: -1,
+    //   array: [],
+    //   pivot_: 1.7976931348623157e+308,
+    //   convertedPrimitiveFields_: {}
+    // }
     console.error(res)
+
+    return res
   }
 
   async test () {

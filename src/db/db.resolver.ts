@@ -3,6 +3,7 @@ import { Mutation, Resolver } from '@nestjs/graphql'
 import { Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { DbService } from './db.service'
+import { SetDbSchema } from './model/db.model'
 
 @Resolver()
 export class DbResolver {
@@ -10,7 +11,7 @@ export class DbResolver {
 
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(() => SetDbSchema)
   @Roles(Role.Admin)
   async setSchema () {
     return await this.dbService.setSchema()

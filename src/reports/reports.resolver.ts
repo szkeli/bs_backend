@@ -3,7 +3,6 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { Conversation } from '../conversations/models/conversations.model'
-import { Delete } from '../deletes/models/deletes.model'
 import { User } from '../user/models/user.model'
 import { AddReportToArgs, Report, Report2Union } from './models/reports.model'
 import { ReportsService } from './reports.service'
@@ -43,7 +42,8 @@ export class ReportsResolver {
     return await this.reportsService.discardReport(user.id, reportId, content)
   }
 
-  @Mutation(() => Delete, { description: '管理员接口：认为举报有效' })
+  @Mutation(() => Boolean, { description: '管理员接口：认为举报有效' })
+  @Roles(Role.Admin)
   async acceptReport (@Args('reportId') reportId: string, @Args('content') content: string, @CurrentUser() user: User) {
     return await this.reportsService.acceptReport(user.id, reportId, content)
   }

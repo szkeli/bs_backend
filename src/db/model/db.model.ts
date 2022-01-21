@@ -1,3 +1,4 @@
+import { Field, Float, Int, ObjectType } from '@nestjs/graphql'
 
 export type UserId = string
 export type PostId = string
@@ -24,4 +25,25 @@ export class FollowAPersonDto {
    * 被关注者
    */
   to: UserId
+}
+
+@ObjectType()
+export class SetDbSchema {
+  @Field(type => Int)
+    arrayIndexOffset: number
+
+  @Field(type => [String])
+    array: string[]
+
+  @Field(type => Float)
+    pivot_: number
+
+  @Field({ nullable: true })
+    wrappers_?: string
+
+  @Field({ nullable: true })
+    messageId_?: string
+
+  @Field()
+    convertedPrimitiveFields_: string
 }
