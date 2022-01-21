@@ -3,7 +3,6 @@ import { Reflector } from '@nestjs/core'
 import { GqlExecutionContext } from '@nestjs/graphql'
 import { AuthGuard } from '@nestjs/passport'
 import { memoize } from '@nestjs/passport/dist/utils/memoize.util'
-import { Observable } from 'rxjs'
 
 import { NO_AUTH_KEY, ROLES_KEY } from './decorator'
 import { Role, UserWithRoles } from './model/auth.model'
@@ -11,18 +10,20 @@ import { Role, UserWithRoles } from './model/auth.model'
 @Injectable()
 export class RoleAuthGuard implements CanActivate {
   constructor (private readonly reflector: Reflector) {}
-  canActivate (context: ExecutionContext): boolean | Promise<boolean> | Observable<boolean> {
+  canActivate (context: ExecutionContext) {
     const noAuth = this.reflector.get<boolean>(NO_AUTH_KEY, context.getHandler())
-    const roles = this.reflector.get<Role[]>(ROLES_KEY, context.getHandler())
     if (noAuth) return true
 
+    const roles = this.reflector.get<Role[]>(ROLES_KEY, context.getHandler())
+
     const guard = new (RoleGuard(roles || [Role.User]))()
+
     return guard.canActivate(context)
   }
 }
 
 export const RoleGuard = memoize((roles: Role[]) => {
-  return class JwtAuthGuard extends AuthGuard('jwt') {
+  return class GqlAuthGuard extends AuthGuard('jwt') {
     getRequest (context: ExecutionContext) {
       const ctx = GqlExecutionContext.create(context)
       return ctx.getContext().req

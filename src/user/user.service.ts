@@ -9,8 +9,6 @@ import { Post, PostsConnection } from '../posts/models/post.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import {
   CheckUserResult,
-  CreateFollowRelationInput,
-  DeleteFollowRelationInput,
   User,
   UserDataBaseType,
   UserFollowASubjectInput,
@@ -45,7 +43,6 @@ export class UserService {
       })).getJson() as unknown as {
       user: CheckUserResult[]
     }
-
     if (!res || !res.user || res.user.length !== 1 || !res.user[0].success) {
       throw new ForbiddenException('用户名或密码错误')
     }
@@ -126,20 +123,6 @@ export class UserService {
       totalCount: v.me[0].postsCount || 0
     }
     return u
-  }
-
-  async followOne (input: CreateFollowRelationInput) {
-    if (input.from === input.to) {
-      throw new ForbiddenException('禁止关注自己')
-    }
-    // return await this.dbService.followAPerson(input)
-  }
-
-  async unfollowOne (input: DeleteFollowRelationInput) {
-    if (input.from === input.to) {
-      throw new ForbiddenException('禁止取消关注自己')
-    }
-    // return await this.dbService.unfollowAPerson(input)
   }
 
   async getUserOrAdminWithRolesByUid (id: string): Promise<UserWithRoles> {
