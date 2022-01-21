@@ -1,5 +1,6 @@
 import { createUnionType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
+import { Admin } from '../../admin/models/admin.model'
 import { Conversation } from '../../conversations/models/conversations.model'
 import { Node } from '../../node/models/node.model'
 import { User } from '../../user/models/user.model'
@@ -45,4 +46,9 @@ export class MessagesConnection {
 export const MessageReciverUnion = createUnionType({
   name: 'MessageRevicerUnion',
   types: () => [User, Conversation]
+})
+
+export const MessageCreatorUnion = createUnionType({
+  name: 'MessageCreatorUnion',
+  types: () => [User, Admin]
 })

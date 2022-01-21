@@ -262,7 +262,12 @@ type Message implements Node {
 
   """返回消息所属的会话"""
   conversation: Conversation!
+
+  """返回消息的创建者"""
+  creator: MessageCreatorUnion!
 }
+
+union MessageCreatorUnion = User | Admin
 
 type Votable {
   """Number of upvotes that this node has received."""

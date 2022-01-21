@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
+import { Admin } from '../admin/models/admin.model'
 import { Conversation, MessageItem, MessageItemConnection, ParticipantsConnection } from '../conversations/models/conversations.model'
 import { DbService } from '../db/db.service'
 import { Report } from '../reports/models/reports.model'
@@ -14,10 +15,45 @@ export class MessagesService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async findCreatorByMessageId (id: string) {
+    const query = `
+      query v($messageId: string) {
+        message(func: uid($messageId)) @filter(type(Message)) {
+          id: uid
+          creator {
+            id: uid
+            expand(_all_)
+            dgraph.type
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{message: Array<{creator: ((User | Admin) & {'dgraph.type': string[]})}>}>({
+      query,
+      vars: {
+        $messageId: id
+      }
+    })
+    if (res.message.length !== 1) {
+      throw new ForbiddenException(`消息 ${id} 不存在`)
+    }
+    if (!res.message[0].creator) {
+      throw new ForbiddenException(`消息 ${id} 没有创建者`)
+    }
+    const { creator } = res.message[0]
+    if (creator['dgraph.type'].includes('User')) {
+      return new User(creator as unknown as User)
+    }
+    if (creator['dgraph.type'].includes('Admin')) {
+      return new Admin(creator as unknown as Admin)
+    }
+  }
+
   async findConversationByMessageId (id: string) {
     const query = `
       query v($messageId: string) {
         message(func: uid($messageId)) @filter(type(Message)) {
+          id: uid
           conversation @filter(type(Conversation)) {
             id: uid
             expand(_all_)

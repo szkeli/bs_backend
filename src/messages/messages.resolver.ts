@@ -4,7 +4,7 @@ import { CurrentUser } from '../auth/decorator'
 import { Conversation, ConversationId } from '../conversations/models/conversations.model'
 import { User } from '../user/models/user.model'
 import { MessagesService } from './messages.service'
-import { Message } from './models/messages.model'
+import { Message, MessageCreatorUnion } from './models/messages.model'
 
 @Resolver(() => Message)
 export class MessagesResolver {
@@ -15,11 +15,6 @@ export class MessagesResolver {
     return await this.messagesService.message(id)
   }
 
-  @ResolveField(() => Conversation, { description: '返回消息所属的会话' })
-  async conversation (@Parent() message: Message) {
-    return await this.messagesService.findConversationByMessageId(message.id)
-  }
-
   @Mutation(returns => Message, { description: '向指定的会话中添加一条消息' })
   async addMessageOnConversation (
   @CurrentUser() user: User,
@@ -27,5 +22,15 @@ export class MessagesResolver {
     @Args('content') content: string
   ) {
     return await this.messagesService.addMessageOnConversation(user.id, id, content)
+  }
+
+  @ResolveField(() => Conversation, { description: '返回消息所属的会话' })
+  async conversation (@Parent() message: Message) {
+    return await this.messagesService.findConversationByMessageId(message.id)
+  }
+
+  @ResolveField(() => MessageCreatorUnion, { description: '返回消息的创建者' })
+  async creator (@Parent() message: Message) {
+    return await this.messagesService.findCreatorByMessageId(message.id)
   }
 }

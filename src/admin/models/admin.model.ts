@@ -56,6 +56,10 @@ export class AdminLoginResult {
   implements: [Node, Person]
 })
 export class Admin implements Node, Person {
+  constructor (admin: Admin) {
+    Object.assign(this, admin)
+  }
+
   @Field()
     id: string
 
