@@ -336,14 +336,23 @@ type SearchResultItemConnection {
 union SearchResultItem = Post | User | Comment | Subject
 
 type PostImagesUploadCredentialInfo {
+  """签证生效时间"""
   startTime: Int!
+
+  """签证过期时间"""
   expiredTime: Int!
   expiration: String!
   sessionToken: String!
   tmpSecretId: String!
   tmpSecretKey: String!
+
+  """桶id"""
   bucket: String!
+
+  """桶所在的地域"""
   region: String!
+
+  """key"""
   keys: [String!]!
 }
 
@@ -397,6 +406,9 @@ type Query {
 
   """根据举报id返回举报"""
   report(id: String!): Report!
+
+  """所有的举报"""
+  reports(first: Int = 0, offset: Int = 0): ReportsConnection!
 
   """返回指定的消息"""
   message(id: String!): Message!

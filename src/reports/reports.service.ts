@@ -30,6 +30,28 @@ export class ReportsService {
     return res.report[0]
   }
 
+  async reports (first: number, offset: number): Promise<ReportsConnection> {
+    const query = `
+      query {
+        totalCount(func: type(Report)) {
+          count(uid)
+        }
+        reports(func: type(Report), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      reports: Report[]
+    }>({ query })
+    return {
+      nodes: res.reports || [],
+      totalCount: res.totalCount[0].count
+    }
+  }
+
   async acceptReport (id: string, reportId: string, content: string) {
     const now = new Date().toISOString()
     const query = `
@@ -366,7 +388,7 @@ export class ReportsService {
    * @param {string} id 举报的id
    * @returns { Promise<User|Post|Comment> }
    */
-  async findReport2ByReportId (id: string): Promise<User|Post|Comment> {
+  async to (id: string): Promise<User|Post|Comment> {
     const query = `
       query v($uid: string) {
         report(func: uid($uid)) @filter(type(Report)) {
@@ -378,20 +400,17 @@ export class ReportsService {
         }
       }
     `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $uid: id }))
-      .getJson() as unknown as {
+    const res = await this.dbService.commitQuery<{
       report: Array<{to: (typeof Report2Union) & { 'dgraph.type': [string]}}>
-    }
+    }>({ query, vars: { $uid: id } })
 
-    if (res.report[0].to['dgraph.type'].includes('User')) {
+    if (res.report[0].to['dgraph.type']?.includes('User')) {
       return new User(res.report[0].to as unknown as User)
     }
-    if (res.report[0].to['dgraph.type'].includes('Post')) {
+    if (res.report[0].to['dgraph.type']?.includes('Post')) {
       return new Post(res.report[0].to as unknown as Post)
     }
-    if (res.report[0].to['dgraph.type'].includes('Comment')) {
+    if (res.report[0].to['dgraph.type']?.includes('Comment')) {
       return new Comment(res.report[0].to as unknown as Comment)
     }
   }

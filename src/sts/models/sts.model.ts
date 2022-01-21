@@ -2,10 +2,10 @@ import { Field, Int, ObjectType } from '@nestjs/graphql'
 
 @ObjectType()
 export class PostImagesUploadCredentialInfo {
-  @Field(type => Int)
+  @Field(type => Int, { description: '签证生效时间' })
     startTime: number
 
-  @Field(type => Int)
+  @Field(type => Int, { description: '签证过期时间' })
 
     expiredTime: number
 
@@ -21,13 +21,13 @@ export class PostImagesUploadCredentialInfo {
   @Field()
     tmpSecretKey: string
 
-  @Field()
+  @Field({ description: '桶id' })
     bucket: string
 
-  @Field()
+  @Field({ description: '桶所在的地域' })
     region: string
 
-  @Field(type => [String])
+  @Field(type => [String], { description: 'key' })
     keys: string[]
 }
 

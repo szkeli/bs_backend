@@ -3,8 +3,8 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { Conversation } from '../conversations/models/conversations.model'
-import { User } from '../user/models/user.model'
-import { AddReportToArgs, Report, Report2Union } from './models/reports.model'
+import { PagingConfigArgs, User } from '../user/models/user.model'
+import { AddReportToArgs, Report, Report2Union, ReportsConnection } from './models/reports.model'
 import { ReportsService } from './reports.service'
 
 // 1. 创建一个会话
@@ -19,6 +19,11 @@ export class ReportsResolver {
   @Query(() => Report, { description: '根据举报id返回举报' })
   async report (@Args('id') id: string) {
     return await this.reportsService.report(id)
+  }
+
+  @Query(() => ReportsConnection, { description: '所有的举报' })
+  async reports (@Args() { first, offset }: PagingConfigArgs) {
+    return await this.reportsService.reports(first, offset)
   }
 
   @Mutation(returns => Report, { description: '举报一条评论' })
@@ -50,7 +55,7 @@ export class ReportsResolver {
 
   @ResolveField(returns => Report2Union, { description: '被举报的对象' })
   async to (@Parent() report: Report) {
-    return await this.reportsService.findReport2ByReportId(report.id)
+    return await this.reportsService.to(report.id)
   }
 
   @ResolveField(returns => User, { description: '举报的创建者' })
