@@ -134,7 +134,20 @@ export class ReportsService {
         ]
       }
     }
-
+    // {
+    //   uids: {
+    //     arr_: [ [Array], [Array], [Array], [Array] ],
+    //     valueCtor_: null,
+    //     map_: {
+    //       block: [Object],
+    //       delete: [Object],
+    //       message: [Object],
+    //       sys_message: [Object]
+    //     },
+    //     arrClean: true
+    //   },
+    //   json: { a: [ [Object] ], r: [ [Object] ], x: [ [Object] ], q: [] }
+    // }
     const res = await this.dbService.commitConditionalUpsertWithVars<Map<string, string>, {
       a: Array<{uid: string}>
       r: Array<{uid: string}>

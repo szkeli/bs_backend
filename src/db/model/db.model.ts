@@ -47,3 +47,29 @@ export class SetDbSchema {
   @Field()
     convertedPrimitiveFields_: string
 }
+
+export interface CommitConditionalUpertsProps {
+  mutations: MutationsWithCondition[]
+  query: string
+  vars: Vars
+}
+
+export interface MutationsWithCondition {
+  mutation: object
+  condition: string
+}
+
+export interface CommitConditionalUpsertWithVarsProps {
+  conditions: string
+  mutation: object
+  query: string
+  vars: Vars
+}
+export interface CommitQueryWithVarsProps {
+  query: string
+  vars?: Vars
+}
+
+export interface Vars {
+  [key: string]: string
+}
