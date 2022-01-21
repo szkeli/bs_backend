@@ -16,22 +16,22 @@ import { ReportsService } from './reports.service'
 export class ReportsResolver {
   constructor (private readonly reportsService: ReportsService) {}
 
-  @Query(() => Report)
-  async report (@Args('id')id: string) {
+  @Query(() => Report, { description: '根据举报id返回举报' })
+  async report (@Args('id') id: string) {
     return await this.reportsService.report(id)
   }
 
-  @Mutation(returns => Report)
+  @Mutation(returns => Report, { description: '举报一条评论' })
   async addReportOnComment (@CurrentUser() user: User, @Args() { type, description, to }: AddReportToArgs) {
     return await this.reportsService.addReportOnComment(user.id, to, type, description)
   }
 
-  @Mutation(returns => Report)
+  @Mutation(returns => Report, { description: '举报一个帖子' })
   async addReportOnPost (@CurrentUser() user: User, @Args() { type, description, to }: AddReportToArgs) {
     return await this.reportsService.addReportOnPost(user.id, to, type, description)
   }
 
-  @Mutation(returns => Report)
+  @Mutation(returns => Report, { description: '举报一个用户' })
   async addReportOnUser (@CurrentUser() user: User, @Args() { type, description, to }: AddReportToArgs) {
     return await this.reportsService.addReportOnUser(user.id, to, type, description)
   }
@@ -48,17 +48,17 @@ export class ReportsResolver {
     return await this.reportsService.acceptReport(user.id, reportId, content)
   }
 
-  @ResolveField(returns => Report2Union)
+  @ResolveField(returns => Report2Union, { description: '被举报的对象' })
   async to (@Parent() report: Report) {
     return await this.reportsService.findReport2ByReportId(report.id)
   }
 
-  @ResolveField(returns => User)
+  @ResolveField(returns => User, { description: '举报的创建者' })
   async creator (@Parent() report: Report) {
     return await this.reportsService.findCreatorOfReport(report.id)
   }
 
-  @ResolveField(returns => Conversation)
+  @ResolveField(returns => Conversation, { description: '举报所在的会话' })
   async conversation (@Parent() report: Report) {
     return await this.reportsService.findConversationByReportId(report.id)
   }

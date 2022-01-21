@@ -25,11 +25,17 @@ type User implements Person & Node {
   avatarImageUrl: String!
   school: String!
   grade: String!
+
+  """分页返回帖子"""
   posts(first: Int = 0, offset: Int = 0): PostsConnection!
+
+  """用户创建的主题"""
   subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
+
+  """用户创建的会话"""
   conversations(first: Int = 0, offset: Int = 0): ConversationsConnection!
 
-  """当前用户收到的举报"""
+  """用户收到的举报"""
   reports(first: Int = 0, offset: Int = 0): ReportsConnection!
 }
 
@@ -52,11 +58,17 @@ type LoginResult implements Node & Person {
   avatarImageUrl: String!
   school: String!
   grade: String!
+
+  """分页返回帖子"""
   posts(first: Int = 0, offset: Int = 0): PostsConnection!
+
+  """用户创建的主题"""
   subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
+
+  """用户创建的会话"""
   conversations(first: Int = 0, offset: Int = 0): ConversationsConnection!
 
-  """当前用户收到的举报"""
+  """用户收到的举报"""
   reports(first: Int = 0, offset: Int = 0): ReportsConnection!
   token: String!
 }
@@ -70,13 +82,6 @@ type PageInfo {
 
 type UsersConnection {
   nodes: [User!]!
-  totalCount: Int!
-}
-
-type FollowersConnection {
-  edges: [UserEdge!]!
-  nodes: [User!]!
-  pageInfo: PageInfo!
   totalCount: Int!
 }
 
@@ -156,10 +161,20 @@ type Post {
   content: String!
   createdAt: String!
   images: [String!]!
+
+  """帖子的创建者"""
   creator: User!
+
+  """帖子的评论"""
   comments(first: Int = 0, offset: Int = 0): CommentsConnection!
+
+  """帖子所属的主题"""
   subject: Subject
+
+  """帖子的点赞"""
   votes(first: Int = 0, offset: Int = 0): VotesConnection!
+
+  """帖子收到的举报"""
   reports(first: Int = 0, offset: Int = 0): ReportsConnection!
 }
 
@@ -174,8 +189,14 @@ type Report implements Node {
   type: REPORT_TYPE!
   description: String!
   state: REPORT_STATE!
+
+  """被举报的对象"""
   to: Report2Union!
+
+  """举报的创建者"""
   creator: User!
+
+  """举报所在的会话"""
   conversation: Conversation!
 }
 
@@ -204,7 +225,11 @@ type Conversation implements Node {
   title: String!
   description: String!
   state: CONVERSATION_STATE!
+
+  """返回会话中的所有消息"""
   messages(first: Int = 0, offset: Int = 0): MessageItemConnection!
+
+  """返回会话的参与者"""
   participants(first: Int = 0, offset: Int = 0): ParticipantsConnection!
 }
 
@@ -234,11 +259,6 @@ type Message implements Node {
   id: String!
   createdAt: String!
   content: String!
-}
-
-type MessagesConnection {
-  nodes: [Message!]!
-  totalCount: Int!
 }
 
 type Votable {
@@ -287,8 +307,11 @@ type Subject {
   description: String!
   avatarImageUrl: String!
   backgroundImageUrl: String!
+
+  """主题的创建者"""
   creator: User!
-  followers(first: Int = 0, offset: Int = 0): FollowersConnection!
+
+  """分页返回主题中的帖子"""
   posts(first: Int = 0, offset: Int = 0): PostsConnection!
 }
 
@@ -331,17 +354,27 @@ type AvatarImageUploadCredentialInfo {
 type Query {
   post(id: String!): Post!
   posts(first: Int = 0, offset: Int = 0): PostsConnection!
+
+  """用户登录"""
   login(
     """用户 userId，注意不是 id"""
     userId: String!
     sign: String!
   ): LoginResult!
+
+  """当前用户的用户画像"""
   whoAmI: User!
+
+  """分页返回用户"""
   users(first: Int = 0, offset: Int = 0): UsersConnection!
   comment(id: String!): Comment!
   admins(first: Int = 0, offset: Int = 0): AdminsConnection!
   admin(id: String!): Admin!
+
+  """根据主题id返回对应的主题"""
   subject(id: String!): Subject!
+
+  """分页返回主题"""
   subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
   search(
     first: Int = 0
@@ -353,10 +386,17 @@ type Query {
   ): SearchResultItemConnection!
   node(id: String!): Node!
   nodes(ids: [String!]!): NodesConnection!
+
+  """根据举报id返回举报"""
   report(id: String!): Report!
-  messages(first: Int = 0, offset: Int = 0): MessagesConnection!
+
+  """返回指定的消息"""
   message: Message!
+
+  """返回指定的会话"""
   conversation(id: String!): Conversation!
+
+  """分页返回会话"""
   conversations(first: Int = 0, offset: Int = 0): ConversationsConnection!
 
   """用户上传头像时，先根据文件名获取临时上传凭证信息"""
@@ -374,6 +414,7 @@ enum SEARCHTYPE {
 }
 
 type Mutation {
+  """创建一个帖子"""
   createPost(
     """帖子标题"""
     title: String!
@@ -387,6 +428,8 @@ type Mutation {
     """帖子所属的主题"""
     subjectId: String
   ): Post!
+
+  """用户注册"""
   register(input: UserRegisterInput!): User!
   addCommentOnComment(
     """相应的评论的id"""
@@ -411,8 +454,11 @@ type Mutation {
     sign: String!
   ): Admin!
   authenAdmin(to: String!): Admin!
+
+  """创建一个主题"""
   createSubject(input: CreateSubjectInput!): Subject!
-  updateSubject(input: UpdateSubjectInput!): Subject!
+
+  """举报一条评论"""
   addReportOnComment(
     """举报的类型，枚举值"""
     type: REPORT_TYPE!
@@ -423,6 +469,8 @@ type Mutation {
     """被举报对象的id"""
     to: String!
   ): Report!
+
+  """举报一个帖子"""
   addReportOnPost(
     """举报的类型，枚举值"""
     type: REPORT_TYPE!
@@ -433,6 +481,8 @@ type Mutation {
     """被举报对象的id"""
     to: String!
   ): Report!
+
+  """举报一个用户"""
   addReportOnUser(
     """举报的类型，枚举值"""
     type: REPORT_TYPE!
@@ -449,7 +499,11 @@ type Mutation {
 
   """管理员接口：认为举报有效"""
   acceptReport(content: String!, reportId: String!): Boolean!
+
+  """向指定的会话中添加一条消息"""
   addMessageOnConversation(content: String!, id: String!): Message!
+
+  """创建一个会话"""
   createConversation(title: String!, description: String!, participants: [String!]!): Conversation!
   setSchema: SetDbSchema!
   dropAllData: Boolean!
@@ -475,12 +529,4 @@ input CreateSubjectInput {
   description: String!
   avatarImageUrl: String!
   backgroundImageUrl: String!
-}
-
-input UpdateSubjectInput {
-  id: String!
-  title: String
-  description: String
-  avatarUrl: String
-  background: String
 }

@@ -3,10 +3,10 @@ import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
 import { Comment, CommentsConnection } from 'src/comment/models/comment.model'
 import { DbService } from 'src/db/db.service'
-import { PostId, UserId } from 'src/db/model/db.model'
+import { PostId } from 'src/db/model/db.model'
 
 import { Vote, VotesConnection } from '../votes/model/votes.model'
-import { Post, PostsConnection } from './models/post.model'
+import { CreatePostArgs, Post, PostsConnection } from './models/post.model'
 
 @Injectable()
 export class PostsService {
@@ -15,13 +15,7 @@ export class PostsService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async createAPost (
-    creator: UserId,
-    title: string,
-    content: string,
-    images: [string],
-    subjectId: string
-  ) {
+  async createAPost (creator: string, { title, content, images, subjectId }: CreatePostArgs) {
     const txn = this.dgraph.newTxn()
     let conditions: string
     let query: string

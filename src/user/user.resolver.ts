@@ -31,50 +31,46 @@ export class UserResolver {
     private readonly reportsService: ReportsService
   ) {}
 
-  @Query(returns => LoginResult)
+  @Query(returns => LoginResult, { description: '用户登录' })
   @NoAuth()
   async login (@Args() args: PersonLoginArgs): Promise<LoginResult> {
     const v = sign_calculus(args.sign)
     return await this.authService.login(args.userId, v)
   }
 
-  @Mutation(returns => User)
+  @Mutation(returns => User, { description: '用户注册' })
   @NoAuth()
   async register (@Args('input') input: UserRegisterInput) {
     input.sign = sign_calculus(input.sign)
     return await this.userService.registerAUser(input)
   }
 
-  @Query(returns => User)
+  @Query(returns => User, { description: '当前用户的用户画像' })
   async whoAmI (@CurrentUser() user: User) {
     return user
   }
 
-  @Query(returns => UsersConnection)
+  @Query(returns => UsersConnection, { description: '分页返回用户' })
   async users (@Args() args: PagingConfigArgs) {
     return await this.userService.users(args.first, args.offset)
   }
 
-  @ResolveField(returns => PostsConnection)
-  async posts (@Parent() user: User, @Args() args: PagingConfigArgs) {
-    return await this.userService.findPostsByUid(
-      user.id,
-      args.first,
-      args.offset
-    )
+  @ResolveField(returns => PostsConnection, { description: '分页返回帖子' })
+  async posts (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.userService.findPostsByUid(user.id, first, offset)
   }
 
-  @ResolveField(returns => SubjectsConnection)
+  @ResolveField(returns => SubjectsConnection, { description: '用户创建的主题' })
   async subjects (@Parent() user: User, @Args() args: PagingConfigArgs) {
     return await this.userService.findSubjectsByUid(user.id, args.first, args.offset)
   }
 
-  @ResolveField(returns => ConversationsConnection)
+  @ResolveField(returns => ConversationsConnection, { description: '用户创建的会话' })
   async conversations (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.conversationsService.findConversationsByUid(user.id, first, offset)
   }
 
-  @ResolveField(returns => ReportsConnection, { description: '当前用户收到的举报' })
+  @ResolveField(returns => ReportsConnection, { description: '用户收到的举报' })
   async reports (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.reportsService.findReportsByUid(user.id, first, offset)
   }

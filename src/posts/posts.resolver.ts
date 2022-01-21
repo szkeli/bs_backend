@@ -44,23 +44,17 @@ export class PostsResolver {
     return await this.postsService.posts(first, offset)
   }
 
-  @Mutation(returns => Post)
+  @Mutation(returns => Post, { description: '创建一个帖子' })
   async createPost (@CurrentUser() user: User, @Args() args: CreatePostArgs) {
-    return await this.postsService.createAPost(
-      user.id,
-      args.title,
-      args.content,
-      args.images,
-      args.subjectId
-    )
+    return await this.postsService.createAPost(user.id, args)
   }
 
-  @ResolveField(returns => User)
+  @ResolveField(returns => User, { description: '帖子的创建者' })
   async creator (@Parent() post: Post): Promise<User> {
     return await this.postsService.getUserByPostId(post.id)
   }
 
-  @ResolveField(returns => CommentsConnection)
+  @ResolveField(returns => CommentsConnection, { description: '帖子的评论' })
   async comments (@Parent() post: Post, @Args() args: PagingConfigArgs) {
     return await this.postsService.getCommentsByPostId(
       post.id,
@@ -69,17 +63,17 @@ export class PostsResolver {
     )
   }
 
-  @ResolveField(returns => Subject, { nullable: true })
+  @ResolveField(returns => Subject, { nullable: true, description: '帖子所属的主题' })
   async subject (@Parent() post: Post): Promise<Subject | null> {
     return await this.subjectService.findASubjectByPostId(post.id)
   }
 
-  @ResolveField(returns => VotesConnection)
+  @ResolveField(returns => VotesConnection, { description: '帖子的点赞' })
   async votes (@CurrentUser() user: User, @Parent() post: Post, @Args() args: PagingConfigArgs) {
     return await this.postsService.getVotesByPostId(user.id, post.id, args.first, args.offset)
   }
 
-  @ResolveField(returns => ReportsConnection)
+  @ResolveField(returns => ReportsConnection, { description: '帖子收到的举报' })
   async reports (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
     return await this.reportsService.findReportsByPostId(post.id, first, offset)
   }
