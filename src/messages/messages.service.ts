@@ -136,7 +136,7 @@ export class MessagesService {
     return u
   }
 
-  async findMessagesByConversationId (id: string, first: number, offset: number) {
+  async findMessagesByConversationId (id: string, first: number, offset: number): Promise<MessageItemConnection> {
     const query = `
       query v($uid: string) {
         totalCount(func: uid($uid)) @filter(type(Conversation)) {
@@ -169,18 +169,29 @@ export class MessagesService {
       return new Message(m as unknown as Message)
     })
 
-    const u: MessageItemConnection = {
+    return {
       nodes: messages || [],
       totalCount: res.totalCount[0].count
     }
-    return u
   }
 
-  async message (id: string) {
-    throw new Error('Method not implemented.')
-  }
+  async message (id: string): Promise<Message> {
+    const query = `
+      query v($messageId: string) {
+        message(func: uid($messageId)) @filter(type(Message)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{message: Message[]}>({
+      query,
+      vars: { $messageId: id }
+    })
 
-  async messages (first: number, offset: number) {
-    throw new Error('Method not implemented.')
+    if (res.message.length !== 1) {
+      throw new ForbiddenException(`消息 ${id} 不存在`)
+    }
+    return res.message[0]
   }
 }

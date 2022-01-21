@@ -11,7 +11,7 @@ export class MessagesResolver {
   constructor (private readonly messagesService: MessagesService) {}
 
   @Query(returns => Message, { description: '返回指定的消息' })
-  async message (id: string) {
+  async message (@Args('id') id: string) {
     return await this.messagesService.message(id)
   }
 

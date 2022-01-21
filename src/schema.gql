@@ -391,7 +391,7 @@ type Query {
   report(id: String!): Report!
 
   """返回指定的消息"""
-  message: Message!
+  message(id: String!): Message!
 
   """返回指定的会话"""
   conversation(id: String!): Conversation!
