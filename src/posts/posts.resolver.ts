@@ -7,7 +7,7 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CurrentUser } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser } from 'src/auth/decorator'
 import {
   CommentsConnection
 } from 'src/comment/models/comment.model'
@@ -16,6 +16,7 @@ import { Subject } from 'src/subject/model/subject.model'
 import { SubjectService } from 'src/subject/subject.service'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
+import { ReadPostPolicyHandler } from '../casl/casl.handler'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -35,12 +36,14 @@ export class PostsResolver {
   ) {}
 
   @Query(returns => Post)
+  @CheckPolicies(new ReadPostPolicyHandler())
   async post (@Args('id') id: PostId): Promise<Post> {
     return await this.postsService.post(id)
   }
 
   @Query(returns => PostsConnection)
-  async posts (@Args() { first, offset }: PagingConfigArgs) {
+  @CheckPolicies(new ReadPostPolicyHandler())
+  async posts (@Args() { first, offset }: PagingConfigArgs): Promise<PostsConnection> {
     return await this.postsService.posts(first, offset)
   }
 
@@ -55,12 +58,8 @@ export class PostsResolver {
   }
 
   @ResolveField(returns => CommentsConnection, { description: '帖子的评论' })
-  async comments (@Parent() post: Post, @Args() args: PagingConfigArgs) {
-    return await this.postsService.getCommentsByPostId(
-      post.id,
-      args.first,
-      args.offset
-    )
+  async comments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.postsService.getCommentsByPostId(post.id, first, offset)
   }
 
   @ResolveField(returns => Subject, { nullable: true, description: '帖子所属的主题' })

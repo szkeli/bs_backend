@@ -1,3 +1,4 @@
+import { AppAbility } from '../../casl/models/casl.model'
 import { User } from '../../user/models/user.model'
 
 export interface Payload {
@@ -18,3 +19,11 @@ export interface InviteTokenPayload {
 export type UserWithRoles = User & {
   roles: Role[]
 }
+
+export interface IPolicyHandler {
+  handle: (ability: AppAbility) => boolean
+}
+
+type PolicyHandlerCallback = (ability: AppAbility) => boolean
+
+export type PolicyHandler = IPolicyHandler | PolicyHandlerCallback

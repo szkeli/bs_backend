@@ -6,7 +6,7 @@ import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
 import { Vote, VotesConnection } from '../votes/model/votes.model'
-import { CreatePostArgs, Post, PostsConnection } from './models/post.model'
+import { CreatePostArgs, Post, PostsConnection, PostWithCreatorId } from './models/post.model'
 
 @Injectable()
 export class PostsService {
@@ -119,26 +119,37 @@ export class PostsService {
     }
   }
 
-  async post (id: PostId) {
+  async post (id: PostId): Promise<PostWithCreatorId> {
     const query = `
         query v($uid: string) {
+          postCreatorId(func: uid($uid)) @filter(type(Post)) {
+            creator @filter(type(User)) {
+              id: uid
+            }
+          }
           post(func: uid($uid)) @filter(type(Post)) {
             id: uid
-            expand(_all_)
+            expand(_all_) 
           }
         }
       `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $uid: id }))
-      .getJson() as unknown as {
+    const res = await this.dbService.commitQuery<{
       post: Post[]
-    }
+      postCreatorId: Array<{creator: {uid: string}}>
+    }>({
+      query,
+      vars: {
+        $uid: id
+      }
+    })
 
     if (!res || !res.post || res.post.length !== 1) {
       throw new ForbiddenException(`帖子 ${id} 不存在`)
     }
-    return res.post[0]
+    return {
+      ...res.post[0],
+      creatorId: res.postCreatorId[0]?.creator.uid || ''
+    }
   }
 
   async posts (first: number, offset: number) {

@@ -39,6 +39,10 @@ export class Post {
     images: [string]
 }
 
+export class PostWithCreatorId extends Post {
+  creatorId: string
+}
+
 @InputType()
 export class CreateAPostInput {
   @Field()

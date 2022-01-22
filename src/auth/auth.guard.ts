@@ -4,25 +4,47 @@ import { GqlExecutionContext } from '@nestjs/graphql'
 import { AuthGuard } from '@nestjs/passport'
 import { memoize } from '@nestjs/passport/dist/utils/memoize.util'
 
-import { NO_AUTH_KEY, ROLES_KEY } from './decorator'
-import { Role, UserWithRoles } from './model/auth.model'
+import { CaslAbilityFactory } from '../casl/casl-ability.factory'
+import { AppAbility } from '../casl/models/casl.model'
+import { CHECK_POLICIES_KEY, NO_AUTH_KEY, ROLES_KEY } from './decorator'
+import { PolicyHandler, Role, UserWithRoles } from './model/auth.model'
 
 @Injectable()
 export class RoleAuthGuard implements CanActivate {
-  constructor (private readonly reflector: Reflector) {}
-  canActivate (context: ExecutionContext) {
+  constructor (
+    private readonly reflector: Reflector,
+    private readonly caslAbilityFactory: CaslAbilityFactory
+  ) {}
+
+  async canActivate (context: ExecutionContext): Promise<boolean> {
     const noAuth = this.reflector.get<boolean>(NO_AUTH_KEY, context.getHandler())
+    const roles = this.reflector.get<Role[]>(ROLES_KEY, context.getHandler()) || [Role.User]
+    const policies = this.reflector.get<PolicyHandler[]>(CHECK_POLICIES_KEY, context.getHandler()) || []
+
     if (noAuth) return true
 
-    const roles = this.reflector.get<Role[]>(ROLES_KEY, context.getHandler())
+    const guard = new (RoleGuard(roles, policies, this.caslAbilityFactory))()
 
-    const guard = new (RoleGuard(roles || [Role.User]))()
+    const canActive = await guard.canActivate(context)
 
-    return guard.canActivate(context)
+    const ctx = GqlExecutionContext.create(context)
+    const { user } = ctx.getContext().req as unknown as { user: UserWithRoles }
+
+    const ability = this.caslAbilityFactory.createForAdminAndUser(user)
+    const hasAccess = policies.every(handler => this.execPolicyHandler(handler, ability))
+
+    if (!hasAccess) throw new UnauthorizedException('权限不足')
+
+    return canActive
+  }
+
+  private execPolicyHandler (handler: PolicyHandler, ability: AppAbility) {
+    if (typeof handler === 'function') return handler(ability)
+    return handler.handle(ability)
   }
 }
 
-export const RoleGuard = memoize((roles: Role[]) => {
+export const RoleGuard = memoize((roles: Role[], policies: PolicyHandler[], casl: CaslAbilityFactory) => {
   return class GqlAuthGuard extends AuthGuard('jwt') {
     getRequest (context: ExecutionContext) {
       const ctx = GqlExecutionContext.create(context)
@@ -34,6 +56,7 @@ export const RoleGuard = memoize((roles: Role[]) => {
       if (!user) throw new UnauthorizedException('Not authorized')
 
       const notIncludes = roles.filter(r => !user.roles.includes(r))
+
       if (notIncludes.length !== 0) {
         throw new UnauthorizedException(`${user.id} not in [${notIncludes.toString()}] roles.`)
       }

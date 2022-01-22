@@ -27,6 +27,7 @@ import { SubjectModule } from './subject/subject.module'
 import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { VotesModule } from './votes/votes.module'
+import { CaslModule } from './casl/casl.module';
 
 @Module({
   imports: [
@@ -55,7 +56,8 @@ import { VotesModule } from './votes/votes.module'
     ConversationsModule,
     DbModule,
     DeletesModule,
-    StsModule
+    StsModule,
+    CaslModule
   ],
   controllers: [AppController],
   providers: [
