@@ -65,18 +65,30 @@ export class ReportsService {
           conversation as conversation
           # 被举报的对象
           to as to
-          # 被举报的对象的类型
+        }
+        # 被举报的对象是User或者Admin
+        p(func: uid($reportId)) @filter(type(Report)) {
+          to @filter(type(User) OR type(Admin)) {
+            p as uid
+          }
+        }
+        # 被举报的对象是Post或Comment
+        v(func: uid($reportId)) @filter(type(Report)) {
+          to @filter(type(Post) OR type(Comment)) {
+            v as uid
+          }
         }
       }
     `
-    const conditions = '@if( eq(len(a), 1) AND eq(len(r), 1) AND eq(len(x), 1) )'
-    const mutation = {
+    // 被举报的对象是Post或Comment
+    const isPostOrComment = '@if( eq(len(a), 1) AND eq(len(r), 1) AND eq(len(x), 1) AND eq(len(p), 0) AND eq(len(v), 1) )'
+    const mutation1 = {
       uid: reportId,
       // 关闭该举报
       state: REPORT_STATE.CLOSE,
       to: {
         uid: 'uid(to)',
-        // 尝试添加一个删除
+        // 添加一个删除
         delete: {
           uid: '_:delete',
           'dgraph.type': 'Delete',
@@ -87,8 +99,62 @@ export class ReportsService {
           to: {
             uid: 'uid(to)'
           }
-        },
-        // 尝试添加一个拉黑
+        }
+        // block: {
+        //   uid: '_:block',
+        //   'dgraph.type': 'Block',
+        //   createdAt: now,
+        //   creator: {
+        //     uid: id
+        //   },
+        //   to: {
+        //     uid: 'uid(to)'
+        //   }
+        // }
+      },
+      conversation: {
+        uid: 'uid(conversation)',
+        state: CONVERSATION_STATE.CLOSE,
+        messages: [
+          {
+            // 创建一个新消息
+            uid: '_:message',
+            'dgraph.type': 'Message',
+            type: MESSAGE_TYPE.TEXT,
+            content,
+            createdAt: now,
+            creator: {
+              uid: id
+            },
+            conversation: {
+              uid: 'uid(conversation)'
+            }
+          }, {
+            uid: '_:sys_message',
+            'dgraph.type': 'Message',
+            type: MESSAGE_TYPE.TEXT,
+            content: '举报已处理完成，系统自动关闭会话',
+            createdAt: new Date().toISOString(),
+            creator: {
+              uid: id
+            },
+            conversation: {
+              uid: 'uid(conversation)'
+            }
+          }
+        ]
+      }
+    }
+
+    // 被举报的对象是User或Admin
+    const isUserOrAdmin = '@if( eq(len(a), 1) AND eq(len(r), 1) AND eq(len(x), 1) AND eq(len(p), 1) AND eq(len(v), 0) )'
+    const mutation2 = {
+      uid: reportId,
+      // 关闭该举报
+      state: REPORT_STATE.CLOSE,
+      to: {
+        uid: 'uid(to)',
+        // 添加一个拉黑
         block: {
           uid: '_:block',
           'dgraph.type': 'Block',
@@ -134,28 +200,20 @@ export class ReportsService {
         ]
       }
     }
-    // {
-    //   uids: {
-    //     arr_: [ [Array], [Array], [Array], [Array] ],
-    //     valueCtor_: null,
-    //     map_: {
-    //       block: [Object],
-    //       delete: [Object],
-    //       message: [Object],
-    //       sys_message: [Object]
-    //     },
-    //     arrClean: true
-    //   },
-    //   json: { a: [ [Object] ], r: [ [Object] ], x: [ [Object] ], q: [] }
-    // }
-    const res = await this.dbService.commitConditionalUpsertWithVars<Map<string, string>, {
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       a: Array<{uid: string}>
       r: Array<{uid: string}>
       x: Array<{uid: string}>
+      q: Array<{}>
+      p: Array<{uid: string}>
+      v: Array<{}>
     }>({
-      conditions,
-      mutation,
-      query,
+      mutations: [
+        { mutation: mutation1, condition: isPostOrComment },
+        { mutation: mutation2, condition: isUserOrAdmin }
+      ],
+      query: query,
       vars: {
         $adminId: id,
         $reportId: reportId,
@@ -164,20 +222,19 @@ export class ReportsService {
     })
 
     if (res.json.x.length !== 1) {
-      throw new ForbiddenException(`举报 ${reportId} 已被关闭`)
+      throw new ForbiddenException(`举报 ${reportId} 的对象不存在`)
     }
 
     if (res.json.a.length !== 1) {
       throw new ForbiddenException(`管理员 ${id} 不存在`)
     }
-
     if (res.json.r.length !== 1) {
       throw new ForbiddenException(`举报 ${reportId} 不存在`)
     }
 
-    console.error(res)
-
-    return !!res.uids.get('message')
+    if (res.uids.get('message')) {
+      return true
+    }
   }
 
   /**
