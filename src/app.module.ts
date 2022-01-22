@@ -28,6 +28,7 @@ import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { VotesModule } from './votes/votes.module'
 import { CaslModule } from './casl/casl.module';
+import { PrivilegesModule } from './privileges/privileges.module';
 
 @Module({
   imports: [
@@ -57,7 +58,8 @@ import { CaslModule } from './casl/casl.module';
     DbModule,
     DeletesModule,
     StsModule,
-    CaslModule
+    CaslModule,
+    PrivilegesModule
   ],
   controllers: [AppController],
   providers: [

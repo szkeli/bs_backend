@@ -1,8 +1,18 @@
-import { ArgsType, Field, InputType, Int, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql'
+import {
+  ArgsType,
+  createUnionType,
+  Field,
+  InputType,
+  Int,
+  InterfaceType,
+  ObjectType,
+  registerEnumType
+} from '@nestjs/graphql'
 
 import { UserId } from 'src/db/model/db.model'
 import { SubjectId } from 'src/subject/model/subject.model'
 
+import { Admin } from '../../admin/models/admin.model'
 import { Role } from '../../auth/model/auth.model'
 import { Node } from '../../node/models/node.model'
 
@@ -156,25 +166,10 @@ export class User implements Person, Node {
     grade: string
 }
 
-export class CreateFollowRelationInput {
-  from: UserId
-  to: UserId
-}
-export class DeleteFollowRelationInput {
-  from: UserId
-  to: UserId
-}
-
 @ObjectType({
   implements: () => [Node]
 })
 export class LoginResult extends User implements Node {
-  @Field()
-    token: string
-}
-
-@ObjectType()
-export class InviteTokenResult {
   @Field()
     token: string
 }
@@ -188,6 +183,10 @@ export interface UserFollowASubjectInput {
   implements: () => [Node]
 })
 export abstract class Person implements Node {
+  constructor (person: Person) {
+    Object.assign(this, person)
+  }
+
   @Field(type => String)
     userId: UserId
 
@@ -228,48 +227,9 @@ export class UsersConnection {
     totalCount: number
 }
 
-@ObjectType()
-export class FollowersConnection {
-  @Field(type => [UserEdge])
-    edges: [UserEdge]
-
-  @Field(type => [User])
-    nodes: [User]
-
-  @Field(type => PageInfo)
-    pageInfo: PageInfo
-
-  @Field(type => Int)
-    totalCount: number
-}
-
-@ObjectType()
-export class UserEdge {
-  @Field()
-    cursor: string
-
-  @Field(type => User)
-    node: User
-}
-
-@ObjectType()
-export class FolloweringsConnection {
-  @Field(type => [UserEdge])
-    edges: [UserEdge]
-
-  @Field(type => [User])
-    nodes: [User]
-
-  @Field(type => PageInfo)
-    pageInfo: PageInfo
-
-  @Field(type => Int)
-    totalCount: number
-}
-
 @ArgsType()
 export class PagingConfigArgs {
-  @Field(type => Int, { nullable: true, defaultValue: 0 })
+  @Field(type => Int, { nullable: true, defaultValue: 10 })
     first: number
 
   @Field(type => Int, { nullable: true, defaultValue: 0 })
@@ -277,3 +237,7 @@ export class PagingConfigArgs {
 }
 
 export type CheckUserResult = User & {success: boolean, roles: Role[]}
+export const AdminAndUserUnion = createUnionType({
+  name: 'AdminAndUserUnion',
+  types: () => [User, Admin]
+})

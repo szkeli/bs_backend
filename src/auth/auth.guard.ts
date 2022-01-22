@@ -56,8 +56,7 @@ export const RoleGuard = memoize((roles: Role[], policies: PolicyHandler[], casl
       if (!user) throw new UnauthorizedException('Not authorized')
 
       const notIncludes = roles.filter(r => !user.roles.includes(r))
-
-      if (notIncludes.length !== 0) {
+      if (notIncludes.length === roles.length) {
         throw new UnauthorizedException(`${user.id} not in [${notIncludes.toString()}] roles.`)
       }
 

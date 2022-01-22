@@ -2,10 +2,40 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
 import { DbService } from '../db/db.service'
-import { Admin, AdminsConnection, Credential, CredentialsConnection, PRIVILEGE, RegisterAdminArgs } from './models/admin.model'
+import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
+import {
+  Admin,
+  AdminsConnection,
+  Credential,
+  CredentialsConnection,
+  RegisterAdminArgs
+} from './models/admin.model'
 
 @Injectable()
 export class AdminService {
+  async privileges (adminId: string, first: number, offset: number): Promise<PrivilegesConnection> {
+    const query = `
+      query v($adminId: string) {
+        to(func: uid($adminId)) @filter(type(Admin)) {
+          privileges @filter(type(Privilege)) {
+            count(uid)
+          }
+        }
+        admin(func: uid($adminId)) @filter(type(Admin)) {
+          privileges (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Privilege)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{to: Array<{privileges: Array<{count: number}>}>, admin: Array<{privileges: Privilege[]}>}>({ query, vars: { $adminId: adminId } })
+    return {
+      nodes: res.admin[0]?.privileges ?? [],
+      totalCount: res?.to[0]?.privileges[0]?.count ?? 0
+    }
+  }
+
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
@@ -199,7 +229,7 @@ export class AdminService {
     }
   }
 
-  async registerAdmin (args: RegisterAdminArgs) {
+  async registerAdmin (args: RegisterAdminArgs): Promise<Admin> {
     const txn = this.dgraph.newTxn()
     try {
       const now = new Date().toISOString()
@@ -242,17 +272,15 @@ export class AdminService {
       }
       const uid = res.getUidsMap().get('admin')
 
-      const u: Admin = {
+      return {
         id: uid,
         userId: args.userId,
         name: args.name,
         avatarImageUrl: args.avatarImageUrl,
         createdAt: now,
         updatedAt: now,
-        lastLoginedAt: now,
-        privileges: [PRIVILEGE.ROOT, PRIVILEGE.CAN_CREATE_ADMIN]
+        lastLoginedAt: now
       }
-      return u
     } finally {
       await txn.discard()
     }

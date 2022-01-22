@@ -12,6 +12,30 @@ interface Node {
   id: String!
 }
 
+type Privilege {
+  id: String!
+  createdAt: String!
+  value: PRIVILEGE!
+  to: AdminAndUserUnion!
+  creator: Admin!
+}
+
+enum PRIVILEGE {
+  ROOT
+  CAN_CREATE_ADMIN
+  CAN_DELETE_ADMIN
+  CAN_DELETE_USER
+  CAN_CREATE_USER
+  CAN_UPDATE_USER
+}
+
+union AdminAndUserUnion = User | Admin
+
+type PrivilegesConnection {
+  nodes: [Privilege!]!
+  totalCount: Int!
+}
+
 type User implements Person & Node {
   userId: String!
   name: String!
@@ -27,16 +51,16 @@ type User implements Person & Node {
   grade: String!
 
   """分页返回帖子"""
-  posts(first: Int = 0, offset: Int = 0): PostsConnection!
+  posts(first: Int = 10, offset: Int = 0): PostsConnection!
 
   """用户创建的主题"""
-  subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
 
   """用户创建的会话"""
-  conversations(first: Int = 0, offset: Int = 0): ConversationsConnection!
+  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
 
   """用户收到的举报"""
-  reports(first: Int = 0, offset: Int = 0): ReportsConnection!
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 }
 
 enum GENDER {
@@ -60,16 +84,16 @@ type LoginResult implements Node & Person {
   grade: String!
 
   """分页返回帖子"""
-  posts(first: Int = 0, offset: Int = 0): PostsConnection!
+  posts(first: Int = 10, offset: Int = 0): PostsConnection!
 
   """用户创建的主题"""
-  subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
 
   """用户创建的会话"""
-  conversations(first: Int = 0, offset: Int = 0): ConversationsConnection!
+  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
 
   """用户收到的举报"""
-  reports(first: Int = 0, offset: Int = 0): ReportsConnection!
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
   token: String!
 }
 
@@ -83,11 +107,6 @@ type PageInfo {
 type UsersConnection {
   nodes: [User!]!
   totalCount: Int!
-}
-
-type UserEdge {
-  cursor: String!
-  node: User!
 }
 
 type NodesConnection {
@@ -110,18 +129,13 @@ type Admin implements Node & Person {
   createdAt: String!
   updatedAt: String!
   lastLoginedAt: String!
-  privileges: [PRIVILEGE!]!
-  credential: Credential
-  credentials(first: Int = 0, offset: Int = 0): CredentialsConnection!
-}
 
-enum PRIVILEGE {
-  ROOT
-  CAN_CREATE_ADMIN
-  CAN_DELETE_ADMIN
-  CAN_DELETE_USER
-  CAN_CREATE_USER
-  CAN_UPDATE_USER
+  """管理员的认证者"""
+  credential: Credential
+
+  """当前管理员认证过的其他管理员"""
+  credentials(offset: Int!, first: Int!): CredentialsConnection!
+  privileges(offset: Int!, first: Int!): PrivilegesConnection!
 }
 
 type AdminsConnection {
@@ -150,16 +164,16 @@ type Post {
   creator: User!
 
   """帖子的评论"""
-  comments(first: Int = 0, offset: Int = 0): CommentsConnection!
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
   """帖子所属的主题"""
   subject: Subject
 
   """帖子的点赞"""
-  votes(first: Int = 0, offset: Int = 0): VotesConnection!
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
 
   """帖子收到的举报"""
-  reports(first: Int = 0, offset: Int = 0): ReportsConnection!
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 }
 
 type PostsConnection {
@@ -171,9 +185,9 @@ type Comment implements Node {
   id: String!
   content: String!
   createdAt: String!
-  comments(first: Int = 0, offset: Int = 0): CommentsConnection!
-  votes(first: Int = 0, offset: Int = 0): VotesConnection!
-  reports(first: Int = 0, offset: Int = 0): ReportsConnection!
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
   post: Post!
   creator: User!
 }
@@ -227,10 +241,10 @@ type Conversation implements Node {
   state: CONVERSATION_STATE!
 
   """返回会话中的所有消息"""
-  messages(first: Int = 0, offset: Int = 0): MessageItemConnection!
+  messages(first: Int = 10, offset: Int = 0): MessageItemConnection!
 
   """返回会话的参与者"""
-  participants(first: Int = 0, offset: Int = 0): ParticipantsConnection!
+  participants(first: Int = 10, offset: Int = 0): ParticipantsConnection!
 }
 
 enum CONVERSATION_STATE {
@@ -320,7 +334,7 @@ type Subject {
   creator: User!
 
   """分页返回主题中的帖子"""
-  posts(first: Int = 0, offset: Int = 0): PostsConnection!
+  posts(first: Int = 10, offset: Int = 0): PostsConnection!
 }
 
 type SubjectsConnection {
@@ -370,7 +384,7 @@ type AvatarImageUploadCredentialInfo {
 
 type Query {
   post(id: String!): Post!
-  posts(first: Int = 0, offset: Int = 0): PostsConnection!
+  posts(first: Int = 10, offset: Int = 0): PostsConnection!
 
   """用户登录"""
   login(
@@ -379,22 +393,26 @@ type Query {
     sign: String!
   ): LoginResult!
 
-  """当前用户的用户画像"""
-  whoAmI: User!
+  """当前id对应的的用户画像"""
+  whoAmI: AdminAndUserUnion!
 
   """分页返回用户"""
-  users(first: Int = 0, offset: Int = 0): UsersConnection!
+  users(first: Int = 10, offset: Int = 0): UsersConnection!
   comment(id: String!): Comment!
-  admins(first: Int = 0, offset: Int = 0): AdminsConnection!
+
+  """根据id返回管理员"""
   admin(id: String!): Admin!
+
+  """分页返回所有的管理员"""
+  admins(offset: Int!, first: Int!): AdminsConnection!
 
   """根据主题id返回对应的主题"""
   subject(id: String!): Subject!
 
   """分页返回主题"""
-  subjects(first: Int = 0, offset: Int = 0): SubjectsConnection!
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
   search(
-    first: Int = 0
+    first: Int = 10
     offset: Int = 0
 
     """待检索的关键字"""
@@ -408,7 +426,7 @@ type Query {
   report(id: String!): Report!
 
   """所有的举报"""
-  reports(first: Int = 0, offset: Int = 0): ReportsConnection!
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 
   """返回指定的消息"""
   message(id: String!): Message!
@@ -417,13 +435,14 @@ type Query {
   conversation(id: String!): Conversation!
 
   """分页返回会话"""
-  conversations(first: Int = 0, offset: Int = 0): ConversationsConnection!
+  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
 
   """用户上传头像时，先根据文件名获取临时上传凭证信息"""
   getAvatarImageUploadCredentialInfo(fileName: String!): AvatarImageUploadCredentialInfo!
 
   """用户上传帖子图片时，先根据文件名获取临时上传凭证信息"""
   getPostImagesUploadCredentialInfo(fileNames: [String!]!): PostImagesUploadCredentialInfo!
+  privilege(id: String!): Privilege!
 }
 
 enum SEARCHTYPE {
@@ -465,6 +484,8 @@ type Mutation {
   addUpvoteOnComment(commentId: String!): Votable!
   removeUpvoteOnComment(from: String!): Votable!
   removeUpvoteOnPost(from: String!): Votable!
+
+  """注册一个管理员，需要使用authen认证新注册的管理员"""
   registerAdmin(
     userId: String!
     name: String!
@@ -473,6 +494,8 @@ type Mutation {
     """管理员密码"""
     sign: String!
   ): Admin!
+
+  """已存在的管理员认证一个新注册的管理员"""
   authenAdmin(to: String!): Admin!
 
   """创建一个主题"""
@@ -530,6 +553,7 @@ type Mutation {
   dropData: Boolean!
   deletePost(postId: String!): Delete!
   deleteComment(commentId: String!): Delete!
+  addPrivilegeOnAdmin(privilege: PRIVILEGE!, adminId: String!): Privilege!
 }
 
 input UserRegisterInput {

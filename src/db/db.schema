@@ -10,6 +10,7 @@ messages: [uid] @reverse .
 deletes: [uid] @reverse .
 folds: [uid] @reverse .
 blocks: [uid] @reverse .
+privileges: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -23,7 +24,6 @@ delete: uid @reverse .
 fold: uid @reverse .
 block: uid @reverse .
 
-privileges: [string] @index(exact) .
 images: [string] .
 
 userId: string @index(exact, hash, fulltext) .
@@ -40,6 +40,7 @@ grade: string @index(term) .
 openId: string @index(hash) .
 unionId: string @index(hash) .
 state: string @index(hash) .
+value: string @index(hash) .
 
 lastLoginedAt: dateTime @index(hour) .
 createdAt: dateTime @index(hour) .
@@ -78,7 +79,7 @@ type Admin {
   blocks
 }
 
-# 管理员授权凭证
+# 管理员认证凭证
 type Credential {
   # 创建时间
   createdAt
@@ -86,6 +87,18 @@ type Credential {
   to
   # 创建者
   creator
+}
+
+# 权限
+type Privilege {
+  # 创建时间
+  createdAt
+  # 具有该权限的对象
+  to
+  # 权限的创建者
+  creator
+  # 权限的值
+  value
 }
 
 # 用户
