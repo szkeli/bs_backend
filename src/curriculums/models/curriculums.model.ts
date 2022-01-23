@@ -56,3 +56,12 @@ export class AddCurriculumArgs {
   @Field({ description: '课程号' })
     curriculumId: string
 }
+
+@ObjectType()
+export class CurriculumsConnection {
+  @Field(type => [Curriculum])
+    nodes: Curriculum[]
+
+  @Field(type => Int)
+    totalCount: number
+}

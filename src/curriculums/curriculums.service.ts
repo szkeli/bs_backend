@@ -1,11 +1,38 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { DbService } from '../db/db.service'
-import { AddCurriculumArgs, Curriculum } from './models/curriculums.model'
+import { AddCurriculumArgs, Curriculum, CurriculumsConnection } from './models/curriculums.model'
 
 @Injectable()
 export class CurriculumsService {
   constructor (private readonly dbService: DbService) {}
+
+  async findCurriculumsByUid (id: string, first: number, offset: number): Promise<CurriculumsConnection> {
+    const query = `
+      query v($uid: string) {
+        totalCount (func: uid($uid)) @filter(type(User)) {
+          curriculums @filter(type(Curriculum)) {
+            count(uid)
+          }
+        }
+        user (func: uid($uid)) @filter(type(User)) {
+          curriculums (first: ${first}, offset: ${offset}) @filter(type(Curriculum)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{curriculums: Array<{count: number}>}>
+      user: Array<{curriculums: Curriculum[]}>
+    }>({ query, vars: { $uid: id } })
+
+    return {
+      nodes: res.user[0]?.curriculums ?? [],
+      totalCount: res.totalCount[0]?.curriculums[0]?.count ?? 0
+    }
+  }
 
   /**
    * 将当前用户添加到对应的课程中，课程不存在时，

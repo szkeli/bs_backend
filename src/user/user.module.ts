@@ -7,6 +7,7 @@ import { SharedModule } from 'src/shared/shared.module'
 
 import { AdminService } from '../admin/admin.service'
 import { ConversationsService } from '../conversations/conversations.service'
+import { CurriculumsService } from '../curriculums/curriculums.service'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { ReportsService } from '../reports/reports.service'
 import { UserResolver } from './user.resolver'
@@ -22,7 +23,8 @@ import { UserService } from './user.service'
     ConversationsService,
     ReportsService,
     AdminService,
-    DeadlinesService
+    DeadlinesService,
+    CurriculumsService
   ],
   imports: [
     SharedModule

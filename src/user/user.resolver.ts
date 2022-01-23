@@ -10,6 +10,8 @@ import { Admin } from '../admin/models/admin.model'
 import { Role, UserWithRoles } from '../auth/model/auth.model'
 import { ConversationsService } from '../conversations/conversations.service'
 import { ConversationsConnection } from '../conversations/models/conversations.model'
+import { CurriculumsService } from '../curriculums/curriculums.service'
+import { CurriculumsConnection } from '../curriculums/models/curriculums.model'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { ReportsConnection } from '../reports/models/reports.model'
@@ -33,7 +35,8 @@ export class UserResolver {
     private readonly authService: AuthService,
     private readonly conversationsService: ConversationsService,
     private readonly reportsService: ReportsService,
-    private readonly deadlinesService: DeadlinesService
+    private readonly deadlinesService: DeadlinesService,
+    private readonly curriculumsService: CurriculumsService
   ) {}
 
   @Query(returns => LoginResult, { description: '用户登录' })
@@ -94,5 +97,10 @@ export class UserResolver {
       endTime,
       first
     )
+  }
+
+  @ResolveField(of => CurriculumsConnection)
+  async curriculums (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.curriculumsService.findCurriculumsByUid(user.id, first, offset)
   }
 }

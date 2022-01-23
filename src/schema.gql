@@ -62,6 +62,7 @@ type User implements Person & Node {
   """用户收到的举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
   deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
+  curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
 }
 
 enum GENDER {
@@ -96,6 +97,7 @@ type LoginResult implements Node & Person {
   """用户收到的举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
   deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
+  curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
   token: String!
 }
 
@@ -442,11 +444,6 @@ type AvatarImageUploadCredentialInfo {
   key: String!
 }
 
-type View {
-  id: String!
-  createdAt: String!
-}
-
 type Curriculum {
   id: String!
 
@@ -470,6 +467,16 @@ type Curriculum {
 
   """该节课位于一星期中的第几天"""
   dayOfWeek: Int!
+}
+
+type CurriculumsConnection {
+  nodes: [Curriculum!]!
+  totalCount: Int!
+}
+
+type View {
+  id: String!
+  createdAt: String!
 }
 
 type Query {
