@@ -447,6 +447,31 @@ type View {
   createdAt: String!
 }
 
+type Curriculum {
+  id: String!
+
+  """上课地点"""
+  destination: String!
+
+  """第几节课开始"""
+  start: Int!
+
+  """第几节课结束"""
+  end: Int!
+
+  """课程名称"""
+  name: String!
+
+  """课程周期，比如 1-17周"""
+  circle: String!
+
+  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
+  description: String!
+
+  """该节课位于一星期中的第几天"""
+  dayOfWeek: Int!
+}
+
 type Query {
   post(id: String!): Post!
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
@@ -625,6 +650,34 @@ type Mutation {
   addDeadline(courseContentId: Int!, courseId: Int!, ownerUserId: Int!, notificationIds: [Int!]!, parentId: String!, sourceId: String!, courseName: String!, dataPending: Boolean!, dateAdded: String!, startDate: String!, endDate: String, dueDate: String!, eventType: DEADLINE_EVENT_TYPE!, eventUrl: String, groupCount: Int!, ownerName: String!, receiverCount: Int!, recipientCount: Int!, recipientId: Int!, recipientType: DEADLINE_RECIPIENT_TYPE!, seen: Boolean!, sourceData: String, sourceDataType: DEADLINE_SOURCE_DATA_TYPE!, sourceType: DEADLINE_SOURCE_TYPE!, title: String!, type: DEADLINE_TYPE!, viewId: Int!): Deadline!
   addViewOnPost(postId: String!): View!
   addViewOnComment(commentId: String!): View!
+  addCurriculum(
+    """上课地点"""
+    destination: String!
+
+    """第几节课开始"""
+    start: Int!
+
+    """第几节课结束"""
+    end: Int!
+
+    """课程名称"""
+    name: String!
+
+    """课程周期，比如 1-17周"""
+    circle: String!
+
+    """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
+    description: String!
+
+    """该节课位于一星期中的第几天"""
+    dayOfWeek: Int!
+
+    """授课教师的名字"""
+    educatorName: String!
+
+    """课程号"""
+    curriculumId: String!
+  ): Curriculum!
 }
 
 input UserRegisterInput {

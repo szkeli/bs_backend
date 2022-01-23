@@ -13,6 +13,7 @@ blocks: [uid] @reverse .
 privileges: [uid] @reverse .
 deadlines: [uid] @reverse .
 views: [uid] @reverse .
+curriculums: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -25,6 +26,7 @@ creator: uid @reverse .
 delete: uid @reverse .
 fold: uid @reverse .
 block: uid @reverse .
+educator: uid @reverse .
 
 images: [string] .
 
@@ -35,6 +37,7 @@ backgroundImageUrl: string @index(exact) .
 title: string @index(fulltext) .
 content: string @index(fulltext) .
 description: string @index(fulltext) .
+destination: string @index(fulltext) .
 type: string @index(term) .
 gender: string @index(term) .
 school: string @index(term) .
@@ -53,6 +56,8 @@ recipientType: string @index(term) .
 sourceData: string @index(fulltext) .
 sourceDataType: string @index(term) .
 sourceType: string @index(term) .
+curriculumId: string @index(hash) .
+circle: string @index(term) .
 
 notificationIds: [int] .
 
@@ -64,6 +69,8 @@ receiverCount: int .
 recipientCount: int .
 recipientId: int .
 viewId: int .
+start: int .
+end: int .
 
 dataPending: bool .
 seen: bool .
@@ -385,4 +392,32 @@ type Message {
   createdAt
   # 消息所属的会话
   conversation
+}
+
+# 课程
+type Curriculum {
+  # 课程号
+  curriculumId
+  # 创建时间
+  createdAt
+  # 课程名称
+  name
+  # 开始
+  start
+  # 结束
+  end
+  # 课程描述
+  description
+  # 上课地点
+  destination
+  # 授课老师
+  educator
+}
+
+# 授课教师
+type Educator {
+  # 姓名
+  name
+  # 该教师所有的课程
+  curriculums
 }
