@@ -541,6 +541,8 @@ type Query {
   getPostImagesUploadCredentialInfo(fileNames: [String!]!): PostImagesUploadCredentialInfo!
   privilege(id: String!): Privilege!
   deadline(deadlineId: String!): Deadline!
+  curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
+  curriculum(id: String!): Curriculum!
 }
 
 enum SEARCHTYPE {

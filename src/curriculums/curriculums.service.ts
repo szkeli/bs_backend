@@ -7,6 +7,45 @@ import { AddCurriculumArgs, Curriculum, CurriculumsConnection } from './models/c
 export class CurriculumsService {
   constructor (private readonly dbService: DbService) {}
 
+  async curriculum (id: string) {
+    const query = `
+      query v($id: string) {
+        curriculum (func: uid($id)) @filter(type(Curriculum)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{curriculum: Curriculum[]}>({ query, vars: { $id: id } })
+    if (res.curriculum.length !== 1) {
+      throw new ForbiddenException(`课程 ${id} 不存在`)
+    }
+    return res.curriculum[0]
+  }
+
+  async curriculums (first: number, offset: number) {
+    const query = `
+      query {
+        totalCount (func: type(Curriculum)) {
+          count(uid)
+        }
+        curriculums (func: type(Curriculum), first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      curriculums: Curriculum[]
+      totalCount: Array<{count: number}>
+    }>({ query })
+    console.error(res)
+    return {
+      nodes: res.curriculums ?? [],
+      totalCount: res.totalCount[0]?.count ?? 0
+    }
+  }
+
   async findCurriculumsByUid (id: string, first: number, offset: number): Promise<CurriculumsConnection> {
     const query = `
       query v($uid: string) {
