@@ -12,6 +12,7 @@ folds: [uid] @reverse .
 blocks: [uid] @reverse .
 privileges: [uid] @reverse .
 deadlines: [uid] @reverse .
+views: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -175,6 +176,8 @@ type User {
   privileges
   # 用户的ddl
   deadlines
+  # 当前用户的浏览
+  views
 }
 
 # 帖子
@@ -201,6 +204,8 @@ type Post {
   comments
   # 所属主题
   subject
+  # 帖子的浏览
+  views
 }
 
 # 用户在blackboard上的ddl
@@ -234,6 +239,16 @@ type Deadline {
   title
   type
   viewId
+}
+
+# 浏览
+type View {
+  # 创建者
+  creator
+  # 创建时间
+  createdAt
+  # 被浏览的对象
+  to
 }
 
 # 拉黑
@@ -298,6 +313,8 @@ type Comment {
   fold
   # 评论收到的删除
   delete
+  # 评论收到的浏览
+  views
 }
 
 # 帖子的主题

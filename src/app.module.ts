@@ -30,6 +30,7 @@ import { SubjectModule } from './subject/subject.module'
 import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { VotesModule } from './votes/votes.module'
+import { ViewsModule } from './views/views.module';
 
 @Module({
   imports: [
@@ -61,7 +62,8 @@ import { VotesModule } from './votes/votes.module'
     StsModule,
     CaslModule,
     PrivilegesModule,
-    DeadlinesModule
+    DeadlinesModule,
+    ViewsModule
   ],
   controllers: [AppController],
   providers: [

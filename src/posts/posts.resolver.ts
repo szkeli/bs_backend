@@ -37,7 +37,7 @@ export class PostsResolver {
 
   @Query(returns => Post)
   @CheckPolicies(new ReadPostPolicyHandler())
-  async post (@Args('id') id: PostId): Promise<Post> {
+  async post (@CurrentUser() user: User, @Args('id') id: PostId): Promise<Post> {
     return await this.postsService.post(id)
   }
 
