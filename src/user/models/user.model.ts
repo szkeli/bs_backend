@@ -241,3 +241,15 @@ export const AdminAndUserUnion = createUnionType({
   name: 'AdminAndUserUnion',
   types: () => [User, Admin]
 })
+
+@ArgsType()
+export class DeadlinesPagingArgs {
+  @Field()
+    startTime: string
+
+  @Field()
+    endTime: string
+
+  @Field(type => Int)
+    first: number
+}

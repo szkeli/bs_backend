@@ -204,3 +204,12 @@ export class AddDealineArgs {
   @Field(type => Int)
     viewId: number
 }
+
+@ObjectType()
+export class DeadlinesConnection {
+  @Field(type => [Deadline])
+    nodes: Deadline[]
+
+  @Field(type => Int)
+    totalCount: number
+}

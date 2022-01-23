@@ -61,6 +61,7 @@ type User implements Person & Node {
 
   """用户收到的举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+  deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
 }
 
 enum GENDER {
@@ -94,6 +95,7 @@ type LoginResult implements Node & Person {
 
   """用户收到的举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+  deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
   token: String!
 }
 
@@ -368,6 +370,11 @@ enum DEADLINE_SOURCE_TYPE {
 
 enum DEADLINE_TYPE {
   SCHEDULED
+}
+
+type DeadlinesConnection {
+  nodes: [Deadline!]!
+  totalCount: Int!
 }
 
 type Delete {

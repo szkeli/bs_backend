@@ -2,11 +2,35 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { DbService } from '../db/db.service'
 import { User } from '../user/models/user.model'
-import { AddDealineArgs, Deadline } from './models/deadlines.model'
+import { AddDealineArgs, Deadline, DeadlinesConnection } from './models/deadlines.model'
 
 @Injectable()
 export class DeadlinesService {
   constructor (private readonly dbService: DbService) {}
+  async findDeadlinesByUId (id: string, startTime: string, endTime: string, first: number): Promise<DeadlinesConnection> {
+    const query = `
+      query v($uid: string, $startTime: string, $endTime: string) {
+        totalCount(func: uid($uid)) @filter(type(User)) {
+          deadlines @filter(type(Deadline)) {
+            count(uid)
+          }
+        }
+        user(func: uid($uid)) @filter(type(User)) {
+          deadlines (orderdesc: startDate, first: ${first}) @filter(between(startDate, $startTime, $endTime) AND type(Deadline)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{totalCount: Array<{deadlines: [{count: number}]}>, user: Array<{deadlines: Deadline[]}>}>({ query, vars: { $uid: id, $startTime: startTime, $endTime: endTime } })
+
+    return {
+      totalCount: res.totalCount[0]?.deadlines[0]?.count ?? 0,
+      nodes: res.user[0]?.deadlines ?? []
+    }
+  }
+
   async creator (id: string) {
     const query = `
       query v($deadlineId: string) {

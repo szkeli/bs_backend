@@ -10,10 +10,13 @@ import { Admin } from '../admin/models/admin.model'
 import { Role, UserWithRoles } from '../auth/model/auth.model'
 import { ConversationsService } from '../conversations/conversations.service'
 import { ConversationsConnection } from '../conversations/models/conversations.model'
+import { DeadlinesService } from '../deadlines/deadlines.service'
+import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import {
   AdminAndUserUnion,
+  DeadlinesPagingArgs,
   LoginResult,
   PagingConfigArgs,
   PersonLoginArgs,
@@ -29,7 +32,8 @@ export class UserResolver {
     private readonly userService: UserService,
     private readonly authService: AuthService,
     private readonly conversationsService: ConversationsService,
-    private readonly reportsService: ReportsService
+    private readonly reportsService: ReportsService,
+    private readonly deadlinesService: DeadlinesService
   ) {}
 
   @Query(returns => LoginResult, { description: '用户登录' })
@@ -80,5 +84,10 @@ export class UserResolver {
   @ResolveField(returns => ReportsConnection, { description: '用户收到的举报' })
   async reports (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.reportsService.findReportsByUid(user.id, first, offset)
+  }
+
+  @ResolveField(of => DeadlinesConnection)
+  async deadlines (@Parent() user: User, @Args() { startTime, endTime, first }: DeadlinesPagingArgs) {
+    return await this.deadlinesService.findDeadlinesByUId(user.id, startTime, endTime, first)
   }
 }
