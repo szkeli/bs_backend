@@ -50,11 +50,8 @@ export class PersonLoginArgs {
 
 @InputType()
 export class UserCreateInput {
-  @Field()
-    openId: string
-
-  @Field()
-    unionId: string
+  @Field({ nullable: true })
+    code?: string
 
   @Field()
     name: string

@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
-import { DgraphClient, Mutation, Request } from 'dgraph-js'
+import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 import { UserId } from 'src/db/model/db.model'
@@ -7,6 +7,7 @@ import { UserId } from 'src/db/model/db.model'
 import { UserWithRoles } from '../auth/model/auth.model'
 import { Post, PostsConnection } from '../posts/models/post.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
+import { code2Session } from '../tool'
 import {
   CheckUserResult,
   User,
@@ -147,65 +148,69 @@ export class UserService {
     return res.user[0]
   }
 
-  async registerAUser (input: UserRegisterInput) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
+  async registerUser (input: UserRegisterInput): Promise<User> {
+    let unionId: string = ''
+    let openId: string = ''
+    if (input.code) {
+      const res = await code2Session(input.code)
+      unionId = res.unionId
+      openId = res.openId
+    }
+
+    const query = `
         query v($userId: string) {
           q(func: eq(userId, $userId)) @filter(type(User) OR type(Admin)) { v as uid }
         }
       `
-      const now = new Date().toISOString()
-      const user: UserDataBaseType = {
-        uid: '_:user',
-        'dgraph.type': 'User',
-        userId: input.userId,
-        sign: input.sign,
-        name: input.name,
-        avatarImageUrl: input.avatarImageUrl,
-        gender: input.gender,
-        school: input.school,
-        grade: input.grade,
-        openId: input.openId,
-        unionId: input.unionId,
-        createdAt: now,
-        updatedAt: now,
-        lastLoginedAt: now
-      }
-      const conditions = '@if( eq(len(v), 0) )'
-      const mu = new Mutation()
-      mu.setSetJson(user)
-      mu.setCond(conditions)
+    const now = new Date().toISOString()
+    const mutation: UserDataBaseType = {
+      uid: '_:user',
+      'dgraph.type': 'User',
+      userId: input.userId,
+      sign: input.sign,
+      name: input.name,
+      avatarImageUrl: input.avatarImageUrl,
+      gender: input.gender,
+      school: input.school,
+      grade: input.grade,
+      openId,
+      unionId,
+      createdAt: now,
+      updatedAt: now,
+      lastLoginedAt: now
+    }
 
-      const req = new Request()
-      const vars = req.getVarsMap()
-      vars.set('$userId', input.userId)
-      req.setQuery(query)
-      req.addMutations(mu)
-      req.setCommitNow(true)
-      const res = await txn.doRequest(req)
+    const condition = '@if( eq(len(v), 0) )'
 
-      const uid = res.getUidsMap().get('user')
-      if (!uid) {
-        throw new ForbiddenException(`${input.userId} 已被使用`)
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      q: Array<{uid: string}>
+    }>({
+      mutations: [{ mutation, condition }],
+      query,
+      vars: {
+        $userId: input.userId
       }
-      const v: User = {
-        id: uid,
-        name: input.name,
-        userId: input.userId,
-        openId: input.openId,
-        unionId: input.unionId,
-        gender: input.gender,
-        createdAt: now,
-        updatedAt: now,
-        lastLoginedAt: now,
-        avatarImageUrl: input.avatarImageUrl,
-        school: input.school,
-        grade: input.grade
-      }
-      return v
-    } finally {
-      await txn.discard()
+    })
+
+    const uid = res.uids.get('user')
+
+    if (!uid || res.json.q.length !== 0) {
+      throw new ForbiddenException(`${input.userId} 已被使用`)
+    }
+
+    return {
+      id: uid,
+      name: input.name,
+      userId: input.userId,
+      openId,
+      unionId,
+      gender: input.gender,
+      createdAt: now,
+      updatedAt: now,
+      lastLoginedAt: now,
+      avatarImageUrl: input.avatarImageUrl,
+      school: input.school,
+      grade: input.grade
     }
   }
 

@@ -621,8 +621,7 @@ type Mutation {
 }
 
 input UserRegisterInput {
-  openId: String!
-  unionId: String!
+  code: String
   name: String!
   gender: GENDER!
   avatarImageUrl: String!

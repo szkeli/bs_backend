@@ -47,7 +47,7 @@ export class UserResolver {
   @NoAuth()
   async register (@Args('input') input: UserRegisterInput) {
     input.sign = sign_calculus(input.sign)
-    return await this.userService.registerAUser(input)
+    return await this.userService.registerUser(input)
   }
 
   @Query(returns => AdminAndUserUnion, { description: '当前id对应的的用户画像' })
