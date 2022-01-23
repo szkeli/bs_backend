@@ -1,26 +1,44 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { DbService } from '../db/db.service'
+import { User } from '../user/models/user.model'
 import { AddDealineArgs, Deadline } from './models/deadlines.model'
 
 @Injectable()
 export class DeadlinesService {
   constructor (private readonly dbService: DbService) {}
+  async creator (id: string) {
+    const query = `
+      query v($deadlineId: string) {
+        deadline(func:uid($deadlineId)) @filter(type(Deadline)) {
+          creator @filter(type(User)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{deadline: Array<{creator: User}>}>({ query, vars: { $deadlineId: id } })
+    return res.deadline[0]?.creator
+  }
+
   async deadline (id: string) {
     const query = `
       query v($deadlineId: string) {
-        id: uid
-        expand(_all_)
+        deadline(func: uid($deadlineId)) @filter(type(Deadline)) {
+          id: uid
+          expand(_all_)
+        }
       }
     `
-    const res = await this.dbService.commitQuery({ query, vars: { $deadlineId: id } })
-    console.error(res)
+    const res = await this.dbService.commitQuery<{deadline: Deadline[]}>({ query, vars: { $deadlineId: id } })
+    return res.deadline[0]
   }
 
   async addDeadline (id: string, args: AddDealineArgs): Promise<Deadline> {
     const query = `
       query v($userId: string) {
-        v(func: uid($userId)) { v as uid }
+        v(func: uid($userId)) @filter(type(User)) { v as uid }
       }
     `
     const condition = '@if( eq(len(v), 1) )'

@@ -346,6 +346,7 @@ type Deadline {
   title: String!
   type: DEADLINE_TYPE!
   viewId: Int!
+  creator: User!
 }
 
 enum DEADLINE_EVENT_TYPE {
