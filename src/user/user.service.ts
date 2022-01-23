@@ -12,7 +12,6 @@ import {
   CheckUserResult,
   User,
   UserDataBaseType,
-  UserFollowASubjectInput,
   UserRegisterInput,
   UsersConnection,
   UserUpdateProfileInput
@@ -195,7 +194,7 @@ export class UserService {
     const uid = res.uids.get('user')
 
     if (!uid || res.json.q.length !== 0) {
-      throw new ForbiddenException(`${input.userId} 已被使用`)
+      throw new ForbiddenException(`userId ${input.userId} 已被使用`)
     }
 
     return {
@@ -216,9 +215,5 @@ export class UserService {
 
   async updateUser (userId: UserId, input: UserUpdateProfileInput) {
     // return await this.dbService.updateAUser(userId, input)
-  }
-
-  async followASubject (l: UserFollowASubjectInput) {
-    // return await this.dbService.userFollowASubject(l)
   }
 }

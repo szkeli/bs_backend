@@ -49,12 +49,12 @@ export class PostsResolver {
 
   @Mutation(returns => Post, { description: '创建一个帖子' })
   async createPost (@CurrentUser() user: User, @Args() args: CreatePostArgs) {
-    return await this.postsService.createAPost(user.id, args)
+    return await this.postsService.createPost(user.id, args)
   }
 
   @ResolveField(returns => User, { description: '帖子的创建者' })
   async creator (@Parent() post: Post): Promise<User> {
-    return await this.postsService.getUserByPostId(post.id)
+    return await this.postsService.creator(post.id)
   }
 
   @ResolveField(returns => CommentsConnection, { description: '帖子的评论' })

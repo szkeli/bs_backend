@@ -15,7 +15,7 @@ export class PostsService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async createAPost (creator: string, { title, content, images, subjectId }: CreatePostArgs) {
+  async createPost (creator: string, { title, content, images, subjectId }: CreatePostArgs) {
     const txn = this.dgraph.newTxn()
     let conditions: string
     let query: string
@@ -178,7 +178,7 @@ export class PostsService {
     return u
   }
 
-  async getUserByPostId (id: PostId) {
+  async creator (id: PostId) {
     const txn = this.dgraph.newTxn()
     try {
       const query = `

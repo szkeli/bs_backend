@@ -85,7 +85,7 @@ export class SubjectService {
       const conditions = '@if( eq(len(v), 1) )'
       const query = `
       query {
-        q(func: uid(${creator})) { v as uid }
+        q(func: uid(${creator})) @filter(type(User)) { v as uid }
       }
     `
       const now = new Date().toISOString()
@@ -120,7 +120,7 @@ export class SubjectService {
       const res = await txn.doRequest(req)
       const v = res.getJson().q[0]
       if (!v || !v.uid) {
-        throw new ForbiddenException(`${creator} 用户不存在`)
+        throw new ForbiddenException(`用户 ${creator} 不存在`)
       }
       const u: Subject = {
         id: res.getUidsMap().get('subject'),
@@ -141,20 +141,10 @@ export class SubjectService {
     try {
       const query = `
         query v($uid: string) {
-          subject(func: uid($uid)) {
-            creator {
+          subject(func: uid($uid)) @filter(type(Subject)) {
+            creator @filter(type(User)) {
               id: uid
-              name
-              userId
-              avatarImageUrl
-              gender
-              school
-              grade
-              openId
-              unionId
-              createdAt
-              updatedAt
-              lastLoginedAt
+              expand(_all_)
             }
           }
         }
@@ -167,21 +157,7 @@ export class SubjectService {
         throw new ForbiddenException('user不存在')
       }
 
-      const u: User = {
-        id: user.id,
-        userId: user.userId,
-        name: user.name,
-        avatarImageUrl: user.avatarImageUrl,
-        gender: user.gender,
-        school: user.school,
-        grade: user.grade,
-        openId: user.openId,
-        unionId: user.unionId,
-        createdAt: user.createdAt,
-        updatedAt: user.updatedAt,
-        lastLoginedAt: user.lastLoginedAt
-      }
-      return u
+      return user
     } finally {
       await txn.discard()
     }
@@ -195,13 +171,9 @@ export class SubjectService {
           post(func: uid($uid)) @filter(has(subject)) {
             uid
             title
-            subject {
+            subject @filter(type(Subject)) {
               id: uid
-              createdAt
-              title
-              description
-              avatarImageUrl
-              backgorundImageeUrl
+              expand(_all_)
             }
           }
         }

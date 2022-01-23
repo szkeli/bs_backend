@@ -88,6 +88,11 @@ export class UserResolver {
 
   @ResolveField(of => DeadlinesConnection)
   async deadlines (@Parent() user: User, @Args() { startTime, endTime, first }: DeadlinesPagingArgs) {
-    return await this.deadlinesService.findDeadlinesByUId(user.id, startTime, endTime, first)
+    return await this.deadlinesService.findDeadlinesByUId(
+      user.id,
+      startTime,
+      endTime,
+      first
+    )
   }
 }
