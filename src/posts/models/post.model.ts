@@ -11,7 +11,7 @@ export class CreatePostArgs {
     content: string
 
   @Field(type => [String], { description: '帖子图片', nullable: true })
-    images: [string]
+    images: string[]
 
   @Field({ nullable: true, description: '帖子所属的主题' })
     subjectId: string
@@ -35,8 +35,8 @@ export class Post {
   @Field()
     createdAt: string
 
-  @Field(type => [String])
-    images: [string]
+  @Field(type => [String], { nullable: true })
+    images: string[]
 }
 
 export class PostWithCreatorId extends Post {

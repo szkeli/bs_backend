@@ -11,6 +11,7 @@ deletes: [uid] @reverse .
 folds: [uid] @reverse .
 blocks: [uid] @reverse .
 privileges: [uid] @reverse .
+deadlines: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -41,6 +42,35 @@ openId: string @index(hash) .
 unionId: string @index(hash) .
 state: string @index(hash) .
 value: string @index(hash) .
+parentId: string @index(hash) .
+sourceId: string @index(hash).
+courseName: string @index(fulltext) .
+eventType: string @index(term) .
+eventUrl: string @index(hash) .
+ownerName: string @index(fulltext) .
+recipientType: string @index(term) .
+sourceData: string @index(fulltext) .
+sourceDataType: string @index(term) .
+sourceType: string @index(term) .
+
+notificationIds: [int] .
+
+courseContentId: int .
+courseId: int .
+ownerUserId: int .
+groupCount: int .
+receiverCount: int .
+recipientCount: int .
+recipientId: int .
+viewId: int .
+
+dataPending: bool .
+seen: bool .
+
+dateAdded: dateTime @index(hour) .
+startDate: dateTime @index(hour) .
+endDate: dateTime @index(hour) .
+dueDate: dateTime @index(hour) .
 
 lastLoginedAt: dateTime @index(hour) .
 createdAt: dateTime @index(hour) .
@@ -143,6 +173,8 @@ type User {
   block
   # 当前用户的权限
   privileges
+  # 用户的ddl
+  deadlines
 }
 
 # 帖子
@@ -169,6 +201,39 @@ type Post {
   comments
   # 所属主题
   subject
+}
+
+# 用户在blackboard上的ddl
+type Deadline {
+  # ddl的创建者
+  creator
+  courseContentId
+  courseId
+  ownerUserId
+  notificationIds
+  parentId
+  sourceId
+  courseName
+  dataPending
+  dateAdded
+  startDate
+  endDate
+  dueDate
+  eventType
+  eventUrl
+  groupCount
+  ownerName
+  receiverCount
+  recipientCount
+  recipientId
+  recipientType
+  seen
+  sourceData
+  sourceDataType
+  sourceType
+  title
+  type
+  viewId
 }
 
 # 拉黑

@@ -158,7 +158,7 @@ type Post {
   title: String!
   content: String!
   createdAt: String!
-  images: [String!]!
+  images: [String!]
 
   """帖子的创建者"""
   creator: User!
@@ -317,6 +317,58 @@ type SetDbSchema {
   convertedPrimitiveFields_: String!
 }
 
+type Deadline {
+  id: String!
+  courseContentId: Int!
+  courseId: Int!
+  ownerUserId: Int!
+  notificationIds: [Int!]!
+  parentId: String!
+  sourceId: String!
+  courseName: String!
+  dataPending: Boolean!
+  dateAdded: String!
+  startDate: String!
+  endDate: String
+  dueDate: String!
+  eventType: DEADLINE_EVENT_TYPE!
+  eventUrl: String
+  groupCount: Int!
+  ownerName: String!
+  receiverCount: Int!
+  recipientCount: Int!
+  recipientId: Int!
+  recipientType: DEADLINE_RECIPIENT_TYPE!
+  seen: Boolean!
+  sourceData: String
+  sourceDataType: DEADLINE_SOURCE_DATA_TYPE!
+  sourceType: DEADLINE_SOURCE_TYPE!
+  title: String!
+  type: DEADLINE_TYPE!
+  viewId: Int!
+}
+
+enum DEADLINE_EVENT_TYPE {
+  OVERDUE
+  DUE
+}
+
+enum DEADLINE_RECIPIENT_TYPE {
+  RECEIVER
+}
+
+enum DEADLINE_SOURCE_DATA_TYPE {
+  BLACKBOARD_PLATFORM_GRADEBOOK2_GRADABLEITEM
+}
+
+enum DEADLINE_SOURCE_TYPE {
+  AS
+}
+
+enum DEADLINE_TYPE {
+  SCHEDULED
+}
+
 type Delete {
   id: String!
   createdAt: String!
@@ -443,6 +495,7 @@ type Query {
   """用户上传帖子图片时，先根据文件名获取临时上传凭证信息"""
   getPostImagesUploadCredentialInfo(fileNames: [String!]!): PostImagesUploadCredentialInfo!
   privilege(id: String!): Privilege!
+  deadline(deadlineId: String!): Deadline!
 }
 
 enum SEARCHTYPE {
@@ -554,6 +607,9 @@ type Mutation {
   deletePost(postId: String!): Delete!
   deleteComment(commentId: String!): Delete!
   addPrivilegeOnAdmin(privilege: PRIVILEGE!, adminId: String!): Privilege!
+
+  """在当前用户上添加一个ddl"""
+  addDeadline(courseContentId: Int!, courseId: Int!, ownerUserId: Int!, notificationIds: [Int!]!, parentId: String!, sourceId: String!, courseName: String!, dataPending: Boolean!, dateAdded: String!, startDate: String!, endDate: String, dueDate: String!, eventType: DEADLINE_EVENT_TYPE!, eventUrl: String, groupCount: Int!, ownerName: String!, receiverCount: Int!, recipientCount: Int!, recipientId: Int!, recipientType: DEADLINE_RECIPIENT_TYPE!, seen: Boolean!, sourceData: String, sourceDataType: DEADLINE_SOURCE_DATA_TYPE!, sourceType: DEADLINE_SOURCE_TYPE!, title: String!, type: DEADLINE_TYPE!, viewId: Int!): Deadline!
 }
 
 input UserRegisterInput {
