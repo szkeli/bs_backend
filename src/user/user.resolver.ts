@@ -18,12 +18,12 @@ import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import {
   AdminAndUserUnion,
+  CreateUserArgs,
   DeadlinesPagingArgs,
   LoginResult,
   PagingConfigArgs,
   PersonLoginArgs,
   User,
-  UserRegisterInput,
   UsersConnection
 } from './models/user.model'
 import { UserService } from './user.service'
@@ -48,9 +48,9 @@ export class UserResolver {
 
   @Mutation(returns => User, { description: '用户注册' })
   @NoAuth()
-  async register (@Args('input') input: UserRegisterInput) {
-    input.sign = sign_calculus(input.sign)
-    return await this.userService.registerUser(input)
+  async register (@Args() args: CreateUserArgs) {
+    args.sign = sign_calculus(args.sign)
+    return await this.userService.registerUser(args)
   }
 
   @Query(returns => AdminAndUserUnion, { description: '当前id对应的的用户画像' })

@@ -312,6 +312,36 @@ type Vote {
   createdAt: String!
 }
 
+type Curriculum {
+  id: String!
+
+  """上课地点"""
+  destination: String!
+
+  """第几节课开始"""
+  start: Int!
+
+  """第几节课结束"""
+  end: Int!
+
+  """课程名称"""
+  name: String!
+
+  """课程周期，比如 1-17周"""
+  circle: String!
+
+  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
+  description: String!
+
+  """该节课位于一星期中的第几天"""
+  dayOfWeek: Int!
+}
+
+type CurriculumsConnection {
+  nodes: [Curriculum!]!
+  totalCount: Int!
+}
+
 type SetDbSchema {
   arrayIndexOffset: Int!
   array: [String!]!
@@ -444,36 +474,6 @@ type AvatarImageUploadCredentialInfo {
   key: String!
 }
 
-type Curriculum {
-  id: String!
-
-  """上课地点"""
-  destination: String!
-
-  """第几节课开始"""
-  start: Int!
-
-  """第几节课结束"""
-  end: Int!
-
-  """课程名称"""
-  name: String!
-
-  """课程周期，比如 1-17周"""
-  circle: String!
-
-  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
-  description: String!
-
-  """该节课位于一星期中的第几天"""
-  dayOfWeek: Int!
-}
-
-type CurriculumsConnection {
-  nodes: [Curriculum!]!
-  totalCount: Int!
-}
-
 type View {
   id: String!
   createdAt: String!
@@ -569,7 +569,7 @@ type Mutation {
   ): Post!
 
   """用户注册"""
-  register(input: UserRegisterInput!): User!
+  register(userId: String!, sign: String!, code: String, name: String!, gender: GENDER!, avatarImageUrl: String!, school: String!, grade: String!): User!
   addCommentOnComment(
     """相应的评论的id"""
     to: String!
@@ -687,17 +687,6 @@ type Mutation {
     """课程号"""
     curriculumId: String!
   ): Curriculum!
-}
-
-input UserRegisterInput {
-  code: String
-  name: String!
-  gender: GENDER!
-  avatarImageUrl: String!
-  school: String!
-  grade: String!
-  userId: String!
-  sign: String!
 }
 
 input CreateSubjectInput {

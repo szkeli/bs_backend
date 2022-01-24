@@ -2,7 +2,6 @@ import {
   ArgsType,
   createUnionType,
   Field,
-  InputType,
   Int,
   InterfaceType,
   ObjectType,
@@ -48,8 +47,14 @@ export class PersonLoginArgs {
     sign: string
 }
 
-@InputType()
-export class UserCreateInput {
+@ArgsType()
+export class CreateUserArgs {
+  @Field()
+    userId: UserId
+
+  @Field()
+    sign: RawSign
+
   @Field({ nullable: true })
     code?: string
 
@@ -67,15 +72,6 @@ export class UserCreateInput {
 
   @Field()
     grade: string
-}
-
-@InputType()
-export class UserRegisterInput extends UserCreateInput {
-  @Field()
-    userId: UserId
-
-  @Field()
-    sign: RawSign
 }
 
 export type RawSign = string

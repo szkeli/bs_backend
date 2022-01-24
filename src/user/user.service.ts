@@ -10,9 +10,9 @@ import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import { code2Session } from '../tool'
 import {
   CheckUserResult,
+  CreateUserArgs,
   User,
   UserDataBaseType,
-  UserRegisterInput,
   UsersConnection,
   UserUpdateProfileInput
 } from './models/user.model'
@@ -147,7 +147,7 @@ export class UserService {
     return res.user[0]
   }
 
-  async registerUser (input: UserRegisterInput): Promise<User> {
+  async registerUser (input: CreateUserArgs): Promise<User> {
     let unionId: string = ''
     let openId: string = ''
     if (input.code) {
