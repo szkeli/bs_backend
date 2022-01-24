@@ -47,6 +47,11 @@ export class PostsResolver {
     return await this.postsService.posts(first, offset)
   }
 
+  @Query(of => PostsConnection)
+  async trendingPosts (@Args() { first, offset }: PagingConfigArgs) {
+    return await this.postsService.trendingPosts(first, offset)
+  }
+
   @Mutation(returns => Post, { description: '创建一个帖子' })
   async createPost (@CurrentUser() user: User, @Args() args: CreatePostArgs) {
     return await this.postsService.createPost(user.id, args)

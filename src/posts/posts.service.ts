@@ -15,6 +15,14 @@ export class PostsService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async trendingPosts (first: number, offset: number) {
+    const query = `
+
+    `
+    const res = await this.dbService.commitQuery({ query })
+    console.error(res)
+  }
+
   async createPost (creator: string, { title, content, images, subjectId }: CreatePostArgs) {
     const txn = this.dgraph.newTxn()
     let conditions: string

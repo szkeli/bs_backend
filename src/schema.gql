@@ -482,6 +482,7 @@ type View {
 type Query {
   post(id: String!): Post!
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
+  trendingPosts(first: Int = 10, offset: Int = 0): PostsConnection!
 
   """用户登录"""
   login(
