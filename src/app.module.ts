@@ -13,6 +13,7 @@ import { CaslModule } from './casl/casl.module'
 import { CommentModule } from './comment/comment.module'
 import { CommentService } from './comment/comment.service'
 import { ConversationsModule } from './conversations/conversations.module'
+import { CurriculumsModule } from './curriculums/curriculums.module'
 import { DbModule } from './db/db.module'
 import { DbService } from './db/db.service'
 import { DeadlinesModule } from './deadlines/deadlines.module'
@@ -29,9 +30,8 @@ import { StsModule } from './sts/sts.module'
 import { SubjectModule } from './subject/subject.module'
 import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
+import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
-import { ViewsModule } from './views/views.module';
-import { CurriculumsModule } from './curriculums/curriculums.module';
 
 @Module({
   imports: [
