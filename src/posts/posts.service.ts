@@ -1,7 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
-import { Comment, CommentsConnection } from 'src/comment/models/comment.model'
 import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
@@ -212,44 +211,6 @@ export class PostsService {
       return post.creator
     } finally {
       await txn.discard()
-    }
-  }
-
-  /**
-   * 返回对应帖子id下的评论
-   * @param id 帖子id
-   * @param first 前first条帖子
-   * @param offset 偏移量
-   * @returns {Promise<CommentsConnection>} CommentsConnection
-   */
-  async getCommentsByPostId (id: PostId, first: number, offset: number): Promise<CommentsConnection> {
-    const query = `
-        query v($uid: string) {
-          totalCount(func: uid($uid)) @filter(type(Post)) {
-            comments @filter(type(Comment) AND NOT has(delete)) {
-              count: count(uid)
-            }
-          }
-          post(func: uid($uid)) @filter(type(Post)) {
-            comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Comment) AND NOT has(delete)) {
-              id: uid
-              expand(_all_)
-            }
-          }
-        }
-      `
-    const res = await this.dbService.commitQuery<{
-      post: Array<{ comments?: Comment[]}>
-      totalCount: Array<{comments: Array<{count: number}>}>
-    }>({ query, vars: { $uid: id } })
-
-    if (!res.post) {
-      throw new ForbiddenException(`帖子 ${id} 不存在`)
-    }
-
-    return {
-      nodes: res.post[0]?.comments || [],
-      totalCount: res?.totalCount[0]?.comments[0]?.count || 0
     }
   }
 

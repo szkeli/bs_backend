@@ -17,6 +17,7 @@ import { SubjectService } from 'src/subject/subject.service'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { ReadPostPolicyHandler } from '../casl/casl.handler'
+import { CommentService } from '../comment/comment.service'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -32,7 +33,8 @@ export class PostsResolver {
   constructor (
     private readonly postsService: PostsService,
     private readonly subjectService: SubjectService,
-    private readonly reportsService: ReportsService
+    private readonly reportsService: ReportsService,
+    private readonly commentService: CommentService
   ) {}
 
   @Query(returns => Post)
@@ -64,7 +66,7 @@ export class PostsResolver {
 
   @ResolveField(returns => CommentsConnection, { description: '帖子的评论' })
   async comments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.postsService.getCommentsByPostId(post.id, first, offset)
+    return await this.commentService.getCommentsByPostId(post.id, first, offset)
   }
 
   @ResolveField(returns => Subject, { nullable: true, description: '帖子所属的主题' })

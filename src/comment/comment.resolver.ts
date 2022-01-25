@@ -39,7 +39,7 @@ export class CommentResolver {
     @Args('content') content: string,
     @Args('to', { description: '相应的评论的id' }) to: string
   ) {
-    return await this.commentService.addACommentOnComment(
+    return await this.commentService.addCommentOnComment(
       user.id,
       content,
       to
@@ -48,11 +48,11 @@ export class CommentResolver {
 
   @Mutation(returns => Comment)
   async addCommentOnPost (
-    @CurrentUser() user: User,
-      @Args('content') content: string,
-      @Args('to', { description: '相应的帖子的id' }) to: string
-  ): Promise<Comment> {
-    return await this.commentService.addACommentOnPost(user.id, content, to)
+  @CurrentUser() user: User,
+    @Args('content') content: string,
+    @Args('to', { description: '相应的帖子的id' }) to: string
+  ) {
+    return await this.commentService.addCommentOnPost(user.id, content, to)
   }
 
   @ResolveField(returns => CommentsConnection)

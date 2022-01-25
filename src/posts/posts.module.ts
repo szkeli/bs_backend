@@ -5,6 +5,7 @@ import { SubjectService } from 'src/subject/subject.service'
 import { UserService } from 'src/user/user.service'
 
 import { CaslModule } from '../casl/casl.module'
+import { CommentService } from '../comment/comment.service'
 import { ReportsService } from '../reports/reports.service'
 import { PostsResolver } from './posts.resolver'
 import { PostsService } from './posts.service'
@@ -17,7 +18,8 @@ import { PostsService } from './posts.service'
     UserService,
     SubjectService,
     ReportsService,
-    CaslModule
+    CaslModule,
+    CommentService
   ]
 })
 export class PostsModule {}
