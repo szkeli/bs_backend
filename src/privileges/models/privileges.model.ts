@@ -1,6 +1,6 @@
 import { ArgsType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
-export enum PRIVILEGE {
+export enum IPRIVILEGE {
   ROOT = 'ROOT',
   // 能够认证并创建管理员
   CAN_CREATE_ADMIN = 'CAN_CREATE_ADMIN',
@@ -14,8 +14,8 @@ export enum PRIVILEGE {
   CAN_UPDATE_USER = 'CAN_UPDATE_USER',
 }
 
-registerEnumType(PRIVILEGE, {
-  name: 'PRIVILEGE'
+registerEnumType(IPRIVILEGE, {
+  name: 'IPRIVILEGE'
 })
 
 @ObjectType()
@@ -26,16 +26,16 @@ export class Privilege {
   @Field()
     createdAt: string
 
-  @Field(type => PRIVILEGE)
-    value: PRIVILEGE
+  @Field(type => IPRIVILEGE)
+    value: IPRIVILEGE
   // creator
   // to
 }
 
 @ArgsType()
 export class AddPrivilegeOnAdmin {
-  @Field(type => PRIVILEGE)
-    privilege: PRIVILEGE
+  @Field(type => IPRIVILEGE)
+    privilege: IPRIVILEGE
 
   @Field(type => String)
     adminId: string

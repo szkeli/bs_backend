@@ -4,7 +4,7 @@ import { Admin } from '../admin/models/admin.model'
 import { Role } from '../auth/model/auth.model'
 import { DbService } from '../db/db.service'
 import { AdminAndUserUnion, User } from '../user/models/user.model'
-import { PRIVILEGE, Privilege } from './models/privileges.model'
+import { IPRIVILEGE, Privilege } from './models/privileges.model'
 
 @Injectable()
 export class PrivilegesService {
@@ -62,7 +62,7 @@ export class PrivilegesService {
     return res.privilege[0]
   }
 
-  async addPrivilegeOnAdmin (id: string, privilege: PRIVILEGE, to: string): Promise<Privilege> {
+  async addPrivilegeOnAdmin (id: string, privilege: IPRIVILEGE, to: string): Promise<Privilege> {
     if (id === to) {
       throw new ForbiddenException(`不能对自己授权 ${privilege}`)
     }
