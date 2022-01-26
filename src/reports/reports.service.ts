@@ -487,13 +487,15 @@ export class ReportsService {
       throw new ForbiddenException('不能举报自己')
     }
     const now = new Date().toISOString()
-    const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
+    const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) and eq(len(q), 1) )'
     const query = `
       query v($reporter: string, $uid: string, $reportState: string) {
         # 举报者是否存在
         v(func: uid($reporter)) @filter(type(User)) { v as uid }
         # 被举报者是否存在
         u(func: uid($uid)) @filter(type(User)) { u as uid }
+        # 被举报用户未被拉黑
+        q(func: uid($uid)) @filter(type(User) and not has(block)) { q as uid }
         # 一次对一个用户在一个时间只能举报一次
         x(func: uid($reporter)) @filter(type(User)) {
           conversations {
@@ -547,6 +549,7 @@ export class ReportsService {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
       x: Array<{conversations: any[]}>
+      q: Array<{uid: string}>
     }>({
       query,
       conditions,
@@ -565,6 +568,9 @@ export class ReportsService {
     }
     if (!res.json.x || res.json.x.length !== 0) {
       throw new ForbiddenException(`用户 ${id} 对 用户 ${uid} 的举报已经提交，待处理中`)
+    }
+    if (res.json.q.length !== 1) {
+      throw new ForbiddenException(`被举报用户 ${uid} 已被管理员拉黑`)
     }
     return {
       id: res.uids.get('report'),
