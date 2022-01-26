@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 
 import { CheckUserResult, LoginResult } from 'src/user/models/user.model'
@@ -22,14 +22,10 @@ export class AuthService {
 
   async login (userId: string, sign: string): Promise<LoginResult> {
     const user = await this.validateUser<CheckUserResult>(userId, sign)
-    if (!user) {
-      throw new UnauthorizedException('用户名id或密码错误')
-    }
     const payload: Payload = { id: user.id, roles: user.roles }
-    const loginResult: LoginResult = {
+    return {
       token: this.jwtService.sign(payload),
       ...user
     }
-    return loginResult
   }
 }

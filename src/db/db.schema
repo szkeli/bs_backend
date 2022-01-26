@@ -114,7 +114,7 @@ type Admin {
   deletes
   # 该管理员折叠的评论 (折叠评论)
   folds
-  # 拉黑 (拉黑用户)
+  # 该管理员拉黑的用户 (拉黑用户)
   blocks
 }
 
@@ -279,6 +279,8 @@ type Block {
   to
   # 拉黑的创建者 一般是管理员
   creator
+  # 被拉黑的原因
+  description
 }
 
 # 折叠
@@ -299,6 +301,8 @@ type Delete {
   to
   # 删除的创建者
   creator
+  # 被删除的原因
+  description
 }
 
 # 点赞

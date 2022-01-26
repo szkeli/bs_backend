@@ -12,6 +12,19 @@ interface Node {
   id: String!
 }
 
+type Block {
+  id: String!
+  createdAt: String!
+  description: String!
+  to: User!
+  creator: Admin!
+}
+
+type BlocksConnection {
+  nodes: [Block!]!
+  totalCount: Int!
+}
+
 type Fold {
   id: String!
   createdAt: String!
@@ -154,13 +167,20 @@ type Admin implements Node & Person {
   updatedAt: String!
   lastLoginedAt: String!
 
-  """管理员的认证者"""
+  """管理员的凭证"""
   credential: Credential
 
   """当前管理员认证过的其他管理员"""
   credentials(offset: Int!, first: Int!): CredentialsConnection!
+
+  """当前管理员拥有的权限"""
   privileges(offset: Int!, first: Int!): PrivilegesConnection!
+
+  """当前管理员折叠的评论"""
   folds(offset: Int!, first: Int!): FoldsConnection!
+
+  """当前管理员拉黑的用户"""
+  blocks(offset: Int!, first: Int!): BlocksConnection!
 }
 
 type AdminsConnection {
@@ -518,7 +538,7 @@ type Query {
   """根据id返回管理员"""
   admin(id: String!): Admin!
 
-  """分页返回所有的管理员"""
+  """返回所有的管理员"""
   admins(offset: Int!, first: Int!): AdminsConnection!
 
   """根据主题id返回对应的主题"""
@@ -562,6 +582,9 @@ type Query {
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
   curriculum(id: String!): Curriculum!
   folds(first: Int = 10, offset: Int = 0): FoldsConnection!
+
+  """所有的拉黑"""
+  blocks(first: Int = 10, offset: Int = 0): BlocksConnection!
 }
 
 enum SEARCHTYPE {

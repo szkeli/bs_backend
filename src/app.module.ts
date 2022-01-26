@@ -33,6 +33,7 @@ import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
 import { FoldsModule } from './folds/folds.module';
+import { BlocksModule } from './blocks/blocks.module';
 
 @Module({
   imports: [
@@ -67,7 +68,8 @@ import { FoldsModule } from './folds/folds.module';
     DeadlinesModule,
     ViewsModule,
     CurriculumsModule,
-    FoldsModule
+    FoldsModule,
+    BlocksModule
   ],
   controllers: [AppController],
   providers: [

@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common'
 
 import { AuthService } from '../auth/auth.service'
 import { JwtStrategy } from '../auth/jwt.strategy'
+import { BlocksService } from '../blocks/blocks.service'
 import { DbService } from '../db/db.service'
 import { FoldsService } from '../folds/folds.service'
 import { SharedModule } from '../shared/shared.module'
@@ -17,7 +18,8 @@ import { AdminService } from './admin.service'
     AuthService,
     UserService,
     DbService,
-    FoldsService
+    FoldsService,
+    BlocksService
   ],
   imports: [SharedModule]
 })

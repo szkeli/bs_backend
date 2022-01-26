@@ -12,6 +12,8 @@ import { sign as sign_calculus } from 'src/tool'
 
 import { CurrentUser, NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
+import { BlocksService } from '../blocks/blocks.service'
+import { BlocksConnection } from '../blocks/models/blocks.model'
 import { FoldsService } from '../folds/folds.service'
 import { FoldsConnection } from '../folds/models/folds.model'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
@@ -28,7 +30,8 @@ import {
 export class AdminResolver {
   constructor (
     private readonly adminService: AdminService,
-    private readonly foldsService: FoldsService
+    private readonly foldsService: FoldsService,
+    private readonly blocksService: BlocksService
   ) {}
 
   @Mutation(returns => Admin, { description: '注册一个管理员，需要使用authen认证新注册的管理员' })
@@ -50,7 +53,7 @@ export class AdminResolver {
     return await this.adminService.admin(id)
   }
 
-  @Query(returns => AdminsConnection, { description: '分页返回所有的管理员' })
+  @Query(returns => AdminsConnection, { description: '返回所有的管理员' })
   @Roles(Role.Admin)
   async admins (
   @Args('first', { type: () => Int }) first: number,
@@ -59,7 +62,7 @@ export class AdminResolver {
     return await this.adminService.admins(first, offset)
   }
 
-  @ResolveField(returns => Credential, { nullable: true, description: '管理员的认证者' })
+  @ResolveField(returns => Credential, { nullable: true, description: '管理员的凭证' })
   async credential (@Parent() admin: Admin) {
     return await this.adminService.findCredentialByAdminId(admin.id)
   }
@@ -73,7 +76,7 @@ export class AdminResolver {
     return await this.adminService.findCredentialsByAdminId(admin.id, first, offset)
   }
 
-  @ResolveField(() => PrivilegesConnection)
+  @ResolveField(() => PrivilegesConnection, { description: '当前管理员拥有的权限' })
   async privileges (
   @Parent() admin: Admin,
     @Args('first', { type: () => Int }) first: number,
@@ -82,12 +85,21 @@ export class AdminResolver {
     return await this.adminService.privileges(admin.id, first, offset)
   }
 
-  @ResolveField(of => FoldsConnection)
+  @ResolveField(of => FoldsConnection, { description: '当前管理员折叠的评论' })
   async folds (
   @Parent() admin: Admin,
     @Args('first', { type: () => Int }) first: number,
     @Args('offset', { type: () => Int }) offset: number
   ) {
     return await this.foldsService.findFoldsByAdminId(admin.id, first, offset)
+  }
+
+  @ResolveField(of => BlocksConnection, { description: '当前管理员拉黑的用户' })
+  async blocks (
+  @Parent() admin: Admin,
+    @Args('first', { type: () => Int }) first: number,
+    @Args('offset', { type: () => Int }) offset: number
+  ) {
+    return await this.blocksService.findBlocksByAdminId(admin.id, first, offset)
   }
 }

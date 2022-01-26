@@ -93,8 +93,12 @@ export class ReportsService {
           uid: '_:delete',
           'dgraph.type': 'Delete',
           createdAt: now,
+          description: content,
           creator: {
-            uid: id
+            uid: id,
+            deletes: {
+              uid: '_:delete'
+            }
           },
           to: {
             uid: 'uid(to)'
@@ -148,8 +152,12 @@ export class ReportsService {
           uid: '_:block',
           'dgraph.type': 'Block',
           createdAt: now,
+          description: content,
           creator: {
-            uid: id
+            uid: id,
+            blocks: {
+              uid: '_:block'
+            }
           },
           to: {
             uid: 'uid(to)'
