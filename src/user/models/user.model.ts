@@ -46,6 +46,26 @@ export class PersonLoginArgs {
   @Field()
     sign: string
 }
+@ArgsType()
+export class UpdateUserArgs {
+  @Field({ description: '用户密码', nullable: true })
+    sign?: RawSign
+
+  @Field({ description: '用户昵称', nullable: true })
+    name?: string
+
+  @Field(type => GENDER, { description: '用户性别', nullable: true })
+    gender?: GENDER
+
+  @Field({ description: '用户头像链接', nullable: true })
+    avatarImageUrl?: string
+
+  @Field({ description: '用户的学校', nullable: true })
+    school?: string
+
+  @Field({ description: '用户年级', nullable: true })
+    grade?: string
+}
 
 @ArgsType()
 export class CreateUserArgs {

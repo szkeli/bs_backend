@@ -2,7 +2,6 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
-import { UserId } from 'src/db/model/db.model'
 
 import { UserWithRoles } from '../auth/model/auth.model'
 import { Post, PostsConnection } from '../posts/models/post.model'
@@ -11,10 +10,10 @@ import { code2Session } from '../tool'
 import {
   CheckUserResult,
   CreateUserArgs,
+  UpdateUserArgs,
   User,
   UserDataBaseType,
-  UsersConnection,
-  UserUpdateProfileInput
+  UsersConnection
 } from './models/user.model'
 
 @Injectable()
@@ -213,7 +212,40 @@ export class UserService {
     }
   }
 
-  async updateUser (userId: UserId, input: UserUpdateProfileInput) {
-    // return await this.dbService.updateAUser(userId, input)
+  async updateUser (id: string, args: UpdateUserArgs) {
+    if (Object.entries(args).length === 0) {
+      throw new ForbiddenException('参数不能为空')
+    }
+    const now = new Date().toISOString()
+    const query = `
+      query v($id: string) {
+        u(func: uid($id)) @filter(type(User)) { u as uid }
+        user(func: uid($id)) @filter(type(User)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const condition = '@if  ( eq(len(u), 1) )'
+    const mutation = {
+      uid: id,
+      updatedAt: now
+    }
+    Object.assign(mutation, args)
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+      user: User[]
+    }>({
+      mutations: [{ mutation, condition }],
+      query,
+      vars: {
+        $id: id
+      }
+    })
+    Object.assign(res.json.user[0], args)
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`用户 ${id} 不存在`)
+    }
+    return res.json.user[0]
   }
 }

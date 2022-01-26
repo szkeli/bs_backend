@@ -23,6 +23,7 @@ import {
   LoginResult,
   PagingConfigArgs,
   PersonLoginArgs,
+  UpdateUserArgs,
   User,
   UsersConnection
 } from './models/user.model'
@@ -51,6 +52,14 @@ export class UserResolver {
   async register (@Args() args: CreateUserArgs) {
     args.sign = sign_calculus(args.sign)
     return await this.userService.registerUser(args)
+  }
+
+  @Mutation(of => User, { description: '更新用户画像' })
+  async updateUser (@CurrentUser() user: User, @Args() args: UpdateUserArgs) {
+    if (args.sign) {
+      args.sign = sign_calculus(args.sign)
+    }
+    return await this.userService.updateUser(user.id, args)
   }
 
   @Query(returns => AdminAndUserUnion, { description: '当前id对应的的用户画像' })
@@ -89,7 +98,7 @@ export class UserResolver {
     return await this.reportsService.findReportsByUid(user.id, first, offset)
   }
 
-  @ResolveField(of => DeadlinesConnection)
+  @ResolveField(of => DeadlinesConnection, { description: '当前用户的ddl信息' })
   async deadlines (@Parent() user: User, @Args() { startTime, endTime, first }: DeadlinesPagingArgs) {
     return await this.deadlinesService.findDeadlinesByUId(
       user.id,
@@ -99,7 +108,7 @@ export class UserResolver {
     )
   }
 
-  @ResolveField(of => CurriculumsConnection)
+  @ResolveField(of => CurriculumsConnection, { description: '当前用户的课程信息' })
   async curriculums (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.curriculumsService.findCurriculumsByUid(user.id, first, offset)
   }

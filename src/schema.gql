@@ -73,7 +73,11 @@ type User implements Person & Node {
 
   """用户收到的举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """当前用户的ddl信息"""
   deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
+
+  """当前用户的课程信息"""
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
 }
 
@@ -108,7 +112,11 @@ type LoginResult implements Node & Person {
 
   """用户收到的举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """当前用户的ddl信息"""
   deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
+
+  """当前用户的课程信息"""
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
   token: String!
 }
@@ -591,6 +599,27 @@ type Mutation {
 
   """用户注册"""
   register(userId: String!, sign: String!, code: String, name: String!, gender: GENDER!, avatarImageUrl: String!, school: String!, grade: String!): User!
+
+  """更新用户画像"""
+  updateUser(
+    """用户密码"""
+    sign: String
+
+    """用户昵称"""
+    name: String
+
+    """用户性别"""
+    gender: GENDER
+
+    """用户头像链接"""
+    avatarImageUrl: String
+
+    """用户的学校"""
+    school: String
+
+    """用户年级"""
+    grade: String
+  ): User!
   addCommentOnComment(
     """相应的评论的id"""
     to: String!
