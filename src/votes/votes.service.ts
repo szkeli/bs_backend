@@ -141,6 +141,7 @@ export class VotesService {
   async removeUpvoteOnComment (voter: string, to: string): Promise<Votable> {
     const mutation = {
       uid: 'uid(q)',
+      'dgraph.type': 'Vote',
       to: {
         uid: to,
         votes: {
@@ -226,6 +227,7 @@ export class VotesService {
 
     const mutation = {
       uid: 'uid(q)',
+      'dgraph.type': 'Vote',
       to: {
         uid: to,
         votes: {

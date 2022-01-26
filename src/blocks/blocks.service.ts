@@ -95,6 +95,7 @@ export class BlocksService {
     `
     const mutation = {
       uid: 'uid(v)',
+      'dgraph.type': 'Block',
       creator: {
         uid: 'uid(creator)',
         blocks: {
