@@ -56,12 +56,8 @@ export class CommentResolver {
   }
 
   @ResolveField(returns => CommentsConnection)
-  async comments (@Parent() comment: Comment, @Args() args: PagingConfigArgs) {
-    return await this.commentService.getCommentsByCommentId(
-      comment.id,
-      args.first,
-      args.offset
-    )
+  async comments (@Parent() comment: Comment, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.commentService.getCommentsByCommentId(comment.id, first, offset)
   }
 
   @ResolveField(returns => VotesConnection)

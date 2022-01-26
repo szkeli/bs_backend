@@ -100,17 +100,6 @@ export class ReportsService {
             uid: 'uid(to)'
           }
         }
-        // block: {
-        //   uid: '_:block',
-        //   'dgraph.type': 'Block',
-        //   createdAt: now,
-        //   creator: {
-        //     uid: id
-        //   },
-        //   to: {
-        //     uid: 'uid(to)'
-        //   }
-        // }
       },
       conversation: {
         uid: 'uid(conversation)',

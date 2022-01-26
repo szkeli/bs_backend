@@ -112,7 +112,7 @@ type Admin {
   privileges
   # 删除 (删除用户 帖子 评论)
   deletes
-  # 折叠 (折叠评论)
+  # 该管理员折叠的评论 (折叠评论)
   folds
   # 拉黑 (拉黑用户)
   blocks

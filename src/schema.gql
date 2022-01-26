@@ -479,6 +479,18 @@ type View {
   createdAt: String!
 }
 
+type Fold {
+  id: String!
+  createdAt: String!
+  creator: Admin!
+  to: Comment!
+}
+
+type FoldsConnection {
+  nodes: [Fold!]!
+  totalCount: Int!
+}
+
 type Query {
   post(id: String!): Post!
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
@@ -544,6 +556,7 @@ type Query {
   deadline(deadlineId: String!): Deadline!
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
   curriculum(id: String!): Curriculum!
+  folds(first: Int = 10, offset: Int = 0): FoldsConnection!
 }
 
 enum SEARCHTYPE {
@@ -691,6 +704,7 @@ type Mutation {
     """课程号"""
     curriculumId: String!
   ): Curriculum!
+  addFoldOnComment(commentId: String!): Fold!
 }
 
 input CreateSubjectInput {
