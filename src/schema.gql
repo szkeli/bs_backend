@@ -164,8 +164,8 @@ type Post {
   createdAt: String!
   images: [String!]
 
-  """帖子的创建者"""
-  creator: User!
+  """帖子的创建者，当帖子是匿名帖子时，返回null"""
+  creator: User
 
   """帖子的评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
@@ -567,6 +567,9 @@ type Mutation {
 
     """帖子所属的主题"""
     subjectId: String
+
+    """是否匿名帖子"""
+    isAnonymous: Boolean = false
   ): Post!
 
   """用户注册"""

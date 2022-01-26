@@ -1,11 +1,12 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
-import { DgraphClient, Mutation, Request } from 'dgraph-js'
+import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
+import { User } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
-import { CreatePostArgs, Post, PostsConnection, PostWithCreatorId } from './models/post.model'
+import { CreatePostArgs, Nullable, Post, PostsConnection, PostWithCreatorId } from './models/post.model'
 
 @Injectable()
 export class PostsService {
@@ -52,107 +53,167 @@ export class PostsService {
     }
   }
 
-  async createPost (creator: string, { title, content, images, subjectId }: CreatePostArgs) {
-    const txn = this.dgraph.newTxn()
-    let conditions: string
+  async createPost (creator: string, { title, content, images, subjectId, isAnonymous }: CreatePostArgs): Promise<Post> {
+    let condition: string
     let query: string
     let mutation: object
     const now = new Date().toISOString()
-    try {
-      if (subjectId) {
-        conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) )'
-        query = `
-          query {
+    if (subjectId) {
+      condition = '@if( eq(len(v), 1) AND eq(len(u), 1) )'
+      query = `
+          query v($creator: string, $subjectId: string) {
             # 创建者存在
-            v(func: uid(${creator})) @filter(type(User)) { v as uid }
+            v(func: uid($creator)) @filter(type(User)) { v as uid }
             # 主题存在
-            u(func: uid(${subjectId})) @filter(type(Subject)) { u as uid }
+            u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }
           }
         `
-        mutation = {
-          uid: creator,
-          posts: {
-            uid: '_:post',
-            'dgraph.type': 'Post',
-            title,
-            content,
-            images,
-            createdAt: now,
-            creator: {
-              uid: creator,
-              posts: {
-                uid: '_:post'
-              }
-            },
-            subject: {
-              uid: subjectId,
-              posts: {
-                uid: '_:post'
+      mutation = isAnonymous
+        ? {
+            uid: creator,
+            posts: {
+              uid: '_:post',
+              'dgraph.type': 'Post',
+              title,
+              content,
+              images,
+              createdAt: now,
+              // 帖子的创建者
+              creator: {
+                uid: creator,
+                posts: {
+                  uid: '_:post'
+                }
+              },
+              // 帖子的匿名信息
+              anonymous: {
+                uid: '_:anonymous',
+                'dgraph.type': 'Anonymous',
+                creator: {
+                  uid: creator
+                },
+                createdAt: now,
+                to: {
+                  uid: '_:post'
+                }
+              },
+              // 帖子所属的主题
+              subject: {
+                uid: subjectId,
+                posts: {
+                  uid: '_:post'
+                }
               }
             }
           }
-        }
-      } else {
-        conditions = '@if( eq(len(v), 1) )'
-        query = `
+        : {
+            uid: creator,
+            posts: {
+              uid: '_:post',
+              'dgraph.type': 'Post',
+              title,
+              content,
+              images,
+              createdAt: now,
+              // 帖子的创建者
+              creator: {
+                uid: creator,
+                posts: {
+                  uid: '_:post'
+                }
+              },
+              // 帖子所属的主题
+              subject: {
+                uid: subjectId,
+                posts: {
+                  uid: '_:post'
+                }
+              }
+            }
+          }
+    } else {
+      condition = '@if( eq(len(v), 1) )'
+      query = `
         query {
-          q(func: uid(${creator})) @filter(type(User)) { v as uid }
+          v(func: uid(${creator})) @filter(type(User)) { v as uid }
         }
       `
-        mutation = {
-          uid: creator,
-          posts: {
-            uid: '_:post',
-            'dgraph.type': 'Post',
-            title,
-            content,
-            images,
-            createdAt: now,
-            creator: {
-              uid: creator
+      mutation = isAnonymous
+        ? {
+            uid: creator,
+            posts: {
+              uid: '_:post',
+              'dgraph.type': 'Post',
+              title,
+              content,
+              images,
+              createdAt: now,
+              // 帖子的创建者
+              creator: {
+                uid: creator,
+                posts: {
+                  uid: '_:post'
+                }
+              },
+              // 帖子的匿名信息
+              anonymous: {
+                uid: '_:annonymous',
+                'dgraph.type': 'Anonymous',
+                creator: {
+                  uid: creator
+                },
+                to: {
+                  uid: '_:post'
+                },
+                createdAt: now
+              }
             }
           }
-        }
-      }
+        : {
+            uid: creator,
+            posts: {
+              uid: '_:post',
+              'dgraph.type': 'Post',
+              title,
+              content,
+              images,
+              createdAt: now,
+              // 帖子的创建者
+              creator: {
+                uid: creator,
+                posts: {
+                  uid: '_:post'
+                }
+              }
+            }
+          }
+    }
 
-      const mu = new Mutation()
-      mu.setSetJson(mutation)
-      mu.setCond(conditions)
-
-      const req = new Request()
-      req.setQuery(query)
-      req.addMutations(mu)
-      req.setCommitNow(true)
-      const res = await txn.doRequest(req)
-      console.error(res.getJson())
-      if (!subjectId) {
-        const v = res.getJson().q[0]
-        if (!v) {
-          throw new ForbiddenException(`${creator} 用户不存在`)
-        }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+    }>({
+      mutations: [{ mutation, condition }],
+      query,
+      vars: {
+        $creator: creator,
+        $subjectId: subjectId
       }
-      if (subjectId) {
-        const v = res.getJson().v[0]
-        const u = res.getJson().u[0]
-        if (!v) {
-          throw new ForbiddenException(`用户 ${creator} 不存在`)
-        }
-        if (!u) {
-          throw new ForbiddenException(`主题 ${subjectId} 不存在`)
-        }
-      }
+    })
 
-      const post: Post = {
-        id: res.getUidsMap().get('post'),
-        title,
-        content,
-        images,
-        createdAt: new Date(now).toISOString()
-      }
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`用户 ${creator} 不存在`)
+    }
+    if (subjectId && res.json.u.length !== 1) {
+      throw new ForbiddenException(`主题 ${subjectId} 不存在`)
+    }
 
-      return post
-    } finally {
-      await txn.discard()
+    return {
+      id: res.uids.get('post'),
+      title,
+      content,
+      images,
+      createdAt: now
     }
   }
 
@@ -216,32 +277,18 @@ export class PostsService {
   }
 
   async creator (id: PostId) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
-        query v($uid: string) {
-          post(func: uid($uid)) @filter(type(Post)) {
-            creator @filter(type(User)) {
-              id: uid
-              expand(_all_)
-            }
+    const query = `
+      query v($postId: string) {
+        post(func: uid($postId)) @filter(type(Post) and not has(anonymous)) {
+          creator @filter(type(User)) {
+            id: uid
+            expand(_all_)
           }
         }
-      `
-      const res = await this.dgraph
-        .newTxn({ readOnly: true })
-        .queryWithVars(query, { $uid: id })
-      const post = res.getJson().post[0]
-      if (!post) {
-        throw new ForbiddenException(`帖子 ${id} 不存在`)
       }
-      if (!post.creator) {
-        throw new ForbiddenException(`查询帖子 ${id} 的创建者失败`)
-      }
-      return post.creator
-    } finally {
-      await txn.discard()
-    }
+    `
+    const res = await this.dbService.commitQuery<{post: Array<Nullable<{creator: Nullable<User>}>>}>({ query, vars: { $postId: id } })
+    return res.post[0]?.creator
   }
 
   /**

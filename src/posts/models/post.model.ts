@@ -2,6 +2,7 @@ import { ArgsType, Field, InputType, Int, ObjectType } from '@nestjs/graphql'
 
 import { SubjectId } from 'src/subject/model/subject.model'
 
+export type Nullable<T> = T | null
 @ArgsType()
 export class CreatePostArgs {
   @Field({ description: '帖子标题' })
@@ -15,6 +16,9 @@ export class CreatePostArgs {
 
   @Field({ nullable: true, description: '帖子所属的主题' })
     subjectId: string
+
+  @Field(type => Boolean, { nullable: true, description: '是否匿名帖子', defaultValue: false })
+    isAnonymous: boolean
 }
 
 @ObjectType()

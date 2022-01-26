@@ -27,6 +27,7 @@ delete: uid @reverse .
 fold: uid @reverse .
 block: uid @reverse .
 educator: uid @reverse .
+anonymous: uid @reverse .
 
 images: [string] .
 
@@ -213,6 +214,18 @@ type Post {
   subject
   # 帖子的浏览
   views
+  # 帖子的匿名信息
+  anonymous
+}
+
+# 匿名信息
+type Anonymous {
+  # 匿名的创建者
+  creator
+  # 匿名的对象
+  to
+  # 匿名的创建时间
+  createdAt
 }
 
 # 用户在blackboard上的ddl

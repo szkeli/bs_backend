@@ -23,6 +23,7 @@ import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
+  Nullable,
   Post,
   PostsConnection
 } from './models/post.model'
@@ -59,8 +60,8 @@ export class PostsResolver {
     return await this.postsService.createPost(user.id, args)
   }
 
-  @ResolveField(returns => User, { description: '帖子的创建者' })
-  async creator (@Parent() post: Post): Promise<User> {
+  @ResolveField(returns => User, { nullable: true, description: '帖子的创建者，当帖子是匿名帖子时，返回null' })
+  async creator (@Parent() post: Post): Promise<Nullable<User>> {
     return await this.postsService.creator(post.id)
   }
 
