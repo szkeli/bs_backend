@@ -100,6 +100,7 @@ export class CommentService {
   async getCommentsByPostId (id: PostId, first: number, offset: number): Promise<CommentsConnection> {
     const query = `
           query v($uid: string) {
+            # 包含已经被折叠的帖子
             var(func: uid($uid)) @recurse(loop: false) {
               A as uid
               comments
@@ -110,7 +111,7 @@ export class CommentService {
             }
   
             post(func: uid($uid)) @filter(type(Post)) {
-              comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Comment) AND NOT has(delete)) {
+              comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Comment) and not has(delete) and not has(fold)) {
                 id: uid
                 expand(_all_)
               }
