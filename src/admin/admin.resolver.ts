@@ -12,6 +12,8 @@ import { sign as sign_calculus } from 'src/tool'
 
 import { CurrentUser, NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
+import { FoldsService } from '../folds/folds.service'
+import { FoldsConnection } from '../folds/models/folds.model'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { AdminService } from './admin.service'
 import {
@@ -25,7 +27,8 @@ import {
 @Resolver(of => Admin)
 export class AdminResolver {
   constructor (
-    private readonly adminService: AdminService
+    private readonly adminService: AdminService,
+    private readonly foldsService: FoldsService
   ) {}
 
   @Mutation(returns => Admin, { description: '注册一个管理员，需要使用authen认证新注册的管理员' })
@@ -77,5 +80,14 @@ export class AdminResolver {
     @Args('offset', { type: () => Int }) offset: number
   ) {
     return await this.adminService.privileges(admin.id, first, offset)
+  }
+
+  @ResolveField(of => FoldsConnection)
+  async folds (
+  @Parent() admin: Admin,
+    @Args('first', { type: () => Int }) first: number,
+    @Args('offset', { type: () => Int }) offset: number
+  ) {
+    return await this.foldsService.findFoldsByAdminId(admin.id, first, offset)
   }
 }

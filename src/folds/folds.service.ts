@@ -2,10 +2,36 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
 import { DbService } from '../db/db.service'
-import { Fold } from './models/folds.model'
+import { Fold, FoldsConnection } from './models/folds.model'
 
 @Injectable()
 export class FoldsService {
+  async findFoldsByAdminId (id: string, first: number, offset: number): Promise<FoldsConnection> {
+    const query = `
+        query v($adminId: string) {
+            totalCount(func: uid($adminId)) @filter(type(Admin)) {
+                count: count(folds)
+            }
+            admin(func: uid($adminId)) @filter(type(Admin)) {
+                folds (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Fold)) {
+                    id: uid
+                    expand(_all_)
+                }
+            }
+        }
+      `
+
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      admin: Array<{folds: Fold[]}>
+    }>({ query, vars: { $adminId: id } })
+    console.error(res)
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.admin[0]?.folds ?? []
+    }
+  }
+
   async to (id: string) {
     const query = `
         query v($foldId: string) {

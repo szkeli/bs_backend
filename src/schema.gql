@@ -12,6 +12,18 @@ interface Node {
   id: String!
 }
 
+type Fold {
+  id: String!
+  createdAt: String!
+  creator: Admin!
+  to: Comment!
+}
+
+type FoldsConnection {
+  nodes: [Fold!]!
+  totalCount: Int!
+}
+
 type Privilege {
   id: String!
   createdAt: String!
@@ -140,6 +152,7 @@ type Admin implements Node & Person {
   """当前管理员认证过的其他管理员"""
   credentials(offset: Int!, first: Int!): CredentialsConnection!
   privileges(offset: Int!, first: Int!): PrivilegesConnection!
+  folds(offset: Int!, first: Int!): FoldsConnection!
 }
 
 type AdminsConnection {
@@ -477,18 +490,6 @@ type AvatarImageUploadCredentialInfo {
 type View {
   id: String!
   createdAt: String!
-}
-
-type Fold {
-  id: String!
-  createdAt: String!
-  creator: Admin!
-  to: Comment!
-}
-
-type FoldsConnection {
-  nodes: [Fold!]!
-  totalCount: Int!
 }
 
 type Query {
