@@ -86,11 +86,15 @@ export class FoldsService {
     const now = new Date().toISOString()
     const query = `
         query v($admin: string, $commentId: string) {
+            # 管理员存在
             v(func: uid($admin)) @filter(type(Admin)) { v as uid }
+            # 评论存在
             u(func: uid($commentId)) @filter(type(Comment)) { u as uid }
+            # 评论未被折叠
+            x(func: uid($commentId)) @filter(type(Comment) and not has(fold)) { x as uid }
         }
     `
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) )'
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) )'
     const mutation = {
       uid: '_:fold',
       'dgraph.type': 'Fold',
@@ -111,6 +115,7 @@ export class FoldsService {
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
+      x: Array<{uid: string}>
     }>({
       mutations: [{ mutation, condition }],
       query,
@@ -121,6 +126,9 @@ export class FoldsService {
     }
     if (res.json.u.length !== 1) {
       throw new ForbiddenException(`评论 ${commentId} 不存在`)
+    }
+    if (res.json.x.length !== 1) {
+      throw new ForbiddenException(`评论 ${commentId} 已经被折叠`)
     }
     console.error(res)
 
