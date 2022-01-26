@@ -43,21 +43,41 @@ export class DbService {
     const op = new Operation()
     op.setSchema(schema)
     const res = await this.dgraph.alter(op)
-    // Payload {
-    //   wrappers_: null,
-    //   messageId_: undefined,
-    //   arrayIndexOffset_: -1,
-    //   array: [],
-    //   pivot_: 1.7976931348623157e+308,
-    //   convertedPrimitiveFields_: {}
-    // }
     console.error(res)
-
     return res
   }
 
-  async test () {
-    await this.setSchema()
+  async commitConditionalDeletions<U, V> ({ mutations, query, vars }: CommitConditionalUpertsProps) {
+    const txn = this.dgraph.newTxn()
+    try {
+      if (mutations.length === 0) {
+        throw new ForbiddenException('变更不能为空')
+      }
+      const mus = mutations.map(m => {
+        const mu = new Mutation()
+        mu.setDeleteJson(m.mutation)
+        mu.setCond(m.condition)
+        return mu
+      })
+
+      const req = new Request()
+      if (vars && Object.entries(vars).length !== 0) {
+        const _vars = req.getVarsMap()
+        Object.entries(vars).forEach(r => _vars.set(r[0], r[1]))
+      }
+      req.setQuery(query)
+      req.setMutationsList(mus)
+      req.setCommitNow(true)
+
+      const res = await txn.doRequest(req)
+
+      return {
+        uids: res.getUidsMap() as unknown as U,
+        json: res.getJson() as unknown as V
+      }
+    } finally {
+      await txn.discard()
+    }
   }
 
   async commitQuery<T> ({ vars, query }: CommitQueryWithVarsProps): Promise<T> {

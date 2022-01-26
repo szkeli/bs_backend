@@ -24,11 +24,11 @@ export class VotesResolver {
 
   @Mutation(returns => Votable)
   async removeUpvoteOnComment (@CurrentUser() user: User, @Args('from') from: string) {
-    return await this.votesService.unvoteAComment(user.id, from)
+    return await this.votesService.removeUpvoteOnComment(user.id, from)
   }
 
   @Mutation(returns => Votable)
   async removeUpvoteOnPost (@CurrentUser() user: User, @Args('from') from: string) {
-    return await this.votesService.unvoteAPost(user.id, from)
+    return await this.votesService.removeUpvoteOnPost(user.id, from)
   }
 }

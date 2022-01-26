@@ -70,3 +70,4 @@ export async function code2Session (code: string) {
     errcode: number
   }
 }
+export const now = () => new Date().toISOString()

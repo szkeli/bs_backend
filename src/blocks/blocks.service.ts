@@ -1,12 +1,128 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
 import { DbService } from '../db/db.service'
+import { now } from '../tool'
 import { User } from '../user/models/user.model'
 import { Block, BlocksConnection } from './models/blocks.model'
 
 @Injectable()
 export class BlocksService {
+  constructor (private readonly dbService: DbService) {}
+
+  async addBlockOnUser (adminId: string, id: string, description: string): Promise<Block> {
+    const query = `
+      query v($adminId: string, $id: string, $description: string) {
+        v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
+        x(func: uid($id)) @filter(type(User)) { 
+          x as uid
+        }
+        b(func: uid($id)) @filter(type(User)) {
+          block @filter(type(Block)) {
+            block as uid
+          }
+        }
+      }
+    `
+    const condition = '@if( eq(len(v), 1) and eq(len(x), 1) and eq(len(block), 0) )'
+    const mutation = {
+      uid: '_:block',
+      'dgraph.type': 'Block',
+      description,
+      createdAt: now(),
+      creator: {
+        uid: adminId,
+        blocks: {
+          uid: '_:block'
+        }
+      },
+      to: {
+        uid: id,
+        block: {
+          uid: '_:block'
+        }
+      }
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      x: Array<{uid: string}>
+      b: Array<{block: string}>
+    }>({
+      mutations: [{ mutation, condition }],
+      query,
+      vars: {
+        $adminId: adminId,
+        $id: id,
+        $description: description
+      }
+    })
+
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`管理员 ${adminId} 不存在`)
+    }
+    if (res.json.x.length !== 1) {
+      throw new ForbiddenException(`用户 ${id} 不存在`)
+    }
+    if (res.json.b.length !== 0) {
+      throw new ForbiddenException(`用户 ${id} 已被拉黑`)
+    }
+    return {
+      description,
+      createdAt: now(),
+      id: res.uids.get('block')
+    }
+  }
+
+  async removeBlockOnUser (from: string) {
+    const condition = '@if( eq(len(v), 1) and eq(len(creator), 1) and eq(len(to),1) )'
+    const query = `
+      query v($uid: string) {
+        user(func: uid($uid)) @filter(type(User)) {
+          block @filter(type(Block)) {
+            # 拉黑存在
+            v as uid
+            # 创建拉黑的管理员存在
+            creator @filter(type(Admin)) {
+              creator as uid
+            }
+            # 被拉黑的对象存在
+            to @filter(type(User)) {
+              to as uid
+            }
+          }
+        }
+      }
+    `
+    const mutation = {
+      uid: 'uid(v)',
+      creator: {
+        uid: 'uid(creator)',
+        blocks: {
+          uid: 'uid(v)'
+        }
+      },
+      to: {
+        uid: 'uid(to)',
+        block: {
+          uid: 'uid(v)'
+        }
+      }
+    }
+
+    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
+      user: Array<{}>
+    }>({
+      mutations: [{ mutation, condition }],
+      query,
+      vars: { $uid: from }
+    })
+
+    if (res.json.user.length === 0) {
+      throw new ForbiddenException(`用户 ${from} 未被拉黑`)
+    }
+    return res.json.user.length === 1
+  }
+
   async findBlocksByAdminId (id: string, first: number, offset: number) {
     const query = `
       query v($adminId: string) {
@@ -60,7 +176,6 @@ export class BlocksService {
     return res.block[0]?.to
   }
 
-  constructor (private readonly dbService: DbService) {}
   async blocks (first: number, offset: number): Promise<BlocksConnection> {
     const query = `
         query v {

@@ -761,6 +761,8 @@ type Mutation {
     curriculumId: String!
   ): Curriculum!
   addFoldOnComment(commentId: String!): Fold!
+  removeBlockOnUser(from: String!): Boolean!
+  addBlockOnUser(id: String!, description: String!): Block!
 }
 
 input CreateSubjectInput {

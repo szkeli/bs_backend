@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
 @ObjectType()
 export class Block {
@@ -19,4 +19,13 @@ export class BlocksConnection {
 
   @Field(type => Int)
     totalCount: number
+}
+
+@ArgsType()
+export class AddBlockOnUserArgs {
+  @Field()
+    id: string
+
+  @Field()
+    description: string
 }
