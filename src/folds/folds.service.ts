@@ -6,6 +6,8 @@ import { Fold, FoldsConnection } from './models/folds.model'
 
 @Injectable()
 export class FoldsService {
+  constructor (private readonly dbService: DbService) {}
+
   async findFoldsByAdminId (id: string, first: number, offset: number): Promise<FoldsConnection> {
     const query = `
         query v($adminId: string) {
@@ -20,12 +22,10 @@ export class FoldsService {
             }
         }
       `
-
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
       admin: Array<{folds: Fold[]}>
     }>({ query, vars: { $adminId: id } })
-    console.error(res)
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
       nodes: res.admin[0]?.folds ?? []
@@ -82,7 +82,6 @@ export class FoldsService {
     }
   }
 
-  constructor (private readonly dbService: DbService) {}
   async addFoldOnComment (adminId: string, commentId: string) {
     const now = new Date().toISOString()
     const query = `

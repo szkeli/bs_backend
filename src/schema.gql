@@ -191,6 +191,9 @@ type Post {
 
   """帖子收到的举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """获取帖子的折叠评论"""
+  foldedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 }
 
 type PostsConnection {

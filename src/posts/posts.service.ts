@@ -4,12 +4,32 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
+import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { User } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import { CreatePostArgs, Nullable, Post, PostsConnection, PostWithCreatorId } from './models/post.model'
 
 @Injectable()
 export class PostsService {
+  async findFoldedCommentsByPostId (id: string, first: number, offset: number): Promise<CommentsConnection> {
+    const query = `
+      query v($postId: string) {
+        post(func: uid($postId)) @filter(type(Post)) {
+          count: count(comments @filter(has(fold)))
+          comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(has(fold)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{post: Array<{count: number, comments?: Comment[]}>}>({ query, vars: { $postId: id } })
+    return {
+      totalCount: res.post[0]?.count ?? 0,
+      nodes: res.post[0]?.comments ?? []
+    }
+  }
+
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()

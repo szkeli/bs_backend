@@ -84,4 +84,9 @@ export class PostsResolver {
   async reports (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
     return await this.reportsService.findReportsByPostId(post.id, first, offset)
   }
+
+  @ResolveField(of => CommentsConnection, { description: '获取帖子的折叠评论' })
+  async foldedComments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.postsService.findFoldedCommentsByPostId(post.id, first, offset)
+  }
 }
