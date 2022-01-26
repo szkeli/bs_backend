@@ -27,25 +27,34 @@ export class UserService {
     const query = `
       query v($sign: string, $userId: string) {
         user(func: eq(userId, $userId)) @filter(type(User) OR type(Admin)) {
-          id: uid
+          id: t as uid
           expand(_all_)
           success: checkpwd(sign, $sign)
           roles: dgraph.type
         }
       }
       `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, {
+    const now = new Date().toISOString()
+    const condition = '@if( eq(len(t), 1) )'
+    const mutation = {
+      uid: 'uid(t)',
+      lastLoginedAt: now
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {user: CheckUserResult[]}>({
+      query,
+      vars: {
         $userId: userId,
         $sign: sign
-      })).getJson() as unknown as {
-      user: CheckUserResult[]
-    }
-    if (!res || !res.user || res.user.length !== 1 || !res.user[0].success) {
+      },
+      mutations: [{ mutation, condition }]
+    })
+    if (res.json.user.length !== 1) {
       throw new ForbiddenException('用户名或密码错误')
     }
-    return res.user[0]
+    Object.assign(res.json.user[0], {
+      lastLoginedAt: now
+    })
+    return res.json.user[0]
   }
 
   async findSubjectsByUid (id: string, first: number, offset: number) {

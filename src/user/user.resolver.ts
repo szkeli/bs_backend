@@ -40,7 +40,7 @@ export class UserResolver {
     private readonly curriculumsService: CurriculumsService
   ) {}
 
-  @Query(returns => LoginResult, { description: '用户登录' })
+  @Mutation(of => LoginResult, { description: '用户登录' })
   @NoAuth()
   async login (@Args() args: PersonLoginArgs): Promise<LoginResult> {
     const v = sign_calculus(args.sign)

@@ -508,13 +508,6 @@ type Query {
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
   trendingPosts(first: Int = 10, offset: Int = 0): PostsConnection!
 
-  """用户登录"""
-  login(
-    """用户 userId，注意不是 id"""
-    userId: String!
-    sign: String!
-  ): LoginResult!
-
   """当前id对应的的用户画像"""
   whoAmI: AdminAndUserUnion!
 
@@ -596,6 +589,13 @@ type Mutation {
     """是否匿名帖子"""
     isAnonymous: Boolean = false
   ): Post!
+
+  """用户登录"""
+  login(
+    """用户 userId，注意不是 id"""
+    userId: String!
+    sign: String!
+  ): LoginResult!
 
   """用户注册"""
   register(userId: String!, sign: String!, code: String, name: String!, gender: GENDER!, avatarImageUrl: String!, school: String!, grade: String!): User!
