@@ -14,12 +14,42 @@ export class PostsService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async trendingPosts (first: number, offset: number) {
+  async trendingPosts (first: number, offset: number): Promise<PostsConnection> {
+    if (first + offset > 30) {
+      throw new ForbiddenException('first + offset 应该小于30')
+    }
+    // TODO
     const query = `
-
+      query v($first: int, $offset: int) {
+        posts as var(func: type(Post)) {
+          voteCount as count(votes @filter(type(Vote)))
+        # TODO
+          c as count(comments @filter(type(Comment)))
+          commentsCount as math(c * 3)
+          createdAt as createdAt
+        
+          hour as math(
+            0.75*(since(createdAt)/216000)
+          )
+          score as math((voteCount + commentsCount)* hour)
+        }
+        
+        totalCount(func: uid(posts)) { count(uid) }
+        posts(func: uid(posts), orderdesc: val(score), first: $first, offset: $offset) {
+          val(score)
+          id: uid
+          expand(_all_)
+        } 
+      }
     `
-    const res = await this.dbService.commitQuery({ query })
-    console.error(res)
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: 13}>
+      posts: Post[]
+    }>({ query, vars: { $first: `${first}`, $offset: `${offset}` } })
+    return {
+      nodes: res.posts ?? [],
+      totalCount: res.totalCount[0]?.count ?? 0
+    }
   }
 
   async createPost (creator: string, { title, content, images, subjectId }: CreatePostArgs) {
