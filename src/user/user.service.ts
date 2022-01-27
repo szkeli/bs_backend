@@ -48,7 +48,7 @@ export class UserService {
       },
       mutations: [{ mutation, condition }]
     })
-    if (res.json.user.length !== 1) {
+    if (res.json.user.length !== 1 || !res.json.user[0].success) {
       throw new ForbiddenException('用户名或密码错误')
     }
     Object.assign(res.json.user[0], {
