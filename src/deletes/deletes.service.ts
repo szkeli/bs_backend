@@ -1,14 +1,90 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient } from 'dgraph-js'
 
+import { Admin } from '../admin/models/admin.model'
+import { Comment } from '../comment/models/comment.model'
 import { DbService } from '../db/db.service'
-import { Delete } from './models/deletes.model'
+import { Post } from '../posts/models/post.model'
+import { Delete, DeletesConnection, PostAndCommentUnion } from './models/deletes.model'
 
 @Injectable()
 export class DeletesService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async to (deleteId: string): Promise<typeof PostAndCommentUnion> {
+    const query = `
+      query v($deleteId: string) {
+        delete(func: uid($deleteId)) @filter(type(Delete)) {
+          to @filter(type(Comment) or type(Post)) {
+            id: uid
+            expand(_all_)
+            dgraph.type
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{delete: Array<{to: (Comment | Post) & { 'dgraph.type': Array<'Post'|'Comment'>}}>}>({ query, vars: { $deleteId: deleteId } })
+    if (res.delete[0]?.to['dgraph.type'].includes('Post')) {
+      return new Post(res.delete[0]?.to as unknown as Post)
+    }
+    if (res.delete[0]?.to['dgraph.type'].includes('Comment')) {
+      return new Comment(res.delete[0]?.to as unknown as Comment)
+    }
+  }
+
+  async creator (deleteId: string) {
+    const query = `
+      query v($deleteId: string) {
+        delete(func: uid($deleteId)) @filter(type(Delete)) {
+          creator @filter(type(Admin)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{delete: Array<{creator: Admin}>}>({ query, vars: { $deleteId: deleteId } })
+    return res.delete[0]?.creator
+  }
+
+  async delete (deleteId: string) {
+    const query = `
+      query v($deleteId: string) {
+        delete(func: uid($deleteId)) @filter(type(Delete)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{delete: Delete[]}>({ query, vars: { $deleteId: deleteId } })
+    if (res.delete.length !== 1) {
+      throw new ForbiddenException(`删除操作 ${deleteId} 不存在`)
+    }
+    return res.delete
+  }
+
+  async deletes (first: number, offset: number): Promise<DeletesConnection> {
+    const query = `
+      query {
+        totalCount (func: type(Delete)) { count(uid) }
+        deletes (func: type(Delete), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      deletes: Delete[]
+    }>({ query })
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.deletes ?? []
+    }
   }
 
   async deleteComment (adminId: string, commentId: string): Promise<Delete> {

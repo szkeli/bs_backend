@@ -463,6 +463,15 @@ type DeadlinesConnection {
 type Delete {
   id: String!
   createdAt: String!
+  creator: Admin!
+  to: PostAndCommentUnion!
+}
+
+union PostAndCommentUnion = Post | Comment
+
+type DeletesConnection {
+  nodes: [Delete!]!
+  totalCount: Int!
 }
 
 type Subject {
@@ -578,6 +587,8 @@ type Query {
 
   """分页返回会话"""
   conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
+  delete(deleteId: String!): Delete!
+  deletes(first: Int = 10, offset: Int = 0): DeletesConnection!
 
   """用户上传头像时，先根据文件名获取临时上传凭证信息"""
   getAvatarImageUploadCredentialInfo(fileName: String!): AvatarImageUploadCredentialInfo!
