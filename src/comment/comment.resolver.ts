@@ -60,6 +60,11 @@ export class CommentResolver {
     return await this.commentService.getCommentsByCommentId(comment.id, first, offset)
   }
 
+  @ResolveField(of => CommentsConnection)
+  async trendingComments (@Parent() comment: Comment, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.commentService.trendingComments(comment.id, first, offset)
+  }
+
   @ResolveField(returns => VotesConnection)
   async votes (@CurrentUser() user: User, @Parent() comment: Comment, @Args() args: PagingConfigArgs) {
     return await this.commentService.getVotesByCommentId(user.id, comment.id, args.first, args.offset)

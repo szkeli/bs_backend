@@ -89,4 +89,9 @@ export class PostsResolver {
   async foldedComments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.findFoldedCommentsByPostId(post.id, first, offset)
   }
+
+  @ResolveField(of => CommentsConnection, { description: '按热度返回评论' })
+  async trendingComments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.postsService.trendingComments(post.id, first, offset)
+  }
 }

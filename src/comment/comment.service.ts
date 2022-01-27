@@ -14,6 +14,42 @@ import {
 
 @Injectable()
 export class CommentService {
+  async trendingComments (id: string, first: number, offset: number): Promise<CommentsConnection> {
+    const query = `
+      # TODO 实现产品中要求的计算评论热度的方法
+      query v($commentId: string) {
+        var(func: uid($commentId)) @filter(type(Comment)) {
+          comments as comments @filter(type(Comment)) {
+            c as count(comments @filter(type(Comment)))
+            voteCount as count(votes @filter(type(Vote)))
+            commentScore as math(c * 3)
+            createdAt as createdAt
+
+            hour as math (
+              0.75 * (since(createdAt)/216000)
+            )
+            score as math((voteCount + commentScore) * hour)
+          }
+        }
+        totalCount(func: uid(comments)) { count(uid) }
+        comments(func: uid(comments), orderdesc: val(score), first: ${first}, offset: ${offset}) {
+          val(score)
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      comments: Comment[]
+    }>({ query, vars: { $commentId: id } })
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.comments ?? []
+    }
+  }
+
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()

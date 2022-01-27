@@ -222,6 +222,9 @@ type Post {
 
   """获取帖子的折叠评论"""
   foldedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """按热度返回评论"""
+  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 }
 
 type PostsConnection {
@@ -234,6 +237,7 @@ type Comment implements Node {
   content: String!
   createdAt: String!
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
   votes(first: Int = 10, offset: Int = 0): VotesConnection!
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
   post: Post!
