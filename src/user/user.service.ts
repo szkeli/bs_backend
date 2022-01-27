@@ -24,6 +24,9 @@ export class UserService {
   }
 
   async checkUserPasswordAndGetUser (userId: string, sign: string) {
+    if (userId.length <= 2) {
+      throw new ForbiddenException('userId 不能少于3个字符')
+    }
     const query = `
       query v($sign: string, $userId: string) {
         user(func: eq(userId, $userId)) @filter(type(User) OR type(Admin)) {
