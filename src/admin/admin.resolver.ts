@@ -14,6 +14,7 @@ import { CurrentUser, NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { BlocksService } from '../blocks/blocks.service'
 import { BlocksConnection } from '../blocks/models/blocks.model'
+import { ICredential, ICredentialsConnection } from '../credentials/models/credentials.model'
 import { FoldsService } from '../folds/folds.service'
 import { FoldsConnection } from '../folds/models/folds.model'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
@@ -21,8 +22,6 @@ import { AdminService } from './admin.service'
 import {
   Admin,
   AdminsConnection,
-  Credential,
-  CredentialsConnection,
   RegisterAdminArgs
 } from './models/admin.model'
 
@@ -62,12 +61,12 @@ export class AdminResolver {
     return await this.adminService.admins(first, offset)
   }
 
-  @ResolveField(returns => Credential, { nullable: true, description: '管理员的凭证' })
+  @ResolveField(returns => ICredential, { nullable: true, description: '管理员的凭证' })
   async credential (@Parent() admin: Admin) {
     return await this.adminService.findCredentialByAdminId(admin.id)
   }
 
-  @ResolveField(returns => CredentialsConnection, { description: '当前管理员认证过的其他管理员' })
+  @ResolveField(returns => ICredentialsConnection, { description: '当前管理员认证过的其他管理员' })
   async credentials (
   @Parent() admin: Admin,
     @Args('first', { type: () => Int }) first: number,

@@ -34,6 +34,7 @@ import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
 import { FoldsModule } from './folds/folds.module';
 import { BlocksModule } from './blocks/blocks.module';
+import { CredentialsModule } from './credentials/credentials.module';
 
 @Module({
   imports: [
@@ -69,7 +70,8 @@ import { BlocksModule } from './blocks/blocks.module';
     ViewsModule,
     CurriculumsModule,
     FoldsModule,
-    BlocksModule
+    BlocksModule,
+    CredentialsModule
   ],
   controllers: [AppController],
   providers: [

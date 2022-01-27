@@ -25,6 +25,16 @@ type BlocksConnection {
   totalCount: Int!
 }
 
+type ICredential {
+  id: String!
+  createdAt: String!
+}
+
+type ICredentialsConnection {
+  nodes: [ICredential!]!
+  totalCount: Int!
+}
+
 type Fold {
   id: String!
   createdAt: String!
@@ -168,10 +178,10 @@ type Admin implements Node & Person {
   lastLoginedAt: String!
 
   """管理员的凭证"""
-  credential: Credential
+  credential: ICredential
 
   """当前管理员认证过的其他管理员"""
-  credentials(offset: Int!, first: Int!): CredentialsConnection!
+  credentials(offset: Int!, first: Int!): ICredentialsConnection!
 
   """当前管理员拥有的权限"""
   privileges(offset: Int!, first: Int!): PrivilegesConnection!
@@ -185,16 +195,6 @@ type Admin implements Node & Person {
 
 type AdminsConnection {
   nodes: [Admin!]!
-  totalCount: Int!
-}
-
-type Credential {
-  id: String!
-  createdAt: String!
-}
-
-type CredentialsConnection {
-  nodes: [Credential!]!
   totalCount: Int!
 }
 
@@ -590,6 +590,8 @@ type Query {
 
   """所有的拉黑"""
   blocks(first: Int = 10, offset: Int = 0): BlocksConnection!
+  credential(credentialId: String!): ICredential!
+  credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
 }
 
 enum SEARCHTYPE {

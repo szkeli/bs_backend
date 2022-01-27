@@ -1,13 +1,12 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
+import { ICredential, ICredentialsConnection } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import {
   Admin,
   AdminsConnection,
-  Credential,
-  CredentialsConnection,
   RegisterAdminArgs
 } from './models/admin.model'
 
@@ -41,7 +40,7 @@ export class AdminService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async findCredentialsByAdminId (id: string, first: number, offset: number): Promise<CredentialsConnection> {
+  async findCredentialsByAdminId (id: string, first: number, offset: number): Promise<ICredentialsConnection> {
     const query = `
       query v($uid: string) {
         admin(func: uid($uid)) @filter(type(Admin)) {
@@ -57,7 +56,7 @@ export class AdminService {
       .newTxn({ readOnly: true })
       .queryWithVars(query, { $uid: id }))
       .getJson() as unknown as {
-      admin: Array<{credentials: Credential[], count: number}>
+      admin: Array<{credentials: ICredential[], count: number}>
     }
     return {
       nodes: res.admin[0]?.credentials || [],
@@ -91,7 +90,7 @@ export class AdminService {
    * @param to 未授权的管理员
    * @returns {Promise<Credential>}
    */
-  async authenAdmin (i: string, to: string): Promise<Credential> {
+  async authenAdmin (i: string, to: string): Promise<ICredential> {
     if (i === to) {
       throw new ForbiddenException('不能对自己授权')
     }

@@ -59,21 +59,3 @@ export class AdminsConnection {
 }
 
 export type CheckAdminResult = Admin & {success: boolean, roles: Role[]}
-
-@ObjectType()
-export class Credential {
-  @Field()
-    id: string
-
-  @Field()
-    createdAt: string
-}
-
-@ObjectType()
-export class CredentialsConnection {
-  @Field(type => [Credential])
-    nodes: Credential[]
-
-  @Field(type => Int)
-    totalCount: number
-}
