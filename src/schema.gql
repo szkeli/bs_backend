@@ -582,6 +582,7 @@ type Query {
   """用户上传帖子图片时，先根据文件名获取临时上传凭证信息"""
   getPostImagesUploadCredentialInfo(fileNames: [String!]!): PostImagesUploadCredentialInfo!
   privilege(id: String!): Privilege!
+  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
   deadline(deadlineId: String!): Deadline!
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
   curriculum(id: String!): Curriculum!

@@ -5,10 +5,32 @@ import { Role } from '../auth/model/auth.model'
 import { DbService } from '../db/db.service'
 import { now } from '../tool'
 import { AdminAndUserUnion, User } from '../user/models/user.model'
-import { IPRIVILEGE, Privilege } from './models/privileges.model'
+import { IPRIVILEGE, Privilege, PrivilegesConnection } from './models/privileges.model'
 
 @Injectable()
 export class PrivilegesService {
+  async privileges (first: number, offset: number): Promise<PrivilegesConnection> {
+    const query = `
+      query {
+        totalCount (func: type(Privilege)) {
+          count(uid)
+        }
+        privileges (func: type(Privilege), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      privileges: Privilege[]
+      totalCount: Array<{count: number}>
+    }>({ query })
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.privileges ?? []
+    }
+  }
+
   constructor (private readonly dbService: DbService) {}
 
   async removePrivilegeOnAdmin (adminId: string, from: string, privilege: IPRIVILEGE) {
