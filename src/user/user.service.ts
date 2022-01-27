@@ -156,6 +156,9 @@ export class UserService {
   }
 
   async registerUser (input: CreateUserArgs): Promise<User> {
+    if (input.userId.length <= 2) {
+      throw new ForbiddenException('userId 不能少于三个字符')
+    }
     let unionId: string = ''
     let openId: string = ''
     if (input.code) {
