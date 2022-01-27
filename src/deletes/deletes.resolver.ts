@@ -11,13 +11,13 @@ import { Delete, DeletesConnection, PostAndCommentUnion } from './models/deletes
 export class DeletesResolver {
   constructor (private readonly deletesService: DeletesService) {}
 
-  @Mutation(() => Delete)
+  @Mutation(() => Delete, { description: '管理员删除一个帖子' })
   @Roles(Role.Admin)
   async deletePost (@CurrentUser() user: User, @Args('postId') postId: string) {
     return await this.deletesService.deletePost(user.id, postId)
   }
 
-  @Mutation(() => Delete)
+  @Mutation(() => Delete, { description: '管理员删除一个评论' })
   @Roles(Role.Admin)
   async deleteComment (@CurrentUser() user: User, @Args('commentId') commentId: string) {
     return await this.deletesService.deleteComment(user.id, commentId)

@@ -11,6 +11,57 @@ export class ConversationsService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async closeConversation (creator: string, conversationId: string) {
+    const query = `
+      query v($creator: string, $conversationId: string, $runningState: string) {
+        # 当前用户存在
+        v(func: uid($creator)) @filter(type(User)) { v as uid }
+        # 当前会话存在
+        u(func: uid($conversationId)) @filter(type(Conversation)) { 
+          id: u as uid
+          expand(_all_)
+        }
+        # 当前会话创建人是当前用户
+        x(func: uid($conversationId)) @filter(type(Conversation) and uid_in(creator, $creator)) { x as uid }
+        # 当前会话处于open状态
+        g(func: uid($conversationId)) @filter(type(Conversation) and eq(state, $runningState)) { g as uid }
+      }
+    `
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and(len(g), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      state: CONVERSATION_STATE.CLOSE
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Conversation[]
+      x: Array<{uid: string}>
+      g: Array<{uid: string}>
+    }>({
+      mutations: [{ mutation, condition }],
+      query,
+      vars: {
+        $creator: creator,
+        $conversationId: conversationId,
+        $openState: CONVERSATION_STATE.RUNNING
+      }
+    })
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`用户 ${creator} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`会话 ${conversationId} 不存在`)
+    }
+    if (res.json.x.length !== 1) {
+      throw new ForbiddenException(`用户 ${creator} 不是会话 ${conversationId} 的创建者`)
+    }
+    if (res.json.g.length !== 1) {
+      throw new ForbiddenException(`会话 ${conversationId} 不处于 ${CONVERSATION_STATE.RUNNING} 状态`)
+    }
+    Object.assign(res.json.u[0], { state: CONVERSATION_STATE.CLOSE })
+    return res.json.u[0]
+  }
+
   async createConversation (creator: string, title: string, description: string, participants: string[]) {
     const txn = this.dgraph.newTxn()
     try {

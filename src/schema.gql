@@ -746,10 +746,17 @@ type Mutation {
 
   """创建一个会话"""
   createConversation(title: String!, description: String!, participants: [String!]!): Conversation!
+
+  """关闭一个会话"""
+  closeConversation(conversationId: String!): Conversation!
   setSchema: SetDbSchema!
   dropAllData: Boolean!
   dropData: Boolean!
+
+  """管理员删除一个帖子"""
   deletePost(postId: String!): Delete!
+
+  """管理员删除一个评论"""
   deleteComment(commentId: String!): Delete!
   addPrivilegeOnAdmin(privilege: IPRIVILEGE!, adminId: String!): Privilege!
   removePrivilegeOnAdmin(privilege: IPRIVILEGE!, from: String!): Boolean!

@@ -35,6 +35,11 @@ export class ConversationsResolver {
     return await this.conversationsService.createConversation(user.id, args.title, args.description, args.participants)
   }
 
+  @Mutation(of => Conversation, { description: '关闭一个会话' })
+  async closeConversation (@CurrentUser() user: User, @Args('conversationId') conversationId: string) {
+    return await this.conversationsService.closeConversation(user.id, conversationId)
+  }
+
   @ResolveField(returns => MessageItemConnection, { description: '返回会话中的所有消息' })
   async messages (@Parent() conversation: Conversation, @Args() { first, offset }: PagingConfigArgs) {
     return await this.messagesService.findMessagesByConversationId(conversation.id, first, offset)
