@@ -1,6 +1,6 @@
-import { ObjectType, Field, Int } from '@nestjs/graphql'
+import { Field, Int, ObjectType } from '@nestjs/graphql'
 
-@ObjectType()
+@ObjectType({ description: '凭证是成为管理员的前提' })
 export class ICredential {
   @Field()
     id: string

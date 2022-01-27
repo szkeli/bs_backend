@@ -25,9 +25,12 @@ type BlocksConnection {
   totalCount: Int!
 }
 
+"""凭证是成为管理员的前提"""
 type ICredential {
   id: String!
   createdAt: String!
+  creator: Admin!
+  to: Admin!
 }
 
 type ICredentialsConnection {
@@ -590,7 +593,11 @@ type Query {
 
   """所有的拉黑"""
   blocks(first: Int = 10, offset: Int = 0): BlocksConnection!
+
+  """获取一个凭证"""
   credential(credentialId: String!): ICredential!
+
+  """获取所有凭证"""
   credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
 }
 
