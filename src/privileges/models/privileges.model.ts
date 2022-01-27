@@ -41,6 +41,15 @@ export class AddPrivilegeOnAdmin {
     adminId: string
 }
 
+@ArgsType()
+export class RemovePrivilegeOnAdmin {
+  @Field(type => IPRIVILEGE)
+    privilege: IPRIVILEGE
+
+  @Field(type => String)
+    from: string
+}
+
 @ObjectType()
 export class PrivilegesConnection {
   @Field(type => [Privilege])

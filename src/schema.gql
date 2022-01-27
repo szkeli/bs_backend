@@ -731,6 +731,7 @@ type Mutation {
   deletePost(postId: String!): Delete!
   deleteComment(commentId: String!): Delete!
   addPrivilegeOnAdmin(privilege: IPRIVILEGE!, adminId: String!): Privilege!
+  removePrivilegeOnAdmin(privilege: IPRIVILEGE!, from: String!): Boolean!
 
   """在当前用户上添加一个ddl"""
   addDeadline(courseContentId: Int!, courseId: Int!, ownerUserId: Int!, notificationIds: [Int!]!, parentId: String!, sourceId: String!, courseName: String!, dataPending: Boolean!, dateAdded: String!, startDate: String!, endDate: String, dueDate: String!, eventType: DEADLINE_EVENT_TYPE!, eventUrl: String, groupCount: Int!, ownerName: String!, receiverCount: Int!, recipientCount: Int!, recipientId: Int!, recipientType: DEADLINE_RECIPIENT_TYPE!, seen: Boolean!, sourceData: String, sourceDataType: DEADLINE_SOURCE_DATA_TYPE!, sourceType: DEADLINE_SOURCE_TYPE!, title: String!, type: DEADLINE_TYPE!, viewId: Int!): Deadline!

@@ -4,7 +4,7 @@ import { Admin } from '../admin/models/admin.model'
 import { CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { AdminAndUserUnion } from '../user/models/user.model'
-import { AddPrivilegeOnAdmin, Privilege } from './models/privileges.model'
+import { AddPrivilegeOnAdmin, Privilege, RemovePrivilegeOnAdmin } from './models/privileges.model'
 import { PrivilegesService } from './privileges.service'
 
 @Resolver(of => Privilege)
@@ -20,6 +20,12 @@ export class PrivilegesResolver {
   @Roles(Role.Admin)
   async addPrivilegeOnAdmin (@CurrentUser() admin: Admin, @Args() { privilege, adminId }: AddPrivilegeOnAdmin) {
     return await this.privilegesService.addPrivilegeOnAdmin(admin.id, privilege, adminId)
+  }
+
+  @Mutation(of => Boolean)
+  @Roles(Role.Admin)
+  async removePrivilegeOnAdmin (@CurrentUser() admin: Admin, @Args() { privilege, from }: RemovePrivilegeOnAdmin) {
+    return await this.privilegesService.removePrivilegeOnAdmin(admin.id, from, privilege)
   }
 
   @ResolveField(() => AdminAndUserUnion)
