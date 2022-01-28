@@ -353,6 +353,31 @@ export class PostsService {
    * @returns { Promise<VotesConnection> }
    */
   async getVotesByPostId (viewerId: string, postId: string, first: number, offset: number): Promise<VotesConnection> {
+    if (!viewerId) {
+      const query = `
+        query v($postId: string) {
+          totalCount(func: uid($postId)) @filter(type(Post)) {
+            count: count(votes @filter(type(Vote)))
+          }
+          post(func: uid($postId)) @filter(type(Post)) {
+            votes (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Vote)) {
+              id: uid
+              expand(_all_)
+            }
+          }
+        }
+      `
+      const res = await this.dbService.commitQuery<{
+        totalCount: Array<{count: number}>
+        post: Array<{ votes: Vote[]}>
+      }>({ query, vars: { $postId: postId } })
+      return {
+        nodes: res.post[0]?.votes ?? [],
+        totalCount: res.totalCount[0]?.count ?? 0,
+        viewerCanUpvote: true,
+        viewerHasUpvoted: false
+      }
+    }
     const query = `
       query v($viewerId: string, $postId: string) {
         q(func: uid($postId)) @filter(type(Post)) {

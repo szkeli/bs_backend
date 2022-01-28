@@ -78,7 +78,7 @@ export class PostsResolver {
 
   @ResolveField(returns => VotesConnection, { description: '帖子的点赞' })
   async votes (@CurrentUser() user: User, @Parent() post: Post, @Args() args: PagingConfigArgs) {
-    return await this.postsService.getVotesByPostId(user.id, post.id, args.first, args.offset)
+    return await this.postsService.getVotesByPostId(user?.id, post.id, args.first, args.offset)
   }
 
   @ResolveField(returns => ReportsConnection, { description: '帖子收到的举报' })
