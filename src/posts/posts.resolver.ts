@@ -7,7 +7,7 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CheckPolicies, CurrentUser } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser, NoAuth } from 'src/auth/decorator'
 import {
   CommentsConnection
 } from 'src/comment/models/comment.model'
@@ -45,12 +45,13 @@ export class PostsResolver {
   }
 
   @Query(returns => PostsConnection)
-  @CheckPolicies(new ReadPostPolicyHandler())
+  @NoAuth()
   async posts (@Args() { first, offset }: PagingConfigArgs): Promise<PostsConnection> {
     return await this.postsService.posts(first, offset)
   }
 
   @Query(of => PostsConnection)
+  @NoAuth()
   async trendingPosts (@Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.trendingPosts(first, offset)
   }
