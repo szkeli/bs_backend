@@ -223,7 +223,7 @@ type Post {
   subject
   # 帖子的浏览
   views
-  # 帖子的匿名信息
+  # 帖子的匿名
   anonymous
 }
 
@@ -348,6 +348,8 @@ type Comment {
   delete
   # 评论收到的浏览
   views
+  # 评论的匿名
+  anonymous
 }
 
 # 帖子的主题

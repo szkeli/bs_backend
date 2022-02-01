@@ -7,6 +7,7 @@ import { PostId } from '../db/model/db.model'
 import { User } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
+  AddCommentArgs,
   Comment,
   CommentId,
   CommentsConnection
@@ -58,7 +59,7 @@ export class CommentService {
   async findCreatorByCommentId (id: string) {
     const query = `
       query v($commentId: string) {
-        comment (func: uid($commentId)) @filter(type(Comment)) {
+        comment (func: uid($commentId)) @filter(type(Comment) and not has(anonymous)) {
           creator @filter(type(User)) {
             id: uid
             expand(_all_)
@@ -169,7 +170,7 @@ export class CommentService {
     }
   }
 
-  async addCommentOnComment (creator: string, content: string, commentId: string): Promise<Comment> {
+  async addCommentOnComment (creator: string, { content, to: commentId, isAnonymous }: AddCommentArgs): Promise<Comment> {
     const now = new Date().toISOString()
 
     const condition = '@if( eq(len(v), 1) AND eq(len(u), 1) )'
@@ -181,7 +182,36 @@ export class CommentService {
           u(func: uid(${commentId})) @filter(type(Comment)) { u as uid }
         }
       `
-    const mutation = {
+    // eslint-disable-next-line multiline-ternary
+    const mutation = isAnonymous ? {
+      uid: commentId,
+      comments: {
+        uid: '_:comment',
+        'dgraph.type': 'Comment',
+        content,
+        createdAt: now,
+        // 评论所属的评论
+        comment: {
+          uid: commentId
+        },
+        // 评论的创建者
+        creator: {
+          uid: creator
+        },
+        // 评论的匿名信息
+        anonymous: {
+          uid: '_:anonymous',
+          'dgraph.type': 'Anonymous',
+          creator: {
+            uid: creator
+          },
+          createdAt: now,
+          to: {
+            uid: '_:comment'
+          }
+        }
+      }
+    } : {
       uid: commentId,
       comments: {
         uid: '_:comment',
@@ -222,7 +252,7 @@ export class CommentService {
     }
   }
 
-  async addCommentOnPost (creator: string, content: string, postId: string): Promise<Comment> {
+  async addCommentOnPost (creator: string, { content, to: postId, isAnonymous }: AddCommentArgs): Promise<Comment> {
     const now = new Date().toISOString()
     const condition = '@if( eq(len(v), 1) AND eq(len(u), 1) )'
     const query = `
@@ -233,26 +263,59 @@ export class CommentService {
         u(func: uid($postId)) @filter(type(Post)) { u as uid }
       }
     `
-    const mutation = {
-      uid: creator,
-      posts: {
-        uid: postId,
-        comments: {
-          uid: '_:comment',
-          'dgraph.type': 'Comment',
-          content,
-          createdAt: now,
-          // 评论所属的帖子
-          post: {
-            uid: postId
-          },
-          // 评论的创建者
-          creator: {
-            uid: creator
+    const mutation = isAnonymous
+      // eslint-disable-next-line multiline-ternary
+      ? {
+          uid: creator,
+          posts: {
+            uid: postId,
+            comments: {
+              uid: '_:comment',
+              'dgraph.type': 'Comment',
+              content,
+              createdAt: now,
+              // 评论所属的帖子
+              post: {
+                uid: postId
+              },
+              // 评论的创建者
+              creator: {
+                uid: creator
+              },
+              // 评论的匿名信息
+              anonymous: {
+                uid: '_:anonymous',
+                'dgraph.type': 'Anonymous',
+                creator: {
+                  uid: creator
+                },
+                createdAt: now,
+                to: {
+                  uid: '_:comment'
+                }
+              }
+            }
+          }
+        } : {
+          uid: creator,
+          posts: {
+            uid: postId,
+            comments: {
+              uid: '_:comment',
+              'dgraph.type': 'Comment',
+              content,
+              createdAt: now,
+              // 评论所属的帖子
+              post: {
+                uid: postId
+              },
+              // 评论的创建者
+              creator: {
+                uid: creator
+              }
+            }
           }
         }
-      }
-    }
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>

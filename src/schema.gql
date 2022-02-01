@@ -308,7 +308,9 @@ type Comment implements Node {
   votes(first: Int = 10, offset: Int = 0): VotesConnection!
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
   post: Post!
-  creator: User!
+
+  """评论的创建者，评论是匿名评论时，creator为null"""
+  creator: User
 }
 
 type CommentsConnection {
@@ -774,14 +776,24 @@ type Mutation {
     grade: String
   ): User!
   addCommentOnComment(
-    """相应的评论的id"""
-    to: String!
+    """评论的内容"""
     content: String!
+
+    """被评论的对象的id"""
+    to: String!
+
+    """是否匿名发布这条评论"""
+    isAnonymous: Boolean = false
   ): Comment!
   addCommentOnPost(
-    """相应的帖子的id"""
-    to: String!
+    """评论的内容"""
     content: String!
+
+    """被评论的对象的id"""
+    to: String!
+
+    """是否匿名发布这条评论"""
+    isAnonymous: Boolean = false
   ): Comment!
   addUpvoteOnPost(postId: String!): Votable!
   addUpvoteOnComment(commentId: String!): Votable!

@@ -16,6 +16,7 @@ import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
 import { CommentService } from './comment.service'
 import {
+  AddCommentArgs,
   Comment,
   CommentId,
   CommentsConnection
@@ -34,25 +35,16 @@ export class CommentResolver {
   }
 
   @Mutation(returns => Comment)
-  async addCommentOnComment (
-  @CurrentUser() user: User,
-    @Args('content') content: string,
-    @Args('to', { description: '相应的评论的id' }) to: string
-  ) {
+  async addCommentOnComment (@CurrentUser() user: User, @Args() args: AddCommentArgs) {
     return await this.commentService.addCommentOnComment(
       user.id,
-      content,
-      to
+      args
     )
   }
 
   @Mutation(returns => Comment)
-  async addCommentOnPost (
-  @CurrentUser() user: User,
-    @Args('content') content: string,
-    @Args('to', { description: '相应的帖子的id' }) to: string
-  ) {
-    return await this.commentService.addCommentOnPost(user.id, content, to)
+  async addCommentOnPost (@CurrentUser() user: User, @Args() args: AddCommentArgs) {
+    return await this.commentService.addCommentOnPost(user.id, args)
   }
 
   @ResolveField(returns => CommentsConnection)
@@ -80,7 +72,7 @@ export class CommentResolver {
     return await this.commentService.findPostByCommentId(comment.id)
   }
 
-  @ResolveField(() => User)
+  @ResolveField(() => User, { nullable: true, description: '评论的创建者，评论是匿名评论时，creator为null' })
   async creator (@Parent() comment: Comment) {
     return await this.commentService.findCreatorByCommentId(comment.id)
   }
