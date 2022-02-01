@@ -15,6 +15,11 @@ import {
 
 @Injectable()
 export class CommentService {
+  private readonly dgraph: DgraphClient
+  constructor (private readonly dbService: DbService) {
+    this.dgraph = dbService.getDgraphIns()
+  }
+
   async trendingComments (id: string, first: number, offset: number): Promise<CommentsConnection> {
     const query = `
       # TODO 实现产品中要求的计算评论热度的方法
@@ -49,11 +54,6 @@ export class CommentService {
       totalCount: res.totalCount[0]?.count ?? 0,
       nodes: res.comments ?? []
     }
-  }
-
-  private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
-    this.dgraph = dbService.getDgraphIns()
   }
 
   async findCreatorByCommentId (id: string) {
@@ -367,11 +367,37 @@ export class CommentService {
     return res.comment[0]
   }
 
-  async getVotesByCommentId (viewerId: string, id: string, first: number, offset: number) {
+  async getVotesByCommentId (viewerId: string, id: string, first: number, offset: number): Promise<VotesConnection> {
+    if (!viewerId) {
+      // 未登录时
+      const query = `
+        query v($commentId: string) {
+          v(func: uid($commentId)) @filter(type(Comment)) {
+            totalCount: count(votes @filter(type(Vote)))
+          }
+          u(func: uid($commentId)) @filter(type(Comment)) {
+            votes (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Vote)) {
+              id: uid
+              expand(_all_)
+            }
+          }
+        }
+      `
+      const res = await this.dbService.commitQuery<{
+        v: Array<{totalCount: number}>
+        u: Array<{votes: Vote[]}>
+      }>({ query, vars: { $commentId: id } })
+      return {
+        totalCount: res.v[0]?.totalCount ?? 0,
+        nodes: res.u[0]?.votes ?? [],
+        viewerCanUpvote: true,
+        viewerHasUpvoted: false
+      }
+    }
     const query = `
       query v($commentId: string, $viewerId: string) {
-        v(func: uid($commentId)) @filter(type(Comment)){
-          totalCount: count(votes)
+        v(func: uid($commentId)) @filter(type(Comment)) {
+          totalCount: count(votes @filter(type(Vote)))
           canVote: votes @filter(uid_in(creator, $viewerId)) {
             uid
           }
@@ -379,7 +405,7 @@ export class CommentService {
         u(func: uid($commentId)) @filter(type(Comment)) {
           votes (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Vote)) {
             id: uid
-            createdAt
+            expand(_all_)
           }
         }
       }
@@ -391,6 +417,7 @@ export class CommentService {
       v: Array<{totalCount: number, canVote?: any[]}>
       u: Array<{votes: Vote[]}>
     }
+    console.error(res)
     const u: VotesConnection = {
       nodes: res.u[0]?.votes || [],
       totalCount: res.v[0]?.totalCount,
