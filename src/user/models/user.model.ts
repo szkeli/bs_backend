@@ -9,7 +9,6 @@ import {
 } from '@nestjs/graphql'
 
 import { UserId } from 'src/db/model/db.model'
-import { SubjectId } from 'src/subject/model/subject.model'
 
 import { Admin } from '../../admin/models/admin.model'
 import { Role } from '../../auth/model/auth.model'
@@ -40,14 +39,20 @@ registerEnumType(GENDER, {
 
 @ArgsType()
 export class PersonLoginArgs {
-  @Field({ description: '用户 userId，注意不是 id' })
+  @Field({ description: '用户账号' })
     userId: string
 
-  @Field()
+  @Field({ description: '用户密码' })
     sign: string
 }
 @ArgsType()
 export class UpdateUserArgs {
+  @Field({ description: '学院', nullable: true })
+    college?: string
+
+  @Field({ description: '校区', nullable: true })
+    subCampus?: string
+
   @Field({ description: '用户密码', nullable: true })
     sign?: RawSign
 
@@ -69,70 +74,41 @@ export class UpdateUserArgs {
 
 @ArgsType()
 export class CreateUserArgs {
-  @Field()
+  @Field(type => Int, { description: '学号', nullable: true })
+    studentId?: number
+
+  @Field({ description: '学院' })
+    college: string
+
+  @Field({ description: '校区' })
+    subCampus: string
+
+  @Field({ description: '用户账号' })
     userId: UserId
 
-  @Field()
+  @Field({ description: '用户密码' })
     sign: RawSign
 
-  @Field({ nullable: true })
+  @Field({ nullable: true, description: '微信login code' })
     code?: string
 
-  @Field()
+  @Field({ description: '用户昵称' })
     name: string
 
-  @Field(type => GENDER)
+  @Field(type => GENDER, { description: '用户性别' })
     gender: GENDER
 
-  @Field()
+  @Field({ description: '用户头像链接' })
     avatarImageUrl: string
 
-  @Field()
+  @Field({ description: '学校' })
     school: string
 
-  @Field()
+  @Field({ description: '年级' })
     grade: string
 }
 
 export type RawSign = string
-
-@ArgsType()
-export class UserUpdateProfileInput {
-  @Field({ nullable: true })
-    name?: string
-
-  @Field(type => GENDER, { nullable: true })
-    gender?: GENDER
-
-  @Field({ nullable: true })
-    avatarUrl?: string
-
-  @Field({ nullable: true })
-    school?: string
-
-  @Field({ nullable: true })
-    grade?: string
-
-  @Field({ nullable: true })
-    sign?: string
-}
-
-export interface UserDataBaseType {
-  userId: string
-  sign: string
-  name: string
-  avatarImageUrl: string
-  gender: GENDER
-  school: string
-  grade: string
-  openId: string
-  unionId: string
-  createdAt: string
-  updatedAt: string
-  lastLoginedAt: string
-  'dgraph.type': string
-  uid?: string
-}
 
 @ObjectType({
   implements: () => [Person, Node]
@@ -142,40 +118,49 @@ export class User implements Person, Node {
     Object.assign(this, user)
   }
 
-  @Field()
+  @Field(type => Int, { description: '学号', nullable: true })
+    studentId?: number
+
+  @Field({ description: '学院', nullable: true })
+    college?: string
+
+  @Field({ description: '校区', nullable: true })
+    subCampus?: string
+
+  @Field({ description: 'id 自动生成' })
     id: string
 
-  @Field()
+  @Field({ description: '用户昵称' })
     name: string
 
-  @Field()
+  @Field({ description: '用户账号' })
     userId: UserId
 
-  @Field()
+  @Field({ description: '微信openId,注册时传入微信code自动通过微信提供的接口获取获取' })
     openId: string
 
-  @Field()
+  @Field({ description: '微信unionId,注册时传入微信code自动通过微信提供的接口获取获取' })
     unionId: string
 
-  @Field(type => GENDER, { defaultValue: GENDER.NONE })
+  @Field(type => GENDER, { defaultValue: GENDER.NONE, description: '用户性别' })
     gender: GENDER
 
-  @Field()
+  @Field({ description: '用户创建时间' })
     createdAt: string
 
-  @Field()
+  @Field({ description: '用户信息的更新时间' })
     updatedAt: string
 
-  @Field()
+  @Field({ description: '用户上一次调用login接口获取token的时间' })
     lastLoginedAt: string
 
-  @Field()
+  @Field({ description: '用户头像链接' })
     avatarImageUrl: string
 
-  @Field()
+  @Field({ description: '学校' })
     school: string
 
-  @Field()
+  @Field({ description: '年级' })
     grade: string
 }
 
@@ -183,13 +168,8 @@ export class User implements Person, Node {
   implements: () => [Node]
 })
 export class LoginResult extends User implements Node {
-  @Field()
+  @Field({ description: 'token' })
     token: string
-}
-
-export interface UserFollowASubjectInput {
-  from: UserId
-  to: SubjectId
 }
 
 @InterfaceType({

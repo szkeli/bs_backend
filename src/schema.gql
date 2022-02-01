@@ -75,17 +75,49 @@ type PrivilegesConnection {
 }
 
 type User implements Person & Node {
+  """用户账号"""
   userId: String!
+
+  """用户昵称"""
   name: String!
+
+  """id 自动生成"""
   id: String!
+
+  """学号"""
+  studentId: Int
+
+  """学院"""
+  college: String
+
+  """校区"""
+  subCampus: String
+
+  """微信openId,注册时传入微信code自动通过微信提供的接口获取获取"""
   openId: String!
+
+  """微信unionId,注册时传入微信code自动通过微信提供的接口获取获取"""
   unionId: String!
+
+  """用户性别"""
   gender: GENDER!
+
+  """用户创建时间"""
   createdAt: String!
+
+  """用户信息的更新时间"""
   updatedAt: String!
+
+  """用户上一次调用login接口获取token的时间"""
   lastLoginedAt: String!
+
+  """用户头像链接"""
   avatarImageUrl: String!
+
+  """学校"""
   school: String!
+
+  """年级"""
   grade: String!
 
   """分页返回帖子"""
@@ -114,17 +146,47 @@ enum GENDER {
 }
 
 type LoginResult implements Node & Person {
+  """用户账号"""
   userId: String!
+
+  """用户昵称"""
   name: String!
   id: String!
+
+  """学号"""
+  studentId: Int
+
+  """学院"""
+  college: String
+
+  """校区"""
+  subCampus: String
+
+  """微信openId,注册时传入微信code自动通过微信提供的接口获取获取"""
   openId: String!
+
+  """微信unionId,注册时传入微信code自动通过微信提供的接口获取获取"""
   unionId: String!
+
+  """用户性别"""
   gender: GENDER!
+
+  """用户创建时间"""
   createdAt: String!
+
+  """用户信息的更新时间"""
   updatedAt: String!
+
+  """用户上一次调用login接口获取token的时间"""
   lastLoginedAt: String!
+
+  """用户头像链接"""
   avatarImageUrl: String!
+
+  """学校"""
   school: String!
+
+  """年级"""
   grade: String!
 
   """分页返回帖子"""
@@ -144,6 +206,8 @@ type LoginResult implements Node & Person {
 
   """当前用户的课程信息"""
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
+
+  """token"""
   token: String!
 }
 
@@ -640,16 +704,57 @@ type Mutation {
 
   """用户登录"""
   login(
-    """用户 userId，注意不是 id"""
+    """用户账号"""
     userId: String!
+
+    """用户密码"""
     sign: String!
   ): LoginResult!
 
   """用户注册"""
-  register(userId: String!, sign: String!, code: String, name: String!, gender: GENDER!, avatarImageUrl: String!, school: String!, grade: String!): User!
+  register(
+    """学号"""
+    studentId: Int
+
+    """学院"""
+    college: String!
+
+    """校区"""
+    subCampus: String!
+
+    """用户账号"""
+    userId: String!
+
+    """用户密码"""
+    sign: String!
+
+    """微信login code"""
+    code: String
+
+    """用户昵称"""
+    name: String!
+
+    """用户性别"""
+    gender: GENDER!
+
+    """用户头像链接"""
+    avatarImageUrl: String!
+
+    """学校"""
+    school: String!
+
+    """年级"""
+    grade: String!
+  ): User!
 
   """更新用户画像"""
   updateUser(
+    """学院"""
+    college: String
+
+    """校区"""
+    subCampus: String
+
     """用户密码"""
     sign: String
 

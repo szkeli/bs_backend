@@ -12,7 +12,6 @@ import {
   CreateUserArgs,
   UpdateUserArgs,
   User,
-  UserDataBaseType,
   UsersConnection
 } from './models/user.model'
 
@@ -176,7 +175,7 @@ export class UserService {
         }
       `
     const now = new Date().toISOString()
-    const mutation: UserDataBaseType = {
+    const mutation = {
       uid: '_:user',
       'dgraph.type': 'User',
       userId: input.userId,
@@ -185,6 +184,9 @@ export class UserService {
       avatarImageUrl: input.avatarImageUrl,
       gender: input.gender,
       school: input.school,
+      studentId: input.studentId,
+      subCampus: input.subCampus,
+      college: input.college,
       grade: input.grade,
       openId,
       unionId,
@@ -222,7 +224,10 @@ export class UserService {
       updatedAt: now,
       lastLoginedAt: now,
       avatarImageUrl: input.avatarImageUrl,
+      studentId: input.studentId,
       school: input.school,
+      subCampus: input.subCampus,
+      college: input.college,
       grade: input.grade
     }
   }

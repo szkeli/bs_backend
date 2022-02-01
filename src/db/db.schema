@@ -41,6 +41,8 @@ description: string @index(fulltext) .
 destination: string @index(fulltext) .
 type: string @index(term) .
 gender: string @index(term) .
+college: string @index(term) .
+subCampus: string @index(term) .
 school: string @index(term) .
 grade: string @index(term) .
 openId: string @index(hash) .
@@ -72,6 +74,7 @@ recipientId: int .
 viewId: int .
 start: int .
 end: int .
+studentId: int .
 
 dataPending: bool .
 seen: bool .
@@ -152,8 +155,14 @@ type User {
   avatarImageUrl
   # 用户性别
   gender
+  # 用户学号
+  studentId
   # 用户的学校
   school
+  # 用户所在的校区
+  subCampus
+  # 用户所在的学院
+  college
   # 用户的年级
   grade
   # 用户的openId
