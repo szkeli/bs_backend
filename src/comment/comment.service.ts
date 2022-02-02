@@ -417,7 +417,6 @@ export class CommentService {
       v: Array<{totalCount: number, canVote?: any[]}>
       u: Array<{votes: Vote[]}>
     }
-    console.error(res)
     const u: VotesConnection = {
       nodes: res.u[0]?.votes || [],
       totalCount: res.v[0]?.totalCount,
