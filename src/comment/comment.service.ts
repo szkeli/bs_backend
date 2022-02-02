@@ -4,7 +4,8 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 
 import { PostId } from '../db/model/db.model'
-import { User } from '../user/models/user.model'
+import { DeletePrivateValue } from '../tool'
+import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
   AddCommentArgs,
@@ -67,8 +68,9 @@ export class CommentService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{comment: Array<{creator: User}>}>({ query, vars: { $commentId: id } })
-    return res.comment[0]?.creator
+    const res = await this.dbService.commitQuery<{comment: Array<{creator: UserWithFacets}>}>({ query, vars: { $commentId: id } })
+    const creator = res.comment[0]?.creator
+    return DeletePrivateValue<User>(creator)
   }
 
   async findPostByCommentId (id: string) {

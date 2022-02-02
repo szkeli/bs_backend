@@ -5,7 +5,8 @@ import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
-import { User } from '../user/models/user.model'
+import { DeletePrivateValue } from '../tool'
+import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import { CreatePostArgs, Nullable, Post, PostsConnection, PostWithCreatorId } from './models/post.model'
 
@@ -342,8 +343,9 @@ export class PostsService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{post: Array<Nullable<{creator: Nullable<User>}>>}>({ query, vars: { $postId: id } })
-    return res.post[0]?.creator
+    const res = await this.dbService.commitQuery<{post: Array<Nullable<{creator: Nullable<UserWithFacets>}>>}>({ query, vars: { $postId: id } })
+    const creator = res.post[0]?.creator
+    return DeletePrivateValue<User>(creator)
   }
 
   /**

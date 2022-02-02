@@ -87,12 +87,6 @@ type User implements Person & Node {
   """学号"""
   studentId: Int
 
-  """学院"""
-  college: String
-
-  """校区"""
-  subCampus: String
-
   """微信openId,注册时传入微信code自动通过微信提供的接口获取获取"""
   openId: String!
 
@@ -100,7 +94,19 @@ type User implements Person & Node {
   unionId: String!
 
   """用户性别"""
-  gender: GENDER!
+  gender: GENDER
+
+  """学院"""
+  college: String
+
+  """校区"""
+  subCampus: String
+
+  """学校"""
+  school: String
+
+  """年级"""
+  grade: String
 
   """用户创建时间"""
   createdAt: String!
@@ -108,17 +114,11 @@ type User implements Person & Node {
   """用户信息的更新时间"""
   updatedAt: String!
 
-  """用户上一次调用login接口获取token的时间"""
+  """用户上一次调用login接口获取token的系统时间"""
   lastLoginedAt: String!
 
   """用户头像链接"""
   avatarImageUrl: String!
-
-  """学校"""
-  school: String!
-
-  """年级"""
-  grade: String!
 
   """分页返回帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
@@ -156,12 +156,6 @@ type LoginResult implements Node & Person {
   """学号"""
   studentId: Int
 
-  """学院"""
-  college: String
-
-  """校区"""
-  subCampus: String
-
   """微信openId,注册时传入微信code自动通过微信提供的接口获取获取"""
   openId: String!
 
@@ -169,7 +163,19 @@ type LoginResult implements Node & Person {
   unionId: String!
 
   """用户性别"""
-  gender: GENDER!
+  gender: GENDER
+
+  """学院"""
+  college: String
+
+  """校区"""
+  subCampus: String
+
+  """学校"""
+  school: String
+
+  """年级"""
+  grade: String
 
   """用户创建时间"""
   createdAt: String!
@@ -177,17 +183,11 @@ type LoginResult implements Node & Person {
   """用户信息的更新时间"""
   updatedAt: String!
 
-  """用户上一次调用login接口获取token的时间"""
+  """用户上一次调用login接口获取token的系统时间"""
   lastLoginedAt: String!
 
   """用户头像链接"""
   avatarImageUrl: String!
-
-  """学校"""
-  school: String!
-
-  """年级"""
-  grade: String!
 
   """分页返回帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
@@ -719,10 +719,10 @@ type Mutation {
     studentId: Int
 
     """学院"""
-    college: String!
+    college: UserStringPropMap!
 
     """校区"""
-    subCampus: String!
+    subCampus: UserStringPropMap!
 
     """用户账号"""
     userId: String!
@@ -737,25 +737,25 @@ type Mutation {
     name: String!
 
     """用户性别"""
-    gender: GENDER!
+    gender: UserGenderPropMap!
 
     """用户头像链接"""
     avatarImageUrl: String!
 
     """学校"""
-    school: String!
+    school: UserStringPropMap!
 
     """年级"""
-    grade: String!
+    grade: UserStringPropMap!
   ): User!
 
   """更新用户画像"""
   updateUser(
     """学院"""
-    college: String
+    college: UserStringPropMap
 
     """校区"""
-    subCampus: String
+    subCampus: UserStringPropMap
 
     """用户密码"""
     sign: String
@@ -764,16 +764,16 @@ type Mutation {
     name: String
 
     """用户性别"""
-    gender: GENDER
+    gender: UserGenderPropMap
 
     """用户头像链接"""
     avatarImageUrl: String
 
     """用户的学校"""
-    school: String
+    school: UserStringPropMap
 
-    """用户年级"""
-    grade: String
+    """用户的年级"""
+    grade: UserStringPropMap
   ): User!
   addCommentOnComment(
     """评论的内容"""
@@ -913,6 +913,22 @@ type Mutation {
   addFoldOnComment(commentId: String!): Fold!
   removeBlockOnUser(from: String!): Boolean!
   addBlockOnUser(id: String!, description: String!): Block!
+}
+
+input UserStringPropMap {
+  """属性的值"""
+  value: String!
+
+  """是否私有属性"""
+  isPrivate: Boolean = false
+}
+
+input UserGenderPropMap {
+  """属性的值"""
+  value: GENDER!
+
+  """是否私有属性"""
+  isPrivate: Boolean = false
 }
 
 input CreateSubjectInput {

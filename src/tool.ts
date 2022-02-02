@@ -2,6 +2,8 @@ import { ForbiddenException } from '@nestjs/common'
 import axios from 'axios'
 import * as crypto from 'crypto'
 
+import { UpdateUserArgs, UserWithFacets } from './user/models/user.model'
+
 export async function exec<T, U> (l: string, bindings: object, aliases?: object) {
   return await axios.post<T>('http://w3.onism.cc:8084/gremlin', {
     gremlin: l,
@@ -71,3 +73,25 @@ export async function code2Session (code: string) {
   }
 }
 export const now = () => new Date().toISOString()
+
+export const DeletePrivateValue = function <T>(userWithFacets: UserWithFacets) {
+  const map = new Map(Object.entries(userWithFacets))
+  for (const [key, value] of map.entries()) {
+    const v = key.split('|')
+    v.length === 2 && map.has(v[0]) && value === true && map.delete(v[0])
+  }
+  return Object.fromEntries<string>(map.entries()) as unknown as T
+}
+
+export const UpdateUserArgs2User = function <T>(updateUserArgs: UpdateUserArgs) {
+  const map = new Map(Object.entries(updateUserArgs))
+
+  for (const [key, value] of map.entries()) {
+    if (typeof value === 'object' && value.value) {
+      map.set(key, value.value)
+      map.set(`${key}|private`, value.isPrivate)
+    }
+  }
+
+  return Object.fromEntries(map.entries()) as unknown as T
+}

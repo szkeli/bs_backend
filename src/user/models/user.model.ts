@@ -2,6 +2,7 @@ import {
   ArgsType,
   createUnionType,
   Field,
+  InputType,
   Int,
   InterfaceType,
   ObjectType,
@@ -37,6 +38,24 @@ registerEnumType(GENDER, {
   name: 'GENDER'
 })
 
+@InputType()
+export class UserStringPropMap {
+  @Field({ description: '属性的值' })
+    value: string
+
+  @Field(type => Boolean, { description: '是否私有属性', nullable: true, defaultValue: false })
+    isPrivate: boolean
+}
+
+@InputType()
+export class UserGenderPropMap {
+  @Field(of => GENDER, { description: '属性的值' })
+    value: GENDER
+
+  @Field(type => Boolean, { description: '是否私有属性', nullable: true, defaultValue: false })
+    isPrivate: boolean
+}
+
 @ArgsType()
 export class PersonLoginArgs {
   @Field({ description: '用户账号' })
@@ -45,13 +64,14 @@ export class PersonLoginArgs {
   @Field({ description: '用户密码' })
     sign: string
 }
+
 @ArgsType()
 export class UpdateUserArgs {
-  @Field({ description: '学院', nullable: true })
-    college?: string
+  @Field(of => UserStringPropMap, { description: '学院', nullable: true })
+    college?: UserStringPropMap
 
-  @Field({ description: '校区', nullable: true })
-    subCampus?: string
+  @Field(of => UserStringPropMap, { description: '校区', nullable: true })
+    subCampus?: UserStringPropMap
 
   @Field({ description: '用户密码', nullable: true })
     sign?: RawSign
@@ -59,29 +79,29 @@ export class UpdateUserArgs {
   @Field({ description: '用户昵称', nullable: true })
     name?: string
 
-  @Field(type => GENDER, { description: '用户性别', nullable: true })
-    gender?: GENDER
+  @Field(of => UserGenderPropMap, { description: '用户性别', nullable: true })
+    gender?: UserGenderPropMap
 
   @Field({ description: '用户头像链接', nullable: true })
     avatarImageUrl?: string
 
-  @Field({ description: '用户的学校', nullable: true })
-    school?: string
+  @Field(of => UserStringPropMap, { description: '用户的学校', nullable: true })
+    school?: UserStringPropMap
 
-  @Field({ description: '用户年级', nullable: true })
-    grade?: string
+  @Field(of => UserStringPropMap, { description: '用户的年级', nullable: true })
+    grade?: UserStringPropMap
 }
 
 @ArgsType()
 export class CreateUserArgs {
-  @Field(type => Int, { description: '学号', nullable: true })
+  @Field(of => Int, { description: '学号', nullable: true })
     studentId?: number
 
-  @Field({ description: '学院' })
-    college: string
+  @Field(of => UserStringPropMap, { description: '学院' })
+    college: UserStringPropMap
 
-  @Field({ description: '校区' })
-    subCampus: string
+  @Field(of => UserStringPropMap, { description: '校区' })
+    subCampus: UserStringPropMap
 
   @Field({ description: '用户账号' })
     userId: UserId
@@ -95,17 +115,17 @@ export class CreateUserArgs {
   @Field({ description: '用户昵称' })
     name: string
 
-  @Field(type => GENDER, { description: '用户性别' })
-    gender: GENDER
+  @Field(of => UserGenderPropMap, { description: '用户性别' })
+    gender: UserGenderPropMap
 
   @Field({ description: '用户头像链接' })
     avatarImageUrl: string
 
-  @Field({ description: '学校' })
-    school: string
+  @Field(of => UserStringPropMap, { description: '学校' })
+    school: UserStringPropMap
 
-  @Field({ description: '年级' })
-    grade: string
+  @Field(of => UserStringPropMap, { description: '年级' })
+    grade: UserStringPropMap
 }
 
 export type RawSign = string
@@ -118,17 +138,11 @@ export class User implements Person, Node {
     Object.assign(this, user)
   }
 
-  @Field(type => Int, { description: '学号', nullable: true })
-    studentId?: number
-
-  @Field({ description: '学院', nullable: true })
-    college?: string
-
-  @Field({ description: '校区', nullable: true })
-    subCampus?: string
-
   @Field({ description: 'id 自动生成' })
     id: string
+
+  @Field(type => Int, { description: '学号', nullable: true })
+    studentId?: number
 
   @Field({ description: '用户昵称' })
     name: string
@@ -142,8 +156,20 @@ export class User implements Person, Node {
   @Field({ description: '微信unionId,注册时传入微信code自动通过微信提供的接口获取获取' })
     unionId: string
 
-  @Field(type => GENDER, { defaultValue: GENDER.NONE, description: '用户性别' })
-    gender: GENDER
+  @Field(of => GENDER, { nullable: true, description: '用户性别' })
+    gender?: GENDER
+
+  @Field({ description: '学院', nullable: true })
+    college?: string
+
+  @Field({ description: '校区', nullable: true })
+    subCampus?: string
+
+  @Field({ description: '学校', nullable: true })
+    school?: string
+
+  @Field({ description: '年级', nullable: true })
+    grade?: string
 
   @Field({ description: '用户创建时间' })
     createdAt: string
@@ -151,17 +177,35 @@ export class User implements Person, Node {
   @Field({ description: '用户信息的更新时间' })
     updatedAt: string
 
-  @Field({ description: '用户上一次调用login接口获取token的时间' })
+  @Field({ description: '用户上一次调用login接口获取token的系统时间' })
     lastLoginedAt: string
 
   @Field({ description: '用户头像链接' })
     avatarImageUrl: string
+}
 
-  @Field({ description: '学校' })
-    school: string
-
-  @Field({ description: '年级' })
-    grade: string
+export class UserWithFacets extends User {
+  /**
+   * 学院属性是否私有
+   */
+  'college|private'?: boolean
+  /**
+   * 校区属性是否私有
+   *
+   */
+  'subCampus|private'?: boolean
+  /**
+   * 性别属性是否私有
+   */
+  'gender|private'?: boolean
+  /**
+   * 学校属性是否私有
+   */
+  'school|private'?: boolean
+  /**
+   * 年级属性是否私有
+   */
+  'grade|private'?: Boolean
 }
 
 @ObjectType({

@@ -6,7 +6,7 @@ import { DbService } from 'src/db/db.service'
 import { UserWithRoles } from '../auth/model/auth.model'
 import { Post, PostsConnection } from '../posts/models/post.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
-import { code2Session } from '../tool'
+import { code2Session, now, UpdateUserArgs2User } from '../tool'
 import {
   CheckUserResult,
   CreateUserArgs,
@@ -179,15 +179,20 @@ export class UserService {
       uid: '_:user',
       'dgraph.type': 'User',
       userId: input.userId,
+      studentId: input.studentId,
       sign: input.sign,
       name: input.name,
       avatarImageUrl: input.avatarImageUrl,
       gender: input.gender,
+      'gender|private': input.gender.isPrivate,
       school: input.school,
-      studentId: input.studentId,
+      'school|private': input.school.isPrivate,
       subCampus: input.subCampus,
-      college: input.college,
+      'subCampus|private': input.subCampus.isPrivate,
+      college: input.college.value,
+      'college|private': input.college.isPrivate,
       grade: input.grade,
+      'grade|private': input.grade.isPrivate,
       openId,
       unionId,
       createdAt: now,
@@ -219,16 +224,16 @@ export class UserService {
       userId: input.userId,
       openId,
       unionId,
-      gender: input.gender,
+      gender: input.gender.value,
       createdAt: now,
       updatedAt: now,
       lastLoginedAt: now,
       avatarImageUrl: input.avatarImageUrl,
       studentId: input.studentId,
-      school: input.school,
-      subCampus: input.subCampus,
-      college: input.college,
-      grade: input.grade
+      school: input.school.value,
+      subCampus: input.subCampus.value,
+      college: input.college.value,
+      grade: input.grade.value
     }
   }
 
@@ -236,7 +241,8 @@ export class UserService {
     if (Object.entries(args).length === 0) {
       throw new ForbiddenException('参数不能为空')
     }
-    const now = new Date().toISOString()
+    const _args = UpdateUserArgs2User<UpdateUserArgs>(args)
+    const _now = now()
     const query = `
       query v($id: string) {
         u(func: uid($id)) @filter(type(User)) { u as uid }
@@ -249,9 +255,10 @@ export class UserService {
     const condition = '@if  ( eq(len(u), 1) )'
     const mutation = {
       uid: id,
-      updatedAt: now
+      updatedAt: _now
     }
-    Object.assign(mutation, args)
+
+    Object.assign(mutation, _args)
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       u: Array<{uid: string}>
       user: User[]
@@ -262,7 +269,7 @@ export class UserService {
         $id: id
       }
     })
-    Object.assign(res.json.user[0], args)
+    Object.assign(res.json.user[0], _args)
     if (res.json.u.length !== 1) {
       throw new ForbiddenException(`用户 ${id} 不存在`)
     }
