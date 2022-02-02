@@ -57,7 +57,7 @@ export class CommentService {
     }
   }
 
-  async findCreatorByCommentId (id: string) {
+  async creator (id: string) {
     const query = `
       query v($commentId: string) {
         comment (func: uid($commentId)) @filter(type(Comment) and not has(anonymous)) {

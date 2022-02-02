@@ -74,6 +74,6 @@ export class CommentResolver {
 
   @ResolveField(() => User, { nullable: true, description: '评论的创建者，评论是匿名评论时，creator为null' })
   async creator (@Parent() comment: Comment) {
-    return await this.commentService.findCreatorByCommentId(comment.id)
+    return await this.commentService.creator(comment.id)
   }
 }

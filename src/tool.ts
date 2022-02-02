@@ -2,6 +2,7 @@ import { ForbiddenException } from '@nestjs/common'
 import axios from 'axios'
 import * as crypto from 'crypto'
 
+import { Nullable } from './posts/models/post.model'
 import { UpdateUserArgs, UserWithFacets } from './user/models/user.model'
 
 export async function exec<T, U> (l: string, bindings: object, aliases?: object) {
@@ -74,13 +75,14 @@ export async function code2Session (code: string) {
 }
 export const now = () => new Date().toISOString()
 
-export const DeletePrivateValue = function <T>(userWithFacets: UserWithFacets) {
+export const DeletePrivateValue = function <T>(userWithFacets?: UserWithFacets) {
+  if (!userWithFacets) return null
   const map = new Map(Object.entries(userWithFacets))
   for (const [key, value] of map.entries()) {
     const v = key.split('|')
     v.length === 2 && map.has(v[0]) && value === true && map.delete(v[0])
   }
-  return Object.fromEntries<string>(map.entries()) as unknown as T
+  return Object.fromEntries<string>(map.entries()) as unknown as Nullable<T>
 }
 
 export const UpdateUserArgs2User = function <T>(updateUserArgs: UpdateUserArgs) {
