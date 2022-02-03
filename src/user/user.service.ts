@@ -158,6 +158,7 @@ export class UserService {
   }
 
   async registerUser (input: CreateUserArgs): Promise<User> {
+    console.error(input)
     if (input.userId.length <= 2) {
       throw new ForbiddenException('userId 不能少于三个字符')
     }
@@ -183,15 +184,15 @@ export class UserService {
       sign: input.sign,
       name: input.name,
       avatarImageUrl: input.avatarImageUrl,
-      gender: input.gender,
+      gender: input.gender.value,
       'gender|private': input.gender.isPrivate,
-      school: input.school,
+      school: input.school.value,
       'school|private': input.school.isPrivate,
-      subCampus: input.subCampus,
+      subCampus: input.subCampus.value,
       'subCampus|private': input.subCampus.isPrivate,
       college: input.college.value,
       'college|private': input.college.isPrivate,
-      grade: input.grade,
+      grade: input.grade.value,
       'grade|private': input.grade.isPrivate,
       openId,
       unionId,
@@ -211,6 +212,7 @@ export class UserService {
         $userId: input.userId
       }
     })
+    console.error(res)
 
     const uid = res.uids.get('user')
 

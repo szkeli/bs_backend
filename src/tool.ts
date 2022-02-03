@@ -91,7 +91,7 @@ export const UpdateUserArgs2User = function <T>(updateUserArgs: UpdateUserArgs) 
   for (const [key, value] of map.entries()) {
     if (typeof value === 'object' && value.value) {
       map.set(key, value.value)
-      map.set(`${key}|private`, value.isPrivate)
+      map.set(`${key}|private`, value?.isPrivate ?? false)
     }
   }
 
