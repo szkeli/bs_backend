@@ -3,7 +3,7 @@ import axios from 'axios'
 import * as crypto from 'crypto'
 
 import { Nullable } from './posts/models/post.model'
-import { UpdateUserArgs, UserWithFacets } from './user/models/user.model'
+import { UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
 
 export async function exec<T, U> (l: string, bindings: object, aliases?: object) {
   return await axios.post<T>('http://w3.onism.cc:8084/gremlin', {
@@ -96,4 +96,19 @@ export const UpdateUserArgs2User = function <T>(updateUserArgs: UpdateUserArgs) 
   }
 
   return Object.fromEntries(map.entries()) as unknown as T
+}
+
+export const RawUser2UserWithPrivateProps = function (user: User): UserWithPrivateProps {
+  const map = new Map(Object.entries(user))
+
+  const upper = (v: string) => v.slice(0, 1).toUpperCase() + v.slice(1).toLowerCase()
+  for (const [key, value] of map.entries()) {
+    const lv = key.split('|')
+    if (typeof value === 'boolean' && lv.length === 2) {
+      map.delete(key)
+      map.set(`is${upper(lv[0])}${upper(lv[1])}`, value)
+    }
+  }
+
+  return Object.fromEntries(map.entries()) as unknown as UserWithPrivateProps
 }

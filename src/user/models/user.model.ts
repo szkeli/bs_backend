@@ -184,24 +184,51 @@ export class User implements Person, Node {
     avatarImageUrl: string
 }
 
+@ObjectType({ description: '包含属性是否个人可见的用户对象' })
+export class UserWithPrivateProps extends User {
+  constructor (userWithPrivateProps: UserWithPrivateProps) {
+    super(userWithPrivateProps)
+    Object.assign(this, userWithPrivateProps)
+  }
+
+  @Field(of => Boolean, { description: '学院属性是否私有', nullable: true, defaultValue: false })
+    isCollegePrivate: boolean
+
+  @Field(of => Boolean, { description: '校区属性是否私有', nullable: true, defaultValue: false })
+    isSubCampusPrivate: boolean
+
+  @Field(of => Boolean, { description: '性别属性是否私有', nullable: true, defaultValue: false })
+    isGenderPrivate: boolean
+
+  @Field(of => Boolean, { description: '学校属性是否私有', nullable: true, defaultValue: false })
+    isSchoolPrivate: boolean
+
+  @Field(of => Boolean, { description: '年级属性是否私有', nullable: true, defaultValue: false })
+    isGradePrivate: boolean
+}
+
 export class UserWithFacets extends User {
   /**
    * 学院属性是否私有
    */
   'college|private'?: boolean
+
   /**
    * 校区属性是否私有
    *
    */
   'subCampus|private'?: boolean
+
   /**
    * 性别属性是否私有
    */
   'gender|private'?: boolean
+
   /**
    * 学校属性是否私有
    */
   'school|private'?: boolean
+
   /**
    * 年级属性是否私有
    */
@@ -251,12 +278,6 @@ export class PageInfo {
 
 @ObjectType()
 export class UsersConnection {
-  // @Field(type => [UserEdge])
-  //   edges: [UserEdge]
-
-  // @Field(type => PageInfo)
-  //   pageInfo: PageInfo
-
   @Field(type => [User])
     nodes: [User?]
 
@@ -274,6 +295,11 @@ export class PagingConfigArgs {
 }
 
 export type CheckUserResult = User & {success: boolean, roles: Role[]}
+export const AdminAndUserWithPrivatePropsUnion = createUnionType({
+  name: 'AdminAndUserWithPrivatePropsUnion',
+  types: () => [UserWithPrivateProps, Admin]
+})
+
 export const AdminAndUserUnion = createUnionType({
   name: 'AdminAndUserUnion',
   types: () => [User, Admin]

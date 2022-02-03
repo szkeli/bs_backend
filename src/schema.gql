@@ -611,7 +611,7 @@ type Query {
   trendingPosts(first: Int = 10, offset: Int = 0): PostsConnection!
 
   """当前id对应的的用户画像"""
-  whoAmI: AdminAndUserUnion!
+  whoAmI: AdminAndUserWithPrivatePropsUnion!
 
   """分页返回用户"""
   users(first: Int = 10, offset: Int = 0): UsersConnection!
@@ -676,6 +676,89 @@ type Query {
 
   """获取所有凭证"""
   credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
+}
+
+union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
+
+"""包含属性是否个人可见的用户对象"""
+type UserWithPrivateProps implements Person & Node {
+  """用户账号"""
+  userId: String!
+
+  """用户昵称"""
+  name: String!
+
+  """id 自动生成"""
+  id: String!
+
+  """学号"""
+  studentId: Int
+
+  """微信openId,注册时传入微信code自动通过微信提供的接口获取获取"""
+  openId: String!
+
+  """微信unionId,注册时传入微信code自动通过微信提供的接口获取获取"""
+  unionId: String!
+
+  """用户性别"""
+  gender: GENDER
+
+  """学院"""
+  college: String
+
+  """校区"""
+  subCampus: String
+
+  """学校"""
+  school: String
+
+  """年级"""
+  grade: String
+
+  """用户创建时间"""
+  createdAt: String!
+
+  """用户信息的更新时间"""
+  updatedAt: String!
+
+  """用户上一次调用login接口获取token的系统时间"""
+  lastLoginedAt: String!
+
+  """用户头像链接"""
+  avatarImageUrl: String!
+
+  """分页返回帖子"""
+  posts(first: Int = 10, offset: Int = 0): PostsConnection!
+
+  """用户创建的主题"""
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+
+  """用户创建的会话"""
+  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
+
+  """用户收到的举报"""
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """当前用户的ddl信息"""
+  deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
+
+  """当前用户的课程信息"""
+  curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
+
+  """学院属性是否私有"""
+  isCollegePrivate: Boolean
+
+  """校区属性是否私有"""
+  isSubCampusPrivate: Boolean
+
+  """性别属性是否私有"""
+  isGenderPrivate: Boolean
+
+  """学校属性是否私有"""
+  isSchoolPrivate: Boolean
+
+  """年级属性是否私有"""
+  isGradePrivate: Boolean
 }
 
 enum SEARCHTYPE {

@@ -4,7 +4,7 @@ import { AuthService } from 'src/auth/auth.service'
 import { CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
 import { PostsConnection } from 'src/posts/models/post.model'
 import { SubjectsConnection } from 'src/subject/model/subject.model'
-import { sign as sign_calculus } from 'src/tool'
+import { RawUser2UserWithPrivateProps, sign as sign_calculus } from 'src/tool'
 
 import { Admin } from '../admin/models/admin.model'
 import { Role, UserWithRoles } from '../auth/model/auth.model'
@@ -17,7 +17,7 @@ import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import {
-  AdminAndUserUnion,
+  AdminAndUserWithPrivatePropsUnion,
   CreateUserArgs,
   DeadlinesPagingArgs,
   LoginResult,
@@ -25,7 +25,8 @@ import {
   PersonLoginArgs,
   UpdateUserArgs,
   User,
-  UsersConnection
+  UsersConnection,
+  UserWithPrivateProps
 } from './models/user.model'
 import { UserService } from './user.service'
 
@@ -60,14 +61,15 @@ export class UserResolver {
     return await this.userService.updateUser(user.id, args)
   }
 
-  @Query(returns => AdminAndUserUnion, { description: '当前id对应的的用户画像' })
+  @Query(of => AdminAndUserWithPrivatePropsUnion, { description: '当前id对应的的用户画像' })
   @Roles(Role.User, Role.Admin)
   async whoAmI (@CurrentUser() user: UserWithRoles) {
     if (user.roles.includes(Role.Admin)) {
       return new Admin(user as unknown as Admin)
     }
     if (user.roles.includes(Role.User)) {
-      return new User(user as unknown as User)
+      const userWithPrivateProps = RawUser2UserWithPrivateProps(user)
+      return new UserWithPrivateProps(userWithPrivateProps)
     }
   }
 
