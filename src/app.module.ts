@@ -36,6 +36,7 @@ import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
+import { CensorsModule } from './censors/censors.module';
 
 @Module({
   imports: [
@@ -73,7 +74,8 @@ import { VotesModule } from './votes/votes.module'
     FoldsModule,
     BlocksModule,
     CredentialsModule,
-    PinsModule
+    PinsModule,
+    CensorsModule
   ],
   controllers: [AppController],
   providers: [
