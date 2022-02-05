@@ -14,6 +14,7 @@ privileges: [uid] @reverse .
 deadlines: [uid] @reverse .
 views: [uid] @reverse .
 curriculums: [uid] @reverse .
+pins: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -28,6 +29,7 @@ fold: uid @reverse .
 block: uid @reverse .
 educator: uid @reverse .
 anonymous: uid @reverse .
+pin: uid @reverse .
 
 images: [string] .
 
@@ -119,28 +121,8 @@ type Admin {
   folds
   # 该管理员拉黑的用户 (拉黑用户)
   blocks
-}
-
-# 管理员认证凭证
-type Credential {
-  # 创建时间
-  createdAt
-  # 授权对象
-  to
-  # 创建者
-  creator
-}
-
-# 权限
-type Privilege {
-  # 创建时间
-  createdAt
-  # 具有该权限的对象
-  to
-  # 权限的创建者
-  creator
-  # 权限的值
-  value
+  # 当前管理员创建的置顶
+  pins
 }
 
 # 用户
@@ -225,16 +207,8 @@ type Post {
   views
   # 帖子的匿名
   anonymous
-}
-
-# 匿名信息
-type Anonymous {
-  # 匿名的创建者
-  creator
-  # 匿名的对象
-  to
-  # 匿名的创建时间
-  createdAt
+  # 置顶信息
+  pin
 }
 
 # 用户在blackboard上的ddl
@@ -268,6 +242,98 @@ type Deadline {
   title
   type
   viewId
+}
+
+# 帖子和评论的评论
+type Comment {
+  # 评论的创建时间
+  createdAt
+  # 评论的内容
+  content
+  # 评论的创建者
+  creator
+  # 评论的点赞
+  votes
+  # 评论的折叠者
+  folder
+  # 评论收到的举报
+  reports
+  # 评论的评论
+  comments
+  # 评论所属的帖子
+  post
+  # 评论所属的评论
+  comment
+  # 评论收到的折叠
+  fold
+  # 评论收到的删除
+  delete
+  # 评论收到的浏览
+  views
+  # 评论的匿名
+  anonymous
+  # 置顶信息
+  pin
+}
+
+# 帖子的主题
+type Subject {
+  # 创建时间
+  createdAt
+  # 标题
+  title
+  # 主题描述
+  description
+  # 头像
+  avatarImageUrl
+  # 背景
+  backgroundImageUrl
+  # 创建者
+  creator
+  # 包含的帖子
+  posts
+}
+
+# 置顶
+type Pin {
+  # 创建时间
+  createdAt
+  # 被指定对象
+  to
+  # 创建者 一般是管理员
+  creator
+}
+
+# 匿名信息
+type Anonymous {
+  # 匿名的创建者
+  creator
+  # 匿名的对象
+  to
+  # 匿名的创建时间
+  createdAt
+}
+
+# 管理员认证凭证
+type Credential {
+  # 创建时间
+  createdAt
+  # 授权对象
+  to
+  # 创建者
+  creator
+}
+
+# 权限
+type Privilege {
+  # 创建时间
+  createdAt
+  # 具有该权限的对象
+  to
+  # 权限的创建者
+  creator
+  # 权限的值
+  value
 }
 
 # 浏览
@@ -322,53 +388,7 @@ type Vote {
   type
 }
 
-# 帖子和评论的评论
-type Comment {
-  # 评论的创建时间
-  createdAt
-  # 评论的内容
-  content
-  # 评论的创建者
-  creator
-  # 评论的点赞
-  votes
-  # 评论的折叠者
-  folder
-  # 评论收到的举报
-  reports
-  # 评论的评论
-  comments
-  # 评论所属的帖子
-  post
-  # 评论所属的评论
-  comment
-  # 评论收到的折叠
-  fold
-  # 评论收到的删除
-  delete
-  # 评论收到的浏览
-  views
-  # 评论的匿名
-  anonymous
-}
 
-# 帖子的主题
-type Subject {
-  # 创建时间
-  createdAt
-  # 标题
-  title
-  # 主题描述
-  description
-  # 头像
-  avatarImageUrl
-  # 背景
-  backgroundImageUrl
-  # 创建者
-  creator
-  # 包含的帖子
-  posts
-}
 
 # 举报实体
 type Report {

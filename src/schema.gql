@@ -540,6 +540,18 @@ type DeletesConnection {
   totalCount: Int!
 }
 
+type Pin {
+  id: String!
+  createdAt: String!
+  creator: Admin!
+  to: PostAndCommentUnion!
+}
+
+type PinsConnection {
+  totalCount: Int!
+  nodes: [Pin!]!
+}
+
 type Subject {
   id: String!
   createdAt: String!
@@ -676,6 +688,8 @@ type Query {
 
   """获取所有凭证"""
   credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
+  pin(id: String!): Pin!
+  pins(first: Int = 10, offset: Int = 0): PinsConnection!
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
@@ -996,6 +1010,8 @@ type Mutation {
   addFoldOnComment(commentId: String!): Fold!
   removeBlockOnUser(from: String!): Boolean!
   addBlockOnUser(id: String!, description: String!): Block!
+  addPinOnPost(postId: String!): Pin!
+  removePinOnPost(from: String!): Boolean!
 }
 
 input UserStringPropMap {

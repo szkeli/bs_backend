@@ -11,6 +11,7 @@ import { Fold, FoldsConnection } from './models/folds.model'
 @Resolver(of => Fold)
 export class FoldsResolver {
   constructor (private readonly foldsService: FoldsService) {}
+
   @Mutation(of => Fold)
   @Roles(Role.Admin)
   async addFoldOnComment (@CurrentUser() admin: Admin, @Args('commentId') commentId: string) {

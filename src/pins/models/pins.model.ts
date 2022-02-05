@@ -1,4 +1,4 @@
-import { Field, ObjectType } from '@nestjs/graphql'
+import { Field, Int, ObjectType } from '@nestjs/graphql'
 
 @ObjectType()
 export class Pin {
@@ -7,4 +7,13 @@ export class Pin {
 
   @Field()
     createdAt: string
+}
+
+@ObjectType()
+export class PinsConnection {
+  @Field(of => Int)
+    totalCount: number
+
+  @Field(of => [Pin])
+    nodes: Pin[]
 }
