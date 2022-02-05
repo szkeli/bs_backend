@@ -181,8 +181,6 @@ type User {
 
 # 帖子
 type Post {
-  # 帖子的名字
-  title
   # 帖子的内容
   content
   # 帖子的图片

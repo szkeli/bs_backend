@@ -109,7 +109,7 @@ export class PostsService {
     }
   }
 
-  async createPost (creator: string, { title, content, images, subjectId, isAnonymous }: CreatePostArgs): Promise<Post> {
+  async createPost (creator: string, { content, images, subjectId, isAnonymous }: CreatePostArgs): Promise<Post> {
     let condition: string
     let query: string
     let mutation: object
@@ -130,7 +130,6 @@ export class PostsService {
             posts: {
               uid: '_:post',
               'dgraph.type': 'Post',
-              title,
               content,
               images,
               createdAt: now,
@@ -167,7 +166,6 @@ export class PostsService {
             posts: {
               uid: '_:post',
               'dgraph.type': 'Post',
-              title,
               content,
               images,
               createdAt: now,
@@ -200,7 +198,6 @@ export class PostsService {
             posts: {
               uid: '_:post',
               'dgraph.type': 'Post',
-              title,
               content,
               images,
               createdAt: now,
@@ -230,7 +227,6 @@ export class PostsService {
             posts: {
               uid: '_:post',
               'dgraph.type': 'Post',
-              title,
               content,
               images,
               createdAt: now,
@@ -266,7 +262,6 @@ export class PostsService {
 
     return {
       id: res.uids.get('post'),
-      title,
       content,
       images,
       createdAt: now

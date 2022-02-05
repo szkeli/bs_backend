@@ -46,12 +46,6 @@ export class SearchResultItemConnection {
 
   @Field(type => [SearchResultItem])
     nodes: Array<typeof SearchResultItem>
-
-  // @Field(type => PageInfo)
-  //   pageInfo: PageInfo
-
-  // @Field(type => SearchResultItemEdge)
-  // edges: SearchResultItemEdge
 }
 export const SearchResultItem = createUnionType({
   name: 'SearchResultItem',

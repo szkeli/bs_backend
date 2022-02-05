@@ -103,10 +103,10 @@ export class SearchService {
   async searchPost (q: string, first: number, offset: number) {
     const query = `
     query v($query: string) {
-      totalCount(func: type(Post)) @filter(alloftext(title, $query) OR alloftext(content, $query)) {
+      totalCount(func: type(Post)) @filter(alloftext(content, $query)) {
         count(uid)
       }
-      search(func: type(Post), first: ${first}, offset: ${offset}) @filter(alloftext(title, $query) OR alloftext(content, $query)) {
+      search(func: type(Post), first: ${first}, offset: ${offset}) @filter(alloftext(content, $query)) {
         id: uid
         expand(_all_)
       }
