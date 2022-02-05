@@ -7,7 +7,7 @@ export class Votable {
   }
 
   @Field(type => Int, { description: 'Number of upvotes that this node has received.' })
-    upvoteCount: number
+    totalCount: number
 
   @Field(type => Boolean, { description: 'Whether or not the current user can add or remove an upvote on this node.' })
     viewerCanUpvote: boolean

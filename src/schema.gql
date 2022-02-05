@@ -406,7 +406,7 @@ union MessageCreatorUnion = User | Admin
 
 type Votable {
   """Number of upvotes that this node has received."""
-  upvoteCount: Int!
+  totalCount: Int!
 
   """
   Whether or not the current user can add or remove an upvote on this node.
