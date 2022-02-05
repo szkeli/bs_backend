@@ -7,7 +7,7 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CheckPolicies, CurrentUser, NoAuth } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser, MaybeAuth } from 'src/auth/decorator'
 import {
   CommentsConnection
 } from 'src/comment/models/comment.model'
@@ -38,20 +38,20 @@ export class PostsResolver {
     private readonly commentService: CommentService
   ) {}
 
-  @Query(returns => Post)
+  @Query(of => Post)
   @CheckPolicies(new ReadPostPolicyHandler())
   async post (@CurrentUser() user: User, @Args('id') id: PostId): Promise<Post> {
     return await this.postsService.post(id)
   }
 
-  @Query(returns => PostsConnection)
-  @NoAuth()
-  async posts (@Args() { first, offset }: PagingConfigArgs): Promise<PostsConnection> {
+  @Query(of => PostsConnection)
+  @MaybeAuth()
+  async posts (@CurrentUser() user: User, @Args() { first, offset }: PagingConfigArgs): Promise<PostsConnection> {
     return await this.postsService.posts(first, offset)
   }
 
   @Query(of => PostsConnection)
-  @NoAuth()
+  @MaybeAuth()
   async trendingPosts (@Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.trendingPosts(first, offset)
   }
@@ -71,13 +71,13 @@ export class PostsResolver {
     return await this.commentService.getCommentsByPostId(post.id, first, offset)
   }
 
-  @ResolveField(returns => Subject, { nullable: true, description: '帖子所属的主题' })
+  @ResolveField(of => Subject, { nullable: true, description: '帖子所属的主题' })
   async subject (@Parent() post: Post): Promise<Subject | null> {
     return await this.subjectService.findASubjectByPostId(post.id)
   }
 
-  @ResolveField(returns => VotesConnection, { description: '帖子的点赞' })
-  async votes (@CurrentUser() user: User, @Parent() post: Post, @Args() args: PagingConfigArgs) {
+  @ResolveField(of => VotesConnection, { description: '帖子的点赞' })
+  async votes (@Parent() post: Post, @CurrentUser() user: User, @Args() args: PagingConfigArgs) {
     return await this.postsService.getVotesByPostId(user?.id, post.id, args.first, args.offset)
   }
 

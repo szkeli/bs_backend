@@ -6,8 +6,13 @@ import { memoize } from '@nestjs/passport/dist/utils/memoize.util'
 
 import { CaslAbilityFactory } from '../casl/casl-ability.factory'
 import { AppAbility } from '../casl/models/casl.model'
-import { CHECK_POLICIES_KEY, NO_AUTH_KEY, ROLES_KEY } from './decorator'
+import { CHECK_POLICIES_KEY, MAYBE_AUTH_KEY, NO_AUTH_KEY, ROLES_KEY } from './decorator'
 import { PolicyHandler, Role, UserWithRoles } from './model/auth.model'
+
+interface Props {
+  roles: Role[]
+  maybeAuth: boolean
+}
 
 @Injectable()
 export class RoleAuthGuard implements CanActivate {
@@ -20,10 +25,12 @@ export class RoleAuthGuard implements CanActivate {
     const noAuth = this.reflector.get<boolean>(NO_AUTH_KEY, context.getHandler())
     const roles = this.reflector.get<Role[]>(ROLES_KEY, context.getHandler()) || [Role.User]
     const policies = this.reflector.get<PolicyHandler[]>(CHECK_POLICIES_KEY, context.getHandler()) || []
+    // 请求头有token时，请求用户数据，没有则返回null;
+    const maybeAuth = this.reflector.get<boolean>(MAYBE_AUTH_KEY, context.getHandler()) || false
 
     if (noAuth) return true
 
-    const guard = new (RoleGuard(roles, policies, this.caslAbilityFactory))()
+    const guard = new (RoleGuard({ roles, maybeAuth }))()
 
     const canActive = await guard.canActivate(context)
 
@@ -44,7 +51,7 @@ export class RoleAuthGuard implements CanActivate {
   }
 }
 
-export const RoleGuard = memoize((roles: Role[], policies: PolicyHandler[], casl: CaslAbilityFactory) => {
+export const RoleGuard = memoize(({ roles, maybeAuth }: Props) => {
   return class GqlAuthGuard extends AuthGuard('jwt') {
     getRequest (context: ExecutionContext) {
       const ctx = GqlExecutionContext.create(context)
@@ -53,7 +60,8 @@ export const RoleGuard = memoize((roles: Role[], policies: PolicyHandler[], casl
 
     handleRequest<TUser = any>(err: any, user: (UserWithRoles | null), info: any, context: any, status?: any): TUser {
       if (err) throw err
-      if (!user) throw new UnauthorizedException('Not authorized')
+      if (!user && !maybeAuth) throw new UnauthorizedException('Not authorized')
+      if (!user && maybeAuth) return null
 
       const notIncludes = roles.filter(r => !user.roles.includes(r))
       if (notIncludes.length === roles.length) {

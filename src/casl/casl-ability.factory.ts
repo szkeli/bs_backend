@@ -7,12 +7,12 @@ import { Action, AppAbility, Subjects } from './models/casl.model'
 @Injectable()
 export class CaslAbilityFactory {
   createForAdminAndUser (user: UserWithRoles) {
-    const { can, cannot, build } = new AbilityBuilder<Ability<[Action, Subjects]>>(
+    const { can, build } = new AbilityBuilder<Ability<[Action, Subjects]>>(
       Ability as AbilityClass<AppAbility>
     )
 
-    if (user.roles.includes(Role.Admin)) {
-      if (user.userId === 'root') {
+    if (user?.roles?.includes(Role.Admin)) {
+      if (user?.userId === 'root') {
         can(Action.Manage, 'all')
       }
     }

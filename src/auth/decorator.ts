@@ -13,6 +13,8 @@ export const CurrentUser = createParamDecorator(
 export const ROLES_KEY = 'roles'
 export const NO_AUTH_KEY = 'no-auth'
 export const CHECK_POLICIES_KEY = 'check_policy'
-export const NoAuth = () => SetMetadata('no-auth', true)
-export const Roles = (...roles: string[]) => SetMetadata('roles', roles)
+export const MAYBE_AUTH_KEY = 'maybe-auth'
+export const NoAuth = () => SetMetadata(NO_AUTH_KEY, true)
+export const MaybeAuth = () => SetMetadata(MAYBE_AUTH_KEY, true)
+export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles)
 export const CheckPolicies = (...handlers: PolicyHandler[]) => SetMetadata(CHECK_POLICIES_KEY, handlers)

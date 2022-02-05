@@ -403,7 +403,6 @@ export class PostsService {
       q: Array<{v?: Array<{uid: string}>, totalCount: number}>
       v: Array<{votes?: Vote[]}>
     }
-
     const u: VotesConnection = {
       nodes: res.v[0]?.votes || [],
       totalCount: res.q[0].totalCount,
