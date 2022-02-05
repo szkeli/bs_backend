@@ -1,13 +1,9 @@
 import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
-import { Node } from '../../node/models/node.model'
-
 export type CommentId = string
 
-@ObjectType({
-  implements: () => [Node]
-})
-export class Comment implements Node {
+@ObjectType()
+export class Comment {
   constructor (comment: Comment) {
     Object.assign(this, comment)
   }

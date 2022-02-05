@@ -6,32 +6,51 @@ import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { Post } from '../posts/models/post.model'
 import { now } from '../tool'
 import { User } from '../user/models/user.model'
-import { Pin } from './models/pins.model'
+import { Pin, PinsConnection } from './models/pins.model'
 
 @Injectable()
 export class PinsService {
   constructor (private readonly dbService: DbService) {}
 
+  async findPinsByAdminId (id: any, first: number, offset: number): Promise<PinsConnection> {
+    const query = `
+      query v($adminId: string) {
+        admin(func: uid($adminId)) @filter(type(Admin)) {
+          totalCount: count(pins @filter(type(Pin)))
+          pins (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Pin)) {
+            id: uid
+            expand(_all_)
+          }
+        } 
+      }
+    `
+    const res = await this.dbService.commitQuery<{admin: Array<{pins: Pin[], totalCount: number}>}>({ query, vars: { $adminId: id } })
+    return {
+      totalCount: res.admin[0]?.totalCount ?? 0,
+      nodes: res.admin[0]?.pins ?? []
+    }
+  }
+
   async removePinOnPost (i: string, from: string) {
     const query = `
-        query v($adminId: string, $postId: string) {
-            # 当前管理员存在
-            v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
-            # 当前帖子存在
-            u(func: uid($postId)) @filter(type(Post)) { u as uid }
-            # 当前帖子被置顶
-            x(func: uid($postId)) @filter(type(Post) and has(pin)) { x as uid }
-            # 获取当前帖子置顶的创建者
-            c(func: uid($postId)) @filter(type(Post) and has(pin)) {
-                pin @filter(type(Pin)) {
-                    pin as uid
-                    creator @filter(type(Admin)) {
-                        creator as uid
-                    }
-                }
-            }
-        }
-      `
+          query v($adminId: string, $postId: string) {
+              # 当前管理员存在
+              v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
+              # 当前帖子存在
+              u(func: uid($postId)) @filter(type(Post)) { u as uid }
+              # 当前帖子被置顶
+              x(func: uid($postId)) @filter(type(Post) and has(pin)) { x as uid }
+              # 获取当前帖子置顶的创建者
+              c(func: uid($postId)) @filter(type(Post) and has(pin)) {
+                  pin @filter(type(Pin)) {
+                      pin as uid
+                      creator @filter(type(Admin)) {
+                          creator as uid
+                      }
+                  }
+              }
+          }
+        `
 
     const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) )'
     const mutation = {
@@ -72,14 +91,14 @@ export class PinsService {
 
   async pins (first: number, offset: number) {
     const query = `
-        query {
-            totalCount(func: type(Pin)) { count(uid) }
-            pins (func: type(Pin), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
-                id: uid
-                expand(_all_)
-            }
-        }
-      `
+          query {
+              totalCount(func: type(Pin)) { count(uid) }
+              pins (func: type(Pin), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+                  id: uid
+                  expand(_all_)
+              }
+          }
+        `
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{ count: number }>
       pins: Pin[]
@@ -93,33 +112,34 @@ export class PinsService {
 
   async pin (pinId: string) {
     const query = `
-        query v($pinId: string) {
-            pin(func: uid($pinId)) @filter(type(Pin)) {
-                id: uid
-                createdAt
-            }
-        }
-      `
+          query v($pinId: string) {
+              pin(func: uid($pinId)) @filter(type(Pin)) {
+                  id: uid
+                  createdAt
+              }
+          }
+        `
     const res = await this.dbService.commitQuery<{pin: Pin[]}>({ query, vars: { $pinId: pinId } })
     return res.pin[0]
   }
 
   async to (pinId: string) {
     const query = `
-        query v($pinId: string) {
-            pin(func: uid($pinId)) @filter(type(Pin)) {
-                to @filter(type(Post) or type(Comment)) {
-                    id: uid
-                    dgraph.type
-                    expand(_all_)
+            query v($pinId: string) {
+                pin(func: uid($pinId)) @filter(type(Pin)) {
+                    to @filter(type(Post) or type(Comment)) {
+                        id: uid
+                        dgraph.type
+                        expand(_all_)
+                    }
                 }
             }
-        }
-      `
-    const res = await this.dbService.commitQuery<{pin: Array<{to: typeof PostAndCommentUnion & { 'dgraph.type': string}}>}>({ query, vars: { $pinId: pinId } })
+          `
+    const res = await this.dbService.commitQuery<{pin: Array<{to: (typeof PostAndCommentUnion) & { 'dgraph.type': string}}>}>({ query, vars: { $pinId: pinId } })
     if (res.pin[0].to['dgraph.type'].includes('Post')) {
       return new Post(res.pin[0].to as unknown as Post)
     }
+
     if (res.pin[0].to['dgraph.type'].includes('Comment')) {
       return new Comment(res.pin[0].to as unknown as Comment)
     }
@@ -127,15 +147,15 @@ export class PinsService {
 
   async creator (id: string) {
     const query = `
-        query v($pinId: string) {
-            pin(func: uid($pinId)) @filter(type(Pin)) {
-                creator @filter(type(Admin)) {
-                    id: uid
-                    expand(_all_)
-                }
-            }
-        }
-    `
+          query v($pinId: string) {
+              pin(func: uid($pinId)) @filter(type(Pin)) {
+                  creator @filter(type(Admin)) {
+                      id: uid
+                      expand(_all_)
+                  }
+              }
+          }
+      `
     const res = await this.dbService.commitQuery<{ pin: Array<{creator: User}>}>({
       query,
       vars: {
@@ -165,23 +185,23 @@ export class PinsService {
   //   }
 
   /**
-   * 置顶一个帖子
-   * 全局一个时间只能有一个帖子
-   * @param postId 帖子id
-   */
+     * 置顶一个帖子
+     * 全局一个时间只能有一个帖子
+     * @param postId 帖子id
+     */
   async addPinOnPost (i: string, postId: string): Promise<Pin> {
     const query = `
-        query v($adminId: string, $postId: string) {
-            # 当前管理员存在
-            x(func: uid($adminId)) @filter(type(Admin)) { x as uid }
-            # 帖子存在
-            v(func: uid($postId)) @filter(type(Post)) { v as uid }
-            # 该帖子未被置顶
-            q(func: uid($postId)) @filter(type(Post) and not has(pin)) { q as uid }
-            # 全局一个时间只能有一个置顶
-            u(func: type(Post)) @filter(has(pin)) { u as uid }
-        }
-    `
+          query v($adminId: string, $postId: string) {
+              # 当前管理员存在
+              x(func: uid($adminId)) @filter(type(Admin)) { x as uid }
+              # 帖子存在
+              v(func: uid($postId)) @filter(type(Post)) { v as uid }
+              # 该帖子未被置顶
+              q(func: uid($postId)) @filter(type(Post) and not has(pin)) { q as uid }
+              # 全局一个时间只能有一个置顶
+              u(func: type(Post)) @filter(has(pin)) { u as uid }
+          }
+      `
     const _now = now()
     const condition = '@if( eq(len(x), 1) and eq(len(v), 1) and eq(len(u), 0) and eq(len(q), 1) )'
     const mutation = {

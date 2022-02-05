@@ -5,6 +5,7 @@ import { JwtStrategy } from '../auth/jwt.strategy'
 import { BlocksService } from '../blocks/blocks.service'
 import { DbService } from '../db/db.service'
 import { FoldsService } from '../folds/folds.service'
+import { PinsService } from '../pins/pins.service'
 import { SharedModule } from '../shared/shared.module'
 import { UserService } from '../user/user.service'
 import { AdminResolver } from './admin.resolver'
@@ -19,7 +20,8 @@ import { AdminService } from './admin.service'
     UserService,
     DbService,
     FoldsService,
-    BlocksService
+    BlocksService,
+    PinsService
   ],
   imports: [SharedModule]
 })

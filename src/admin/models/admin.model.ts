@@ -1,8 +1,6 @@
 import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
 import { Role } from '../../auth/model/auth.model'
-import { Node } from '../../node/models/node.model'
-import { Person } from '../../user/models/user.model'
 
 @ArgsType()
 export class RegisterAdminArgs {
@@ -19,10 +17,8 @@ export class RegisterAdminArgs {
     sign: string
 }
 
-@ObjectType({
-  implements: [Node, Person]
-})
-export class Admin implements Node, Person {
+@ObjectType()
+export class Admin {
   constructor (admin: Admin) {
     Object.assign(this, admin)
   }

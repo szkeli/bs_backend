@@ -1,6 +1,5 @@
 import {
   Args,
-  Int,
   Mutation,
   Parent,
   Query,
@@ -17,7 +16,10 @@ import { BlocksConnection } from '../blocks/models/blocks.model'
 import { ICredential, ICredentialsConnection } from '../credentials/models/credentials.model'
 import { FoldsService } from '../folds/folds.service'
 import { FoldsConnection } from '../folds/models/folds.model'
+import { PinsConnection } from '../pins/models/pins.model'
+import { PinsService } from '../pins/pins.service'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
+import { PagingConfigArgs } from '../user/models/user.model'
 import { AdminService } from './admin.service'
 import {
   Admin,
@@ -30,17 +32,18 @@ export class AdminResolver {
   constructor (
     private readonly adminService: AdminService,
     private readonly foldsService: FoldsService,
-    private readonly blocksService: BlocksService
+    private readonly blocksService: BlocksService,
+    private readonly pinsService: PinsService
   ) {}
 
-  @Mutation(returns => Admin, { description: '注册一个管理员，需要使用authen认证新注册的管理员' })
+  @Mutation(of => Admin, { description: '注册一个管理员，需要使用authen认证新注册的管理员' })
   @NoAuth()
   async registerAdmin (@Args() args: RegisterAdminArgs) {
     args.sign = sign_calculus(args.sign)
     return await this.adminService.registerAdmin(args)
   }
 
-  @Mutation(returns => Admin, { description: '已存在的管理员认证一个新注册的管理员' })
+  @Mutation(of => Admin, { description: '已存在的管理员认证一个新注册的管理员' })
   @Roles(Role.Admin)
   async authenAdmin (@CurrentUser() admin: Admin, @Args('to') to: string) {
     return await this.adminService.authenAdmin(admin.id, to)
@@ -54,10 +57,7 @@ export class AdminResolver {
 
   @Query(returns => AdminsConnection, { description: '返回所有的管理员' })
   @Roles(Role.Admin)
-  async admins (
-  @Args('first', { type: () => Int }) first: number,
-    @Args('offset', { type: () => Int }) offset: number
-  ) {
+  async admins (@Args() { first, offset }: PagingConfigArgs) {
     return await this.adminService.admins(first, offset)
   }
 
@@ -67,38 +67,30 @@ export class AdminResolver {
   }
 
   @ResolveField(returns => ICredentialsConnection, { description: '当前管理员认证过的其他管理员' })
-  async credentials (
-  @Parent() admin: Admin,
-    @Args('first', { type: () => Int }) first: number,
-    @Args('offset', { type: () => Int }) offset: number
-  ) {
+  async credentials (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
     return await this.adminService.findCredentialsByAdminId(admin.id, first, offset)
   }
 
   @ResolveField(() => PrivilegesConnection, { description: '当前管理员拥有的权限' })
-  async privileges (
-  @Parent() admin: Admin,
-    @Args('first', { type: () => Int }) first: number,
-    @Args('offset', { type: () => Int }) offset: number
-  ) {
+  async privileges (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
     return await this.adminService.privileges(admin.id, first, offset)
   }
 
   @ResolveField(of => FoldsConnection, { description: '当前管理员折叠的评论' })
-  async folds (
-  @Parent() admin: Admin,
-    @Args('first', { type: () => Int }) first: number,
-    @Args('offset', { type: () => Int }) offset: number
-  ) {
+  async folds (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
     return await this.foldsService.findFoldsByAdminId(admin.id, first, offset)
   }
 
   @ResolveField(of => BlocksConnection, { description: '当前管理员拉黑的用户' })
   async blocks (
   @Parent() admin: Admin,
-    @Args('first', { type: () => Int }) first: number,
-    @Args('offset', { type: () => Int }) offset: number
+    @Args() { first, offset }: PagingConfigArgs
   ) {
     return await this.blocksService.findBlocksByAdminId(admin.id, first, offset)
+  }
+
+  @ResolveField(of => PinsConnection, { description: '当前管理员创建的置顶' })
+  async pins (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.pinsService.findPinsByAdminId(admin.id, first, offset)
   }
 }

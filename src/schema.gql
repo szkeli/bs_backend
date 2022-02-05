@@ -2,14 +2,67 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+interface Node {
+  id: String!
+}
+
 interface Person implements Node {
   userId: String!
   name: String!
   id: String!
 }
 
-interface Node {
+type Comment {
   id: String!
+  content: String!
+  createdAt: String!
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+  post: Post!
+
+  """评论的创建者，评论是匿名评论时，creator为null"""
+  creator: User
+}
+
+type CommentsConnection {
+  nodes: [Comment!]!
+  totalCount: Int!
+}
+
+type Post {
+  id: String!
+  title: String!
+  content: String!
+  createdAt: String!
+  images: [String!]
+
+  """帖子的创建者，当帖子是匿名帖子时，返回null"""
+  creator: User
+
+  """帖子的评论"""
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """帖子所属的主题"""
+  subject: Subject
+
+  """帖子的点赞"""
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
+
+  """帖子收到的举报"""
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """获取帖子的折叠评论"""
+  foldedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """按热度返回评论"""
+  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+}
+
+type PostsConnection {
+  nodes: [Post!]!
+  totalCount: Int!
 }
 
 type Block {
@@ -50,6 +103,20 @@ type FoldsConnection {
   totalCount: Int!
 }
 
+type Pin {
+  id: String!
+  createdAt: String!
+  creator: Admin!
+  to: PostAndCommentUnion!
+}
+
+union PostAndCommentUnion = Post | Comment
+
+type PinsConnection {
+  totalCount: Int!
+  nodes: [Pin!]!
+}
+
 type Privilege {
   id: String!
   createdAt: String!
@@ -74,15 +141,60 @@ type PrivilegesConnection {
   totalCount: Int!
 }
 
+type Admin {
+  id: String!
+  userId: String!
+  name: String!
+  avatarImageUrl: String!
+  createdAt: String!
+  updatedAt: String!
+  lastLoginedAt: String!
+
+  """管理员的凭证"""
+  credential: ICredential
+
+  """当前管理员认证过的其他管理员"""
+  credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
+
+  """当前管理员拥有的权限"""
+  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
+
+  """当前管理员折叠的评论"""
+  folds(first: Int = 10, offset: Int = 0): FoldsConnection!
+
+  """当前管理员拉黑的用户"""
+  blocks(first: Int = 10, offset: Int = 0): BlocksConnection!
+
+  """当前管理员创建的置顶"""
+  pins(first: Int = 10, offset: Int = 0): PinsConnection!
+}
+
+type AdminsConnection {
+  nodes: [Admin!]!
+  totalCount: Int!
+}
+
+type NodesConnection {
+  edges: [NodeEdge!]!
+  nodes: [Node!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type NodeEdge {
+  cursor: String!
+  node: Node!
+}
+
 type User implements Person & Node {
+  """id 自动生成"""
+  id: String!
+
   """用户账号"""
   userId: String!
 
   """用户昵称"""
   name: String!
-
-  """id 自动生成"""
-  id: String!
 
   """学号"""
   studentId: Int
@@ -146,12 +258,13 @@ enum GENDER {
 }
 
 type LoginResult implements Node & Person {
+  id: String!
+
   """用户账号"""
   userId: String!
 
   """用户昵称"""
   name: String!
-  id: String!
 
   """学号"""
   studentId: Int
@@ -220,101 +333,6 @@ type PageInfo {
 
 type UsersConnection {
   nodes: [User!]!
-  totalCount: Int!
-}
-
-type NodesConnection {
-  edges: [NodeEdge!]!
-  nodes: [Node!]!
-  pageInfo: PageInfo!
-  totalCount: Int!
-}
-
-type NodeEdge {
-  cursor: String!
-  node: Node!
-}
-
-type Admin implements Node & Person {
-  userId: String!
-  name: String!
-  id: String!
-  avatarImageUrl: String!
-  createdAt: String!
-  updatedAt: String!
-  lastLoginedAt: String!
-
-  """管理员的凭证"""
-  credential: ICredential
-
-  """当前管理员认证过的其他管理员"""
-  credentials(offset: Int!, first: Int!): ICredentialsConnection!
-
-  """当前管理员拥有的权限"""
-  privileges(offset: Int!, first: Int!): PrivilegesConnection!
-
-  """当前管理员折叠的评论"""
-  folds(offset: Int!, first: Int!): FoldsConnection!
-
-  """当前管理员拉黑的用户"""
-  blocks(offset: Int!, first: Int!): BlocksConnection!
-}
-
-type AdminsConnection {
-  nodes: [Admin!]!
-  totalCount: Int!
-}
-
-type Post {
-  id: String!
-  title: String!
-  content: String!
-  createdAt: String!
-  images: [String!]
-
-  """帖子的创建者，当帖子是匿名帖子时，返回null"""
-  creator: User
-
-  """帖子的评论"""
-  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """帖子所属的主题"""
-  subject: Subject
-
-  """帖子的点赞"""
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
-
-  """帖子收到的举报"""
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-
-  """获取帖子的折叠评论"""
-  foldedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """按热度返回评论"""
-  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
-}
-
-type PostsConnection {
-  nodes: [Post!]!
-  totalCount: Int!
-}
-
-type Comment implements Node {
-  id: String!
-  content: String!
-  createdAt: String!
-  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
-  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-  post: Post!
-
-  """评论的创建者，评论是匿名评论时，creator为null"""
-  creator: User
-}
-
-type CommentsConnection {
-  nodes: [Comment!]!
   totalCount: Int!
 }
 
@@ -533,23 +551,9 @@ type Delete {
   to: PostAndCommentUnion!
 }
 
-union PostAndCommentUnion = Post | Comment
-
 type DeletesConnection {
   nodes: [Delete!]!
   totalCount: Int!
-}
-
-type Pin {
-  id: String!
-  createdAt: String!
-  creator: Admin!
-  to: PostAndCommentUnion!
-}
-
-type PinsConnection {
-  totalCount: Int!
-  nodes: [Pin!]!
 }
 
 type Subject {
@@ -633,7 +637,7 @@ type Query {
   admin(id: String!): Admin!
 
   """返回所有的管理员"""
-  admins(offset: Int!, first: Int!): AdminsConnection!
+  admins(first: Int = 10, offset: Int = 0): AdminsConnection!
 
   """根据主题id返回对应的主题"""
   subject(id: String!): Subject!
@@ -696,14 +700,14 @@ union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
 
 """包含属性是否个人可见的用户对象"""
 type UserWithPrivateProps implements Person & Node {
+  """id 自动生成"""
+  id: String!
+
   """用户账号"""
   userId: String!
 
   """用户昵称"""
   name: String!
-
-  """id 自动生成"""
-  id: String!
 
   """学号"""
   studentId: Int
