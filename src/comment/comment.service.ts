@@ -6,6 +6,8 @@ import { DbService } from 'src/db/db.service'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { PostId } from '../db/model/db.model'
+import { PostAndCommentUnion } from '../deletes/models/deletes.model'
+import { Post } from '../posts/models/post.model'
 import { DeletePrivateValue } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
@@ -33,12 +35,20 @@ export class CommentService {
           to @filter(type(Post) or type(Comment)) {
             id: uid
             expand(_all_)
+            dgraph.type
           }
         }
       }
     `
-    const res = await this.dbService.commitQuery({ query, vars: { $commentId: id } })
-    console.error(res)
+    const res = await this.dbService.commitQuery<{comment: Array<{to: (typeof PostAndCommentUnion) & {'dgraph.type': string[]}}>}>({ query, vars: { $commentId: id } })
+    const v = res.comment[0]?.to
+
+    if (v['dgraph.type'].includes('Post')) {
+      return new Post(v as unknown as Post)
+    }
+    if (v['dgraph.type'].includes('Comment')) {
+      return new Comment(v as unknown as Comment)
+    }
   }
 
   async deletedComments (first: number, offset: number): Promise<CommentsConnection> {
@@ -264,7 +274,8 @@ export class CommentService {
         'dgraph.type': 'Comment',
         content,
         createdAt: now,
-        comment: {
+        // 被评论的对象
+        to: {
           uid: commentId
         },
         // 评论的创建者
@@ -365,7 +376,8 @@ export class CommentService {
         'dgraph.type': 'Comment',
         content,
         createdAt: now,
-        post: {
+        // 被评论的对象
+        to: {
           uid: postId,
           comments: {
             uid: '_:comment'
