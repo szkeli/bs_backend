@@ -14,6 +14,21 @@ export class DeletesService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async findDeleteByPostId (id: string) {
+    const query = `
+      query v($postId: string) {
+        post(func: uid($postId)) @filter(type(Post)) {
+          delete @filter(type(Delete)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{post: Array<{delete: Delete}>}>({ query, vars: { $postId: id } })
+    return res.post[0]?.delete
+  }
+
   async to (deleteId: string): Promise<typeof PostAndCommentUnion> {
     const query = `
       query v($deleteId: string) {

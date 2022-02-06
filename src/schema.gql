@@ -57,6 +57,9 @@ type Post {
 
   """按热度返回评论"""
   trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """帖子未被删除时，此项为空"""
+  delete: Delete!
 }
 
 type PostsConnection {

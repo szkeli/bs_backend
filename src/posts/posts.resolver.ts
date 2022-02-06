@@ -18,6 +18,8 @@ import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
 import { CommentService } from '../comment/comment.service'
+import { DeletesService } from '../deletes/deletes.service'
+import { Delete } from '../deletes/models/deletes.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -35,7 +37,8 @@ export class PostsResolver {
     private readonly postsService: PostsService,
     private readonly subjectService: SubjectService,
     private readonly reportsService: ReportsService,
-    private readonly commentService: CommentService
+    private readonly commentService: CommentService,
+    private readonly deletesService: DeletesService
   ) {}
 
   @Query(of => Post)
@@ -101,5 +104,10 @@ export class PostsResolver {
   @ResolveField(of => CommentsConnection, { description: '按热度返回评论' })
   async trendingComments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.trendingComments(post.id, first, offset)
+  }
+
+  @ResolveField(of => Delete, { description: '帖子未被删除时，此项为空' })
+  async delete (@Parent() post: Post) {
+    return this.deletesService.findDeleteByPostId(post.id)
   }
 }

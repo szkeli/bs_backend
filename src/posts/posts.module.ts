@@ -7,6 +7,7 @@ import { UserService } from 'src/user/user.service'
 import { CaslModule } from '../casl/casl.module'
 import { CensorsService } from '../censors/censors.service'
 import { CommentService } from '../comment/comment.service'
+import { DeletesService } from '../deletes/deletes.service'
 import { ReportsService } from '../reports/reports.service'
 import { PostsResolver } from './posts.resolver'
 import { PostsService } from './posts.service'
@@ -21,7 +22,8 @@ import { PostsService } from './posts.service'
     ReportsService,
     CaslModule,
     CommentService,
-    CensorsService
+    CensorsService,
+    DeletesService
   ]
 })
 export class PostsModule {}
