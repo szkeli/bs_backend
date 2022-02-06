@@ -172,7 +172,7 @@ export class CommentService {
               comments
             }
   
-            totalCount(func: uid(A)) @filter(type(Comment) AND NOT uid($uid)) {
+            totalCount(func: uid(A)) @filter(type(Comment) and not uid($uid) and not has(delete)) {
               count(uid)
             }
   
