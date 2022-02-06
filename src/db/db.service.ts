@@ -43,7 +43,6 @@ export class DbService {
     const op = new Operation()
     op.setSchema(schema)
     const res = await this.dgraph.alter(op)
-    console.error(res)
     return res
   }
 

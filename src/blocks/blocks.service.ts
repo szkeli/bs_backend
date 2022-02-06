@@ -140,7 +140,6 @@ export class BlocksService {
       admin: Array<{blocks: Block[]}>
       totalCount: Array<{count: number}>
     }>({ query, vars: { $adminId: id } })
-    console.error(res)
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
       nodes: res.admin[0]?.blocks ?? []

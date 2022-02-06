@@ -158,7 +158,6 @@ export class UserService {
   }
 
   async registerUser (input: CreateUserArgs): Promise<User> {
-    console.error(input)
     if (input.userId.length <= 2) {
       throw new ForbiddenException('userId 不能少于三个字符')
     }
@@ -212,7 +211,6 @@ export class UserService {
         $userId: input.userId
       }
     })
-    console.error(res)
 
     const uid = res.uids.get('user')
 

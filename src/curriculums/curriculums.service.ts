@@ -39,7 +39,6 @@ export class CurriculumsService {
       curriculums: Curriculum[]
       totalCount: Array<{count: number}>
     }>({ query })
-    console.error(res)
     return {
       nodes: res.curriculums ?? [],
       totalCount: res.totalCount[0]?.count ?? 0

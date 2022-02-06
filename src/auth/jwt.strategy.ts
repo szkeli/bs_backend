@@ -20,11 +20,6 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 
   async validate (payload: Payload) {
     const userWithRoles = await this.userService.getUserOrAdminWithRolesByUid(payload.id)
-    console.error({
-      m: '请求认证信息',
-      p: 'auth/jwt.strategy.ts',
-      userWithRoles
-    })
     if (!userWithRoles) {
       throw new UnauthorizedException(`用户 ${payload.id} 不存在`)
     }

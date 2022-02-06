@@ -130,7 +130,6 @@ export class FoldsService {
     if (res.json.x.length !== 1) {
       throw new ForbiddenException(`评论 ${commentId} 已经被折叠`)
     }
-    console.error(res)
 
     return {
       id: res.uids.get('fold'),
