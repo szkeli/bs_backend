@@ -123,12 +123,12 @@ export class CommentService {
             comments
           }
 
-          totalCount(func: uid(A)) @filter(type(Comment) AND NOT uid($uid)) {
+          totalCount(func: uid(A)) @filter(type(Comment) and not uid($uid) and not has(delete)) {
             count(uid)
           }
 
           comment(func: uid($uid)) @filter(type(Comment)){
-            comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Comment)) {
+            comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Comment) and not has(delete)) {
               id: uid
               expand(_all_)
             }
@@ -202,64 +202,75 @@ export class CommentService {
   async addCommentOnComment (creator: string, { content, to: commentId, isAnonymous }: AddCommentArgs): Promise<Comment> {
     const now = new Date().toISOString()
 
-    const condition = '@if( eq(len(v), 1) AND eq(len(u), 1) )'
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
     const query = `
         query v($creator: string, $commentId: string) {
+          # 系统 
+          s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
           # 评论创建者存在
           v(func: uid(${creator})) @filter(type(User)) { v as uid }
           # 评论存在
           u(func: uid(${commentId})) @filter(type(Comment)) { u as uid }
         }
       `
-    // eslint-disable-next-line multiline-ternary
-    const mutation = isAnonymous ? {
+
+    const textCensor = await this.censorsService.textCensor(content)
+    // 评论的删除信息
+    const iDelete = {
+      uid: '_:delete',
+      'dgraph.type': 'Delete',
+      creator: {
+        uid: 'uid(system)'
+      },
+      to: {
+        uid: '_:comment',
+        delete: {
+          uid: '_:delete'
+        }
+      }
+    }
+    // 评论的匿名信息
+    const anonymous = {
+      uid: '_:anonymous',
+      'dgraph.type': 'Anonymous',
+      creator: {
+        uid: creator
+      },
+      createdAt: now,
+      to: {
+        uid: '_:comment'
+      }
+    }
+    const mutation = {
+      // 被评论的评论
       uid: commentId,
       comments: {
         uid: '_:comment',
         'dgraph.type': 'Comment',
         content,
         createdAt: now,
-        // 评论所属的评论
         comment: {
           uid: commentId
         },
         // 评论的创建者
         creator: {
           uid: creator
-        },
-        // 评论的匿名信息
-        anonymous: {
-          uid: '_:anonymous',
-          'dgraph.type': 'Anonymous',
-          creator: {
-            uid: creator
-          },
-          createdAt: now,
-          to: {
-            uid: '_:comment'
-          }
         }
       }
-    } : {
-      uid: commentId,
-      comments: {
-        uid: '_:comment',
-        'dgraph.type': 'Comment',
-        content,
-        createdAt: now,
-        // 评论所属的评论
-        comment: {
-          uid: commentId
-        },
-        creator: {
-          uid: creator
-        }
-      }
+    }
+
+    if (isAnonymous) {
+      Object.assign(mutation.comments, { anonymous })
+    }
+
+    if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
+      Object.assign(mutation.comments, { delete: iDelete })
     }
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
+      s: Array<{uid: string}>
     }>({
       mutations: [{ mutation, condition }],
       query,
@@ -268,12 +279,16 @@ export class CommentService {
         $commentId: commentId
       }
     })
-    if (!res.json.v) {
+    if (res.json.s.length !== 1) {
+      throw new ForbiddenException('请先创建userId为system的管理员')
+    }
+    if (res.json.v.length !== 1) {
       throw new ForbiddenException(`用户 ${creator} 不存在`)
     }
-    if (!res.json.u) {
+    if (res.json.u.length !== 1) {
       throw new ForbiddenException(`评论 ${commentId} 不存在`)
     }
+
     return {
       content,
       createdAt: now,
