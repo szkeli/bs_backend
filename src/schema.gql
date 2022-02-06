@@ -452,16 +452,17 @@ type DeletesConnection {
 }
 
 type Votable {
-  """Number of upvotes that this node has received."""
+  """对象当前总赞数"""
   totalCount: Int!
 
-  """
-  Whether or not the current user can add or remove an upvote on this node.
-  """
+  """浏览者是否能点赞"""
   viewerCanUpvote: Boolean!
 
-  """Whether or not the current user has already upvoted this node."""
+  """浏览者是否已经点赞"""
   viewerHasUpvoted: Boolean!
+
+  """被点赞或取消点赞的对象的id"""
+  to: String!
 }
 
 type VotesConnection {
@@ -1137,4 +1138,8 @@ input CreateSubjectInput {
   description: String!
   avatarImageUrl: String!
   backgroundImageUrl: String!
+}
+
+type Subscription {
+  voteChanged: Votable!
 }

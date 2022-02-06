@@ -2,18 +2,17 @@ import { Field, Int, ObjectType } from '@nestjs/graphql'
 
 @ObjectType()
 export class Votable {
-  constructor (votable: Votable) {
-    Object.assign(this, votable)
-  }
-
-  @Field(type => Int, { description: 'Number of upvotes that this node has received.' })
+  @Field(type => Int, { description: '对象当前总赞数' })
     totalCount: number
 
-  @Field(type => Boolean, { description: 'Whether or not the current user can add or remove an upvote on this node.' })
+  @Field(type => Boolean, { description: '浏览者是否能点赞' })
     viewerCanUpvote: boolean
 
-  @Field(type => Boolean, { description: 'Whether or not the current user has already upvoted this node.' })
+  @Field(type => Boolean, { description: '浏览者是否已经点赞' })
     viewerHasUpvoted: boolean
+
+  @Field({ description: '被点赞或取消点赞的对象的id' })
+    to: string
 }
 
 @ObjectType()

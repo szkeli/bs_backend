@@ -1,11 +1,14 @@
+import { Inject } from '@nestjs/common'
 import {
   Args,
   Mutation,
   Parent,
   Query,
   ResolveField,
-  Resolver
+  Resolver,
+  Subscription
 } from '@nestjs/graphql'
+import { PubSub } from 'graphql-subscriptions'
 
 import { CurrentUser, MaybeAuth, Roles } from 'src/auth/decorator'
 import {
@@ -18,11 +21,12 @@ import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
 import { CommentService } from '../comment/comment.service'
+import { PUB_SUB_KEY } from '../constants'
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete } from '../deletes/models/deletes.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
-import { VotesConnection } from '../votes/model/votes.model'
+import { Votable, VotesConnection } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
   Nullable,
@@ -38,8 +42,14 @@ export class PostsResolver {
     private readonly subjectService: SubjectService,
     private readonly reportsService: ReportsService,
     private readonly commentService: CommentService,
-    private readonly deletesService: DeletesService
+    private readonly deletesService: DeletesService,
+    @Inject(PUB_SUB_KEY) private readonly pubSub: PubSub
   ) {}
+
+  @Subscription(of => Votable)
+  voteChanged () {
+    return this.pubSub.asyncIterator('voteChanged')
+  }
 
   @Query(of => Post, { description: '以postId获取一个帖子' })
   @MaybeAuth()

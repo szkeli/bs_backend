@@ -29,6 +29,7 @@ import { PinsModule } from './pins/pins.module'
 import { PostsModule } from './posts/posts.module'
 import { PostsService } from './posts/posts.service'
 import { PrivilegesModule } from './privileges/privileges.module'
+import { PubsubsModule } from './pubsubs/pubsubs.module'
 import { ReportsModule } from './reports/reports.module'
 import { SearchModule } from './search/search.module'
 import { SharedModule } from './shared/shared.module'
@@ -42,6 +43,9 @@ import { VotesModule } from './votes/votes.module'
 @Module({
   imports: [
     GraphQLModule.forRoot({
+      subscriptions: {
+        'graphql-ws': true
+      },
       context: ({ req }) => ({ req }),
       debug: true,
       playground: true,
@@ -76,7 +80,8 @@ import { VotesModule } from './votes/votes.module'
     BlocksModule,
     CredentialsModule,
     PinsModule,
-    CensorsModule
+    CensorsModule,
+    PubsubsModule
   ],
   controllers: [AppController],
   providers: [

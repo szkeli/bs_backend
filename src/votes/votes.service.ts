@@ -112,7 +112,8 @@ export class VotesService {
     return {
       viewerCanUpvote: res?.json.x?.length !== 0,
       totalCount: res?.json.voteCountOfComment[0]?.voteCount + 1 || 0,
-      viewerHasUpvoted: res?.json.x?.length === 0
+      viewerHasUpvoted: res?.json.x?.length === 0,
+      to
     }
   }
 
@@ -175,7 +176,8 @@ export class VotesService {
     return {
       viewerCanUpvote: res?.json.x?.length !== 0,
       totalCount: res?.json.voteCountOfPost[0]?.voteCount + 1 || 0,
-      viewerHasUpvoted: res?.json.x?.length === 0
+      viewerHasUpvoted: res?.json.x?.length === 0,
+      to
     }
   }
 
@@ -242,7 +244,8 @@ export class VotesService {
     return {
       viewerHasUpvoted: false,
       viewerCanUpvote: true,
-      totalCount: res.json.u[0].totalCount === 0 ? res.json.u[0].totalCount : res.json.u[0].totalCount - 1
+      totalCount: res.json.u[0].totalCount === 0 ? res.json.u[0].totalCount : res.json.u[0].totalCount - 1,
+      to
     }
   }
 
@@ -308,7 +311,8 @@ export class VotesService {
     return {
       viewerHasUpvoted: false,
       viewerCanUpvote: true,
-      totalCount: res.json.u[0].totalCount === 0 ? res.json.u[0].totalCount : res.json.u[0].totalCount - 1
+      totalCount: res.json.u[0].totalCount === 0 ? res.json.u[0].totalCount : res.json.u[0].totalCount - 1,
+      to
     }
   }
 }
