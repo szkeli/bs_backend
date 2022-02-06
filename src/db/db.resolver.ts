@@ -21,13 +21,15 @@ export class DbResolver {
   @Roles(Role.Admin)
   async dropAllData (@CurrentUser() admin: Admin) {
     if (admin.userId !== 'system') { throw new ForbiddenException('请使用system账号删库') }
-    return await this.dbService.dropAll()
+    await this.dbService.dropAll()
+    return true
   }
 
   @Mutation(() => Boolean)
   @Roles(Role.Admin)
   async dropData (@CurrentUser() admin: Admin) {
     if (admin.userId !== 'system') { throw new ForbiddenException('请使用system账号删库') }
-    return await this.dbService.dropData()
+    await this.dbService.dropData()
+    return true
   }
 }
