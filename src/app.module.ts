@@ -43,9 +43,10 @@ import { VotesModule } from './votes/votes.module'
 @Module({
   imports: [
     GraphQLModule.forRoot({
-      subscriptions: {
-        'graphql-ws': true
-      },
+      installSubscriptionHandlers: true,
+      // subscriptions: {
+      //   'graphql-ws': true
+      // },
       context: ({ req }) => ({ req }),
       debug: true,
       playground: true,

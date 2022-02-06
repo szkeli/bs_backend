@@ -43,7 +43,7 @@
     "axios": "^0.24.0",
     "class-validator": "^0.13.2",
     "dgraph-js": "^21.3.1",
-    "graphql": "^15",
+    "graphql": "15.3.0",
     "graphql-subscriptions": "^2.0.0",
     "gremlin": "^3.5.1",
     "passport": "^0.5.2",
