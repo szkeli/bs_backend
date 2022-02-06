@@ -446,7 +446,6 @@ export class ReportsService {
       .getJson() as unknown as {
       report: Array<{conversation: Conversation}>
     }
-    (res)
     return res.report[0]?.conversation
   }
 
