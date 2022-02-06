@@ -50,7 +50,7 @@ export class PostsResolver {
     filter: (payload, variables) => {
       return (variables.postIds as unknown as [String]).includes(payload.voteChanged.to)
     },
-    description: '监听置顶帖子的点赞数'
+    description: '监听指定帖子的点赞数'
   })
   @NoAuth()
   voteChanged (@Args('postIds', { type: () => [String], description: '监听的帖子的id' }) postIds: string[]) {
