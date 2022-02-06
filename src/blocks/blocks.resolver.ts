@@ -16,24 +16,24 @@ export class BlocksResolver {
     return await this.blocksService.blocks(first, offset)
   }
 
-  @Mutation(of => Boolean)
+  @Mutation(of => Boolean, { description: '解除拉黑一个用户' })
   @Roles(Role.Admin)
   async removeBlockOnUser (@Args('from') from: string) {
     return await this.blocksService.removeBlockOnUser(from)
   }
 
-  @Mutation(of => Block)
+  @Mutation(of => Block, { description: '拉黑一个用户' })
   @Roles(Role.Admin)
   async addBlockOnUser (@CurrentUser() admin: Admin, @Args() { id, description }: AddBlockOnUserArgs) {
     return await this.blocksService.addBlockOnUser(admin.id, id, description)
   }
 
-  @ResolveField(of => User)
+  @ResolveField(of => User, { description: '被拉黑的对象' })
   async to (@Parent() block: Block) {
     return await this.blocksService.to(block.id)
   }
 
-  @ResolveField(of => Admin)
+  @ResolveField(of => Admin, { description: '拉黑的创建者' })
   async creator (@Parent() block: Block) {
     return await this.blocksService.creator(block.id)
   }

@@ -62,7 +62,6 @@ export const RoleGuard = memoize(({ roles, maybeAuth }: Props) => {
       if (err) throw err
       if (!user && !maybeAuth) throw new UnauthorizedException('Not authorized')
       if (!user && maybeAuth) return null
-
       const notIncludes = roles.filter(r => !user.roles.includes(r))
       if (notIncludes.length === roles.length) {
         throw new UnauthorizedException(`${user.id} not in [${notIncludes.toString()}] roles.`)

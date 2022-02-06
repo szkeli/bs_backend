@@ -41,14 +41,14 @@ export class UserResolver {
     private readonly curriculumsService: CurriculumsService
   ) {}
 
-  @Mutation(of => LoginResult, { description: '用户登录' })
+  @Mutation(of => LoginResult, { description: '登录' })
   @NoAuth()
   async login (@Args() args: PersonLoginArgs): Promise<LoginResult> {
     const v = sign_calculus(args.sign)
     return await this.authService.login(args.userId, v)
   }
 
-  @Mutation(of => User, { description: '用户注册' })
+  @Mutation(of => User, { description: '注册' })
   @NoAuth()
   async register (@Args() args: CreateUserArgs) {
     args.sign = sign_calculus(args.sign)
@@ -73,27 +73,27 @@ export class UserResolver {
     }
   }
 
-  @Query(of => UsersConnection, { description: '分页返回用户' })
+  @Query(of => UsersConnection, { description: '获取所有用户' })
   async users (@Args() args: PagingConfigArgs) {
     return await this.userService.users(args.first, args.offset)
   }
 
-  @ResolveField(of => PostsConnection, { description: '分页返回帖子' })
+  @ResolveField(of => PostsConnection, { description: '当前用户创建的所有帖子' })
   async posts (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.userService.findPostsByUid(user.id, first, offset)
   }
 
-  @ResolveField(of => SubjectsConnection, { description: '用户创建的主题' })
+  @ResolveField(of => SubjectsConnection, { description: '当前用户创建的所有主题' })
   async subjects (@Parent() user: User, @Args() args: PagingConfigArgs) {
     return await this.userService.findSubjectsByUid(user.id, args.first, args.offset)
   }
 
-  @ResolveField(of => ConversationsConnection, { description: '用户创建的会话' })
+  @ResolveField(of => ConversationsConnection, { description: '当前用户创建的所有会话' })
   async conversations (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.conversationsService.findConversationsByUid(user.id, first, offset)
   }
 
-  @ResolveField(of => ReportsConnection, { description: '用户收到的举报' })
+  @ResolveField(of => ReportsConnection, { description: '当前用户收到的所有举报' })
   async reports (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.reportsService.findReportsByUid(user.id, first, offset)
   }

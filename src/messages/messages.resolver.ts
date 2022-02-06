@@ -10,12 +10,12 @@ import { Message, MessageCreatorUnion } from './models/messages.model'
 export class MessagesResolver {
   constructor (private readonly messagesService: MessagesService) {}
 
-  @Query(returns => Message, { description: '返回指定的消息' })
+  @Query(of => Message, { description: '以id获取消息' })
   async message (@Args('id') id: string) {
     return await this.messagesService.message(id)
   }
 
-  @Mutation(returns => Message, { description: '向指定的会话中添加一条消息' })
+  @Mutation(of => Message, { description: '向指定的会话中添加一条消息' })
   async addMessageOnConversation (
   @CurrentUser() user: User,
     @Args('id') id: ConversationId,
@@ -24,12 +24,12 @@ export class MessagesResolver {
     return await this.messagesService.addMessageOnConversation(user.id, id, content)
   }
 
-  @ResolveField(() => Conversation, { description: '返回消息所属的会话' })
+  @ResolveField(of => Conversation, { description: '消息所属的会话' })
   async conversation (@Parent() message: Message) {
     return await this.messagesService.findConversationByMessageId(message.id)
   }
 
-  @ResolveField(() => MessageCreatorUnion, { description: '返回消息的创建者' })
+  @ResolveField(of => MessageCreatorUnion, { description: '消息的创建者' })
   async creator (@Parent() message: Message) {
     return await this.messagesService.findCreatorByMessageId(message.id)
   }

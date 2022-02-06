@@ -250,8 +250,6 @@ type Comment {
   creator
   # 评论的点赞
   votes
-  # 评论的折叠者
-  folder
   # 评论收到的举报
   reports
   # 评论的评论

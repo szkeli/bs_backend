@@ -55,7 +55,7 @@ type Post {
   """帖子的创建者，当帖子是匿名帖子时，返回null"""
   creator: User
 
-  """帖子的评论"""
+  """帖子的所有评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
   """帖子所属的主题"""
@@ -67,7 +67,7 @@ type Post {
   """帖子收到的举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 
-  """获取帖子的折叠评论"""
+  """帖子的折叠评论"""
   foldedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
   """按热度返回评论"""
@@ -86,7 +86,11 @@ type Block {
   id: String!
   createdAt: String!
   description: String!
+
+  """被拉黑的对象"""
   to: User!
+
+  """拉黑的创建者"""
   creator: Admin!
 }
 
@@ -111,7 +115,11 @@ type ICredentialsConnection {
 type Fold {
   id: String!
   createdAt: String!
+
+  """折叠的创建者"""
   creator: Admin!
+
+  """被折叠的对象"""
   to: Comment!
 }
 
@@ -123,7 +131,11 @@ type FoldsConnection {
 type Pin {
   id: String!
   createdAt: String!
+
+  """置顶的创建者"""
   creator: Admin!
+
+  """被置顶的对象"""
   to: PostAndCommentUnion!
 }
 
@@ -136,7 +148,11 @@ type Privilege {
   id: String!
   createdAt: String!
   value: IPRIVILEGE!
+
+  """权限作用的对象"""
   to: AdminAndUserUnion!
+
+  """权限的创建者"""
   creator: Admin!
 }
 
@@ -186,13 +202,6 @@ type Admin {
 
 type AdminsConnection {
   nodes: [Admin!]!
-  totalCount: Int!
-}
-
-type NodesConnection {
-  edges: [NodeEdge!]!
-  nodes: [Node!]!
-  pageInfo: PageInfo!
   totalCount: Int!
 }
 
@@ -333,7 +342,10 @@ type CensorDetail {
 }
 
 type CensorResponse {
+  """block: 建议直接拉黑; review: 建议人工复查; pass: 建议直接发布;"""
   suggestion: String!
+
+  """详情"""
   detail: CensorDetail!
 }
 
@@ -380,10 +392,10 @@ type Conversation implements Node {
   description: String!
   state: CONVERSATION_STATE!
 
-  """返回会话中的所有消息"""
+  """会话中的所有消息"""
   messages(first: Int = 10, offset: Int = 0): MessageItemConnection!
 
-  """返回会话的参与者"""
+  """会话的所有参与者"""
   participants(first: Int = 10, offset: Int = 0): ParticipantsConnection!
 }
 
@@ -414,10 +426,10 @@ type Message implements Node {
   createdAt: String!
   content: String!
 
-  """返回消息所属的会话"""
+  """消息所属的会话"""
   conversation: Conversation!
 
-  """返回消息的创建者"""
+  """消息的创建者"""
   creator: MessageCreatorUnion!
 }
 
@@ -426,7 +438,11 @@ union MessageCreatorUnion = User | Admin
 type Delete {
   id: String!
   createdAt: String!
+
+  """删除的创建者"""
   creator: Admin!
+
+  """被删除的对象"""
   to: PostAndCommentUnion!
 }
 
@@ -458,7 +474,11 @@ type VotesConnection {
 type Vote {
   id: String!
   createdAt: String!
+
+  """点赞的创建者"""
   creator: User!
+
+  """被点赞的对象"""
   to: PostAndCommentUnion!
 }
 
@@ -530,6 +550,8 @@ type Deadline {
   title: String!
   type: DEADLINE_TYPE!
   viewId: Int!
+
+  """ddl的创建者"""
   creator: User!
 }
 
@@ -570,7 +592,7 @@ type Subject {
   """主题的创建者"""
   creator: User!
 
-  """分页返回主题中的帖子"""
+  """当前主题中的所有帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
 }
 
@@ -625,17 +647,22 @@ type View {
 }
 
 type Query {
+  """以postId获取一个帖子"""
   post(id: String!): Post!
+
+  """获取所有帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
+
+  """按热度获取所有帖子"""
   trendingPosts(first: Int = 10, offset: Int = 0): PostsConnection!
 
-  """所有被删除的帖子"""
+  """获取所有被删除的帖子"""
   deletedPosts(first: Int = 10, offset: Int = 0): PostsConnection!
 
   """当前id对应的的用户画像"""
   whoAmI: AdminAndUserWithPrivatePropsUnion!
 
-  """分页返回用户"""
+  """获取所有用户"""
   users(first: Int = 10, offset: Int = 0): UsersConnection!
 
   """以id获取一条评论"""
@@ -644,43 +671,49 @@ type Query {
   """获取所有被删除的评论"""
   deletedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
-  """根据id返回管理员"""
+  """以id获取管理员"""
   admin(id: String!): Admin!
 
-  """返回所有的管理员"""
+  """获取所有管理员"""
   admins(first: Int = 10, offset: Int = 0): AdminsConnection!
 
-  """根据主题id返回对应的主题"""
+  """以id获取主题"""
   subject(id: String!): Subject!
 
-  """分页返回主题"""
+  """获取所有主题"""
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+
+  """简单的搜索"""
   search(
     first: Int = 10
     offset: Int = 0
 
+    """检索的类型"""
+    type: SEARCHTYPE!
+
     """待检索的关键字"""
     query: String!
-    type: SEARCHTYPE!
   ): SearchResultItemConnection!
-  node(id: String!): Node!
-  nodes(ids: [String!]!): NodesConnection!
 
-  """根据举报id返回举报"""
+  """以id获取举报"""
   report(id: String!): Report!
 
-  """所有的举报"""
+  """获取所有的举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 
-  """返回指定的消息"""
+  """以id获取消息"""
   message(id: String!): Message!
 
-  """返回指定的会话"""
+  """以id获取会话"""
   conversation(id: String!): Conversation!
 
-  """分页返回会话"""
+  """获取所有会话"""
   conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
+
+  """以id获取删除"""
   delete(deleteId: String!): Delete!
+
+  """获取所有的删除"""
   deletes(first: Int = 10, offset: Int = 0): DeletesConnection!
 
   """用户上传头像时，先根据文件名获取临时上传凭证信息"""
@@ -688,11 +721,23 @@ type Query {
 
   """用户上传帖子图片时，先根据文件名获取临时上传凭证信息"""
   getPostImagesUploadCredentialInfo(fileNames: [String!]!): PostImagesUploadCredentialInfo!
+
+  """以id获取权限"""
   privilege(id: String!): Privilege!
+
+  """获取所有权限"""
   privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
+
+  """以id获取ddl"""
   deadline(deadlineId: String!): Deadline!
+
+  """获取所有课程"""
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
+
+  """以id获取课程"""
   curriculum(id: String!): Curriculum!
+
+  """获取所有的折叠"""
   folds(first: Int = 10, offset: Int = 0): FoldsConnection!
 
   """所有的拉黑"""
@@ -703,7 +748,11 @@ type Query {
 
   """获取所有凭证"""
   credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
+
+  """获取一个置顶信息"""
   pin(id: String!): Pin!
+
+  """获取全部置顶信息"""
   pins(first: Int = 10, offset: Int = 0): PinsConnection!
 
   """文本审查的测试接口，测试一段文本是否违规"""
@@ -774,16 +823,16 @@ type UserWithPrivateProps {
   """用户头像链接"""
   avatarImageUrl: String!
 
-  """分页返回帖子"""
+  """当前用户创建的所有帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
 
-  """用户创建的主题"""
+  """当前用户创建的所有主题"""
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
 
-  """用户创建的会话"""
+  """当前用户创建的所有会话"""
   conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
 
-  """用户收到的举报"""
+  """当前用户收到的所有举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 
   """当前用户的ddl信息"""
@@ -816,7 +865,7 @@ type Mutation {
     isAnonymous: Boolean = false
   ): Post!
 
-  """用户登录"""
+  """登录"""
   login(
     """用户账号"""
     userId: String!
@@ -825,7 +874,7 @@ type Mutation {
     sign: String!
   ): LoginResult!
 
-  """用户注册"""
+  """注册"""
   register(
     """学号"""
     studentId: Int
@@ -911,9 +960,17 @@ type Mutation {
     """是否匿名发布这条评论"""
     isAnonymous: Boolean = false
   ): Comment!
+
+  """点赞一个帖子"""
   addUpvoteOnPost(postId: String!): Votable!
+
+  """点赞一条评论"""
   addUpvoteOnComment(commentId: String!): Votable!
+
+  """取消点赞"""
   removeUpvoteOnComment(from: String!): Votable!
+
+  """取消点赞"""
   removeUpvoteOnPost(from: String!): Votable!
 
   """注册一个管理员，需要使用authen认证新注册的管理员"""
@@ -982,8 +1039,14 @@ type Mutation {
 
   """关闭一个会话"""
   closeConversation(conversationId: String!): Conversation!
+
+  """重置数据库schema"""
   setSchema: SetDbSchema!
+
+  """删除数据库所有数据，包括schema"""
   dropAllData: Boolean!
+
+  """删除数据库所有数据，但保留schema"""
   dropData: Boolean!
 
   """管理员删除一个帖子"""
@@ -991,13 +1054,23 @@ type Mutation {
 
   """管理员删除一个评论"""
   deleteComment(commentId: String!): Delete!
+
+  """添加一个权限到某管理员"""
   addPrivilegeOnAdmin(privilege: IPRIVILEGE!, adminId: String!): Privilege!
+
+  """从某管理员移除一个权限"""
   removePrivilegeOnAdmin(privilege: IPRIVILEGE!, from: String!): Boolean!
 
   """在当前用户上添加一个ddl"""
   addDeadline(courseContentId: Int!, courseId: Int!, ownerUserId: Int!, notificationIds: [Int!]!, parentId: String!, sourceId: String!, courseName: String!, dataPending: Boolean!, dateAdded: String!, startDate: String!, endDate: String, dueDate: String!, eventType: DEADLINE_EVENT_TYPE!, eventUrl: String, groupCount: Int!, ownerName: String!, receiverCount: Int!, recipientCount: Int!, recipientId: Int!, recipientType: DEADLINE_RECIPIENT_TYPE!, seen: Boolean!, sourceData: String, sourceDataType: DEADLINE_SOURCE_DATA_TYPE!, sourceType: DEADLINE_SOURCE_TYPE!, title: String!, type: DEADLINE_TYPE!, viewId: Int!): Deadline!
+
+  """增加帖子的浏览量"""
   addViewOnPost(postId: String!): View!
+
+  """增加评论的浏览量"""
   addViewOnComment(commentId: String!): View!
+
+  """添加一个课程到当前用户"""
   addCurriculum(
     """上课地点"""
     destination: String!
@@ -1026,10 +1099,20 @@ type Mutation {
     """课程号"""
     curriculumId: String!
   ): Curriculum!
+
+  """折叠一条评论"""
   addFoldOnComment(commentId: String!): Fold!
+
+  """解除拉黑一个用户"""
   removeBlockOnUser(from: String!): Boolean!
+
+  """拉黑一个用户"""
   addBlockOnUser(id: String!, description: String!): Block!
+
+  """置顶一个帖子"""
   addPinOnPost(postId: String!): Pin!
+
+  """对一个帖子取消置顶"""
   removePinOnPost(from: String!): Boolean!
 }
 

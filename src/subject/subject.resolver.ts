@@ -23,28 +23,28 @@ import { SubjectService } from './subject.service'
 export class SubjectResolver {
   constructor (private readonly subjectService: SubjectService) {}
 
-  @Query(returns => Subject, { description: '根据主题id返回对应的主题' })
+  @Query(of => Subject, { description: '以id获取主题' })
   async subject (@Args('id') id: SubjectId) {
     return await this.subjectService.subject(id)
   }
 
-  @Query(returns => SubjectsConnection, { description: '分页返回主题' })
+  @Query(of => SubjectsConnection, { description: '获取所有主题' })
   async subjects (@Args() args: PagingConfigArgs): Promise<SubjectsConnection> {
     return await this.subjectService.subjects(args.first, args.offset)
   }
 
-  @Mutation(returns => Subject, { description: '创建一个主题' })
+  @Mutation(of => Subject, { description: '创建一个主题' })
   async createSubject (@CurrentUser() user: User, @Args('input') input: CreateSubjectInput
   ): Promise<Subject> {
     return await this.subjectService.createASubject(user.id, input)
   }
 
-  @ResolveField(returns => User, { description: '主题的创建者' })
+  @ResolveField(of => User, { description: '主题的创建者' })
   async creator (@Parent() subject: Subject): Promise<User> {
     return await this.subjectService.getCreatorOfSubject(subject.id)
   }
 
-  @ResolveField(returns => PostsConnection, { description: '分页返回主题中的帖子' })
+  @ResolveField(of => PostsConnection, { description: '当前主题中的所有帖子' })
   async posts (@Parent() subject: Subject, @Args() args: PagingConfigArgs): Promise<PostsConnection> {
     return await this.subjectService.findPostsBySubjectId(subject.id, args.first, args.offset)
   }

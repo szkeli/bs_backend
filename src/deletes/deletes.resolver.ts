@@ -23,24 +23,24 @@ export class DeletesResolver {
     return await this.deletesService.deleteComment(user.id, commentId)
   }
 
-  @Query(of => Delete)
+  @Query(of => Delete, { description: '以id获取删除' })
   @Roles(Role.Admin)
   async delete (@Args('deleteId') deleteId: string) {
     return await this.deletesService.delete(deleteId)
   }
 
-  @Query(of => DeletesConnection)
+  @Query(of => DeletesConnection, { description: '获取所有的删除' })
   @Roles(Role.Admin)
   async deletes (@Args() { first, offset }: PagingConfigArgs) {
     return await this.deletesService.deletes(first, offset)
   }
 
-  @ResolveField(of => Admin)
+  @ResolveField(of => Admin, { description: '删除的创建者' })
   async creator (@Parent() d: Delete) {
     return await this.deletesService.creator(d.id)
   }
 
-  @ResolveField(of => PostAndCommentUnion)
+  @ResolveField(of => PostAndCommentUnion, { description: '被删除的对象' })
   async to (@Parent() d: Delete) {
     return await this.deletesService.to(d.id)
   }

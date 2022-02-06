@@ -11,13 +11,13 @@ import { SetDbSchema } from './model/db.model'
 export class DbResolver {
   constructor (private readonly dbService: DbService) {}
 
-  @Mutation(() => SetDbSchema)
+  @Mutation(of => SetDbSchema, { description: '重置数据库schema' })
   @Roles(Role.Admin)
   async setSchema () {
     return await this.dbService.setSchema()
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(of => Boolean, { description: '删除数据库所有数据，包括schema' })
   @Roles(Role.Admin)
   async dropAllData (@CurrentUser() admin: Admin) {
     if (admin.userId !== 'system') { throw new ForbiddenException('请使用system账号删库') }
@@ -25,7 +25,7 @@ export class DbResolver {
     return true
   }
 
-  @Mutation(() => Boolean)
+  @Mutation(of => Boolean, { description: '删除数据库所有数据，但保留schema' })
   @Roles(Role.Admin)
   async dropData (@CurrentUser() admin: Admin) {
     if (admin.userId !== 'system') { throw new ForbiddenException('请使用system账号删库') }

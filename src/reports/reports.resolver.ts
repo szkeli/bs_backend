@@ -16,54 +16,54 @@ import { ReportsService } from './reports.service'
 export class ReportsResolver {
   constructor (private readonly reportsService: ReportsService) {}
 
-  @Query(() => Report, { description: '根据举报id返回举报' })
+  @Query(of => Report, { description: '以id获取举报' })
   async report (@Args('id') id: string) {
     return await this.reportsService.report(id)
   }
 
-  @Query(() => ReportsConnection, { description: '所有的举报' })
+  @Query(of => ReportsConnection, { description: '获取所有的举报' })
   async reports (@Args() { first, offset }: PagingConfigArgs) {
     return await this.reportsService.reports(first, offset)
   }
 
-  @Mutation(returns => Report, { description: '举报一条评论' })
+  @Mutation(of => Report, { description: '举报一条评论' })
   async addReportOnComment (@CurrentUser() user: User, @Args() { type, description, to }: AddReportToArgs) {
     return await this.reportsService.addReportOnComment(user.id, to, type, description)
   }
 
-  @Mutation(returns => Report, { description: '举报一个帖子' })
+  @Mutation(of => Report, { description: '举报一个帖子' })
   async addReportOnPost (@CurrentUser() user: User, @Args() { type, description, to }: AddReportToArgs) {
     return await this.reportsService.addReportOnPost(user.id, to, type, description)
   }
 
-  @Mutation(returns => Report, { description: '举报一个用户' })
+  @Mutation(of => Report, { description: '举报一个用户' })
   async addReportOnUser (@CurrentUser() user: User, @Args() { type, description, to }: AddReportToArgs) {
     return await this.reportsService.addReportOnUser(user.id, to, type, description)
   }
 
-  @Mutation(() => Boolean, { description: '管理员接口：认为举报无效' })
+  @Mutation(of => Boolean, { description: '管理员接口：认为举报无效' })
   @Roles(Role.Admin)
   async discardReport (@Args('reportId') reportId: string, @Args('content') content: string, @CurrentUser() user: User) {
     return await this.reportsService.discardReport(user.id, reportId, content)
   }
 
-  @Mutation(() => Boolean, { description: '管理员接口：认为举报有效' })
+  @Mutation(of => Boolean, { description: '管理员接口：认为举报有效' })
   @Roles(Role.Admin)
   async acceptReport (@Args('reportId') reportId: string, @Args('content') content: string, @CurrentUser() user: User) {
     return await this.reportsService.acceptReport(user.id, reportId, content)
   }
 
-  @ResolveField(returns => Report2Union, { description: '被举报的对象' })
+  @ResolveField(of => Report2Union, { description: '被举报的对象' })
   async to (@Parent() report: Report) {
     return await this.reportsService.to(report.id)
   }
 
-  @ResolveField(returns => User, { description: '举报的创建者' })
+  @ResolveField(of => User, { description: '举报的创建者' })
   async creator (@Parent() report: Report) {
     return await this.reportsService.findCreatorOfReport(report.id)
   }
 
-  @ResolveField(returns => Conversation, { description: '举报所在的会话' })
+  @ResolveField(of => Conversation, { description: '举报所在的会话' })
   async conversation (@Parent() report: Report) {
     return await this.reportsService.findConversationByReportId(report.id)
   }

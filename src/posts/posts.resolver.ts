@@ -41,26 +41,26 @@ export class PostsResolver {
     private readonly deletesService: DeletesService
   ) {}
 
-  @Query(of => Post)
+  @Query(of => Post, { description: '以postId获取一个帖子' })
   @MaybeAuth()
   // @CheckPolicies(new ReadPostPolicyHandler())
   async post (@Args('id') id: PostId): Promise<Post> {
     return await this.postsService.post(id)
   }
 
-  @Query(of => PostsConnection)
+  @Query(of => PostsConnection, { description: '获取所有帖子' })
   @MaybeAuth()
   async posts (@Args() { first, offset }: PagingConfigArgs): Promise<PostsConnection> {
     return await this.postsService.posts(first, offset)
   }
 
-  @Query(of => PostsConnection)
+  @Query(of => PostsConnection, { description: '按热度获取所有帖子' })
   @MaybeAuth()
   async trendingPosts (@Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.trendingPosts(first, offset)
   }
 
-  @Query(of => PostsConnection, { description: '所有被删除的帖子' })
+  @Query(of => PostsConnection, { description: '获取所有被删除的帖子' })
   @Roles(Role.Admin)
   async deletedPosts (@Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.deletedPosts(first, offset)
@@ -76,7 +76,7 @@ export class PostsResolver {
     return await this.postsService.creator(post.id)
   }
 
-  @ResolveField(of => CommentsConnection, { description: '帖子的评论' })
+  @ResolveField(of => CommentsConnection, { description: '帖子的所有评论' })
   async comments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
     return await this.commentService.getCommentsByPostId(post.id, first, offset)
   }
@@ -96,7 +96,7 @@ export class PostsResolver {
     return await this.reportsService.findReportsByPostId(post.id, first, offset)
   }
 
-  @ResolveField(of => CommentsConnection, { description: '获取帖子的折叠评论' })
+  @ResolveField(of => CommentsConnection, { description: '帖子的折叠评论' })
   async foldedComments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.findFoldedCommentsByPostId(post.id, first, offset)
   }
@@ -108,6 +108,6 @@ export class PostsResolver {
 
   @ResolveField(of => Delete, { description: '帖子未被删除时，此项为空' })
   async delete (@Parent() post: Post) {
-    return this.deletesService.findDeleteByPostId(post.id)
+    return await this.deletesService.findDeleteByPostId(post.id)
   }
 }

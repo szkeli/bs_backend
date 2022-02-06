@@ -49,29 +49,29 @@ export class AdminResolver {
     return await this.adminService.authenAdmin(admin.id, to)
   }
 
-  @Query(returns => Admin, { description: '根据id返回管理员' })
+  @Query(of => Admin, { description: '以id获取管理员' })
   @Roles(Role.Admin)
   async admin (@Args('id') id: string) {
     return await this.adminService.admin(id)
   }
 
-  @Query(returns => AdminsConnection, { description: '返回所有的管理员' })
+  @Query(of => AdminsConnection, { description: '获取所有管理员' })
   @Roles(Role.Admin)
   async admins (@Args() { first, offset }: PagingConfigArgs) {
     return await this.adminService.admins(first, offset)
   }
 
-  @ResolveField(returns => ICredential, { nullable: true, description: '管理员的凭证' })
+  @ResolveField(of => ICredential, { nullable: true, description: '管理员的凭证' })
   async credential (@Parent() admin: Admin) {
     return await this.adminService.findCredentialByAdminId(admin.id)
   }
 
-  @ResolveField(returns => ICredentialsConnection, { description: '当前管理员认证过的其他管理员' })
+  @ResolveField(of => ICredentialsConnection, { description: '当前管理员认证过的其他管理员' })
   async credentials (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
     return await this.adminService.findCredentialsByAdminId(admin.id, first, offset)
   }
 
-  @ResolveField(() => PrivilegesConnection, { description: '当前管理员拥有的权限' })
+  @ResolveField(of => PrivilegesConnection, { description: '当前管理员拥有的权限' })
   async privileges (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
     return await this.adminService.privileges(admin.id, first, offset)
   }
@@ -82,10 +82,7 @@ export class AdminResolver {
   }
 
   @ResolveField(of => BlocksConnection, { description: '当前管理员拉黑的用户' })
-  async blocks (
-  @Parent() admin: Admin,
-    @Args() { first, offset }: PagingConfigArgs
-  ) {
+  async blocks (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
     return await this.blocksService.findBlocksByAdminId(admin.id, first, offset)
   }
 

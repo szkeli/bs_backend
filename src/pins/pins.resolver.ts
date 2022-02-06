@@ -12,13 +12,13 @@ import { PinsService } from './pins.service'
 export class PinsResolver {
   constructor (private readonly pinsService: PinsService) {}
 
-  @Mutation(of => Pin)
+  @Mutation(of => Pin, { description: '置顶一个帖子' })
   @Roles(Role.Admin)
   async addPinOnPost (@CurrentUser() admin: Admin, @Args('postId') postId: string) {
     return await this.pinsService.addPinOnPost(admin.id, postId)
   }
 
-  @Mutation(of => Boolean)
+  @Mutation(of => Boolean, { description: '对一个帖子取消置顶' })
   @Roles(Role.Admin)
   async removePinOnPost (@CurrentUser() admin: Admin, @Args('from') from: string) {
     return await this.pinsService.removePinOnPost(admin.id, from)
@@ -30,24 +30,24 @@ export class PinsResolver {
   //     return await this.pinsService.addPinOnComment(admin.id, commentId)
   //   }
 
-  @Query(of => Pin)
+  @Query(of => Pin, { description: '获取一个置顶信息' })
   @Roles(Role.Admin)
   async pin (@Args('id') pinId: string) {
     return await this.pinsService.pin(pinId)
   }
 
-  @Query(of => PinsConnection)
+  @Query(of => PinsConnection, { description: '获取全部置顶信息' })
   @Roles(Role.Admin)
   async pins (@Args() { first, offset }: PagingConfigArgs) {
     return await this.pinsService.pins(first, offset)
   }
 
-  @ResolveField(of => Admin)
+  @ResolveField(of => Admin, { description: '置顶的创建者' })
   async creator (@Parent() pin: Pin) {
     return await this.pinsService.creator(pin.id)
   }
 
-  @ResolveField(of => PostAndCommentUnion)
+  @ResolveField(of => PostAndCommentUnion, { description: '被置顶的对象' })
   async to (@Parent() pin: Pin) {
     return await this.pinsService.to(pin.id)
   }

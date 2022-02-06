@@ -1,4 +1,4 @@
-import { createUnionType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { ArgsType, createUnionType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 import { Time } from 'src/db/model/db.model'
 
@@ -51,3 +51,12 @@ export const SearchResultItem = createUnionType({
   name: 'SearchResultItem',
   types: () => [Post, User, Comment, Subject]
 })
+
+@ArgsType()
+export class SearchArgs {
+  @Field(of => SEARCHTYPE, { nullable: false, description: '检索的类型' })
+    type: SEARCHTYPE
+
+  @Field({ nullable: false, description: '待检索的关键字' })
+    query: string
+}

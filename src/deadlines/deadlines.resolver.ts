@@ -9,7 +9,7 @@ import { AddDealineArgs, Deadline } from './models/deadlines.model'
 export class DeadlinesResolver {
   constructor (private readonly deadlinesService: DeadlinesService) {}
 
-  @Query(of => Deadline)
+  @Query(of => Deadline, { description: '以id获取ddl' })
   async deadline (@Args('deadlineId') deadlineId: string) {
     return await this.deadlinesService.deadline(deadlineId)
   }
@@ -19,7 +19,7 @@ export class DeadlinesResolver {
     return await this.deadlinesService.addDeadline(user.id, args)
   }
 
-  @ResolveField(of => User)
+  @ResolveField(of => User, { description: 'ddl的创建者' })
   async creator (@Parent() deadline: Deadline) {
     return await this.deadlinesService.creator(deadline.id)
   }

@@ -12,24 +12,24 @@ import { Fold, FoldsConnection } from './models/folds.model'
 export class FoldsResolver {
   constructor (private readonly foldsService: FoldsService) {}
 
-  @Mutation(of => Fold)
+  @Mutation(of => Fold, { description: '折叠一条评论' })
   @Roles(Role.Admin)
   async addFoldOnComment (@CurrentUser() admin: Admin, @Args('commentId') commentId: string) {
     return await this.foldsService.addFoldOnComment(admin.id, commentId)
   }
 
-  @Query(of => FoldsConnection)
+  @Query(of => FoldsConnection, { description: '获取所有的折叠' })
   @Roles(Role.Admin)
   async folds (@Args() { first, offset }: PagingConfigArgs) {
     return await this.foldsService.folds(first, offset)
   }
 
-  @ResolveField(of => Admin)
+  @ResolveField(of => Admin, { description: '折叠的创建者' })
   async creator (@Parent() fold: Fold) {
     return await this.foldsService.creator(fold.id)
   }
 
-  @ResolveField(of => Comment)
+  @ResolveField(of => Comment, { description: '被折叠的对象' })
   async to (@Parent() fold: Fold) {
     return await this.foldsService.to(fold.id)
   }

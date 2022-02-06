@@ -26,9 +26,9 @@ export class CensorDetail {
 
 @ObjectType()
 export class CensorResponse {
-  @Field()
+  @Field({ description: 'block: 建议直接拉黑; review: 建议人工复查; pass: 建议直接发布;' })
     suggestion: string
 
-  @Field(of => CensorDetail)
+  @Field(of => CensorDetail, { description: '详情' })
     detail: CensorDetail
 }
