@@ -16,11 +16,21 @@ type Comment {
   id: String!
   content: String!
   createdAt: String!
+
+  """获取该评论下的所有评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """按热度获取该评论下的所有评论"""
   trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """获取该评论下的点赞信息"""
   votes(first: Int = 10, offset: Int = 0): VotesConnection!
+
+  """获取该评论的举报信息"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-  post: Post!
+
+  """获取被评论的对象"""
+  to: PostAndCommentUnion!
 
   """评论的创建者，评论是匿名评论时，creator为null"""
   creator: User
@@ -28,6 +38,8 @@ type Comment {
   """评论未被删除时，此项为null"""
   delete: Delete
 }
+
+union PostAndCommentUnion = Post | Comment
 
 type CommentsConnection {
   nodes: [Comment!]!
@@ -114,8 +126,6 @@ type Pin {
   creator: Admin!
   to: PostAndCommentUnion!
 }
-
-union PostAndCommentUnion = Post | Comment
 
 type PinsConnection {
   totalCount: Int!
@@ -627,7 +637,11 @@ type Query {
 
   """分页返回用户"""
   users(first: Int = 10, offset: Int = 0): UsersConnection!
+
+  """以id获取一条评论"""
   comment(id: String!): Comment!
+
+  """获取所有被删除的评论"""
   deletedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
   """根据id返回管理员"""
@@ -873,6 +887,8 @@ type Mutation {
     """用户的年级"""
     grade: UserStringPropMap
   ): User!
+
+  """添加一条评论到评论"""
   addCommentOnComment(
     """评论的内容"""
     content: String!
@@ -883,6 +899,8 @@ type Mutation {
     """是否匿名发布这条评论"""
     isAnonymous: Boolean = false
   ): Comment!
+
+  """添加一条评论到帖子"""
   addCommentOnPost(
     """评论的内容"""
     content: String!

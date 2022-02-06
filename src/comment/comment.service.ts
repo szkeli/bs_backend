@@ -26,6 +26,21 @@ export class CommentService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async to (id: string) {
+    const query = `
+      query v($commentId: string) {
+        comment(func: uid($commentId)) @filter(type(Comment)) {
+          to @filter(type(Post) or type(Comment)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery({ query, vars: { $commentId: id } })
+    console.error(res)
+  }
+
   async deletedComments (first: number, offset: number): Promise<CommentsConnection> {
     const query = `
       {

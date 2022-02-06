@@ -18,8 +18,6 @@ pins: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
-comment: uid @reverse .
-post: uid @reverse .
 handler: uid @reverse .
 to: uid @reverse .
 conversation: uid @reverse .
@@ -258,10 +256,8 @@ type Comment {
   reports
   # 评论的评论
   comments
-  # 评论所属的帖子
-  post
-  # 评论所属的评论
-  comment
+  # 被评论的对象
+  to
   # 评论收到的折叠
   fold
   # 评论收到的删除
@@ -385,8 +381,6 @@ type Vote {
   to
   type
 }
-
-
 
 # 举报实体
 type Report {
