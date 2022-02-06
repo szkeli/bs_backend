@@ -1,4 +1,17 @@
-import { Resolver } from '@nestjs/graphql'
+import { Args, Query, Resolver } from '@nestjs/graphql'
+
+import { Roles } from '../auth/decorator'
+import { Role } from '../auth/model/auth.model'
+import { CensorsService } from './censors.service'
+import { CensorResponse } from './models/censors.model'
 
 @Resolver()
-export class CensorsResolver {}
+export class CensorsResolver {
+  constructor (private readonly censorsService: CensorsService) {}
+
+  @Query(of => CensorResponse, { description: '文本审查的测试接口，测试一段文本是否违规' })
+  @Roles(Role.Admin)
+  async censorTest (@Args('content') content: string) {
+    return await this.censorsService.textCensor(content)
+  }
+}

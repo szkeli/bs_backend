@@ -1,28 +1,44 @@
-import { Injectable } from '@nestjs/common'
-import { Client as TmsClient } from 'tencentcloud-sdk-nodejs/tencentcloud/services/tms/v20201229/tms_client'
+import { BasicCredentials } from '@huaweicloud/huaweicloud-sdk-core'
+import {
+  ModerationClient,
+  RunTextModerationRequest,
+  TextDetectionItemsReq,
+  TextDetectionReq
+} from '@huaweicloud/huaweicloud-sdk-moderation'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 
 @Injectable()
 export class CensorsService {
-  private readonly client: TmsClient
+  private readonly client: ModerationClient
   constructor () {
-    const config = {
-      credential: {
-        secretId: '',
-        secretKey: ''
-      },
-      region: 'ap-guangzhou',
-      profile: {
-        httpProfile: {
-          endpoint: 'tms.tencentcloudapi.com'
-        }
-      }
-    }
-    this.client = new TmsClient(config)
+    const ak = process.env.ACCESS_KEY
+    const sk = process.env.SECRET_KEY
+    const endpoint = process.env.ENDPOINT
+    const projectId = process.env.PROJECT_ID
+
+    const credentials = new BasicCredentials()
+      .withAk(ak)
+      .withSk(sk)
+      .withProjectId(projectId)
+
+    this.client = ModerationClient.newBuilder()
+      .withCredential(credentials)
+      .withEndpoint(endpoint)
+      .build()
   }
 
-  async moderate (content: string) {
-    return await this.client.TextModeration({
-      Content: content
-    })
+  async textCensor (content: string) {
+    if (content.length >= 5000) {
+      throw new ForbiddenException('内容长度暂时不能大于5000')
+    }
+
+    const request = new RunTextModerationRequest()
+    request.withBody(new TextDetectionReq().withItems([
+      new TextDetectionItemsReq().withText(content)
+    ]))
+
+    return await this.client
+      .runTextModeration(request)
+      .then(r => r.result)
   }
 }

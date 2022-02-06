@@ -620,6 +620,28 @@ type View {
   createdAt: String!
 }
 
+type CensorDetail {
+  """违禁品"""
+  contraband: [String!]
+
+  """广告"""
+  ad: [String!]
+
+  """辱骂"""
+  abuse: [String!]
+
+  """涉黄"""
+  porn: [String!]
+
+  """涉政"""
+  politics: [String!]
+}
+
+type CensorResponse {
+  suggestion: String!
+  detail: CensorDetail!
+}
+
 type Query {
   post(id: String!): Post!
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
@@ -693,6 +715,9 @@ type Query {
   credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
   pin(id: String!): Pin!
   pins(first: Int = 10, offset: Int = 0): PinsConnection!
+
+  """文本审查的测试接口，测试一段文本是否违规"""
+  censorTest(content: String!): CensorResponse!
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
