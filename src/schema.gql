@@ -661,6 +661,7 @@ type Query {
   """分页返回用户"""
   users(first: Int = 10, offset: Int = 0): UsersConnection!
   comment(id: String!): Comment!
+  deletedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
   """根据id返回管理员"""
   admin(id: String!): Admin!

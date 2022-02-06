@@ -21,6 +21,28 @@ export class CommentService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async deletedComments (first: number, offset: number): Promise<CommentsConnection> {
+    const query = `
+      {
+        var(func: type(Comment)) @filter(has(delete)) { v as uid }
+        deletedComments(func: uid(v), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+        totalCount(func: uid(v)) { count(uid) }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      deletedComments: Comment[]
+      totalCount: Array<{count: number}>
+    }>({ query })
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.deletedComments ?? []
+    }
+  }
+
   async trendingComments (id: string, first: number, offset: number): Promise<CommentsConnection> {
     const query = `
       # TODO 实现产品中要求的计算评论热度的方法

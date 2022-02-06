@@ -7,9 +7,11 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CurrentUser } from 'src/auth/decorator'
+import { CurrentUser, Roles } from 'src/auth/decorator'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
+import { Role } from '../auth/model/auth.model'
+import { DeletesService } from '../deletes/deletes.service'
 import { Post } from '../posts/models/post.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
@@ -26,12 +28,19 @@ import {
 export class CommentResolver {
   constructor (
     private readonly commentService: CommentService,
-    private readonly reportsService: ReportsService
+    private readonly reportsService: ReportsService,
+    private readonly deletesService: DeletesService
   ) {}
 
   @Query(returns => Comment)
   async comment (@Args('id') id: CommentId) {
     return await this.commentService.comment(id)
+  }
+
+  @Query(of => CommentsConnection)
+  @Roles(Role.Admin)
+  async deletedComments (@Args() { first, offset }: PagingConfigArgs) {
+    return await this.commentService.deletedComments(first, offset)
   }
 
   @Mutation(returns => Comment)

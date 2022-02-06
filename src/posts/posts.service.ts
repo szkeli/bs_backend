@@ -26,7 +26,7 @@ export class PostsService {
   async deletedPosts (first: number, offset: number) {
     const query = `
       {
-        vars(func: type(Post)) @filter(has(delete)) { v as uid }
+        var(func: type(Post)) @filter(has(delete)) { v as uid }
         deletedPosts(func: uid(v), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
           id: uid
           expand(_all_)
