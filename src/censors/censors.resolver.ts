@@ -11,7 +11,7 @@ export class CensorsResolver {
 
   @Query(of => CensorResponse, { description: '文本审查的测试接口，测试一段文本是否违规' })
   @Roles(Role.Admin)
-  async censorTest (@Args('content') content: string) {
+  async censorText (@Args('content') content: string) {
     return await this.censorsService.textCensor(content)
   }
 }

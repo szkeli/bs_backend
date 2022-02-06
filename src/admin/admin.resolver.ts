@@ -43,7 +43,7 @@ export class AdminResolver {
     return await this.adminService.registerAdmin(args)
   }
 
-  @Mutation(of => Admin, { description: '已存在的管理员认证一个新注册的管理员' })
+  @Mutation(of => ICredential, { description: '已存在的管理员认证一个新注册的管理员' })
   @Roles(Role.Admin)
   async authenAdmin (@CurrentUser() admin: Admin, @Args('to') to: string) {
     return await this.adminService.authenAdmin(admin.id, to)
