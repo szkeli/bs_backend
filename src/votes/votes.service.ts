@@ -3,6 +3,10 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
+import { Comment } from '../comment/models/comment.model'
+import { PostAndCommentUnion } from '../deletes/models/deletes.model'
+import { Post } from '../posts/models/post.model'
+import { User } from '../user/models/user.model'
 import { Votable } from './model/votes.model'
 
 @Injectable()
@@ -10,6 +14,43 @@ export class VotesService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async creator (id: string) {
+    const query = `
+      query v($voteId: string) {
+        vote(func: uid($voteId)) @filter(type(Vote)) {
+          creator @filter(type(User)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{ vote: Array<{creator: User}>}>({ query, vars: { $voteId: id } })
+    return res.vote[0]?.creator
+  }
+
+  async to (id: string) {
+    const query = `
+      query v($voteId: string) {
+        vote(func: uid($voteId)) @filter(type(Vote)) {
+          to @filter(type(Post) or type(Comment)) {
+            id: uid
+            expand(_all_)
+            dgraph.type
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{vote: Array<{to: (typeof PostAndCommentUnion) & {'dgraph.type': string[]}}>}>({ query, vars: { $voteId: id } })
+    const v = res.vote[0]?.to
+    if (v['dgraph.type'].includes('Post')) {
+      return new Post(v as unknown as Post)
+    }
+    if (v['dgraph.type'].includes('Comment')) {
+      return new Comment(v as unknown as Comment)
+    }
   }
 
   async addUpvoteOnComment (voter: string, to: string): Promise<Votable> {
