@@ -7,7 +7,7 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CheckPolicies, CurrentUser, MaybeAuth } from 'src/auth/decorator'
+import { CurrentUser, MaybeAuth } from 'src/auth/decorator'
 import {
   CommentsConnection
 } from 'src/comment/models/comment.model'
@@ -16,7 +16,6 @@ import { Subject } from 'src/subject/model/subject.model'
 import { SubjectService } from 'src/subject/subject.service'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
-import { ReadPostPolicyHandler } from '../casl/casl.handler'
 import { CommentService } from '../comment/comment.service'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
@@ -39,14 +38,15 @@ export class PostsResolver {
   ) {}
 
   @Query(of => Post)
-  @CheckPolicies(new ReadPostPolicyHandler())
-  async post (@CurrentUser() user: User, @Args('id') id: PostId): Promise<Post> {
+  @MaybeAuth()
+  // @CheckPolicies(new ReadPostPolicyHandler())
+  async post (@Args('id') id: PostId): Promise<Post> {
     return await this.postsService.post(id)
   }
 
   @Query(of => PostsConnection)
   @MaybeAuth()
-  async posts (@CurrentUser() user: User, @Args() { first, offset }: PagingConfigArgs): Promise<PostsConnection> {
+  async posts (@Args() { first, offset }: PagingConfigArgs): Promise<PostsConnection> {
     return await this.postsService.posts(first, offset)
   }
 
@@ -56,17 +56,17 @@ export class PostsResolver {
     return await this.postsService.trendingPosts(first, offset)
   }
 
-  @Mutation(returns => Post, { description: '创建一个帖子' })
+  @Mutation(of => Post, { description: '创建一个帖子' })
   async createPost (@CurrentUser() user: User, @Args() args: CreatePostArgs) {
     return await this.postsService.createPost(user.id, args)
   }
 
-  @ResolveField(returns => User, { nullable: true, description: '帖子的创建者，当帖子是匿名帖子时，返回null' })
+  @ResolveField(of => User, { nullable: true, description: '帖子的创建者，当帖子是匿名帖子时，返回null' })
   async creator (@Parent() post: Post): Promise<Nullable<User>> {
     return await this.postsService.creator(post.id)
   }
 
-  @ResolveField(returns => CommentsConnection, { description: '帖子的评论' })
+  @ResolveField(of => CommentsConnection, { description: '帖子的评论' })
   async comments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
     return await this.commentService.getCommentsByPostId(post.id, first, offset)
   }
@@ -81,7 +81,7 @@ export class PostsResolver {
     return await this.postsService.getVotesByPostId(user?.id, post.id, args.first, args.offset)
   }
 
-  @ResolveField(returns => ReportsConnection, { description: '帖子收到的举报' })
+  @ResolveField(of => ReportsConnection, { description: '帖子收到的举报' })
   async reports (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
     return await this.reportsService.findReportsByPostId(post.id, first, offset)
   }

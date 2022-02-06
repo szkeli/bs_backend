@@ -4,6 +4,8 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
+import { CensorsService } from '../censors/censors.service'
+import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { DeletePrivateValue } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
@@ -12,6 +14,14 @@ import { CreatePostArgs, Nullable, Post, PostsConnection, PostWithCreatorId } fr
 
 @Injectable()
 export class PostsService {
+  private readonly dgraph: DgraphClient
+  constructor (
+    private readonly dbService: DbService,
+    private readonly censorsService: CensorsService
+  ) {
+    this.dgraph = dbService.getDgraphIns()
+  }
+
   async trendingComments (id: string, first: number, offset: number): Promise<CommentsConnection> {
     const query = `
       query v($postId: string) {
@@ -66,11 +76,6 @@ export class PostsService {
     }
   }
 
-  private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
-    this.dgraph = dbService.getDgraphIns()
-  }
-
   async trendingPosts (first: number, offset: number): Promise<PostsConnection> {
     if (first + offset > 30) {
       throw new ForbiddenException('first + offset 应该小于30')
@@ -109,152 +114,129 @@ export class PostsService {
     }
   }
 
-  async createPost (creator: string, { content, images, subjectId, isAnonymous }: CreatePostArgs): Promise<Post> {
-    let condition: string
-    let query: string
-    let mutation: object
+  async createPost (i: string, { content, images, subjectId, isAnonymous }: CreatePostArgs): Promise<Post> {
     const now = new Date().toISOString()
-    if (subjectId) {
-      condition = '@if( eq(len(v), 1) AND eq(len(u), 1) )'
-      query = `
-          query v($creator: string, $subjectId: string) {
-            # 创建者存在
-            v(func: uid($creator)) @filter(type(User)) { v as uid }
-            # 主题存在
-            u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }
-          }
-        `
-      mutation = isAnonymous
-        ? {
-            uid: creator,
-            posts: {
-              uid: '_:post',
-              'dgraph.type': 'Post',
-              content,
-              images,
-              createdAt: now,
-              // 帖子的创建者
-              creator: {
-                uid: creator,
-                posts: {
-                  uid: '_:post'
-                }
-              },
-              // 帖子的匿名信息
-              anonymous: {
-                uid: '_:anonymous',
-                'dgraph.type': 'Anonymous',
-                creator: {
-                  uid: creator
-                },
-                createdAt: now,
-                to: {
-                  uid: '_:post'
-                }
-              },
-              // 帖子所属的主题
-              subject: {
-                uid: subjectId,
-                posts: {
-                  uid: '_:post'
-                }
-              }
-            }
-          }
-        : {
-            uid: creator,
-            posts: {
-              uid: '_:post',
-              'dgraph.type': 'Post',
-              content,
-              images,
-              createdAt: now,
-              // 帖子的创建者
-              creator: {
-                uid: creator,
-                posts: {
-                  uid: '_:post'
-                }
-              },
-              // 帖子所属的主题
-              subject: {
-                uid: subjectId,
-                posts: {
-                  uid: '_:post'
-                }
-              }
-            }
-          }
-    } else {
-      condition = '@if( eq(len(v), 1) )'
-      query = `
-        query {
-          v(func: uid(${creator})) @filter(type(User)) { v as uid }
-        }
-      `
-      mutation = isAnonymous
-        ? {
-            uid: creator,
-            posts: {
-              uid: '_:post',
-              'dgraph.type': 'Post',
-              content,
-              images,
-              createdAt: now,
-              // 帖子的创建者
-              creator: {
-                uid: creator,
-                posts: {
-                  uid: '_:post'
-                }
-              },
-              // 帖子的匿名信息
-              anonymous: {
-                uid: '_:annonymous',
-                'dgraph.type': 'Anonymous',
-                creator: {
-                  uid: creator
-                },
-                to: {
-                  uid: '_:post'
-                },
-                createdAt: now
-              }
-            }
-          }
-        : {
-            uid: creator,
-            posts: {
-              uid: '_:post',
-              'dgraph.type': 'Post',
-              content,
-              images,
-              createdAt: now,
-              // 帖子的创建者
-              creator: {
-                uid: creator,
-                posts: {
-                  uid: '_:post'
-                }
-              }
-            }
-          }
+    const condition = `@if( 
+      eq(len(v), 1)
+      and eq(len(system), 1) 
+      ${subjectId ? 'and eq(len(u), 1) ' : ''}
+    )`
+    const query = `
+      query v($creator: string, $subjectId: string) {
+        # 系统
+        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
+        # 创建者存在
+        v(func: uid($creator)) @filter(type(User)) { v as uid }
+        # 主题存在
+        ${subjectId ? 'u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }' : ''}
+      }
+    `
+
+    // 审查帖子文本内容
+    const textCensor = await this.censorsService.textCensor(content)
+
+    // 帖子所属的主题
+    const subject = {
+      uid: subjectId,
+      posts: {
+        uid: '_:post'
+      }
     }
+
+    // 帖子的匿名信息
+    const anonymous = {
+      uid: '_:anonymous',
+      'dgraph.type': 'Anonymous',
+      creator: {
+        uid: i
+      },
+      createdAt: now,
+      to: {
+        uid: '_:post'
+      }
+    }
+
+    // 帖子的创建者
+    const creator = {
+      uid: i,
+      posts: {
+        uid: '_:post'
+      }
+    }
+
+    /**
+     * 含有违规内容的帖子
+     * 系统自动删除
+     */
+    const iDelete = {
+      uid: '_:delete',
+      'dgraph.type': 'Delete',
+      createdAt: now,
+      to: {
+        uid: '_:post',
+        delete: {
+          uid: '_:delete'
+        }
+      },
+      creator: {
+        // 代表系统自动删除
+        uid: 'uid(system)',
+        deletes: {
+          uid: '_:delete'
+        }
+      }
+    }
+
+    const mutation = {
+      uid: i,
+      posts: {
+        uid: '_:post',
+        'dgraph.type': 'Post',
+        content,
+        createdAt: now
+      }
+    }
+
+    // 帖子的创建者
+    Object.assign(mutation.posts, { creator })
+
+    // 发布具有主题的帖子
+    if (subjectId) {
+      Object.assign(mutation.posts, { subject })
+    }
+
+    // 发布匿名帖子
+    if (isAnonymous) {
+      Object.assign(mutation.posts, { anonymous })
+    }
+
+    // 帖子实锤含有违规文本内容
+    if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
+      Object.assign(mutation.posts, { delete: iDelete })
+    }
+
+    // TODO 帖子疑似含有违规内容，加入人工审查
+    // if (textCensor.suggestion === CENSOR_SUGGESTION.REVIEW) {}
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
+      s: Array<{uid: string}>
       u: Array<{uid: string}>
     }>({
       mutations: [{ mutation, condition }],
       query,
       vars: {
-        $creator: creator,
+        $creator: i,
         $subjectId: subjectId
       }
     })
 
+    if (res.json.s.length !== 1) {
+      throw new ForbiddenException('请先注册一个名为system的管理员初始化系统')
+    }
+
     if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`用户 ${creator} 不存在`)
+      throw new ForbiddenException(`用户 ${i} 不存在`)
     }
     if (subjectId && res.json.u.length !== 1) {
       throw new ForbiddenException(`主题 ${subjectId} 不存在`)

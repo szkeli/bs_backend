@@ -335,6 +335,28 @@ type UsersConnection {
   totalCount: Int!
 }
 
+type CensorDetail {
+  """违禁品"""
+  contraband: [String!]
+
+  """广告"""
+  ad: [String!]
+
+  """辱骂"""
+  abuse: [String!]
+
+  """涉黄"""
+  porn: [String!]
+
+  """涉政"""
+  politics: [String!]
+}
+
+type CensorResponse {
+  suggestion: String!
+  detail: CensorDetail!
+}
+
 type Report implements Node {
   id: String!
   createdAt: String!
@@ -620,28 +642,6 @@ type AvatarImageUploadCredentialInfo {
 type View {
   id: String!
   createdAt: String!
-}
-
-type CensorDetail {
-  """违禁品"""
-  contraband: [String!]
-
-  """广告"""
-  ad: [String!]
-
-  """辱骂"""
-  abuse: [String!]
-
-  """涉黄"""
-  porn: [String!]
-
-  """涉政"""
-  politics: [String!]
-}
-
-type CensorResponse {
-  suggestion: String!
-  detail: CensorDetail!
 }
 
 type Query {

@@ -11,6 +11,8 @@ import { RoleAuthGuard } from './auth/auth.guard'
 import { AuthModule } from './auth/auth.module'
 import { BlocksModule } from './blocks/blocks.module'
 import { CaslModule } from './casl/casl.module'
+import { CensorsModule } from './censors/censors.module'
+import { CensorsService } from './censors/censors.service'
 import { CommentModule } from './comment/comment.module'
 import { CommentService } from './comment/comment.service'
 import { ConversationsModule } from './conversations/conversations.module'
@@ -36,7 +38,6 @@ import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
-import { CensorsModule } from './censors/censors.module';
 
 @Module({
   imports: [
@@ -84,6 +85,7 @@ import { CensorsModule } from './censors/censors.module';
     DbService,
     CommentService,
     UserService,
+    CensorsService,
     {
       provide: APP_GUARD,
       useClass: RoleAuthGuard
