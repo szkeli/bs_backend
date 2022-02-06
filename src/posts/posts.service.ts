@@ -7,6 +7,7 @@ import { PostId } from 'src/db/model/db.model'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
+import { Delete } from '../deletes/models/deletes.model'
 import { DeletePrivateValue } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
@@ -20,6 +21,28 @@ export class PostsService {
     private readonly censorsService: CensorsService
   ) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async deletedPosts (first: number, offset: number) {
+    const query = `
+      {
+        vars(func: type(Post)) @filter(has(delete)) { v as uid }
+        deletedPosts(func: uid(v), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+        totalCount(func: uid(v)) { count(uid) }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      deletedPosts: Delete[]
+      totalCount: Array<{count: number}>
+    }>({ query })
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.deletedPosts ?? []
+    }
   }
 
   async trendingComments (id: string, first: number, offset: number): Promise<CommentsConnection> {

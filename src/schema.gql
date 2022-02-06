@@ -649,6 +649,9 @@ type Query {
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
   trendingPosts(first: Int = 10, offset: Int = 0): PostsConnection!
 
+  """所有被删除的帖子"""
+  deletedPosts(first: Int = 10, offset: Int = 0): PostsConnection!
+
   """当前id对应的的用户画像"""
   whoAmI: AdminAndUserWithPrivatePropsUnion!
 
@@ -719,7 +722,7 @@ type Query {
   pins(first: Int = 10, offset: Int = 0): PinsConnection!
 
   """文本审查的测试接口，测试一段文本是否违规"""
-  censorTest(content: String!): CensorResponse!
+  censorText(content: String!): CensorResponse!
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
@@ -935,7 +938,7 @@ type Mutation {
   ): Admin!
 
   """已存在的管理员认证一个新注册的管理员"""
-  authenAdmin(to: String!): Admin!
+  authenAdmin(to: String!): ICredential!
 
   """创建一个主题"""
   createSubject(input: CreateSubjectInput!): Subject!

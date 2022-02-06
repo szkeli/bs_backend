@@ -7,7 +7,7 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CurrentUser, MaybeAuth } from 'src/auth/decorator'
+import { CurrentUser, MaybeAuth, Roles } from 'src/auth/decorator'
 import {
   CommentsConnection
 } from 'src/comment/models/comment.model'
@@ -16,6 +16,7 @@ import { Subject } from 'src/subject/model/subject.model'
 import { SubjectService } from 'src/subject/subject.service'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
+import { Role } from '../auth/model/auth.model'
 import { CommentService } from '../comment/comment.service'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
@@ -54,6 +55,12 @@ export class PostsResolver {
   @MaybeAuth()
   async trendingPosts (@Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.trendingPosts(first, offset)
+  }
+
+  @Query(of => PostsConnection, { description: '所有被删除的帖子' })
+  @Roles(Role.Admin)
+  async deletedPosts (@Args() { first, offset }: PagingConfigArgs) {
+    return await this.postsService.deletedPosts(first, offset)
   }
 
   @Mutation(of => Post, { description: '创建一个帖子' })
