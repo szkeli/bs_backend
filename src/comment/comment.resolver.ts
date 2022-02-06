@@ -12,6 +12,7 @@ import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
 import { DeletesService } from '../deletes/deletes.service'
+import { Delete } from '../deletes/models/deletes.model'
 import { Post } from '../posts/models/post.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
@@ -84,5 +85,10 @@ export class CommentResolver {
   @ResolveField(() => User, { nullable: true, description: '评论的创建者，评论是匿名评论时，creator为null' })
   async creator (@Parent() comment: Comment) {
     return await this.commentService.creator(comment.id)
+  }
+
+  @ResolveField(of => Delete, { description: '评论未被删除时，此项为null', nullable: true })
+  async delete (@Parent() comment: Comment) {
+    return await this.deletesService.findDeleteByCommentId(comment.id)
   }
 }

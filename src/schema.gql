@@ -24,6 +24,9 @@ type Comment {
 
   """评论的创建者，评论是匿名评论时，creator为null"""
   creator: User
+
+  """评论未被删除时，此项为null"""
+  delete: Delete
 }
 
 type CommentsConnection {
@@ -446,6 +449,18 @@ type Message implements Node {
 
 union MessageCreatorUnion = User | Admin
 
+type Delete {
+  id: String!
+  createdAt: String!
+  creator: Admin!
+  to: PostAndCommentUnion!
+}
+
+type DeletesConnection {
+  nodes: [Delete!]!
+  totalCount: Int!
+}
+
 type Votable {
   """Number of upvotes that this node has received."""
   totalCount: Int!
@@ -567,18 +582,6 @@ enum DEADLINE_TYPE {
 
 type DeadlinesConnection {
   nodes: [Deadline!]!
-  totalCount: Int!
-}
-
-type Delete {
-  id: String!
-  createdAt: String!
-  creator: Admin!
-  to: PostAndCommentUnion!
-}
-
-type DeletesConnection {
-  nodes: [Delete!]!
   totalCount: Int!
 }
 
