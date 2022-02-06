@@ -236,24 +236,6 @@ type User implements Person & Node {
 
   """用户头像链接"""
   avatarImageUrl: String!
-
-  """分页返回帖子"""
-  posts(first: Int = 10, offset: Int = 0): PostsConnection!
-
-  """用户创建的主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-
-  """用户创建的会话"""
-  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
-
-  """用户收到的举报"""
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-
-  """当前用户的ddl信息"""
-  deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
-
-  """当前用户的课程信息"""
-  curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
 }
 
 enum GENDER {
@@ -306,24 +288,6 @@ type LoginResult implements Node & Person {
 
   """用户头像链接"""
   avatarImageUrl: String!
-
-  """分页返回帖子"""
-  posts(first: Int = 10, offset: Int = 0): PostsConnection!
-
-  """用户创建的主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-
-  """用户创建的会话"""
-  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
-
-  """用户收到的举报"""
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-
-  """当前用户的ddl信息"""
-  deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
-
-  """当前用户的课程信息"""
-  curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
 
   """token"""
   token: String!
@@ -735,18 +699,33 @@ type Query {
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
 
 """包含属性是否个人可见的用户对象"""
-type UserWithPrivateProps implements Person & Node {
+type UserWithPrivateProps {
+  """学院属性是否私有"""
+  isCollegePrivate: Boolean
+
+  """校区属性是否私有"""
+  isSubCampusPrivate: Boolean
+
+  """性别属性是否私有"""
+  isGenderPrivate: Boolean
+
+  """学校属性是否私有"""
+  isSchoolPrivate: Boolean
+
+  """年级属性是否私有"""
+  isGradePrivate: Boolean
+
   """id 自动生成"""
   id: String!
 
-  """用户账号"""
-  userId: String!
+  """学号"""
+  studentId: Int
 
   """用户昵称"""
   name: String!
 
-  """学号"""
-  studentId: Int
+  """用户账号"""
+  userId: String!
 
   """微信openId,注册时传入微信code自动通过微信提供的接口获取获取"""
   openId: String!
@@ -798,21 +777,6 @@ type UserWithPrivateProps implements Person & Node {
 
   """当前用户的课程信息"""
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
-
-  """学院属性是否私有"""
-  isCollegePrivate: Boolean
-
-  """校区属性是否私有"""
-  isSubCampusPrivate: Boolean
-
-  """性别属性是否私有"""
-  isGenderPrivate: Boolean
-
-  """学校属性是否私有"""
-  isSchoolPrivate: Boolean
-
-  """年级属性是否私有"""
-  isGradePrivate: Boolean
 }
 
 enum SEARCHTYPE {

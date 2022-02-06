@@ -3,6 +3,8 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
+import { CensorsService } from '../censors/censors.service'
+import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { PostId } from '../db/model/db.model'
 import { DeletePrivateValue } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
@@ -17,7 +19,10 @@ import {
 @Injectable()
 export class CommentService {
   private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
+  constructor (
+    private readonly dbService: DbService,
+    private readonly censorsService: CensorsService
+  ) {
     this.dgraph = dbService.getDgraphIns()
   }
 
@@ -278,70 +283,82 @@ export class CommentService {
 
   async addCommentOnPost (creator: string, { content, to: postId, isAnonymous }: AddCommentArgs): Promise<Comment> {
     const now = new Date().toISOString()
-    const condition = '@if( eq(len(v), 1) AND eq(len(u), 1) )'
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
     const query = `
       query v($creator: string, $postId: string) {
+        # 系统
+        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
         # 评论的创建者存在
         v(func: uid($creator)) @filter(type(User)) { v as uid }
         # 帖子存在
         u(func: uid($postId)) @filter(type(Post)) { u as uid }
       }
     `
-    const mutation = isAnonymous
-      // eslint-disable-next-line multiline-ternary
-      ? {
-          uid: creator,
-          posts: {
-            uid: postId,
-            comments: {
-              uid: '_:comment',
-              'dgraph.type': 'Comment',
-              content,
-              createdAt: now,
-              // 评论所属的帖子
-              post: {
-                uid: postId
-              },
-              // 评论的创建者
-              creator: {
-                uid: creator
-              },
-              // 评论的匿名信息
-              anonymous: {
-                uid: '_:anonymous',
-                'dgraph.type': 'Anonymous',
-                creator: {
-                  uid: creator
-                },
-                createdAt: now,
-                to: {
-                  uid: '_:comment'
-                }
-              }
-            }
-          }
-        } : {
-          uid: creator,
-          posts: {
-            uid: postId,
-            comments: {
-              uid: '_:comment',
-              'dgraph.type': 'Comment',
-              content,
-              createdAt: now,
-              // 评论所属的帖子
-              post: {
-                uid: postId
-              },
-              // 评论的创建者
-              creator: {
-                uid: creator
-              }
-            }
-          }
+
+    // 审查内容
+    const textCensor = await this.censorsService.textCensor(content)
+
+    // 评论的删除信息
+    const iDelete = {
+      uid: '_:delete',
+      'dgraph.type': 'Delete',
+      createdAt: now,
+      to: {
+        uid: '_:comment',
+        delete: {
+          uid: '_:delete'
         }
+      },
+      creator: {
+        uid: 'uid(system)'
+      }
+    }
+
+    // 评论的匿名信息
+    const anonymous = {
+      uid: '_:anonymous',
+      'dgraph.type': 'Anonymous',
+      creator: {
+        uid: creator
+      },
+      createdAt: now,
+      to: {
+        uid: '_:comment'
+      }
+    }
+
+    const mutation = {
+      uid: postId,
+      // 创建一条新的评论
+      comments: {
+        uid: '_:comment',
+        'dgraph.type': 'Comment',
+        content,
+        createdAt: now,
+        post: {
+          uid: postId,
+          comments: {
+            uid: '_:comment'
+          }
+        },
+        creator: {
+          uid: creator
+        }
+      }
+    }
+
+    if (isAnonymous) {
+      Object.assign(mutation.comments, { anonymous })
+    }
+
+    if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
+      Object.assign(mutation.comments, { delete: iDelete })
+    }
+
+    // TODO 将疑似违规帖子添加到复查队列
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      s: Array<{uid: string}>
       v: Array<{uid: string}>
       u: Array<{uid: string}>
     }>({
@@ -353,11 +370,15 @@ export class CommentService {
       }
     })
 
-    if (!res.json.v) {
+    if (res.json.s.length !== 1) {
+      throw new ForbiddenException('请先创建system管理员作为系统')
+    }
+
+    if (res.json.v.length !== 1) {
       throw new ForbiddenException(`用户 ${creator} 不存在`)
     }
 
-    if (!res.json.u) {
+    if (res.json.u.length !== 1) {
       throw new ForbiddenException(`帖子 ${postId} 不存在`)
     }
 

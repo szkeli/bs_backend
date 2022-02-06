@@ -5,6 +5,7 @@ import {
   InputType,
   Int,
   InterfaceType,
+  IntersectionType,
   ObjectType,
   registerEnumType
 } from '@nestjs/graphql'
@@ -184,13 +185,8 @@ export class User implements Person, Node {
     avatarImageUrl: string
 }
 
-@ObjectType({ description: '包含属性是否个人可见的用户对象' })
-export class UserWithPrivateProps extends User {
-  constructor (userWithPrivateProps: UserWithPrivateProps) {
-    super(userWithPrivateProps)
-    Object.assign(this, userWithPrivateProps)
-  }
-
+@ObjectType()
+export class UserPrivateProps {
   @Field(of => Boolean, { description: '学院属性是否私有', nullable: true, defaultValue: false })
     isCollegePrivate: boolean
 
@@ -205,6 +201,14 @@ export class UserWithPrivateProps extends User {
 
   @Field(of => Boolean, { description: '年级属性是否私有', nullable: true, defaultValue: false })
     isGradePrivate: boolean
+}
+
+@ObjectType({ description: '包含属性是否个人可见的用户对象' })
+export class UserWithPrivateProps extends IntersectionType(UserPrivateProps, User) {
+  constructor (userWithPrivateProps: UserWithPrivateProps) {
+    super(userWithPrivateProps)
+    Object.assign(this, userWithPrivateProps)
+  }
 }
 
 export class UserWithFacets extends User {

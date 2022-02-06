@@ -44,20 +44,17 @@ export class CommentResolver {
     return await this.commentService.deletedComments(first, offset)
   }
 
-  @Mutation(returns => Comment)
+  @Mutation(of => Comment)
   async addCommentOnComment (@CurrentUser() user: User, @Args() args: AddCommentArgs) {
-    return await this.commentService.addCommentOnComment(
-      user.id,
-      args
-    )
+    return await this.commentService.addCommentOnComment(user.id, args)
   }
 
-  @Mutation(returns => Comment)
+  @Mutation(of => Comment)
   async addCommentOnPost (@CurrentUser() user: User, @Args() args: AddCommentArgs) {
     return await this.commentService.addCommentOnPost(user.id, args)
   }
 
-  @ResolveField(returns => CommentsConnection)
+  @ResolveField(of => CommentsConnection)
   async comments (@Parent() comment: Comment, @Args() { first, offset }: PagingConfigArgs) {
     return await this.commentService.getCommentsByCommentId(comment.id, first, offset)
   }
@@ -67,7 +64,7 @@ export class CommentResolver {
     return await this.commentService.trendingComments(comment.id, first, offset)
   }
 
-  @ResolveField(returns => VotesConnection)
+  @ResolveField(of => VotesConnection)
   async votes (@CurrentUser() user: User, @Parent() comment: Comment, @Args() args: PagingConfigArgs) {
     return await this.commentService.getVotesByCommentId(user?.id, comment.id, args.first, args.offset)
   }
