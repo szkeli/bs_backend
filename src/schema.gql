@@ -984,9 +984,6 @@ type Mutation {
     sign: String!
   ): Admin!
 
-  """已存在的管理员认证一个新注册的管理员"""
-  authenAdmin(to: String!): ICredential!
-
   """创建一个主题"""
   createSubject(input: CreateSubjectInput!): Subject!
 
@@ -1109,6 +1106,9 @@ type Mutation {
 
   """拉黑一个用户"""
   addBlockOnUser(id: String!, description: String!): Block!
+
+  """已存在的管理员认证一个新注册的管理员"""
+  authenAdmin(to: String!): ICredential!
 
   """置顶一个帖子"""
   addPinOnPost(postId: String!): Pin!

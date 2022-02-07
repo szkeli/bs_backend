@@ -10,6 +10,7 @@ import { AddBlockOnUserArgs, Block, BlocksConnection } from './models/blocks.mod
 @Resolver(of => Block)
 export class BlocksResolver {
   constructor (private readonly blocksService: BlocksService) {}
+
   @Query(of => BlocksConnection, { description: '所有的拉黑' })
   @Roles(Role.Admin)
   async blocks (@Args() { first, offset }: PagingConfigArgs) {

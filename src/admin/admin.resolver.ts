@@ -9,7 +9,7 @@ import {
 
 import { sign as sign_calculus } from 'src/tool'
 
-import { CurrentUser, NoAuth, Roles } from '../auth/decorator'
+import { NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { BlocksService } from '../blocks/blocks.service'
 import { BlocksConnection } from '../blocks/models/blocks.model'
@@ -41,12 +41,6 @@ export class AdminResolver {
   async registerAdmin (@Args() args: RegisterAdminArgs) {
     args.sign = sign_calculus(args.sign)
     return await this.adminService.registerAdmin(args)
-  }
-
-  @Mutation(of => ICredential, { description: '已存在的管理员认证一个新注册的管理员' })
-  @Roles(Role.Admin)
-  async authenAdmin (@CurrentUser() admin: Admin, @Args('to') to: string) {
-    return await this.adminService.authenAdmin(admin.id, to)
   }
 
   @Query(of => Admin, { description: '以id获取管理员' })
