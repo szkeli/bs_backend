@@ -2,7 +2,6 @@ import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from
 import { Reflector } from '@nestjs/core'
 import { GqlExecutionContext } from '@nestjs/graphql'
 import { AuthGuard } from '@nestjs/passport'
-import { memoize } from '@nestjs/passport/dist/utils/memoize.util'
 
 import { CaslAbilityFactory } from '../casl/casl-ability.factory'
 import { AppAbility } from '../casl/models/casl.model'
@@ -21,7 +20,7 @@ export class RoleAuthGuard implements CanActivate {
     private readonly caslAbilityFactory: CaslAbilityFactory
   ) {}
 
-  async canActivate (context: ExecutionContext): Promise<boolean> {
+  async canActivate (context: ExecutionContext): Promise<any> {
     const noAuth = this.reflector.get<boolean>(NO_AUTH_KEY, context.getHandler())
     const roles = this.reflector.get<Role[]>(ROLES_KEY, context.getHandler()) || [Role.User]
     const policies = this.reflector.get<PolicyHandler[]>(CHECK_POLICIES_KEY, context.getHandler()) || []
@@ -51,7 +50,7 @@ export class RoleAuthGuard implements CanActivate {
   }
 }
 
-export const RoleGuard = memoize(({ roles, maybeAuth }: Props) => {
+export const RoleGuard = ({ roles, maybeAuth }: Props) => {
   return class GqlAuthGuard extends AuthGuard('jwt') {
     getRequest (context: ExecutionContext) {
       const ctx = GqlExecutionContext.create(context)
@@ -70,4 +69,4 @@ export const RoleGuard = memoize(({ roles, maybeAuth }: Props) => {
       return user as unknown as any
     }
   }
-})
+}
