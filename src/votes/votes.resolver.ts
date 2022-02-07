@@ -1,8 +1,8 @@
-import { Inject } from '@nestjs/common'
-import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql'
+import { ForbiddenException, Inject } from '@nestjs/common'
+import { Args, Mutation, Parent, ResolveField, Resolver, Subscription } from '@nestjs/graphql'
 import { PubSub } from 'graphql-subscriptions'
 
-import { CurrentUser } from 'src/auth/decorator'
+import { CurrentUser, NoAuth } from 'src/auth/decorator'
 import { User } from 'src/user/models/user.model'
 
 import { PUB_SUB_KEY } from '../constants'
@@ -17,10 +17,24 @@ export class VotesResolver {
     @Inject(PUB_SUB_KEY) private readonly pubSub: PubSub
   ) {}
 
+  @Subscription(of => Votable, {
+    filter: (payload: {votesChanged: Votable}, variables: {ids: String[]}) => {
+      return variables.ids.includes(payload.votesChanged.to)
+    },
+    description: '监听指定帖子或评论的点赞数'
+  })
+  @NoAuth()
+  votesChanged (@Args('ids', { type: () => [String], description: '帖子或评论的id' }) ids: string[]) {
+    if (ids.length === 0) {
+      throw new ForbiddenException('监听的列表不能为空')
+    }
+    return this.pubSub.asyncIterator('votesChanged')
+  }
+
   @Mutation(_of => Votable, { description: '点赞一个帖子' })
   async addUpvoteOnPost (@CurrentUser() user: User, @Args('postId') postId: string) {
     const votable = await this.votesService.addUpvoteOnPost(user.id, postId)
-    await this.pubSub.publish('voteChanged', { voteChanged: votable })
+    await this.pubSub.publish('votesChanged', { votesChanged: votable })
 
     return votable
   }
@@ -28,7 +42,7 @@ export class VotesResolver {
   @Mutation(_of => Votable, { description: '点赞一条评论' })
   async addUpvoteOnComment (@CurrentUser() user: User, @Args('commentId') commentId: string) {
     const votable = await this.votesService.addUpvoteOnComment(user.id, commentId)
-    await this.pubSub.publish('voteChanged', { voteChanged: votable })
+    await this.pubSub.publish('votesChanged', { votesChanged: votable })
 
     return votable
   }
@@ -36,7 +50,7 @@ export class VotesResolver {
   @Mutation(_of => Votable, { description: '取消点赞' })
   async removeUpvoteOnComment (@CurrentUser() user: User, @Args('from') from: string) {
     const votable = await this.votesService.removeUpvoteOnComment(user.id, from)
-    await this.pubSub.publish('voteChanged', { voteRemoved: votable })
+    await this.pubSub.publish('votesChanged', { votesChanged: votable })
 
     return votable
   }
@@ -44,7 +58,7 @@ export class VotesResolver {
   @Mutation(_of => Votable, { description: '取消点赞' })
   async removeUpvoteOnPost (@CurrentUser() user: User, @Args('from') from: string) {
     const votable = await this.votesService.removeUpvoteOnPost(user.id, from)
-    await this.pubSub.publish('voteChanged', { voteRemoved: votable })
+    await this.pubSub.publish('votesChanged', { votesChanged: votable })
 
     return votable
   }

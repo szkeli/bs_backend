@@ -1,16 +1,13 @@
-import { Inject } from '@nestjs/common'
 import {
   Args,
   Mutation,
   Parent,
   Query,
   ResolveField,
-  Resolver,
-  Subscription
+  Resolver
 } from '@nestjs/graphql'
-import { PubSub } from 'graphql-subscriptions'
 
-import { CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
+import { CurrentUser, MaybeAuth, Roles } from 'src/auth/decorator'
 import {
   CommentsConnection
 } from 'src/comment/models/comment.model'
@@ -21,12 +18,11 @@ import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
 import { CommentService } from '../comment/comment.service'
-import { PUB_SUB_KEY } from '../constants'
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete } from '../deletes/models/deletes.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
-import { Votable, VotesConnection } from '../votes/model/votes.model'
+import { VotesConnection } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
   Nullable,
@@ -42,20 +38,8 @@ export class PostsResolver {
     private readonly subjectService: SubjectService,
     private readonly reportsService: ReportsService,
     private readonly commentService: CommentService,
-    private readonly deletesService: DeletesService,
-    @Inject(PUB_SUB_KEY) private readonly pubSub: PubSub
+    private readonly deletesService: DeletesService
   ) {}
-
-  @Subscription(of => Votable, {
-    filter: (payload, variables) => {
-      return (variables.postIds as unknown as [String]).includes(payload.voteChanged.to)
-    },
-    description: '监听指定帖子的点赞数'
-  })
-  @NoAuth()
-  voteChanged (@Args('postIds', { type: () => [String], description: '监听的帖子的id' }) postIds: string[]) {
-    return this.pubSub.asyncIterator('voteChanged')
-  }
 
   @Query(of => Post, { description: '以postId获取一个帖子' })
   @MaybeAuth()

@@ -1141,9 +1141,9 @@ input CreateSubjectInput {
 }
 
 type Subscription {
-  """监听置顶帖子的点赞数"""
-  voteChanged(
-    """监听的帖子的id"""
-    postIds: [String!]!
+  """监听指定帖子或评论的点赞数"""
+  votesChanged(
+    """帖子或评论的id"""
+    ids: [String!]!
   ): Votable!
 }
