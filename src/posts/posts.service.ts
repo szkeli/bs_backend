@@ -216,7 +216,8 @@ export class PostsService {
         uid: '_:post',
         'dgraph.type': 'Post',
         content,
-        createdAt: now
+        createdAt: now,
+        images: images ?? []
       }
     }
 
