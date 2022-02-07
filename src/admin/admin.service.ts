@@ -94,20 +94,22 @@ export class AdminService {
     if (i === to) {
       throw new ForbiddenException('不能对自己授权')
     }
-    const txn = this.dgraph.newTxn()
-    try {
-      const now = new Date().toISOString()
-      // 1. 当前认证的管理员存在
-      // 2. 当前管理员已被认证
-      // 3. 被认证的管理员存在
-      // 4. 被认证的管理员未被认证
-      const conditions = '@if( eq(len(x), 0) AND eq(len(v), 1) AND eq(len(u), 1) AND eq(len(q), 1) )'
-      const query = `
+    const now = new Date().toISOString()
+
+    // 1. 当前认证的管理员存在
+    // 2. 当前管理员已被认证或者直接是system
+    // 3. 被认证的管理员存在
+    // 4. 被认证的管理员未被认证
+    const condition = '@if( eq(len(x), 0) and eq(len(v), 1) and eq(len(u), 1) and (eq(len(q), 1) or eq(len(s), 1)) )'
+
+    const query = `
         query v($i: string, $to: string) {
           # 授权者存在
           v(func: uid($i)) @filter(type(Admin)) { v as uid }
           # 被授权者存在
           u(func: uid($to)) @filter(type(Admin)) { u as uid }
+          # 当前授权者是system
+          s(func: type(Admin)) @filter(eq(userId, "system") and uid($i)) { s as uid }
           # 被授权者未被授权
           x(func: uid($to)) @filter(type(Admin)) { 
             credential @filter(type(Credential)) {
@@ -122,64 +124,55 @@ export class AdminService {
           }
         }
       `
-
-      const mutation = {
-        uid: '_:credential',
-        'dgraph.type': 'Credential',
-        createdAt: now,
-        to: {
-          uid: to,
-          credential: {
-            uid: '_:credential'
-          }
-        },
-        creator: {
-          uid: i,
-          credentials: {
-            uid: '_:credential'
-          }
+    const mutation = {
+      uid: '_:credential',
+      'dgraph.type': 'Credential',
+      createdAt: now,
+      to: {
+        uid: to,
+        credential: {
+          uid: '_:credential'
+        }
+      },
+      creator: {
+        uid: i,
+        credentials: {
+          uid: '_:credential'
         }
       }
-      const mu = new Mutation()
-      mu.setSetJson(mutation)
-      mu.setCond(conditions)
+    }
 
-      const req = new Request()
-      const vars = req.getVarsMap()
-      vars.set('$i', i)
-      vars.set('$to', to)
-      req.setQuery(query)
-      req.addMutations(mu)
-      req.setCommitNow(true)
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+      s: Array<{uid: string}>
+      x: Array<{credential: {uid: string}}>
+      q: Array<{credential: {uid: string}}>
+    }>({
+      mutations: [{ mutation, condition }],
+      query,
+      vars: {
+        $i: i,
+        $to: to
+      }
+    })
 
-      const res = await txn.doRequest(req)
-      const json = res.getJson() as unknown as {
-        v: Array<{uid: string}>
-        u: Array<{uid: string}>
-        x: Array<{credential: {uid: string}}>
-        q: Array<{credential: {uid: string}}>
-      }
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`授权者 ${i} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`管理员 ${to} 不存在`)
+    }
+    if (res.json.x.length !== 0) {
+      throw new ForbiddenException(`管理员 ${to} 已被认证`)
+    }
+    if (res.json.q.length === 0 && res.json.s.length === 0) {
+      throw new ForbiddenException(`授权者 ${i} 未认证`)
+    }
 
-      const uid = res.getUidsMap().get('credential')
-
-      if (!json.v || json.v.length !== 1) {
-        throw new ForbiddenException(`授权者 ${i} 不存在`)
-      }
-      if (!json.u || json.u.length !== 1) {
-        throw new ForbiddenException(`管理员 ${to} 不存在`)
-      }
-      if (!json.x || json.x.length !== 0) {
-        throw new ForbiddenException(`管理员 ${to} 已被认证`)
-      }
-      if (!json.q || json.q.length === 0) {
-        throw new ForbiddenException(`授权者 ${i} 未认证`)
-      }
-      return {
-        createdAt: now,
-        id: uid
-      }
-    } finally {
-      await txn.discard()
+    return {
+      createdAt: now,
+      id: res.uids.get('credential')
     }
   }
 
