@@ -54,7 +54,7 @@ export const RoleGuard = ({ roles, maybeAuth }: Props) => {
   return class GqlAuthGuard extends AuthGuard('jwt') {
     getRequest (context: ExecutionContext) {
       const ctx = GqlExecutionContext.create(context)
-      return ctx.getContext().req
+      return ctx?.getContext()?.req
     }
 
     handleRequest<TUser = any>(err: any, user: (UserWithRoles | null), info: any, context: any, status?: any): TUser {
