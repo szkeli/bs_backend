@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common'
+import { CanActivate, ExecutionContext, ForbiddenException, Injectable, UnauthorizedException } from '@nestjs/common'
 import { Reflector } from '@nestjs/core'
 import { GqlExecutionContext } from '@nestjs/graphql'
 import { AuthGuard } from '@nestjs/passport'
@@ -54,7 +54,11 @@ export const RoleGuard = ({ roles, maybeAuth }: Props) => {
   return class GqlAuthGuard extends AuthGuard('jwt') {
     getRequest (context: ExecutionContext) {
       const ctx = GqlExecutionContext.create(context)
-      return ctx?.getContext()?.req
+      const req = ctx?.getContext()?.req
+      if (!req) {
+        throw new ForbiddenException('undefined')
+      }
+      return req
     }
 
     handleRequest<TUser = any>(err: any, user: (UserWithRoles | null), info: any, context: any, status?: any): TUser {
