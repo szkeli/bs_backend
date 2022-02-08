@@ -195,7 +195,7 @@ export class PinsService {
               # 当前管理员存在
               x(func: uid($adminId)) @filter(type(Admin)) { x as uid }
               # 帖子存在
-              v(func: uid($postId)) @filter(type(Post)) { v as uid }
+              v(func: uid($postId)) @filter(type(Post) and not has(delete)) { v as uid }
               # 该帖子未被置顶
               q(func: uid($postId)) @filter(type(Post) and not has(pin)) { q as uid }
               # 全局一个时间只能有一个置顶
