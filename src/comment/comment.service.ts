@@ -28,6 +28,30 @@ export class CommentService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async findCommentsByUid (id: string, first: number, offset: number): Promise<CommentsConnection> {
+    const query = `
+      query v($uid: string) {
+        totalCount(func: type(Comment)) @filter(uid_in(creator, $uid)) {
+          uids as uid
+          count(uid)
+        }
+        comments(func: uid(uids), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      comments: Comment[]
+    }>({ query, vars: { $uid: id } })
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.comments ?? []
+    }
+  }
+
   async to (id: string) {
     const query = `
       query v($commentId: string) {

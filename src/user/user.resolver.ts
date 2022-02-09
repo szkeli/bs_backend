@@ -8,6 +8,8 @@ import { RawUser2UserWithPrivateProps, sign as sign_calculus } from 'src/tool'
 
 import { Admin } from '../admin/models/admin.model'
 import { Role, UserWithRoles } from '../auth/model/auth.model'
+import { CommentService } from '../comment/comment.service'
+import { CommentsConnection } from '../comment/models/comment.model'
 import { ConversationsService } from '../conversations/conversations.service'
 import { ConversationsConnection } from '../conversations/models/conversations.model'
 import { CurriculumsService } from '../curriculums/curriculums.service'
@@ -41,7 +43,8 @@ export class UserResolver {
     private readonly reportsService: ReportsService,
     private readonly deadlinesService: DeadlinesService,
     private readonly curriculumsService: CurriculumsService,
-    private readonly votesService: VotesService
+    private readonly votesService: VotesService,
+    private readonly commentsService: CommentService
   ) {}
 
   @Mutation(of => LoginResult, { description: '登录' })
@@ -89,6 +92,11 @@ export class UserResolver {
   @ResolveField(of => VotesConnection, { description: '当前用户的所有点赞' })
   async votes (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.votesService.findVotesByUid(user.id, first, offset)
+  }
+
+  @ResolveField(of => CommentsConnection, { description: '当前用户发布的评论' })
+  async comments (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.commentsService.findCommentsByUid(user.id, first, offset)
   }
 
   @ResolveField(of => SubjectsConnection, { description: '当前用户创建的所有主题' })

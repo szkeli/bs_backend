@@ -6,6 +6,8 @@ import { DbService } from 'src/db/db.service'
 import { SharedModule } from 'src/shared/shared.module'
 
 import { AdminService } from '../admin/admin.service'
+import { CensorsService } from '../censors/censors.service'
+import { CommentService } from '../comment/comment.service'
 import { ConversationsService } from '../conversations/conversations.service'
 import { CurriculumsService } from '../curriculums/curriculums.service'
 import { DeadlinesService } from '../deadlines/deadlines.service'
@@ -26,7 +28,9 @@ import { UserService } from './user.service'
     AdminService,
     DeadlinesService,
     CurriculumsService,
-    VotesService
+    VotesService,
+    CommentService,
+    CensorsService
   ],
   imports: [
     SharedModule

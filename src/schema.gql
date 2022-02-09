@@ -830,6 +830,9 @@ type UserWithPrivateProps {
   """当前用户的所有点赞"""
   votes(first: Int = 10, offset: Int = 0): VotesConnection!
 
+  """当前用户发布的评论"""
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
   """当前用户创建的所有主题"""
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
 
