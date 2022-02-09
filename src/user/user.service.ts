@@ -22,6 +22,19 @@ export class UserService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async user (viewerId: string, id: string): Promise<User> {
+    const query = `
+        query v($uid: string) {
+          user(func: uid($uid)) @filter(type(User)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      `
+    const res = await this.dbService.commitQuery<{user: User[]}>({ query, vars: { $uid: id } })
+    return res.user[0]
+  }
+
   async checkUserPasswordAndGetUser (userId: string, sign: string) {
     if (userId.length <= 2) {
       throw new ForbiddenException('userId 不能少于3个字符')
@@ -111,28 +124,48 @@ export class UserService {
     return u
   }
 
-  async findPostsByUid (id: string, first: number, offset: number) {
-    const query = `
-    query v($uid: string) {
-      me(func: uid($uid)) {
-        postsCount: count(posts)
-        posts (orderdesc: createdAt, first: ${first}, offset: ${offset}) {
-          id: uid
-          expand(_all_)
+  async findPostsByUid (viewerId: string, id: string, first: number, offset: number): Promise<PostsConnection> {
+    if (viewerId === id) {
+      const query = `
+        query v($uid: string) {
+          me(func: uid($uid)) @filter(type(User)) {
+            postsCount: count(posts @filter(type(Post)))
+            posts (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Post)) {
+              id: uid
+              expand(_all_)
+            }
+          }
         }
+      `
+      const res = await this.dbService.commitQuery<{me: Array<{postsCount: number, posts?: Post[]}>}>({ query, vars: { $uid: id } })
+      return {
+        totalCount: res.me[0]?.postsCount ?? 0,
+        nodes: res.me[0]?.posts ?? []
       }
     }
-  `
-    const res = await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $uid: id })
-    const v = res.getJson() as unknown as { me?: Array<{postsCount: number, posts?: Post[]}>}
 
-    const u: PostsConnection = {
-      nodes: v.me[0].posts as unknown as [Post] || [],
-      totalCount: v.me[0].postsCount || 0
+    // 不返回匿名帖子和已删除的帖子
+    const query = `
+      query v($uid: string) {
+        var(func: uid($uid)) @filter(type(User)) {
+          posts @filter(type(Post) and not has(delete) and not has(anonymous)) {
+            posts as uid
+          }
+        }
+        totalCount(func: uid(posts)) {
+          count(uid)
+        }
+        posts(func: uid(posts), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        } 
+      }
+    `
+    const res = await this.dbService.commitQuery<{totalCount: Array<{count: number}>, posts: Post[]}>({ query, vars: { $uid: id } })
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.posts ?? []
     }
-    return u
   }
 
   async getUserOrAdminWithRolesByUid (id: string): Promise<UserWithRoles> {

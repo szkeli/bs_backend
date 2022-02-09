@@ -1,7 +1,7 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { AuthService } from 'src/auth/auth.service'
-import { CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
+import { CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
 import { PostsConnection } from 'src/posts/models/post.model'
 import { SubjectsConnection } from 'src/subject/model/subject.model'
 import { RawUser2UserWithPrivateProps, sign as sign_calculus } from 'src/tool'
@@ -34,7 +34,7 @@ import {
 } from './models/user.model'
 import { UserService } from './user.service'
 
-@Resolver((_of: User) => UserWithPrivateProps)
+@Resolver((_of: User) => User)
 export class UserResolver {
   constructor (
     private readonly userService: UserService,
@@ -80,13 +80,24 @@ export class UserResolver {
   }
 
   @Query(of => UsersConnection, { description: '获取所有用户' })
+  @MaybeAuth()
   async users (@Args() args: PagingConfigArgs) {
     return await this.userService.users(args.first, args.offset)
   }
 
+  @Query(of => User, { description: '以id获取用户' })
+  @MaybeAuth()
+  async user (@CurrentUser() viewer: User, @Args('id') id: string) {
+    return await this.userService.user(viewer?.id, id)
+  }
+
   @ResolveField(of => PostsConnection, { description: '当前用户创建的所有帖子' })
-  async posts (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.userService.findPostsByUid(user.id, first, offset)
+  async posts (
+  @CurrentUser() viewer: User,
+    @Parent() user: User,
+    @Args() { first, offset }: PagingConfigArgs
+  ) {
+    return await this.userService.findPostsByUid(viewer?.id, user.id, first, offset)
   }
 
   @ResolveField(of => VotesConnection, { description: '当前用户的所有点赞' })
