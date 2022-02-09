@@ -10,6 +10,7 @@ import { ConversationsService } from '../conversations/conversations.service'
 import { CurriculumsService } from '../curriculums/curriculums.service'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { ReportsService } from '../reports/reports.service'
+import { VotesService } from '../votes/votes.service'
 import { UserResolver } from './user.resolver'
 import { UserService } from './user.service'
 
@@ -24,7 +25,8 @@ import { UserService } from './user.service'
     ReportsService,
     AdminService,
     DeadlinesService,
-    CurriculumsService
+    CurriculumsService,
+    VotesService
   ],
   imports: [
     SharedModule

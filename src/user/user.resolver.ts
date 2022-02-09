@@ -16,6 +16,8 @@ import { DeadlinesService } from '../deadlines/deadlines.service'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
+import { VotesConnection } from '../votes/model/votes.model'
+import { VotesService } from '../votes/votes.service'
 import {
   AdminAndUserWithPrivatePropsUnion,
   CreateUserArgs,
@@ -38,7 +40,8 @@ export class UserResolver {
     private readonly conversationsService: ConversationsService,
     private readonly reportsService: ReportsService,
     private readonly deadlinesService: DeadlinesService,
-    private readonly curriculumsService: CurriculumsService
+    private readonly curriculumsService: CurriculumsService,
+    private readonly votesService: VotesService
   ) {}
 
   @Mutation(of => LoginResult, { description: '登录' })
@@ -81,6 +84,11 @@ export class UserResolver {
   @ResolveField(of => PostsConnection, { description: '当前用户创建的所有帖子' })
   async posts (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.userService.findPostsByUid(user.id, first, offset)
+  }
+
+  @ResolveField(of => VotesConnection, { description: '当前用户的所有点赞' })
+  async votes (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.votesService.findVotesByUid(user.id, first, offset)
   }
 
   @ResolveField(of => SubjectsConnection, { description: '当前用户创建的所有主题' })

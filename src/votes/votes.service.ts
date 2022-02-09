@@ -7,10 +7,31 @@ import { Comment } from '../comment/models/comment.model'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { Post } from '../posts/models/post.model'
 import { User } from '../user/models/user.model'
-import { Votable } from './model/votes.model'
+import { Votable, Vote, VotesConnection } from './model/votes.model'
 
 @Injectable()
 export class VotesService {
+  async findVotesByUid (id: string, first: number, offset: number): Promise<VotesConnection> {
+    const query = `
+      query v($uid: string) {
+        user(func: uid($uid)) @filter(type(User)) {
+          count: count(votes @filter(type(Vote)))
+          votes (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Vote)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{user: Array<{count: number, votes: Vote[]}>}>({ query, vars: { $uid: id } })
+    return {
+      totalCount: res.user[0]?.count ?? 0,
+      nodes: res.user[0]?.votes ?? [],
+      viewerCanUpvote: false,
+      viewerHasUpvoted: true
+    }
+  }
+
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
