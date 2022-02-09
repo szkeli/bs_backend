@@ -107,8 +107,12 @@ export class UserResolver {
   }
 
   @ResolveField(of => CommentsConnection, { description: '当前用户发布的评论' })
-  async comments (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.commentsService.findCommentsByUid(user.id, first, offset)
+  async comments (
+  @CurrentUser() viewer: User,
+    @Parent() user: User,
+    @Args() { first, offset }: PagingConfigArgs
+  ) {
+    return await this.commentsService.findCommentsByUid(viewer?.id, user.id, first, offset)
   }
 
   @ResolveField(of => SubjectsConnection, { description: '当前用户创建的所有主题' })

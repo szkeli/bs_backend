@@ -28,19 +28,29 @@ export class CommentService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async findCommentsByUid (id: string, first: number, offset: number): Promise<CommentsConnection> {
-    const query = `
-      query v($uid: string) {
-        totalCount(func: type(Comment)) @filter(uid_in(creator, $uid)) {
-          uids as uid
-          count(uid)
-        }
-        comments(func: uid(uids), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
-          id: uid
-          expand(_all_)
-        }
+  async findCommentsByUid (viewerId: string, id: string, first: number, offset: number): Promise<CommentsConnection> {
+    const q1 = `
+      totalCount(func: type(Comment)) @filter(uid_in(creator, $uid)) {
+        uids as uid
+        count(uid)
       }
-    `
+      `
+    // 非本人不能查看被删除和匿名评论
+    const q2 = `
+      totalCount(func: type(Comment)) @filter(uid_in(creator, $uid) and not has(delete) and not has(anonymous)) {
+        uids as uid
+        count(uid)
+      }
+      `
+    const query = `
+        query v($uid: string) {
+          ${viewerId === id ? q1 : q2}
+          comments(func: uid(uids), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      `
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
       comments: Comment[]
