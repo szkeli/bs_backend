@@ -203,8 +203,11 @@ export class UserPrivateProps {
     isGradePrivate: boolean
 }
 
-@ObjectType({ description: '包含属性是否个人可见的用户对象' })
-export class UserWithPrivateProps extends IntersectionType(UserPrivateProps, User) {
+@ObjectType({
+  implements: () => [Person, Node],
+  description: '包含属性是否个人可见的用户对象'
+})
+export class UserWithPrivateProps extends IntersectionType(UserPrivateProps, User) implements Person, Node {
   constructor (userWithPrivateProps: UserWithPrivateProps) {
     super(userWithPrivateProps)
     Object.assign(this, userWithPrivateProps)

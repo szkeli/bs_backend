@@ -26,6 +26,7 @@ import {
   DeadlinesPagingArgs,
   LoginResult,
   PagingConfigArgs,
+  Person,
   PersonLoginArgs,
   UpdateUserArgs,
   User,
@@ -34,7 +35,7 @@ import {
 } from './models/user.model'
 import { UserService } from './user.service'
 
-@Resolver((_of: User) => User)
+@Resolver((_of: User) => Person)
 export class UserResolver {
   constructor (
     private readonly userService: UserService,
