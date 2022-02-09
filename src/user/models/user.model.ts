@@ -269,21 +269,6 @@ export abstract class Person implements Node {
 }
 
 @ObjectType()
-export class PageInfo {
-  @Field()
-    endCursor: string
-
-  @Field(type => Boolean)
-    hasNextPage: boolean
-
-  @Field(type => Boolean)
-    hasPreviousPage: boolean
-
-  @Field(type => String)
-    startCursor: string
-}
-
-@ObjectType()
 export class UsersConnection {
   @Field(type => [User])
     nodes: [User?]

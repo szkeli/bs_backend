@@ -70,6 +70,18 @@ type CommentsConnection {
   totalCount: Int!
 }
 
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+type NodeEdge {
+  cursor: String!
+  node: Node!
+}
+
 type Post {
   id: String!
   content: String!
@@ -104,6 +116,19 @@ type Post {
 type PostsConnection {
   nodes: [Post!]!
   totalCount: Int!
+}
+
+type Edge {
+  node: Post
+  cursor: String
+}
+
+type PostsConnectionWithRelay {
+  """对象总数"""
+  totalCount: Float!
+  pageInfo: PageInfo!
+  edge: Edge!
+  nodes: [Post!]!
 }
 
 type Block {
@@ -227,11 +252,6 @@ type Admin {
 type AdminsConnection {
   nodes: [Admin!]!
   totalCount: Int!
-}
-
-type NodeEdge {
-  cursor: String!
-  node: Node!
 }
 
 type User implements Person & Node {
@@ -463,13 +483,6 @@ type LoginResult implements Node & Person {
 
   """token"""
   token: String!
-}
-
-type PageInfo {
-  endCursor: String!
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String!
 }
 
 type UsersConnection {
@@ -806,6 +819,21 @@ type Query {
 
   """获取所有帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
+
+  """Relay分页版的posts接口"""
+  postsWithRelay(
+    """最新的n个对象"""
+    first: Float
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Float
+
+    """向后分页游标"""
+    before: String
+  ): PostsConnectionWithRelay!
 
   """按热度获取所有帖子"""
   trendingPosts(first: Int = 10, offset: Int = 0): PostsConnection!

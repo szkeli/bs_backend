@@ -112,3 +112,11 @@ export const RawUser2UserWithPrivateProps = function (user: User): UserWithPriva
 
   return Object.fromEntries(map.entries()) as unknown as UserWithPrivateProps
 }
+
+export const atob = function (content: string): string {
+  return Buffer.from(content, 'utf-8').toString('base64')
+}
+
+export const btoa = function (content: string): string {
+  return Buffer.from(content, 'base64').toString('utf-8')
+}

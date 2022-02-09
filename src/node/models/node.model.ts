@@ -1,7 +1,5 @@
 import { Field, Int, InterfaceType, ObjectType } from '@nestjs/graphql'
 
-import { PageInfo } from '../../user/models/user.model'
-
 @InterfaceType()
 export abstract class Node {
   @Field(type => String)
@@ -9,6 +7,21 @@ export abstract class Node {
 }
 
 export type NodeId = string
+
+@ObjectType()
+export class PageInfo {
+  @Field({ nullable: true })
+    endCursor?: string
+
+  @Field(of => Boolean)
+    hasNextPage: boolean
+
+  @Field(of => Boolean)
+    hasPreviousPage: boolean
+
+  @Field(of => String, { nullable: true })
+    startCursor?: string
+}
 
 @ObjectType()
 export class NodesConnection {

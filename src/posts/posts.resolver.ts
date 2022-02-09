@@ -27,7 +27,9 @@ import {
   CreatePostArgs,
   Nullable,
   Post,
-  PostsConnection
+  PostsConnection,
+  PostsConnectionWithRelay,
+  RelayPagingConfigArgs
 } from './models/post.model'
 import { PostsService } from './posts.service'
 
@@ -52,6 +54,12 @@ export class PostsResolver {
   @MaybeAuth()
   async posts (@Args() { first, offset }: PagingConfigArgs): Promise<PostsConnection> {
     return await this.postsService.posts(first, offset)
+  }
+
+  @Query(of => PostsConnectionWithRelay, { description: 'Relay分页版的posts接口' })
+  @MaybeAuth()
+  async postsWithRelay (@Args() paging: RelayPagingConfigArgs) {
+    return await this.postsService.postsWithRelay(paging)
   }
 
   @Query(of => PostsConnection, { description: '按热度获取所有帖子' })

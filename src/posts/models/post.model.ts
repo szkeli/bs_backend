@@ -1,5 +1,7 @@
 import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
+import { PageInfo } from '../../node/models/node.model'
+
 export type Nullable<T> = T | null
 @ArgsType()
 export class CreatePostArgs {
@@ -46,4 +48,43 @@ export class PostsConnection {
 
   @Field(type => Int)
     totalCount: number
+}
+
+@ObjectType()
+export class Edge {
+  @Field(of => Post, { nullable: true })
+    node?: Post
+
+  @Field({ nullable: true })
+    cursor?: string
+}
+
+@ArgsType()
+export class RelayPagingConfigArgs {
+  @Field(of => Number, { description: '最新的n个对象', nullable: true })
+    first?: number
+
+  @Field(of => String, { description: '向前分页游标', nullable: true })
+    after?: string
+
+  @Field(of => Number, { description: '最早的n个对象', nullable: true })
+    last?: number
+
+  @Field(of => String, { description: '向后分页游标', nullable: true })
+    before?: string
+}
+
+@ObjectType()
+export class PostsConnectionWithRelay {
+  @Field(of => Number, { description: '对象总数' })
+    totalCount: number
+
+  @Field(of => PageInfo)
+    pageInfo: PageInfo
+
+  @Field(of => Edge)
+    edge: Edge
+
+  @Field(of => [Post])
+    nodes: Post[]
 }

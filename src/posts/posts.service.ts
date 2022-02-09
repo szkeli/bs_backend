@@ -8,10 +8,18 @@ import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { Delete } from '../deletes/models/deletes.model'
-import { DeletePrivateValue } from '../tool'
+import { atob, btoa, DeletePrivateValue } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
-import { CreatePostArgs, Nullable, Post, PostsConnection, PostWithCreatorId } from './models/post.model'
+import {
+  CreatePostArgs,
+  Nullable,
+  Post,
+  PostsConnection,
+  PostsConnectionWithRelay,
+  PostWithCreatorId,
+  RelayPagingConfigArgs
+} from './models/post.model'
 
 @Injectable()
 export class PostsService {
@@ -305,6 +313,272 @@ export class PostsService {
       ...res.post[0],
       creatorId: res.postCreatorId[0]?.creator.uid || ''
     }
+  }
+
+  async postsWithRelayForward (first: number, after: string): Promise<PostsConnectionWithRelay> {
+    const query = `
+      query v($after: string) {
+        var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
+          posts as uid
+        }
+        var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }
+        totalCount(func: uid(posts)) {
+          count: count(uid) 
+        }
+        posts(func: uid(q), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          nodes as uid
+          expand(_all_)
+        }
+        # 边界
+        edge(func: uid(nodes), first: 1) {
+          id: uid
+          expand(_all_)  
+        }
+        # 开始游标
+        startCursor(func: uid(posts), first: -1) {
+          id: uid
+          createdAt
+        }
+        # 结束游标
+        endCursor(func: uid(posts), first: 1) {
+          id: uid
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      posts: Post[]
+      startCursor: Array<{id: string, createdAt: string}>
+      endCursor: Array<{id: string, createdAt: string}>
+      edge: Post[]
+    }>({ query, vars: { $after: after } })
+
+    const v = (res.totalCount[0]?.count ?? 0) !== 0
+    const hasNextPage = res.endCursor[0]?.createdAt !== after && res.posts.length === first
+    const hasPreviousPage = after !== res.startCursor[0]?.createdAt
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.posts ?? [],
+      edge: {
+        node: res.edge[0],
+        cursor: atob(res.edge[0]?.createdAt)
+      },
+      pageInfo: {
+        endCursor: res.endCursor[0]?.createdAt,
+        startCursor: res.startCursor[0]?.createdAt,
+        hasNextPage: hasNextPage && v,
+        hasPreviousPage: hasPreviousPage && v
+      }
+    }
+  }
+
+  async postsWithRelayBackward (last: number, before: string): Promise<PostsConnectionWithRelay> {
+    const query = `
+    query v($before: string) {
+      var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
+        posts as uid
+      }
+      var(func: uid(posts), orderdesc: createdAt) @filter(gt(createdAt, $before)) { q as uid }
+      totalCount(func: uid(posts)) {
+        count: count(uid) 
+      }
+      var(func: uid(q), orderasc: createdAt, first: ${last}) { v as uid }
+      posts(func: uid(v), orderdesc: createdAt) {
+        id: uid
+        nodes as uid
+        expand(_all_)
+      }
+      # 边界
+      edge(func: uid(nodes), first: -1) {
+        id: uid
+        expand(_all_)  
+      }
+      # 开始游标
+      startCursor(func: uid(posts), first: -1) {
+        id: uid
+        createdAt
+      }
+      # 结束游标
+      endCursor(func: uid(posts), first: 1) {
+        id: uid
+        createdAt
+      }
+    }
+  `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      posts: Post[]
+      edge: Post[]
+      startCursor: Array<{id: string, createdAt: string}>
+      endCursor: Array<{id: string, createdAt: string}>
+    }>({ query, vars: { $before: before } })
+
+    const v = (res.totalCount[0]?.count ?? 0) !== 0
+    const hasNextPage = res.startCursor[0]?.createdAt !== before && res.posts.length === last
+    const hasPreviousPage = before !== res.endCursor[0]?.createdAt
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.posts ?? [],
+      edge: {
+        node: res.edge[0],
+        cursor: atob(res.edge[0]?.createdAt)
+      },
+      pageInfo: {
+        startCursor: res.startCursor[0]?.createdAt,
+        endCursor: res.endCursor[0]?.createdAt,
+        hasNextPage: hasNextPage && v,
+        hasPreviousPage: hasPreviousPage && v
+      }
+    }
+  }
+
+  async postsWithRelayBackwardInit (last: number): Promise<PostsConnectionWithRelay> {
+    const query = `
+      query {
+        var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
+          posts as uid
+        }
+        var(func: uid(posts), orderasc: createdAt, first: ${last}) { v as uid }
+        totalCount(func: uid(posts)) {
+          count: count(uid) 
+        }
+        posts(func: uid(v), orderdesc: createdAt) {
+          id: uid
+          nodes as uid
+          expand(_all_)
+        }
+        # 边界
+        edge(func: uid(nodes), first: -1) {
+          id: uid
+          expand(_all_)  
+        }
+        # 开始游标
+        startCursor(func: uid(posts), first: -1) {
+          id: uid
+          createdAt
+        }
+        # 结束游标
+        endCursor(func: uid(posts), first: 1) {
+          id: uid
+          createdAt
+        }
+      }
+    `
+
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      posts: Post[]
+      edge: Post[]
+      startCursor: Array<{id: string, createdAt: string}>
+      endCursor: Array<{id: string, createdAt: string}>
+    }>({ query })
+
+    const v = (res.totalCount[0]?.count ?? 0) !== 0
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.posts ?? [],
+      edge: {
+        node: res.edge[0],
+        cursor: atob(res.edge[0]?.createdAt)
+      },
+      pageInfo: {
+        startCursor: res.startCursor[0]?.createdAt,
+        endCursor: res.endCursor[0]?.createdAt,
+        hasNextPage: false,
+        hasPreviousPage: v
+      }
+    }
+  }
+
+  async postsWithRelayForwardInit (first: number): Promise<PostsConnectionWithRelay> {
+    const query = `
+      query {
+        test(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
+          posts as uid
+        }
+        totalCount(func: uid(posts)) {
+          count: count(uid) 
+        }
+        posts(func: uid(posts), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          nodes as uid
+          expand(_all_)
+        }
+        # 边界
+        edge(func: uid(nodes), first: 1) {
+          id: uid
+          expand(_all_)  
+        }
+        # 开始游标
+        startCursor(func: uid(posts), first: -1) {
+          id: uid
+          createdAt
+        }
+        # 结束游标
+        endCursor(func: uid(posts), first: 1) {
+          id: uid
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      posts: Post[]
+      startCursor: Array<{id: string, createdAt: string}>
+      endCursor: Array<{id: string, createdAt: string}>
+      edge: Post[]
+    }>({ query })
+
+    const v = (res.totalCount[0]?.count ?? 0) !== 0
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.posts ?? [],
+      edge: {
+        node: res.edge[0],
+        cursor: atob(res.edge[0]?.createdAt)
+      },
+      pageInfo: {
+        endCursor: res.endCursor[0]?.createdAt,
+        startCursor: res.startCursor[0]?.createdAt,
+        hasNextPage: v,
+        hasPreviousPage: false
+      }
+    }
+  }
+
+  async postsWithRelay ({ first, last, before, after }: RelayPagingConfigArgs): Promise<Nullable<PostsConnectionWithRelay>> {
+    if ((before && after) || (first && last)) {
+      throw new ForbiddenException('同一时间只能使用after作为向后分页、before作为向前分页的游标')
+    }
+    if (!before && !after && !first && !last) {
+      throw new ForbiddenException('必须指定向前分页或者向后分页')
+    }
+
+    if (after && first && !before && !last) {
+      after = btoa(after)
+      return await this.postsWithRelayForward(first, after)
+    }
+
+    if (before && last && !after && !first) {
+      before = btoa(before)
+      return await this.postsWithRelayBackward(last, before)
+    }
+
+    if (first && !after && !last && !before) {
+      return await this.postsWithRelayForwardInit(first)
+    }
+
+    if (!first && !after && last && !before) {
+      return await this.postsWithRelayBackwardInit(last)
+    }
+
+    return null
   }
 
   async posts (first: number, offset: number) {
