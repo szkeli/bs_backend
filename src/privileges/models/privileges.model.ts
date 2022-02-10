@@ -9,9 +9,15 @@ export enum IPRIVILEGE {
   // 能删除User
   CAN_DELETE_USER = 'CAN_DELETE_USER',
   // 能创建User
-  CAN_CREATE_USER = 'CAN_ADD_USER',
+  CAN_CREATE_USER = 'CAN_CREATE_USER',
   // 能更新User
   CAN_UPDATE_USER = 'CAN_UPDATE_USER',
+  // 能通过一个举报
+  CAN_ACCEPT_REPORT = 'CAN_ACCEPT_REPORT',
+  // 能拒绝一个举报
+  CAN_REJECT_REPORT = 'CAN_REJECT_REPORT',
+  // 能查看全局状态数据数据 (某时间段内的注册数，点赞数，发帖数)
+  CAN_VIEW_STATE = 'CAN_VIEW_STATE'
 }
 
 registerEnumType(IPRIVILEGE, {
@@ -28,8 +34,6 @@ export class Privilege {
 
   @Field(type => IPRIVILEGE)
     value: IPRIVILEGE
-  // creator
-  // to
 }
 
 @ArgsType()
