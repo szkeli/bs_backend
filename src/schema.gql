@@ -798,6 +798,18 @@ type PostImagesUploadCredentialInfo {
   keys: [String!]!
 }
 
+type SubjectImagesUploadCredentialInfo {
+  startTime: Int!
+  expiredTime: Int!
+  expiration: String!
+  sessionToken: String!
+  tmpSecretId: String!
+  tmpSecretKey: String!
+  bucket: String!
+  region: String!
+  keys: [String!]!
+}
+
 type AvatarImageUploadCredentialInfo {
   startTime: Int!
   expiredTime: Int!
@@ -920,6 +932,9 @@ type Query {
 
   """用户上传帖子图片时，先根据文件名获取临时上传凭证信息"""
   getPostImagesUploadCredentialInfo(fileNames: [String!]!): PostImagesUploadCredentialInfo!
+
+  """用户创建主题时，先根据文件名获取临时上传凭证"""
+  getSubjectImagesUploadCredentialInfo(fileNames: [String!]!): SubjectImagesUploadCredentialInfo!
 
   """以id获取权限"""
   privilege(id: String!): Privilege!

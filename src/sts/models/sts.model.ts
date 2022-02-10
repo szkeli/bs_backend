@@ -32,6 +32,37 @@ export class PostImagesUploadCredentialInfo {
 }
 
 @ObjectType()
+export class SubjectImagesUploadCredentialInfo {
+  @Field(type => Int)
+    startTime: number
+
+  @Field(type => Int)
+
+    expiredTime: number
+
+  @Field()
+    expiration: string
+
+  @Field()
+    sessionToken: string
+
+  @Field()
+    tmpSecretId: string
+
+  @Field()
+    tmpSecretKey: string
+
+  @Field()
+    bucket: string
+
+  @Field()
+    region: string
+
+  @Field(of => [String])
+    keys: string[]
+}
+
+@ObjectType()
 export class AvatarImageUploadCredentialInfo {
   @Field(type => Int)
     startTime: number
