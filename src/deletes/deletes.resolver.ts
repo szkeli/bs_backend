@@ -5,7 +5,7 @@ import { CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { PagingConfigArgs } from '../user/models/user.model'
 import { DeletesService } from './deletes.service'
-import { Delete, DeletesConnection, PostAndCommentUnion } from './models/deletes.model'
+import { Delete, DeletesConnection, PostAndCommentAndSubjectUnion } from './models/deletes.model'
 
 @Resolver(of => Delete)
 export class DeletesResolver {
@@ -40,7 +40,7 @@ export class DeletesResolver {
     return await this.deletesService.creator(d.id)
   }
 
-  @ResolveField(of => PostAndCommentUnion, { description: '被删除的对象' })
+  @ResolveField(of => PostAndCommentAndSubjectUnion, { description: '被删除的对象' })
   async to (@Parent() d: Delete) {
     return await this.deletesService.to(d.id)
   }

@@ -515,6 +515,26 @@ type CensorResponse {
   detail: CensorDetail!
 }
 
+type Subject {
+  id: String!
+  createdAt: String!
+  title: String!
+  description: String!
+  avatarImageUrl: String!
+  backgroundImageUrl: String!
+
+  """主题的创建者"""
+  creator: User!
+
+  """当前主题中的所有帖子"""
+  posts(first: Int = 10, offset: Int = 0): PostsConnection!
+}
+
+type SubjectsConnection {
+  nodes: [Subject!]!
+  totalCount: Int!
+}
+
 type Report implements Node {
   id: String!
   createdAt: String!
@@ -609,8 +629,10 @@ type Delete {
   creator: Admin!
 
   """被删除的对象"""
-  to: PostAndCommentUnion!
+  to: PostAndCommentAndSubjectUnion!
 }
+
+union PostAndCommentAndSubjectUnion = Post | Comment | Subject
 
 type DeletesConnection {
   nodes: [Delete!]!
@@ -745,26 +767,6 @@ enum DEADLINE_TYPE {
 
 type DeadlinesConnection {
   nodes: [Deadline!]!
-  totalCount: Int!
-}
-
-type Subject {
-  id: String!
-  createdAt: String!
-  title: String!
-  description: String!
-  avatarImageUrl: String!
-  backgroundImageUrl: String!
-
-  """主题的创建者"""
-  creator: User!
-
-  """当前主题中的所有帖子"""
-  posts(first: Int = 10, offset: Int = 0): PostsConnection!
-}
-
-type SubjectsConnection {
-  nodes: [Subject!]!
   totalCount: Int!
 }
 

@@ -5,7 +5,8 @@ import { Admin } from '../admin/models/admin.model'
 import { Comment } from '../comment/models/comment.model'
 import { DbService } from '../db/db.service'
 import { Post } from '../posts/models/post.model'
-import { Delete, DeletesConnection, PostAndCommentUnion } from './models/deletes.model'
+import { Subject } from '../subject/model/subject.model'
+import { Delete, DeletesConnection, PostAndCommentAndSubjectUnion } from './models/deletes.model'
 
 @Injectable()
 export class DeletesService {
@@ -44,11 +45,11 @@ export class DeletesService {
     return res.post[0]?.delete
   }
 
-  async to (deleteId: string): Promise<typeof PostAndCommentUnion> {
+  async to (deleteId: string): Promise<typeof PostAndCommentAndSubjectUnion> {
     const query = `
       query v($deleteId: string) {
         delete(func: uid($deleteId)) @filter(type(Delete)) {
-          to @filter(type(Comment) or type(Post)) {
+          to @filter(type(Comment) or type(Post) or type(Subject)) {
             id: uid
             expand(_all_)
             dgraph.type
@@ -56,12 +57,15 @@ export class DeletesService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{delete: Array<{to: (Comment | Post) & { 'dgraph.type': Array<'Post'|'Comment'>}}>}>({ query, vars: { $deleteId: deleteId } })
+    const res = await this.dbService.commitQuery<{delete: Array<{to: (Comment | Post) & { 'dgraph.type': Array<'Post'|'Comment'|'Subject'>}}>}>({ query, vars: { $deleteId: deleteId } })
     if (res.delete[0]?.to['dgraph.type'].includes('Post')) {
       return new Post(res.delete[0]?.to as unknown as Post)
     }
     if (res.delete[0]?.to['dgraph.type'].includes('Comment')) {
       return new Comment(res.delete[0]?.to as unknown as Comment)
+    }
+    if (res.delete[0]?.to['dgraph.type'].includes('Subject')) {
+      return new Subject(res.delete[0]?.to as unknown as Subject)
     }
   }
 
