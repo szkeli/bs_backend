@@ -51,7 +51,7 @@ export class PostsResolver {
     return await this.postsService.post(id)
   }
 
-  @Query(of => PostsConnection, { description: '获取所有帖子' })
+  @Query(of => PostsConnection, { deprecationReason: '请使用postsWithRelay', description: '获取所有帖子' })
   @MaybeAuth()
   async posts (@Args() { first, offset }: PagingConfigArgs): Promise<PostsConnection> {
     return await this.postsService.posts(first, offset)
