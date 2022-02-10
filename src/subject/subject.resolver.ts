@@ -17,7 +17,8 @@ import {
   CreateSubjectArgs,
   Subject,
   SubjectId,
-  SubjectsConnection
+  SubjectsConnection,
+  UpdateSubjectArgs
 } from './model/subject.model'
 import { SubjectService } from './subject.service'
 
@@ -35,10 +36,18 @@ export class SubjectResolver {
     return await this.subjectService.subjects(args.first, args.offset)
   }
 
-  @Mutation(of => Delete, { description: '删除一个主题' })
+  @Mutation(of => Delete, { description: '以id删除一个主题' })
   @Roles(Role.Admin, Role.User)
   async deleteSubject (@CurrentUser() user: User, @Args('id') id: string) {
     return await this.subjectService.deleteSubject(user.id, id)
+  }
+
+  @Mutation(of => Subject, { description: '以id更新一个主题' })
+  @Roles(Role.Admin, Role.User)
+  async updateSubject (@CurrentUser() user: User, @Args() args: UpdateSubjectArgs) {
+    const subjectId = args.id
+    delete args.id
+    return await this.subjectService.updateSubject(user.id, subjectId, args)
   }
 
   @Mutation(of => Subject, { description: '创建一个主题' })

@@ -11,7 +11,7 @@ import {
   Subject,
   SubjectId,
   SubjectsConnection,
-  UpdateSubjectInput
+  UpdateSubjectArgs
 } from './model/subject.model'
 
 @Injectable()
@@ -146,8 +146,62 @@ export class SubjectService {
     }
   }
 
-  async updateSubject (input: UpdateSubjectInput) {
-    // return await this.dbService.updateSubject(input)
+  async updateSubject (actorId: string, subjectId: string, args: UpdateSubjectArgs) {
+    const query = `
+      query v($actorId: string, $subjectId: string) {
+        v(func: uid($actorId)) @filter(type(Admin) or type(User)) { v as uid }
+        u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }
+        x(func: uid($actorId)) @filter(type(Admin)) { x as uid }
+        y(func: uid($subjectId)) @filter(uid_in(creator, $actorId)) { y as uid }
+        subject(func: uid($subjectId)) @filter(type(Subject)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    // 操作者是管理员
+    const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 0) )'
+    // 操作者是 subject 创建者
+    const condition2 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 0) and eq(len(y), 1) )'
+
+    const mutation = {
+      uid: subjectId,
+      'dgraph.type': 'Subject'
+    }
+
+    Object.assign(mutation, args)
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+      x: Array<{uid: string}>
+      y: Array<{uid: string}>
+      subject: Subject[]
+    }>({
+      mutations: [
+        { mutation, condition: condition1 },
+        { mutation, condition: condition2 }
+      ],
+      query,
+      vars: {
+        $actorId: actorId,
+        $subjectId: subjectId
+      }
+    })
+
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`操作者 ${actorId} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`主题 ${subjectId} 不存在`)
+    }
+    if (res.json.x.length !== 1 && res.json.y.length !== 1) {
+      throw new ForbiddenException(`操作者 ${actorId} 既不是 ${subjectId} 的创建者也不是管理员`)
+    }
+
+    Object.assign(res.json.subject[0], args)
+
+    return res.json.subject[0]
   }
 
   async createASubject (creator: string, input: CreateSubjectArgs) {

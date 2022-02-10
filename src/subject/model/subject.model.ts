@@ -1,4 +1,4 @@
-import { ArgsType, Field, InputType, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
 export type SubjectId = string
 
@@ -42,10 +42,10 @@ export class Subject {
     backgroundImageUrl: string
 }
 
-@InputType()
-export class UpdateSubjectInput {
+@ArgsType()
+export class UpdateSubjectArgs {
   @Field()
-    id: SubjectId
+    id: string
 
   @Field({ nullable: true })
     title?: string
@@ -54,10 +54,10 @@ export class UpdateSubjectInput {
     description?: string
 
   @Field({ nullable: true })
-    avatarUrl?: string
+    avatarImageUrl?: string
 
   @Field({ nullable: true })
-    background?: string
+    backgroundImageUrl?: string
 }
 
 @ObjectType()
