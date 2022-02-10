@@ -31,7 +31,7 @@ export class CommentService {
   async commentsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<CommentsConnection> {
     const query = `
       query v($startTime: string, $endTime: string) {
-        var(func: between(createdAt, $startTime, $endTime)) @filter(type(Comment)) {
+        var(func: between(createdAt, $startTime, $endTime)) @filter(type(Comment) and not has(delete)) {
           comments as uid
         }
         totalCount(func: uid(comments)) {
