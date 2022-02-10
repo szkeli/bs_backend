@@ -31,6 +31,33 @@ export class PostsService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async postsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<PostsConnection> {
+    const query = `
+      query v($startTime: string, $endTime: string) {
+        var(func: between(createdAt, $startTime, $endTime)) @filter(type(Post) and not has(delete)) {
+          posts as uid
+        }
+        totalCount(func: uid(posts)) {
+          count(uid)
+        }
+        posts(func: uid(posts), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      posts: Post[]
+    }>({ query, vars: { $startTime: startTime, $endTime: endTime } })
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.posts ?? []
+    }
+  }
+
   async deletedPosts (first: number, offset: number) {
     const query = `
       {
@@ -498,7 +525,7 @@ export class PostsService {
   async postsWithRelayForwardInit (first: number): Promise<PostsConnectionWithRelay> {
     const query = `
       query {
-        test(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
+        var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
           posts as uid
         }
         totalCount(func: uid(posts)) {

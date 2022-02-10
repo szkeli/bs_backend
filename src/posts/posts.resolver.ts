@@ -29,7 +29,8 @@ import {
   Post,
   PostsConnection,
   PostsConnectionWithRelay,
-  RelayPagingConfigArgs
+  RelayPagingConfigArgs,
+  WithinArgs
 } from './models/post.model'
 import { PostsService } from './posts.service'
 
@@ -54,6 +55,12 @@ export class PostsResolver {
   @MaybeAuth()
   async posts (@Args() { first, offset }: PagingConfigArgs): Promise<PostsConnection> {
     return await this.postsService.posts(first, offset)
+  }
+
+  @Query(of => PostsConnection, { description: '获取指定时间段内的帖子' })
+  @Roles(Role.Admin)
+  async postsCreatedWithin (@Args() { startTime, endTime }: WithinArgs, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.postsService.postsCreatedWithin(startTime, endTime, first, offset)
   }
 
   @Query(of => PostsConnectionWithRelay, { description: 'Relay分页版的posts接口' })

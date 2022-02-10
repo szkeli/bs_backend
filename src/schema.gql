@@ -820,6 +820,9 @@ type Query {
   """获取所有帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
 
+  """获取指定时间段内的帖子"""
+  postsCreatedWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): PostsConnection!
+
   """Relay分页版的posts接口"""
   postsWithRelay(
     """最新的n个对象"""
