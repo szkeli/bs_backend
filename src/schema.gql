@@ -85,13 +85,13 @@ type PostsConnection {
 }
 
 type Edge {
-  node: Post
-  cursor: String
+  node: Post!
+  cursor: String!
 }
 
 type PostsConnectionWithRelay {
   """对象总数"""
-  totalCount: Float!
+  totalCount: Int!
   pageInfo: PageInfo!
   edges: [Edge!]!
 }
@@ -839,13 +839,13 @@ type Query {
   """Relay分页版的posts接口"""
   postsWithRelay(
     """最新的n个对象"""
-    first: Float
+    first: Int
 
     """向前分页游标"""
     after: String
 
     """最早的n个对象"""
-    last: Float
+    last: Int
 
     """向后分页游标"""
     before: String

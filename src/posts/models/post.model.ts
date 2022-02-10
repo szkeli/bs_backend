@@ -56,22 +56,22 @@ export class Edge {
     Object.assign(this, edge)
   }
 
-  @Field(of => Post, { nullable: true })
-    node?: Post
+  @Field(of => Post)
+    node: Post
 
-  @Field({ nullable: true })
-    cursor?: string
+  @Field()
+    cursor: string
 }
 
 @ArgsType()
 export class RelayPagingConfigArgs {
-  @Field(of => Number, { description: '最新的n个对象', nullable: true })
+  @Field(of => Int, { description: '最新的n个对象', nullable: true })
     first?: number
 
   @Field(of => String, { description: '向前分页游标', nullable: true })
     after?: string
 
-  @Field(of => Number, { description: '最早的n个对象', nullable: true })
+  @Field(of => Int, { description: '最早的n个对象', nullable: true })
     last?: number
 
   @Field(of => String, { description: '向后分页游标', nullable: true })
@@ -80,7 +80,7 @@ export class RelayPagingConfigArgs {
 
 @ObjectType()
 export class PostsConnectionWithRelay {
-  @Field(of => Number, { description: '对象总数' })
+  @Field(of => Int, { description: '对象总数' })
     totalCount: number
 
   @Field(of => PageInfo)
