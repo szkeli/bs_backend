@@ -1,9 +1,9 @@
-import { Field, InputType, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, InputType, Int, ObjectType } from '@nestjs/graphql'
 
 export type SubjectId = string
 
-@InputType()
-export class SubjectBase {
+@ArgsType()
+export class CreateSubjectArgs {
   @Field()
     title: string
 
@@ -41,9 +41,6 @@ export class Subject {
   @Field()
     backgroundImageUrl: string
 }
-
-@InputType()
-export class CreateSubjectInput extends SubjectBase {}
 
 @InputType()
 export class UpdateSubjectInput {

@@ -165,7 +165,7 @@ type User {
   conversations
   # 收到的举报
   reports
-  # 用户的删除 (删除帖子 评论)
+  # 用户的删除 (删除帖子 评论 主题)
   deletes
   # 用户被拉黑
   block
@@ -284,6 +284,8 @@ type Subject {
   creator
   # 包含的帖子
   posts
+  # 主题的删除信息
+  delete
 }
 
 # 置顶

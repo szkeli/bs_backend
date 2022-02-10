@@ -7,12 +7,14 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CurrentUser } from 'src/auth/decorator'
+import { CurrentUser, Roles } from 'src/auth/decorator'
 import { PostsConnection } from 'src/posts/models/post.model'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
+import { Role } from '../auth/model/auth.model'
+import { Delete } from '../deletes/models/deletes.model'
 import {
-  CreateSubjectInput,
+  CreateSubjectArgs,
   Subject,
   SubjectId,
   SubjectsConnection
@@ -33,9 +35,14 @@ export class SubjectResolver {
     return await this.subjectService.subjects(args.first, args.offset)
   }
 
+  @Mutation(of => Delete, { description: '删除一个主题' })
+  @Roles(Role.Admin, Role.User)
+  async deleteSubject (@CurrentUser() user: User, @Args('id') id: string) {
+    return await this.subjectService.deleteSubject(user.id, id)
+  }
+
   @Mutation(of => Subject, { description: '创建一个主题' })
-  async createSubject (@CurrentUser() user: User, @Args('input') input: CreateSubjectInput
-  ): Promise<Subject> {
+  async createSubject (@CurrentUser() user: User, @Args() input: CreateSubjectArgs): Promise<Subject> {
     return await this.subjectService.createASubject(user.id, input)
   }
 

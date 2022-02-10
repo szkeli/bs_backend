@@ -3,7 +3,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { Admin } from '../admin/models/admin.model'
 import { CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
-import { PagingConfigArgs, User } from '../user/models/user.model'
+import { PagingConfigArgs } from '../user/models/user.model'
 import { DeletesService } from './deletes.service'
 import { Delete, DeletesConnection, PostAndCommentUnion } from './models/deletes.model'
 

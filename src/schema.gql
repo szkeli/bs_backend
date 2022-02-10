@@ -1099,8 +1099,11 @@ type Mutation {
     sign: String!
   ): Admin!
 
+  """删除一个主题"""
+  deleteSubject(id: String!): Delete!
+
   """创建一个主题"""
-  createSubject(input: CreateSubjectInput!): Subject!
+  createSubject(title: String!, description: String!, avatarImageUrl: String!, backgroundImageUrl: String!): Subject!
 
   """举报一条评论"""
   addReportOnComment(
@@ -1246,13 +1249,6 @@ input UserGenderPropMap {
 
   """是否私有属性"""
   isPrivate: Boolean = false
-}
-
-input CreateSubjectInput {
-  title: String!
-  description: String!
-  avatarImageUrl: String!
-  backgroundImageUrl: String!
 }
 
 type Subscription {
