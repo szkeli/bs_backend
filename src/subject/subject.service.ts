@@ -120,34 +120,29 @@ export class SubjectService {
     }
   }
 
-  async subjects (first: number, offset: number) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
+  async subjects (first: number, offset: number): Promise<SubjectsConnection> {
+    const query = `
         query {
-          totalCount(func: type(Subject)) {
+          var(func: type(Subject)) @filter(not has(delete)) {
+            subjects as uid
+          }
+          totalCount(func: uid(subjects)) {
             count(uid)
           }
-          v(func: type(Subject), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          subjects(func: uid(subjects), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
             id: uid
-            createdAt
-            title
-            description
-            avatarImageUrl
-            backgroundImageUrl
+            expand(_all_)
           }
         }
       `
-      const res = await this.dgraph
-        .newTxn({ readOnly: true })
-        .query(query)
-      const u: SubjectsConnection = {
-        nodes: res.getJson().v || [],
-        totalCount: res.getJson().totalCount[0].count
-      }
-      return u
-    } finally {
-      await txn.discard()
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      subjects: Subject[]
+    }>({ query })
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.subjects ?? []
     }
   }
 

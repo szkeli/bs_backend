@@ -62,14 +62,8 @@ export class UpdateSubjectInput {
 
 @ObjectType()
 export class SubjectsConnection {
-  // @Field(type => [SubjectEdge])
-  //   edges: [SubjectEdge]
-
-  // @Field(type => PageInfo)
-  //   pageInfo: PageInfo
-
   @Field(type => [Subject])
-    nodes: [Subject?]
+    nodes: Subject[]
 
   @Field(type => Int)
     totalCount: number
