@@ -56,6 +56,12 @@ export class UserResolver {
     return await this.authService.login(args.userId, v)
   }
 
+  @Mutation(of => LoginResult, { description: '通过小程序的code进行登录' })
+  @NoAuth()
+  async loginByCode (@Args('code') code: string) {
+    return await this.authService.loginByCode(code)
+  }
+
   @Mutation(of => User, { description: '注册' })
   @NoAuth()
   async register (@Args() args: CreateUserArgs) {

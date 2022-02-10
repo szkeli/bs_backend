@@ -62,6 +62,37 @@ export class UserService {
     return res.user[0]
   }
 
+  async checkUserByCode (code: string) {
+    const { openId, unionId } = await code2Session(code)
+    const _now = now()
+    const query = `
+      query v($openId: string, $unionId: string) {
+        user(func: type(User)) @filter(eq(openId, $openId) and eq(unionId, $unionId)) {
+          id: v as uid
+          expand(_all_)
+          roles: dgraph.type
+        }
+      }
+    `
+    const condition = '@if( eq(len(v), 1) )'
+    const mutation = {
+      uid: 'uid(v)',
+      lastLoginedAt: _now
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      user: UserWithRoles[]
+    }>({
+      mutations: [{ mutation, condition }],
+      vars: {
+        $openId: openId,
+        $unionId: unionId
+      },
+      query
+    })
+
+    return res.json.user[0]
+  }
+
   async checkUserPasswordAndGetUser (userId: string, sign: string) {
     if (userId.length <= 2) {
       throw new ForbiddenException('userId 不能少于3个字符')
