@@ -13,14 +13,14 @@ export class DeletesResolver {
 
   @Mutation(() => Delete, { description: '管理员删除一个帖子' })
   @Roles(Role.Admin)
-  async deletePost (@CurrentUser() user: User, @Args('postId') postId: string) {
-    return await this.deletesService.deletePost(user.id, postId)
+  async deletePost (@CurrentUser() admin: Admin, @Args('postId') postId: string) {
+    return await this.deletesService.deletePost(admin.id, postId)
   }
 
   @Mutation(() => Delete, { description: '管理员删除一个评论' })
   @Roles(Role.Admin)
-  async deleteComment (@CurrentUser() user: User, @Args('commentId') commentId: string) {
-    return await this.deletesService.deleteComment(user.id, commentId)
+  async deleteComment (@CurrentUser() admin: Admin, @Args('commentId') commentId: string) {
+    return await this.deletesService.deleteComment(admin.id, commentId)
   }
 
   @Query(of => Delete, { description: '以id获取删除' })
