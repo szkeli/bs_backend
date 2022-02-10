@@ -2,7 +2,7 @@ import { ForbiddenException } from '@nestjs/common'
 import axios from 'axios'
 import * as crypto from 'crypto'
 
-import { Nullable } from './posts/models/post.model'
+import { Edge, Nullable, Post } from './posts/models/post.model'
 import { UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
 
 export async function exec<T, U> (l: string, bindings: object, aliases?: object) {
@@ -119,4 +119,8 @@ export const atob = function (content: string): string {
 
 export const btoa = function (content: string): string {
   return Buffer.from(content, 'base64').toString('utf-8')
+}
+
+export const edgify = function (vs: Array<object & {'createdAt': string}>): Edge[] {
+  return vs.map(v => new Edge({ node: v as unknown as Post, cursor: atob(v.createdAt) }))
 }

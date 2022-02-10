@@ -8,7 +8,7 @@ import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { Delete } from '../deletes/models/deletes.model'
-import { atob, btoa, DeletePrivateValue } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgify } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
@@ -354,13 +354,7 @@ export class PostsService {
         }
         posts(func: uid(q), orderdesc: createdAt, first: ${first}) {
           id: uid
-          nodes as uid
           expand(_all_)
-        }
-        # 边界
-        edge(func: uid(nodes), first: 1) {
-          id: uid
-          expand(_all_)  
         }
         # 开始游标
         startCursor(func: uid(posts), first: -1) {
@@ -379,7 +373,6 @@ export class PostsService {
       posts: Post[]
       startCursor: Array<{id: string, createdAt: string}>
       endCursor: Array<{id: string, createdAt: string}>
-      edge: Post[]
     }>({ query, vars: { $after: after } })
 
     const v = (res.totalCount[0]?.count ?? 0) !== 0
@@ -388,14 +381,10 @@ export class PostsService {
 
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.posts ?? [],
-      edge: {
-        node: res.edge[0],
-        cursor: atob(res.edge[0]?.createdAt)
-      },
+      edges: edgify(res.posts ?? []),
       pageInfo: {
-        endCursor: res.endCursor[0]?.createdAt,
-        startCursor: res.startCursor[0]?.createdAt,
+        endCursor: atob(res.endCursor[0]?.createdAt),
+        startCursor: atob(res.startCursor[0]?.createdAt),
         hasNextPage: hasNextPage && v,
         hasPreviousPage: hasPreviousPage && v
       }
@@ -415,13 +404,7 @@ export class PostsService {
       var(func: uid(q), orderasc: createdAt, first: ${last}) { v as uid }
       posts(func: uid(v), orderdesc: createdAt) {
         id: uid
-        nodes as uid
         expand(_all_)
-      }
-      # 边界
-      edge(func: uid(nodes), first: -1) {
-        id: uid
-        expand(_all_)  
       }
       # 开始游标
       startCursor(func: uid(posts), first: -1) {
@@ -449,14 +432,10 @@ export class PostsService {
 
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.posts ?? [],
-      edge: {
-        node: res.edge[0],
-        cursor: atob(res.edge[0]?.createdAt)
-      },
+      edges: edgify(res.posts ?? []),
       pageInfo: {
-        startCursor: res.startCursor[0]?.createdAt,
-        endCursor: res.endCursor[0]?.createdAt,
+        endCursor: atob(res.endCursor[0]?.createdAt),
+        startCursor: atob(res.startCursor[0]?.createdAt),
         hasNextPage: hasNextPage && v,
         hasPreviousPage: hasPreviousPage && v
       }
@@ -475,13 +454,7 @@ export class PostsService {
         }
         posts(func: uid(v), orderdesc: createdAt) {
           id: uid
-          nodes as uid
           expand(_all_)
-        }
-        # 边界
-        edge(func: uid(nodes), first: -1) {
-          id: uid
-          expand(_all_)  
         }
         # 开始游标
         startCursor(func: uid(posts), first: -1) {
@@ -508,14 +481,10 @@ export class PostsService {
 
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.posts ?? [],
-      edge: {
-        node: res.edge[0],
-        cursor: atob(res.edge[0]?.createdAt)
-      },
+      edges: edgify(res.posts ?? []),
       pageInfo: {
-        startCursor: res.startCursor[0]?.createdAt,
-        endCursor: res.endCursor[0]?.createdAt,
+        endCursor: atob(res.endCursor[0]?.createdAt),
+        startCursor: atob(res.startCursor[0]?.createdAt),
         hasNextPage: false,
         hasPreviousPage: v
       }
@@ -533,13 +502,7 @@ export class PostsService {
         }
         posts(func: uid(posts), orderdesc: createdAt, first: ${first}) {
           id: uid
-          nodes as uid
           expand(_all_)
-        }
-        # 边界
-        edge(func: uid(nodes), first: 1) {
-          id: uid
-          expand(_all_)  
         }
         # 开始游标
         startCursor(func: uid(posts), first: -1) {
@@ -565,14 +528,10 @@ export class PostsService {
 
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.posts ?? [],
-      edge: {
-        node: res.edge[0],
-        cursor: atob(res.edge[0]?.createdAt)
-      },
+      edges: edgify(res.posts ?? []),
       pageInfo: {
-        endCursor: res.endCursor[0]?.createdAt,
-        startCursor: res.startCursor[0]?.createdAt,
+        endCursor: atob(res.endCursor[0]?.createdAt),
+        startCursor: atob(res.startCursor[0]?.createdAt),
         hasNextPage: v,
         hasPreviousPage: false
       }

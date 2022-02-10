@@ -52,6 +52,10 @@ export class PostsConnection {
 
 @ObjectType()
 export class Edge {
+  constructor (edge: Edge) {
+    Object.assign(this, edge)
+  }
+
   @Field(of => Post, { nullable: true })
     node?: Post
 
@@ -82,9 +86,6 @@ export class PostsConnectionWithRelay {
   @Field(of => PageInfo)
     pageInfo: PageInfo
 
-  @Field(of => Edge)
-    edge: Edge
-
-  @Field(of => [Post])
-    nodes: Post[]
+  @Field(of => [Edge])
+    edges: Edge[]
 }

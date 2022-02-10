@@ -36,40 +36,6 @@ interface Person implements Node {
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
 }
 
-type Comment {
-  id: String!
-  content: String!
-  createdAt: String!
-
-  """获取该评论下的所有评论"""
-  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """按热度获取该评论下的所有评论"""
-  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """获取该评论下的点赞信息"""
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
-
-  """获取该评论的举报信息"""
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-
-  """获取被评论的对象"""
-  to: PostAndCommentUnion!
-
-  """评论的创建者，评论是匿名评论时，creator为null"""
-  creator: User
-
-  """评论未被删除时，此项为null"""
-  delete: Delete
-}
-
-union PostAndCommentUnion = Post | Comment
-
-type CommentsConnection {
-  nodes: [Comment!]!
-  totalCount: Int!
-}
-
 type PageInfo {
   endCursor: String
   hasNextPage: Boolean!
@@ -127,8 +93,41 @@ type PostsConnectionWithRelay {
   """对象总数"""
   totalCount: Float!
   pageInfo: PageInfo!
-  edge: Edge!
-  nodes: [Post!]!
+  edges: [Edge!]!
+}
+
+type Comment {
+  id: String!
+  content: String!
+  createdAt: String!
+
+  """获取该评论下的所有评论"""
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """按热度获取该评论下的所有评论"""
+  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """获取该评论下的点赞信息"""
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
+
+  """获取该评论的举报信息"""
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """获取被评论的对象"""
+  to: PostAndCommentUnion!
+
+  """评论的创建者，评论是匿名评论时，creator为null"""
+  creator: User
+
+  """评论未被删除时，此项为null"""
+  delete: Delete
+}
+
+union PostAndCommentUnion = Post | Comment
+
+type CommentsConnection {
+  nodes: [Comment!]!
+  totalCount: Int!
 }
 
 type Block {
