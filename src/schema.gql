@@ -853,6 +853,9 @@ type Query {
   """以id获取用户"""
   user(id: String!): User!
 
+  """查询某时间段内发布的所有评论"""
+  commentsCreatedWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): CommentsConnection!
+
   """以id获取一条评论"""
   comment(id: String!): Comment!
 

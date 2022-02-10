@@ -13,6 +13,7 @@ import { PagingConfigArgs, User } from 'src/user/models/user.model'
 import { Role } from '../auth/model/auth.model'
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete, PostAndCommentUnion } from '../deletes/models/deletes.model'
+import { WithinArgs } from '../node/models/node.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -31,6 +32,12 @@ export class CommentResolver {
     private readonly reportsService: ReportsService,
     private readonly deletesService: DeletesService
   ) {}
+
+  @Query(of => CommentsConnection, { description: '查询某时间段内发布的所有评论' })
+  @Roles(Role.Admin)
+  async commentsCreatedWithin (@Args() { startTime, endTime }: WithinArgs, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.commentService.commentsCreatedWithin(startTime, endTime, first, offset)
+  }
 
   @Query(of => Comment, { description: '以id获取一条评论' })
   async comment (@Args('id') id: CommentId) {

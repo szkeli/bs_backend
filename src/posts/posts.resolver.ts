@@ -20,6 +20,7 @@ import { Role } from '../auth/model/auth.model'
 import { CommentService } from '../comment/comment.service'
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete } from '../deletes/models/deletes.model'
+import { WithinArgs } from '../node/models/node.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -29,8 +30,7 @@ import {
   Post,
   PostsConnection,
   PostsConnectionWithRelay,
-  RelayPagingConfigArgs,
-  WithinArgs
+  RelayPagingConfigArgs
 } from './models/post.model'
 import { PostsService } from './posts.service'
 

@@ -88,12 +88,3 @@ export class PostsConnectionWithRelay {
   @Field(of => [Post])
     nodes: Post[]
 }
-
-@ArgsType()
-export class WithinArgs {
-  @Field()
-    startTime: string
-
-  @Field()
-    endTime: string
-}

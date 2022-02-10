@@ -1,4 +1,4 @@
-import { Field, Int, InterfaceType, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, Int, InterfaceType, ObjectType } from '@nestjs/graphql'
 
 @InterfaceType()
 export abstract class Node {
@@ -45,4 +45,13 @@ export class NodeEdge {
 
   @Field(type => Node)
     node: Node
+}
+
+@ArgsType()
+export class WithinArgs {
+  @Field()
+    startTime: string
+
+  @Field()
+    endTime: string
 }
