@@ -383,8 +383,8 @@ export class PostsService {
       totalCount: res.totalCount[0]?.count ?? 0,
       edges: edgify(res.posts ?? []),
       pageInfo: {
-        endCursor: atob(res.endCursor[0]?.createdAt),
-        startCursor: atob(res.startCursor[0]?.createdAt),
+        endCursor: res.posts.length !== 0 ? atob(res.posts.slice(-1)[0].createdAt) : null,
+        startCursor: res.posts.length !== 0 ? atob(res.posts[0].createdAt) : null,
         hasNextPage: hasNextPage && v,
         hasPreviousPage: hasPreviousPage && v
       }
@@ -434,8 +434,8 @@ export class PostsService {
       totalCount: res.totalCount[0]?.count ?? 0,
       edges: edgify(res.posts ?? []),
       pageInfo: {
-        endCursor: atob(res.endCursor[0]?.createdAt),
-        startCursor: atob(res.startCursor[0]?.createdAt),
+        endCursor: res.posts.length !== 0 ? atob(res.posts.slice(-1)[0].createdAt) : null,
+        startCursor: res.posts.length !== 0 ? atob(res.posts[0].createdAt) : null,
         hasNextPage: hasNextPage && v,
         hasPreviousPage: hasPreviousPage && v
       }
@@ -483,8 +483,8 @@ export class PostsService {
       totalCount: res.totalCount[0]?.count ?? 0,
       edges: edgify(res.posts ?? []),
       pageInfo: {
-        endCursor: atob(res.endCursor[0]?.createdAt),
-        startCursor: atob(res.startCursor[0]?.createdAt),
+        endCursor: res.posts.length !== 0 ? atob(res.posts.slice(-1)[0].createdAt) : null,
+        startCursor: res.posts.length !== 0 ? atob(res.posts[0].createdAt) : null,
         hasNextPage: false,
         hasPreviousPage: v
       }
@@ -504,16 +504,6 @@ export class PostsService {
           id: uid
           expand(_all_)
         }
-        # 开始游标
-        startCursor(func: uid(posts), first: -1) {
-          id: uid
-          createdAt
-        }
-        # 结束游标
-        endCursor(func: uid(posts), first: 1) {
-          id: uid
-          createdAt
-        }
       }
     `
     const res = await this.dbService.commitQuery<{
@@ -530,8 +520,8 @@ export class PostsService {
       totalCount: res.totalCount[0]?.count ?? 0,
       edges: edgify(res.posts ?? []),
       pageInfo: {
-        endCursor: atob(res.endCursor[0]?.createdAt),
-        startCursor: atob(res.startCursor[0]?.createdAt),
+        endCursor: res.posts.length !== 0 ? atob(res.posts.slice(-1)[0].createdAt) : null,
+        startCursor: res.posts.length !== 0 ? atob(res.posts[0].createdAt) : null,
         hasNextPage: v,
         hasPreviousPage: false
       }
