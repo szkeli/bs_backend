@@ -768,7 +768,7 @@ type Query {
   ): PostsConnectionWithRelay!
 
   """按热度获取所有帖子"""
-  trendingPosts(
+  trendingPostsWithRelay(
     """最新的n个对象"""
     first: Int
 
@@ -781,6 +781,7 @@ type Query {
     """向后分页游标"""
     before: String
   ): PostsConnectionWithRelay!
+  trendingPosts(first: Int = 10, offset: Int = 0): PostsConnection!
 
   """获取所有被删除的帖子"""
   deletedPosts(first: Int = 10, offset: Int = 0): PostsConnection!

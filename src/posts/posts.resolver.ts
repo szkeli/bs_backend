@@ -71,10 +71,14 @@ export class PostsResolver {
 
   @Query(of => PostsConnectionWithRelay, { description: '按热度获取所有帖子' })
   @MaybeAuth()
-  async trendingPosts (@Args() paging: RelayPagingConfigArgs) {
+  async trendingPostsWithRelay (@Args() paging: RelayPagingConfigArgs) {
     return await this.postsService.trendingPostsWithRelayForward(paging.first, paging.after)
+  }
 
-    // return await this.postsService.trendingPosts(10, 1)
+  @Query(of => PostsConnection)
+  @MaybeAuth()
+  async trendingPosts (@Args() { first, offset }: PagingConfigArgs) {
+    return await this.postsService.trendingPosts(first, offset)
   }
 
   @Query(of => PostsConnection, { description: '获取所有被删除的帖子' })
