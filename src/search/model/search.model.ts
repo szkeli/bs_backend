@@ -19,15 +19,6 @@ registerEnumType(SEARCHTYPE, {
 })
 
 @ObjectType()
-export class SearchResultItemEdge {
-  @Field(type => String)
-    cursor: string
-
-  @Field(type => SearchResultItem)
-    node: typeof SearchResultItem
-}
-
-@ObjectType()
 export class Search {
   @Field(type => Int)
     startTime: Time

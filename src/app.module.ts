@@ -15,6 +15,7 @@ import { CensorsModule } from './censors/censors.module'
 import { CensorsService } from './censors/censors.service'
 import { CommentModule } from './comment/comment.module'
 import { CommentService } from './comment/comment.service'
+import { ConnectionsModule } from './connections/connections.module'
 import { ConversationsModule } from './conversations/conversations.module'
 import { CredentialsModule } from './credentials/credentials.module'
 import { CurriculumsModule } from './curriculums/curriculums.module'
@@ -82,7 +83,8 @@ import { VotesModule } from './votes/votes.module'
     CredentialsModule,
     PinsModule,
     CensorsModule,
-    PubsubsModule
+    PubsubsModule,
+    ConnectionsModule
   ],
   controllers: [AppController],
   providers: [

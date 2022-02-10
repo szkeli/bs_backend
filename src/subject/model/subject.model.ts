@@ -68,12 +68,3 @@ export class SubjectsConnection {
   @Field(type => Int)
     totalCount: number
 }
-
-@ObjectType()
-export class SubjectEdge {
-  @Field(type => String)
-    cursor: string
-
-  @Field(type => Subject)
-    node: Subject
-}

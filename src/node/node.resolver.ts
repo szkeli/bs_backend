@@ -1,8 +1,9 @@
 import { Resolver } from '@nestjs/graphql'
 
-import { NodeService } from './node.service'
+import { PostsService } from '../posts/posts.service'
+import { Node } from './models/node.model'
 
-@Resolver()
+@Resolver(Node)
 export class NodeResolver {
-  constructor (private readonly nodeService: NodeService) {}
+  constructor (private readonly postsService: PostsService) {}
 }

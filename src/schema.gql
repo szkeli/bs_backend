@@ -2,50 +2,38 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-interface Node {
+type Comment {
   id: String!
-}
+  content: String!
+  createdAt: String!
 
-interface Person implements Node {
-  userId: String!
-  name: String!
-  id: String!
-
-  """当前用户创建的所有帖子"""
-  posts(first: Int = 10, offset: Int = 0): PostsConnection!
-
-  """当前用户的所有点赞"""
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
-
-  """当前用户发布的评论"""
+  """获取该评论下的所有评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
-  """当前用户创建的所有主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+  """按热度获取该评论下的所有评论"""
+  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
-  """当前用户创建的所有会话"""
-  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
+  """获取该评论下的点赞信息"""
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
 
-  """当前用户收到的所有举报"""
+  """获取该评论的举报信息"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 
-  """当前用户的ddl信息"""
-  deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
+  """获取被评论的对象"""
+  to: PostAndCommentUnion!
 
-  """当前用户的课程信息"""
-  curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
+  """评论的创建者，评论是匿名评论时，creator为null"""
+  creator: User
+
+  """评论未被删除时，此项为null"""
+  delete: Delete
 }
 
-type PageInfo {
-  endCursor: String
-  hasNextPage: Boolean!
-  hasPreviousPage: Boolean!
-  startCursor: String
-}
+union PostAndCommentUnion = Post | Comment
 
-type NodeEdge {
-  cursor: String!
-  node: Node!
+type CommentsConnection {
+  nodes: [Comment!]!
+  totalCount: Int!
 }
 
 type Post {
@@ -84,50 +72,22 @@ type PostsConnection {
   totalCount: Int!
 }
 
-type Edge {
-  node: Post!
-  cursor: String!
-}
-
 type PostsConnectionWithRelay {
-  """对象总数"""
-  totalCount: Int!
-  pageInfo: PageInfo!
   edges: [Edge!]!
-}
-
-type Comment {
-  id: String!
-  content: String!
-  createdAt: String!
-
-  """获取该评论下的所有评论"""
-  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """按热度获取该评论下的所有评论"""
-  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """获取该评论下的点赞信息"""
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
-
-  """获取该评论的举报信息"""
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-
-  """获取被评论的对象"""
-  to: PostAndCommentUnion!
-
-  """评论的创建者，评论是匿名评论时，creator为null"""
-  creator: User
-
-  """评论未被删除时，此项为null"""
-  delete: Delete
-}
-
-union PostAndCommentUnion = Post | Comment
-
-type CommentsConnection {
-  nodes: [Comment!]!
+  pageInfo: PageInfo!
   totalCount: Int!
+}
+
+type Edge {
+  node: Post
+  cursor: String
+}
+
+type PageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
 }
 
 type Block {
@@ -327,67 +287,10 @@ type User implements Person & Node {
   avatarImageUrl: String!
 }
 
-enum GENDER {
-  NONE
-  MALE
-  FEMALE
-}
-
-"""包含属性是否个人可见的用户对象"""
-type UserWithPrivateProps implements Person & Node {
-  """学院属性是否私有"""
-  isCollegePrivate: Boolean
-
-  """校区属性是否私有"""
-  isSubCampusPrivate: Boolean
-
-  """性别属性是否私有"""
-  isGenderPrivate: Boolean
-
-  """学校属性是否私有"""
-  isSchoolPrivate: Boolean
-
-  """年级属性是否私有"""
-  isGradePrivate: Boolean
-  id: String!
-
-  """学号"""
-  studentId: Int
-  name: String!
+interface Person implements Node {
   userId: String!
-
-  """微信openId,注册时传入微信code自动通过微信提供的接口获取获取"""
-  openId: String!
-
-  """微信unionId,注册时传入微信code自动通过微信提供的接口获取获取"""
-  unionId: String!
-
-  """用户性别"""
-  gender: GENDER
-
-  """学院"""
-  college: String
-
-  """校区"""
-  subCampus: String
-
-  """学校"""
-  school: String
-
-  """年级"""
-  grade: String
-
-  """用户创建时间"""
-  createdAt: String!
-
-  """用户信息的更新时间"""
-  updatedAt: String!
-
-  """用户上一次调用login接口获取token的系统时间"""
-  lastLoginedAt: String!
-
-  """用户头像链接"""
-  avatarImageUrl: String!
+  name: String!
+  id: String!
 
   """当前用户创建的所有帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
@@ -412,6 +315,16 @@ type UserWithPrivateProps implements Person & Node {
 
   """当前用户的课程信息"""
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
+}
+
+interface Node {
+  id: String!
+}
+
+enum GENDER {
+  NONE
+  MALE
+  FEMALE
 }
 
 type LoginResult implements Node & Person {
@@ -855,7 +768,19 @@ type Query {
   ): PostsConnectionWithRelay!
 
   """按热度获取所有帖子"""
-  trendingPosts(first: Int = 10, offset: Int = 0): PostsConnection!
+  trendingPosts(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+  ): PostsConnectionWithRelay!
 
   """获取所有被删除的帖子"""
   deletedPosts(first: Int = 10, offset: Int = 0): PostsConnection!
@@ -976,6 +901,87 @@ type Query {
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
+
+"""包含属性是否个人可见的用户对象"""
+type UserWithPrivateProps implements Person & Node {
+  """学院属性是否私有"""
+  isCollegePrivate: Boolean
+
+  """校区属性是否私有"""
+  isSubCampusPrivate: Boolean
+
+  """性别属性是否私有"""
+  isGenderPrivate: Boolean
+
+  """学校属性是否私有"""
+  isSchoolPrivate: Boolean
+
+  """年级属性是否私有"""
+  isGradePrivate: Boolean
+  id: String!
+
+  """学号"""
+  studentId: Int
+  name: String!
+  userId: String!
+
+  """微信openId,注册时传入微信code自动通过微信提供的接口获取获取"""
+  openId: String!
+
+  """微信unionId,注册时传入微信code自动通过微信提供的接口获取获取"""
+  unionId: String!
+
+  """用户性别"""
+  gender: GENDER
+
+  """学院"""
+  college: String
+
+  """校区"""
+  subCampus: String
+
+  """学校"""
+  school: String
+
+  """年级"""
+  grade: String
+
+  """用户创建时间"""
+  createdAt: String!
+
+  """用户信息的更新时间"""
+  updatedAt: String!
+
+  """用户上一次调用login接口获取token的系统时间"""
+  lastLoginedAt: String!
+
+  """用户头像链接"""
+  avatarImageUrl: String!
+
+  """当前用户创建的所有帖子"""
+  posts(first: Int = 10, offset: Int = 0): PostsConnection!
+
+  """当前用户的所有点赞"""
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
+
+  """当前用户发布的评论"""
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """当前用户创建的所有主题"""
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+
+  """当前用户创建的所有会话"""
+  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
+
+  """当前用户收到的所有举报"""
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """当前用户的ddl信息"""
+  deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
+
+  """当前用户的课程信息"""
+  curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
+}
 
 enum SEARCHTYPE {
   USER

@@ -20,26 +20,11 @@ export class Comment {
 
 @ObjectType()
 export class CommentsConnection {
-  // @Field(type => [CommentEdge])
-  //   edges: [CommentEdge]
-
-  // @Field(type => PageInfo)
-  //   pageInfo: PageInfo
-
   @Field(type => [Comment])
     nodes: Comment[]
 
   @Field(type => Int)
     totalCount: number
-}
-
-@ObjectType()
-export class CommentEdge {
-  @Field(type => String)
-    cursor: string
-
-  @Field(type => Comment)
-    node: Comment
 }
 
 @ArgsType()

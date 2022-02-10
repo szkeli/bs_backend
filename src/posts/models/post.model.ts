@@ -1,6 +1,6 @@
 import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
-import { PageInfo } from '../../node/models/node.model'
+import { Connection } from '../../connections/models/connections.model'
 
 export type Nullable<T> = T | null
 @ArgsType()
@@ -24,8 +24,8 @@ export class Post {
     Object.assign(this, post)
   }
 
-  @Field()
-    id?: string
+  @Field(of => String)
+    id: string
 
   @Field()
     content: string
@@ -50,19 +50,6 @@ export class PostsConnection {
     totalCount: number
 }
 
-@ObjectType()
-export class Edge {
-  constructor (edge: Edge) {
-    Object.assign(this, edge)
-  }
-
-  @Field(of => Post)
-    node: Post
-
-  @Field()
-    cursor: string
-}
-
 @ArgsType()
 export class RelayPagingConfigArgs {
   @Field(of => Int, { description: '最新的n个对象', nullable: true })
@@ -79,13 +66,4 @@ export class RelayPagingConfigArgs {
 }
 
 @ObjectType()
-export class PostsConnectionWithRelay {
-  @Field(of => Int, { description: '对象总数' })
-    totalCount: number
-
-  @Field(of => PageInfo)
-    pageInfo: PageInfo
-
-  @Field(of => [Edge])
-    edges: Edge[]
-}
+export class PostsConnectionWithRelay extends Connection<Post>(Post) {}

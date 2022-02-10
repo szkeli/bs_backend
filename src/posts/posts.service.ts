@@ -8,7 +8,7 @@ import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { Delete } from '../deletes/models/deletes.model'
-import { atob, btoa, DeletePrivateValue, edgify } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgify, edgifyByKey, getCurosrByScoreAndId } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
@@ -134,16 +134,21 @@ export class PostsService {
     }
   }
 
-  async trendingPosts (first: number, offset: number): Promise<PostsConnection> {
-    if (first + offset > 30) {
-      throw new ForbiddenException('first + offset 应该小于30')
+  async trendingPostsWithRelayForward (first: number, after: string): Promise<PostsConnectionWithRelay> {
+    after = btoa(after)
+    if (after) {
+      try {
+        after = JSON.parse(after).score
+      } catch {
+        throw new ForbiddenException('cursor解析错误')
+      }
     }
-    // TODO
+    const q1 = 'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
     const query = `
-      query v($first: int, $offset: int) {
-        posts as var(func: type(Post)) {
+      query v($after: string) {
+        v as var(func: type(Post)) @filter(not has(delete)) {
           voteCount as count(votes @filter(type(Vote)))
-        # TODO
+          # TODO
           c as count(comments @filter(type(Comment)))
           commentsCount as math(c * 3)
           createdAt as createdAt
@@ -153,19 +158,80 @@ export class PostsService {
           )
           score as math((voteCount + commentsCount)* hour)
         }
+        posts as var(func: uid(v)) @filter(gt(val(score), 0))
+
+        ${after ? q1 : ''}
         
         totalCount(func: uid(posts)) { count(uid) }
-        posts(func: uid(posts), orderdesc: val(score), first: $first, offset: $offset) {
-          val(score)
+        posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: val(score), first: ${first}) {
+          score: val(score)
           id: uid
           expand(_all_)
-        } 
+        }
       }
     `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      posts: Array<Post & {score: number}>
+    }>({ query, vars: { $after: after } })
+
+    const v = (res.posts.length ?? 0) !== 0
+
+    const firstPost = res.posts[0]
+    const lastPost = res.posts?.slice(-1)[0]
+    const startCursor = getCurosrByScoreAndId(firstPost?.id, firstPost?.score)
+    const endCursor = getCurosrByScoreAndId(lastPost?.id, lastPost?.score)
+
+    const hasNextPage = res.posts.length === first
+    const hasPreviousPage = after !== res.posts?.slice(-1)[0]?.score?.toString() && !!after
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      edges: edgifyByKey(res.posts ?? [], 'score'),
+      pageInfo: {
+        startCursor,
+        endCursor,
+        hasNextPage: hasNextPage && v,
+        hasPreviousPage: hasPreviousPage && v
+      }
+    }
+  }
+
+  async trendingPosts (first: number, offset: number): Promise<PostsConnection> {
+    if (first + offset > 30) {
+      throw new ForbiddenException('first + offset 应该小于30')
+    }
+    // TODO
+    const query = `
+    query v($first: int, $offset: int) {
+      posts as var(func: type(Post)) {
+        voteCount as count(votes @filter(type(Vote)))
+        # TODO
+        c as count(comments @filter(type(Comment)))
+        commentsCount as math(c * 3)
+        createdAt as createdAt
+      
+        hour as math(
+          0.75*(since(createdAt)/216000)
+        )
+        score as math((voteCount + commentsCount)* hour)
+      }
+      
+      totalCount(func: uid(posts)) { count(uid) }
+      posts(func: uid(posts), orderdesc: val(score), first: $first, offset: $offset) {
+        score: val(score)
+        id: uid
+        expand(_all_)
+      } 
+    }
+  `
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: 13}>
       posts: Post[]
     }>({ query, vars: { $first: `${first}`, $offset: `${offset}` } })
+
+    console.error(res)
+
     return {
       nodes: res.posts ?? [],
       totalCount: res.totalCount[0]?.count ?? 0
@@ -302,7 +368,7 @@ export class PostsService {
     }
 
     return {
-      id: res.uids.get('post'),
+      id: res.uids.get('post') as unknown as any,
       content,
       images,
       createdAt: now
@@ -342,17 +408,16 @@ export class PostsService {
     }
   }
 
-  async postsWithRelayForward (first: number, after: string): Promise<PostsConnectionWithRelay> {
+  async postsWithRelayForward (first: number, after?: string | null): Promise<PostsConnectionWithRelay> {
+    const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {
         var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
           posts as uid
         }
-        var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }
-        totalCount(func: uid(posts)) {
-          count: count(uid) 
-        }
-        posts(func: uid(q), orderdesc: createdAt, first: ${first}) {
+        ${after ? q1 : ''}
+        totalCount(func: uid(posts)) { count(uid) }
+        posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -377,7 +442,7 @@ export class PostsService {
 
     const v = (res.totalCount[0]?.count ?? 0) !== 0
     const hasNextPage = res.endCursor[0]?.createdAt !== after && res.posts.length === first
-    const hasPreviousPage = after !== res.startCursor[0]?.createdAt
+    const hasPreviousPage = after !== res.startCursor[0]?.createdAt && !!after
 
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
@@ -391,28 +456,34 @@ export class PostsService {
     }
   }
 
-  async postsWithRelayBackward (last: number, before: string): Promise<PostsConnectionWithRelay> {
+  async postsWithRelayBackward (last: number, before?: string | null): Promise<PostsConnectionWithRelay> {
+    const q1 = `
+      var(func: uid(posts), orderdesc: createdAt) @filter(gt(createdAt, $before)) { q as uid }
+      var(func: uid(q), orderasc: createdAt, first: ${last}) { v as uid }
+    `
+    const q2 = `
+      var(func: uid(posts), orderasc: createdAt, first: ${last}) { v as uid }
+    `
     const query = `
     query v($before: string) {
       var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
         posts as uid
       }
-      var(func: uid(posts), orderdesc: createdAt) @filter(gt(createdAt, $before)) { q as uid }
       totalCount(func: uid(posts)) {
-        count: count(uid) 
+        count(uid) 
       }
-      var(func: uid(q), orderasc: createdAt, first: ${last}) { v as uid }
+      ${before ? q1 : q2}
       posts(func: uid(v), orderdesc: createdAt) {
         id: uid
         expand(_all_)
       }
       # 开始游标
-      startCursor(func: uid(posts), first: -1) {
+      startCursor(func: uid(v), first: -1) {
         id: uid
         createdAt
       }
       # 结束游标
-      endCursor(func: uid(posts), first: 1) {
+      endCursor(func: uid(v), first: 1) {
         id: uid
         createdAt
       }
@@ -428,7 +499,7 @@ export class PostsService {
 
     const v = (res.totalCount[0]?.count ?? 0) !== 0
     const hasNextPage = res.startCursor[0]?.createdAt !== before && res.posts.length === last
-    const hasPreviousPage = before !== res.endCursor[0]?.createdAt
+    const hasPreviousPage = before !== res.endCursor[0]?.createdAt && !!before
 
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
@@ -442,76 +513,6 @@ export class PostsService {
     }
   }
 
-  async postsWithRelayBackwardInit (last: number): Promise<PostsConnectionWithRelay> {
-    const query = `
-      query {
-        var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
-          posts as uid
-        }
-        var(func: uid(posts), orderasc: createdAt, first: ${last}) { v as uid }
-        totalCount(func: uid(posts)) {
-          count: count(uid) 
-        }
-        posts(func: uid(v), orderdesc: createdAt) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      posts: Post[]
-    }>({ query })
-
-    const v = (res.totalCount[0]?.count ?? 0) !== 0
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      edges: edgify(res.posts ?? []),
-      pageInfo: {
-        endCursor: res.posts.length !== 0 ? atob(res.posts.slice(-1)[0].createdAt) : null,
-        startCursor: res.posts.length !== 0 ? atob(res.posts[0].createdAt) : null,
-        hasNextPage: false,
-        hasPreviousPage: v
-      }
-    }
-  }
-
-  async postsWithRelayForwardInit (first: number): Promise<PostsConnectionWithRelay> {
-    const query = `
-      query {
-        var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
-          posts as uid
-        }
-        totalCount(func: uid(posts)) {
-          count: count(uid) 
-        }
-        posts(func: uid(posts), orderdesc: createdAt, first: ${first}) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      posts: Post[]
-    }>({ query })
-
-    const v = (res.totalCount[0]?.count ?? 0) !== 0
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      edges: edgify(res.posts ?? []),
-      pageInfo: {
-        endCursor: res.posts.length !== 0 ? atob(res.posts.slice(-1)[0].createdAt) : null,
-        startCursor: res.posts.length !== 0 ? atob(res.posts[0].createdAt) : null,
-        hasNextPage: v,
-        hasPreviousPage: false
-      }
-    }
-  }
-
   async postsWithRelay ({ first, last, before, after }: RelayPagingConfigArgs): Promise<Nullable<PostsConnectionWithRelay>> {
     if ((before && after) || (first && last)) {
       throw new ForbiddenException('同一时间只能使用after作为向后分页、before作为向前分页的游标')
@@ -520,22 +521,14 @@ export class PostsService {
       throw new ForbiddenException('必须指定向前分页或者向后分页')
     }
 
-    if (after && first && !before && !last) {
+    if (first) {
       after = btoa(after)
       return await this.postsWithRelayForward(first, after)
     }
 
-    if (before && last && !after && !first) {
+    if (last) {
       before = btoa(before)
       return await this.postsWithRelayBackward(last, before)
-    }
-
-    if (first && !after && !last && !before) {
-      return await this.postsWithRelayForwardInit(first)
-    }
-
-    if (!first && !after && last && !before) {
-      return await this.postsWithRelayBackwardInit(last)
     }
 
     return null
