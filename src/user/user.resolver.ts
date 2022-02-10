@@ -16,6 +16,7 @@ import { CurriculumsService } from '../curriculums/curriculums.service'
 import { CurriculumsConnection } from '../curriculums/models/curriculums.model'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
+import { WithinArgs } from '../node/models/node.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -60,6 +61,12 @@ export class UserResolver {
   async register (@Args() args: CreateUserArgs) {
     args.sign = sign_calculus(args.sign)
     return await this.userService.registerUser(args)
+  }
+
+  @Query(of => UsersConnection, { description: '指定时间段内注册的所有用户' })
+  @Roles(Role.Admin)
+  async registerWithin (@Args() { startTime, endTime }: WithinArgs, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.userService.registerWithin(startTime, endTime, first, offset)
   }
 
   @Mutation(of => User, { description: '更新用户画像' })

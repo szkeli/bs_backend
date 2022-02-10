@@ -271,7 +271,7 @@ export abstract class Person implements Node {
 @ObjectType()
 export class UsersConnection {
   @Field(type => [User])
-    nodes: [User?]
+    nodes: User[]
 
   @Field(type => Int)
     totalCount: number

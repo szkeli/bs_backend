@@ -844,6 +844,9 @@ type Query {
   """获取所有被删除的帖子"""
   deletedPosts(first: Int = 10, offset: Int = 0): PostsConnection!
 
+  """指定时间段内注册的所有用户"""
+  registerWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): UsersConnection!
+
   """当前id对应的的用户画像"""
   whoAmI: AdminAndUserWithPrivatePropsUnion!
 

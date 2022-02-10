@@ -22,6 +22,33 @@ export class UserService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async registerWithin (startTime: string, endTime: string, first: number, offset: number): Promise<UsersConnection> {
+    const query = `
+      query v($startTime: string, $endTime: string) {
+        var(func: between(createdAt, $startTime, $endTime)) @filter(type(User)) {
+          users as uid
+        }
+        totalCount(func: uid(users)) {
+          count(uid)
+        }
+        users(func: uid(users), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      users: User[]
+    }>({ query, vars: { $startTime: startTime, $endTime: endTime } })
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.users ?? []
+    }
+  }
+
   async user (viewerId: string, id: string): Promise<User> {
     const query = `
         query v($uid: string) {
