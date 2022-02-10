@@ -456,25 +456,12 @@ export class PostsService {
           id: uid
           expand(_all_)
         }
-        # 开始游标
-        startCursor(func: uid(posts), first: -1) {
-          id: uid
-          createdAt
-        }
-        # 结束游标
-        endCursor(func: uid(posts), first: 1) {
-          id: uid
-          createdAt
-        }
       }
     `
 
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
       posts: Post[]
-      edge: Post[]
-      startCursor: Array<{id: string, createdAt: string}>
-      endCursor: Array<{id: string, createdAt: string}>
     }>({ query })
 
     const v = (res.totalCount[0]?.count ?? 0) !== 0
@@ -509,9 +496,6 @@ export class PostsService {
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
       posts: Post[]
-      startCursor: Array<{id: string, createdAt: string}>
-      endCursor: Array<{id: string, createdAt: string}>
-      edge: Post[]
     }>({ query })
 
     const v = (res.totalCount[0]?.count ?? 0) !== 0
