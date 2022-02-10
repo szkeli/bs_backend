@@ -862,6 +862,9 @@ type Query {
   """获取所有被删除的评论"""
   deletedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
+  """某段时间内的所有点赞"""
+  votesCreatedWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): VotesConnection!
+
   """以id获取管理员"""
   admin(id: String!): Admin!
 

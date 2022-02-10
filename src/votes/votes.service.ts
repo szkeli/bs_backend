@@ -11,6 +11,36 @@ import { Votable, Vote, VotesConnection } from './model/votes.model'
 
 @Injectable()
 export class VotesService {
+  async votesCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<VotesConnection> {
+    const query = `
+      query v($startTime: string, $endTime: string) {
+        var(func: between(createdAt, $startTime, $endTime)) @filter(type(Vote)) {
+          votes as uid
+        }
+        totalCount(func: uid(votes)) {
+          count(uid)
+        }
+        votes(func: uid(votes), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      votes: Vote[]
+    }>({ query, vars: { $startTime: startTime, $endTime: endTime } })
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.votes ?? [],
+      // 当前用户是管理员所以...
+      viewerCanUpvote: false,
+      viewerHasUpvoted: false
+    }
+  }
+
   async findVotesByUid (id: string, first: number, offset: number): Promise<VotesConnection> {
     const query = `
       query v($uid: string) {

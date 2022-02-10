@@ -1,13 +1,15 @@
 import { ForbiddenException, Inject } from '@nestjs/common'
-import { Args, Mutation, Parent, ResolveField, Resolver, Subscription } from '@nestjs/graphql'
+import { Args, Mutation, Parent, Query, ResolveField, Resolver, Subscription } from '@nestjs/graphql'
 import { PubSub } from 'graphql-subscriptions'
 
-import { CurrentUser, NoAuth } from 'src/auth/decorator'
-import { User } from 'src/user/models/user.model'
+import { CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
+import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
+import { Role } from '../auth/model/auth.model'
 import { PUB_SUB_KEY } from '../constants'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
-import { Votable, Vote } from './model/votes.model'
+import { WithinArgs } from '../node/models/node.model'
+import { Votable, Vote, VotesConnection } from './model/votes.model'
 import { VotesService } from './votes.service'
 
 @Resolver(_of => Vote)
@@ -29,6 +31,12 @@ export class VotesResolver {
       throw new ForbiddenException('监听的列表不能为空')
     }
     return this.pubSub.asyncIterator('votesChanged')
+  }
+
+  @Query(of => VotesConnection, { description: '某段时间内的所有点赞' })
+  @Roles(Role.Admin)
+  async votesCreatedWithin (@Args() { startTime, endTime }: WithinArgs, @Args(){ first, offset }: PagingConfigArgs) {
+    return await this.votesService.votesCreatedWithin(startTime, endTime, first, offset)
   }
 
   @Mutation(_of => Votable, { description: '点赞一个帖子' })
