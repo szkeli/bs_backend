@@ -3,8 +3,8 @@ import { Field, Int, ObjectType } from '@nestjs/graphql'
 import { Connection as RelayConnection, Edge as RelayEdge, PageInfo as RelayPageInfo } from 'graphql-relay'
 
 export function Connection<GraphQLObject> (GenericClass?: Type<GraphQLObject>) {
-  @ObjectType({ isAbstract: true })
-  class PageInfo implements RelayPageInfo {
+  @ObjectType(`${GenericClass.name}PageInfo`, { isAbstract: true })
+  abstract class PageInfo implements RelayPageInfo {
     @Field(of => String, { nullable: true })
       startCursor: string
 
@@ -18,7 +18,7 @@ export function Connection<GraphQLObject> (GenericClass?: Type<GraphQLObject>) {
       hasNextPage: boolean
   }
 
-  @ObjectType({ isAbstract: true })
+  @ObjectType(`${GenericClass.name}Edge`, { isAbstract: true })
   abstract class Edge<GraphQLObject> implements RelayEdge<GraphQLObject> {
     @Field(of => GenericClass, { nullable: true })
       node: GraphQLObject

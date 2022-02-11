@@ -31,6 +31,10 @@ export class PostsService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async commentsWithRelay (id: string, paging: RelayPagingConfigArgs) {
+
+  }
+
   async postsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<PostsConnection> {
     const query = `
       query v($startTime: string, $endTime: string) {
@@ -637,5 +641,48 @@ export class PostsService {
       viewerCanUpvote: res.q[0].v === undefined
     }
     return u
+  }
+
+  /**
+   * 返回对应帖子id下的评论
+   * @param id 帖子id
+   * @param first 前first条帖子
+   * @param offset 偏移量
+   * @returns {Promise<CommentsConnection>} CommentsConnection
+   */
+  async comments (id: PostId, first: number, offset: number): Promise<CommentsConnection> {
+    const query = `
+      query v($uid: string) {
+        # 包含已经被折叠的帖子
+        var(func: uid($uid)) @recurse(loop: false) {
+          A as uid
+          comments
+        }
+
+        totalCount(func: uid(A)) @filter(type(Comment) and not uid($uid) and not has(delete)) {
+          count(uid)
+        }
+
+        post(func: uid($uid)) @filter(type(Post)) {
+          comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Comment) and not has(delete) and not has(fold)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      post: Array<{ comments?: Comment[]}>
+      totalCount: Array<{count: number}>
+    }>({ query, vars: { $uid: id } })
+
+    if (!res.post) {
+      throw new ForbiddenException(`帖子 ${id} 不存在`)
+    }
+
+    return {
+      nodes: res.post[0]?.comments ?? [],
+      totalCount: res.totalCount[0]?.count ?? 0
+    }
   }
 }

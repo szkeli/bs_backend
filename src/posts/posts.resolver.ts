@@ -25,6 +25,7 @@ import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
 import {
+  CommentsConnectionWithRelay,
   CreatePostArgs,
   Nullable,
   Post,
@@ -99,7 +100,12 @@ export class PostsResolver {
 
   @ResolveField(of => CommentsConnection, { description: '帖子的所有评论' })
   async comments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.commentService.getCommentsByPostId(post.id.toString(), first, offset)
+    return await this.postsService.comments(post.id.toString(), first, offset)
+  }
+
+  @ResolveField(of => CommentsConnectionWithRelay, { description: '获取所有评论 relay分页版' })
+  async commentsWithRelay (@Parent() post: Post, @Args() paging: RelayPagingConfigArgs) {
+    return await this.postsService.commentsWithRelay(post.id, paging)
   }
 
   @ResolveField(of => Subject, { nullable: true, description: '帖子所属的主题' })

@@ -48,6 +48,21 @@ type Post {
   """帖子的所有评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
+  """获取所有评论 relay分页版"""
+  commentsWithRelay(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+  ): CommentsConnectionWithRelay!
+
   """帖子所属的主题"""
   subject: Subject
 
@@ -73,17 +88,35 @@ type PostsConnection {
 }
 
 type PostsConnectionWithRelay {
-  edges: [Edge!]!
-  pageInfo: PageInfo!
+  edges: [PostEdge!]!
+  pageInfo: PostPageInfo!
   totalCount: Int!
 }
 
-type Edge {
+type PostEdge {
   node: Post
   cursor: String
 }
 
-type PageInfo {
+type PostPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type CommentsConnectionWithRelay {
+  edges: [CommentEdge!]!
+  pageInfo: CommentPageInfo!
+  totalCount: Int!
+}
+
+type CommentEdge {
+  node: Comment
+  cursor: String
+}
+
+type CommentPageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!
