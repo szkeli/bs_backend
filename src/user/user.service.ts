@@ -22,6 +22,57 @@ export class UserService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async pureDeleteUser (adminId: string, userId: string) {
+    const query = `
+      query v($adminId: string, $userId: string) {
+        # 管理员
+        v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
+        u(func: eq(userId, $userId)) @filter(type(User)) {
+          # 被删除的用户
+          u as uid
+          # 非基本数据
+          votesCount: votes as votes
+          subjectsCount: subjects as subjects
+          conversationsCount: conversations as conversations
+          reportsCount: reports as reports
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) and eq(len(v), 1) and eq(len(votes), 0) and eq(len(subjects), 0) and eq(len(conversations), 0) and eq(len(reports), 0) )'
+    const mutation = {
+      uid: 'uid(u)',
+      'dgraph.type': 'User'
+    }
+
+    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{
+        votesCount: number
+        subjectsCount: number
+        conversationsCount: number
+        reportsCount: number
+        uid: string
+      }>
+    }>({
+      mutations: [
+        { mutation, condition }
+      ],
+      query,
+      vars: {
+        $adminId: adminId,
+        $userId: userId
+      }
+    })
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`管理员 ${adminId} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`用户 ${userId} 不存在`)
+    }
+
+    return true
+  }
+
   async registerWithin (startTime: string, endTime: string, first: number, offset: number): Promise<UsersConnection> {
     const query = `
       query v($startTime: string, $endTime: string) {

@@ -69,6 +69,12 @@ export class UserResolver {
     return await this.userService.registerUser(args)
   }
 
+  @Mutation(of => Boolean, { description: '用于调试的接口: 根据userId 删除一个刚创建的用户，该用户不能有点赞评论发帖等操作' })
+  @Roles(Role.Admin)
+  async pureDeleteUser (@CurrentUser() admin: Admin, @Args('userId') userId: string) {
+    return await this.userService.pureDeleteUser(admin.id, userId)
+  }
+
   @Query(of => UsersConnection, { description: '指定时间段内注册的所有用户' })
   @Roles(Role.Admin)
   async registerWithin (@Args() { startTime, endTime }: WithinArgs, @Args() { first, offset }: PagingConfigArgs) {

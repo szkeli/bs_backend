@@ -1088,6 +1088,9 @@ type Mutation {
     grade: UserStringPropMap!
   ): User!
 
+  """用于调试的接口: 根据userId 删除一个刚创建的用户，该用户不能有点赞评论发帖等操作"""
+  pureDeleteUser(userId: String!): Boolean!
+
   """更新用户画像"""
   updateUser(
     """学院"""
