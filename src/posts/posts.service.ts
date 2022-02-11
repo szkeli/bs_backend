@@ -204,7 +204,7 @@ export class PostsService {
     // TODO
     const query = `
     query v($first: int, $offset: int) {
-      posts as var(func: type(Post)) {
+      posts as var(func: type(Post)) @filter(not has (delete)) {
         voteCount as count(votes @filter(type(Vote)))
         # TODO
         c as count(comments @filter(type(Comment)))
@@ -214,6 +214,7 @@ export class PostsService {
         hour as math(
           0.75*(since(createdAt)/216000)
         )
+
         score as math((voteCount + commentsCount)* hour)
       }
       
@@ -229,8 +230,6 @@ export class PostsService {
       totalCount: Array<{count: 13}>
       posts: Post[]
     }>({ query, vars: { $first: `${first}`, $offset: `${offset}` } })
-
-    console.error(res)
 
     return {
       nodes: res.posts ?? [],
