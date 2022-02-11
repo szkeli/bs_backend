@@ -4,6 +4,7 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
+import { Anonymous } from '../anonymous/models/anonymous.model'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
@@ -29,6 +30,24 @@ export class PostsService {
     private readonly censorsService: CensorsService
   ) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async anonymous (id: string) {
+    const query = `
+      query v($postId: string) {
+        post(func: uid($postId)) @filter(type(Post)) {
+          anonymous @filter(type(Anonymous)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      post: Array<{anonymous: Anonymous}>
+    }>({ query, vars: { $postId: id } })
+
+    return res.post[0]?.anonymous
   }
 
   async commentsWithRelay (id: string, paging: RelayPagingConfigArgs) {

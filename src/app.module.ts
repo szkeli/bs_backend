@@ -40,6 +40,7 @@ import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
+import { AnonymousModule } from './anonymous/anonymous.module';
 
 @Module({
   imports: [
@@ -84,7 +85,8 @@ import { VotesModule } from './votes/votes.module'
     PinsModule,
     CensorsModule,
     PubsubsModule,
-    ConnectionsModule
+    ConnectionsModule,
+    AnonymousModule
   ],
   controllers: [AppController],
   providers: [

@@ -16,6 +16,7 @@ import { Subject } from 'src/subject/model/subject.model'
 import { SubjectService } from 'src/subject/subject.service'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
+import { Anonymous } from '../anonymous/models/anonymous.model'
 import { Role } from '../auth/model/auth.model'
 import { CommentService } from '../comment/comment.service'
 import { DeletesService } from '../deletes/deletes.service'
@@ -136,5 +137,10 @@ export class PostsResolver {
   @ResolveField(of => Delete, { description: '帖子未被删除时，此项为空' })
   async delete (@Parent() post: Post) {
     return await this.deletesService.findDeleteByPostId(post.id.toString())
+  }
+
+  @ResolveField(of => Anonymous, { description: '帖子的匿名信息，非匿名帖子此项为空', nullable: true })
+  async anonymous (@Parent() post: Post) {
+    return await this.postsService.anonymous(post.id)
   }
 }

@@ -80,6 +80,9 @@ type Post {
 
   """帖子未被删除时，此项为空"""
   delete: Delete!
+
+  """帖子的匿名信息，非匿名帖子此项为空"""
+  anonymous: Anonymous
 }
 
 type PostsConnection {
@@ -716,6 +719,11 @@ enum DEADLINE_TYPE {
 type DeadlinesConnection {
   nodes: [Deadline!]!
   totalCount: Int!
+}
+
+type Anonymous {
+  id: String!
+  createdAt: String!
 }
 
 type SearchResultItemConnection {
