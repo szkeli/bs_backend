@@ -578,6 +578,12 @@ union MessageCreatorUnion = User | Admin
 type Anonymous {
   id: String!
   createdAt: String!
+
+  """匿名的创建者，只有创建者自己可见"""
+  creator: User
+
+  """被匿名发布的对象"""
+  to: PostAndCommentUnion!
 }
 
 type Delete {
