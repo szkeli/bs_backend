@@ -747,7 +747,7 @@ type Query {
   post(id: String!): Post!
 
   """获取所有帖子"""
-  posts(first: Int = 10, offset: Int = 0): PostsConnection!
+  posts(first: Int = 10, offset: Int = 0): PostsConnection! @deprecated(reason: "请使用postsWithRelay")
 
   """获取指定时间段内的帖子"""
   postsCreatedWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): PostsConnection!
@@ -1015,6 +1015,9 @@ type Mutation {
     """用户密码"""
     sign: String!
   ): LoginResult!
+
+  """通过小程序的code进行登录"""
+  loginByCode(code: String!): LoginResult!
 
   """注册"""
   register(

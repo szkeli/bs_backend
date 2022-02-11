@@ -55,8 +55,8 @@ export async function code2Session (code: string) {
       errmsg: string
     })
 
-  if (res.errcode !== 0) {
-    throw new ForbiddenException(res.errmsg)
+  if (res.errcode && res.errcode !== 0) {
+    throw new ForbiddenException(`code2Session error: ${res.errmsg}`)
   }
 
   return {
