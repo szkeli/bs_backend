@@ -27,6 +27,9 @@ type Comment {
 
   """评论未被删除时，此项为null"""
   delete: Delete
+
+  """评论的匿名信息，非匿名评论，此项为null"""
+  anonymous: Anonymous
 }
 
 union PostAndCommentUnion = Post | Comment
@@ -572,6 +575,11 @@ type Message implements Node {
 
 union MessageCreatorUnion = User | Admin
 
+type Anonymous {
+  id: String!
+  createdAt: String!
+}
+
 type Delete {
   id: String!
   createdAt: String!
@@ -719,11 +727,6 @@ enum DEADLINE_TYPE {
 type DeadlinesConnection {
   nodes: [Deadline!]!
   totalCount: Int!
-}
-
-type Anonymous {
-  id: String!
-  createdAt: String!
 }
 
 type SearchResultItemConnection {

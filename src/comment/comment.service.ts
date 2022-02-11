@@ -3,6 +3,7 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
+import { Anonymous } from '../anonymous/models/anonymous.model'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
@@ -19,6 +20,21 @@ import {
 
 @Injectable()
 export class CommentService {
+  async anonymous (id: string) {
+    const query = `
+      query v($commentId: string) {
+        comment(func: uid($commentId)) @filter(type(Comment)) {
+          anonymous @filter(type(Anonymous)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{comment: Array<{anonymous: Anonymous}>}>({ query, vars: { $commentId: id } })
+    return res.comment[0]?.anonymous
+  }
+
   private readonly dgraph: DgraphClient
   constructor (
     private readonly dbService: DbService,

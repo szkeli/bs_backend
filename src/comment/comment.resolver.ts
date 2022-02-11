@@ -10,6 +10,7 @@ import {
 import { CurrentUser, Roles } from 'src/auth/decorator'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
+import { Anonymous } from '../anonymous/models/anonymous.model'
 import { Role } from '../auth/model/auth.model'
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete, PostAndCommentUnion } from '../deletes/models/deletes.model'
@@ -93,5 +94,10 @@ export class CommentResolver {
   @ResolveField(of => Delete, { description: '评论未被删除时，此项为null', nullable: true })
   async delete (@Parent() comment: Comment) {
     return await this.deletesService.findDeleteByCommentId(comment.id)
+  }
+
+  @ResolveField(of => Anonymous, { description: '评论的匿名信息，非匿名评论，此项为null', nullable: true })
+  async anonymous (@Parent() comment: Comment) {
+    return await this.commentService.anonymous(comment.id)
   }
 }
