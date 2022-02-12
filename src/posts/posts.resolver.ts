@@ -106,7 +106,7 @@ export class PostsResolver {
 
   @ResolveField(of => CommentsConnectionWithRelay, { description: '获取所有评论 relay分页版' })
   async commentsWithRelay (@Parent() post: Post, @Args() paging: RelayPagingConfigArgs) {
-    return await this.postsService.commentsWithRelay(post.id, paging)
+    return await this.commentService.commentsWithRelay(post.id, paging)
   }
 
   @ResolveField(of => Subject, { nullable: true, description: '帖子所属的主题' })

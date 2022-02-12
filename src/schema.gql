@@ -10,6 +10,21 @@ type Comment {
   """获取该评论下的所有评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
+  """Relay版comments"""
+  commentsWithRelay(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+  ): CommentsConnectionWithRelay!
+
   """按热度获取该评论下的所有评论"""
   trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 

@@ -15,6 +15,7 @@ import { Role } from '../auth/model/auth.model'
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete, PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { WithinArgs } from '../node/models/node.model'
+import { CommentsConnectionWithRelay, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -64,6 +65,11 @@ export class CommentResolver {
   @ResolveField(of => CommentsConnection, { description: '获取该评论下的所有评论' })
   async comments (@Parent() comment: Comment, @Args() { first, offset }: PagingConfigArgs) {
     return await this.commentService.getCommentsByCommentId(comment.id, first, offset)
+  }
+
+  @ResolveField(of => CommentsConnectionWithRelay, { description: 'Relay版comments' })
+  async commentsWithRelay (@Parent() comment: Comment, @Args() paging: RelayPagingConfigArgs) {
+    return await this.commentService.commentsWithRelay(comment.id, paging)
   }
 
   @ResolveField(of => CommentsConnection, { description: '按热度获取该评论下的所有评论' })

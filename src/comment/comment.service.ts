@@ -7,8 +7,8 @@ import { Anonymous } from '../anonymous/models/anonymous.model'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
-import { Post } from '../posts/models/post.model'
-import { DeletePrivateValue } from '../tool'
+import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
@@ -20,6 +20,76 @@ import {
 
 @Injectable()
 export class CommentService {
+  private readonly dgraph: DgraphClient
+  constructor (
+    private readonly dbService: DbService,
+    private readonly censorsService: CensorsService
+  ) {
+    this.dgraph = dbService.getDgraphIns()
+  }
+
+  async commentsWithRelayForward (id: string, first: number, after: string | null): Promise<CommentsConnectionWithRelay> {
+    const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(Post) or type(Comment)) {
+          comments as comments(orderdesc: createdAt) @filter(type(Comment) and not has(delete))
+        }
+        ${after ? q1 : ''}
+
+        totalCount(func: uid(comments)) { count(uid) }
+        comments(func: uid(${after ? 'q' : 'comments'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startPost(func: uid(comments), first: -1) {
+          id: uid
+          createdAt
+        }
+        # 结束游标
+        endPost(func: uid(comments), first: 1) {
+          id: uid
+          createdAt
+        }
+      }
+    `
+
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      comments: Comment[]
+      startPost: Array<{id: string, createdAt: string}>
+      endPost: Array<{id: string, createdAt: string}>
+    }>({ query, vars: { $id: id, $after: after } })
+
+    const lastComment = res.comments?.slice(-1)[0]
+    const totalCount = res.totalCount[0]?.count ?? 0
+    const startComment = res.startPost[0]
+    const endComment = res.endPost[0]
+
+    const hasNextPage = endComment?.createdAt !== lastComment?.createdAt && endComment?.createdAt !== after && res.comments.length === first && totalCount !== first
+    const hasPreviousPage = after !== startComment?.createdAt && !!after
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      pageInfo: {
+        startCursor: atob(res.comments[0]?.createdAt),
+        endCursor: atob(lastComment?.createdAt),
+        hasNextPage,
+        hasPreviousPage
+      },
+      edges: edgifyByCreatedAt(res.comments ?? [])
+    }
+  }
+
+  async commentsWithRelay (id: string, { first, after, last, before }: RelayPagingConfigArgs): Promise<CommentsConnectionWithRelay> {
+    after = btoa(after)
+    before = btoa(before)
+    if (first) {
+      return await this.commentsWithRelayForward(id, first, after)
+    }
+  }
+
   async anonymous (id: string) {
     const query = `
       query v($commentId: string) {
@@ -33,14 +103,6 @@ export class CommentService {
     `
     const res = await this.dbService.commitQuery<{comment: Array<{anonymous: Anonymous}>}>({ query, vars: { $commentId: id } })
     return res.comment[0]?.anonymous
-  }
-
-  private readonly dgraph: DgraphClient
-  constructor (
-    private readonly dbService: DbService,
-    private readonly censorsService: CensorsService
-  ) {
-    this.dgraph = dbService.getDgraphIns()
   }
 
   async commentsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<CommentsConnection> {

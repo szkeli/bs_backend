@@ -13,7 +13,6 @@ import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey,
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
-  CommentsConnectionWithRelay,
   CreatePostArgs,
   Nullable,
   Post,
@@ -49,68 +48,6 @@ export class PostsService {
     }>({ query, vars: { $postId: id } })
 
     return res.post[0]?.anonymous
-  }
-
-  async commentsWithRelayForward (postId: string, first: number, after: string | null): Promise<CommentsConnectionWithRelay> {
-    const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    const query = `
-      query v($postId: string, $after: string) {
-        var(func: uid($postId)) @filter(type(Post)) {
-          comments as comments(orderdesc: createdAt) @filter(type(Comment) and not has(delete))
-        }
-        ${after ? q1 : ''}
-
-        totalCount(func: uid(comments)) { count(uid) }
-        comments(func: uid(${after ? 'q' : 'comments'}), orderdesc: createdAt, first: ${first}) {
-          id: uid
-          expand(_all_)
-        }
-        # 开始游标
-        startPost(func: uid(comments), first: -1) {
-          id: uid
-          createdAt
-        }
-        # 结束游标
-        endPost(func: uid(comments), first: 1) {
-          id: uid
-          createdAt
-        }
-      }
-    `
-
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      comments: Comment[]
-      startPost: Array<{id: string, createdAt: string}>
-      endPost: Array<{id: string, createdAt: string}>
-    }>({ query, vars: { $postId: postId, $after: after } })
-
-    const lastComment = res.comments?.slice(-1)[0]
-    const totalCount = res.totalCount[0]?.count ?? 0
-    const startComment = res.startPost[0]
-    const endComment = res.endPost[0]
-
-    const hasNextPage = endComment?.createdAt !== lastComment?.createdAt && endComment?.createdAt !== after && res.comments.length === first && totalCount !== first
-    const hasPreviousPage = after !== startComment?.createdAt && !!after
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      pageInfo: {
-        startCursor: atob(res.comments[0]?.createdAt),
-        endCursor: atob(lastComment?.createdAt),
-        hasNextPage,
-        hasPreviousPage
-      },
-      edges: edgifyByCreatedAt(res.comments ?? [])
-    }
-  }
-
-  async commentsWithRelay (postId: string, { first, after, last, before }: RelayPagingConfigArgs): Promise<CommentsConnectionWithRelay> {
-    after = btoa(after)
-    before = btoa(before)
-    if (first) {
-      return await this.commentsWithRelayForward(postId, first, after)
-    }
   }
 
   async postsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<PostsConnection> {
