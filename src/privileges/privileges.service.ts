@@ -11,6 +11,70 @@ import { IPRIVILEGE, Privilege, PrivilegesConnection } from './models/privileges
 export class PrivilegesService {
   constructor (private readonly dbService: DbService) {}
 
+  async removePrivilegeOnUser (id: string, from: string, privilege: IPRIVILEGE) {
+    const query = `
+      query v($adminId: string, $xid: string, $privilege: string) {
+        # 管理员存在
+        v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
+        # 管理员已认证
+        u(func: uid($adminId)) @filter(type(Admin) and has(credential)) { u as uid }
+        # 用户存在
+        x(func: uid($xid)) @filter(type(User)) { x as uid }
+        y(func: uid($xid)) @filter(type(User)) {
+          privileges @filter(type(Privilege) and eq(value, $privilege)) {
+            # 用户确实具有该权限
+            y as uid
+            # 该权限的创建者
+            creator as creator @filter(type(Admin))
+          }
+        }
+      }
+    `
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 1) )'
+    const mutation = {
+      uid: 'uid(y)',
+      'dgraph.type': 'Privilege',
+      creator: {
+        uid: 'uid(creator)'
+      },
+      to: {
+        uid: from,
+        privileges: {
+          uid: 'uid(y)'
+        }
+      }
+    }
+    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+      x: Array<{uid: string}>
+      y: Array<{uid: string}>
+    }>({
+      mutations: [{ mutation, condition }],
+      query,
+      vars: {
+        $adminId: id,
+        $xid: from,
+        $privilege: privilege
+      }
+    })
+
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`管理员 ${id} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`管理员 ${id} 未认证`)
+    }
+    if (res.json.x.length !== 1) {
+      throw new ForbiddenException(`用户 ${from} 不存在`)
+    }
+    if (res.json.y.length !== 1) {
+      throw new ForbiddenException(`用户 ${from} 没有 ${privilege} 权限`)
+    }
+
+    return true
+  }
+
   async privileges (first: number, offset: number): Promise<PrivilegesConnection> {
     const query = `
       query {

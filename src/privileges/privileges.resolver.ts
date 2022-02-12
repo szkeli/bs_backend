@@ -4,7 +4,7 @@ import { Admin } from '../admin/models/admin.model'
 import { CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { AdminAndUserUnion, PagingConfigArgs } from '../user/models/user.model'
-import { AddPrivilegeOnAdmin, AddPrivilegeOnUserArgs, Privilege, PrivilegesConnection, RemovePrivilegeOnAdmin } from './models/privileges.model'
+import { AddPrivilegeOnAdmin, AddPrivilegeOnUserArgs, Privilege, PrivilegesConnection, RemovePrivilegeArgs } from './models/privileges.model'
 import { PrivilegesService } from './privileges.service'
 
 @Resolver(of => Privilege)
@@ -34,9 +34,15 @@ export class PrivilegesResolver {
     return await this.privilegesService.addPrivilegeOnUser(admin.id, privilege, id)
   }
 
+  @Mutation(of => Boolean, { description: '从某用户移除一个权限' })
+  @Roles(Role.Admin)
+  async removePrivilegeOnUser (@CurrentUser() admin: Admin, @Args() { privilege, from }: RemovePrivilegeArgs) {
+    return await this.privilegesService.removePrivilegeOnUser(admin.id, from, privilege)
+  }
+
   @Mutation(of => Boolean, { description: '从某管理员移除一个权限' })
   @Roles(Role.Admin)
-  async removePrivilegeOnAdmin (@CurrentUser() admin: Admin, @Args() { privilege, from }: RemovePrivilegeOnAdmin) {
+  async removePrivilegeOnAdmin (@CurrentUser() admin: Admin, @Args() { privilege, from }: RemovePrivilegeArgs) {
     return await this.privilegesService.removePrivilegeOnAdmin(admin.id, from, privilege)
   }
 

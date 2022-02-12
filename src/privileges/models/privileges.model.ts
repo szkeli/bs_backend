@@ -56,7 +56,7 @@ export class AddPrivilegeOnUserArgs {
 }
 
 @ArgsType()
-export class RemovePrivilegeOnAdmin {
+export class RemovePrivilegeArgs {
   @Field(type => IPRIVILEGE)
     privilege: IPRIVILEGE
 

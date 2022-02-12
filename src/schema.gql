@@ -1275,6 +1275,9 @@ type Mutation {
   """添加一个权限到某用户"""
   addPrivilegeOnUser(privilege: IPRIVILEGE!, id: String!): Privilege!
 
+  """从某用户移除一个权限"""
+  removePrivilegeOnUser(privilege: IPRIVILEGE!, from: String!): Boolean!
+
   """从某管理员移除一个权限"""
   removePrivilegeOnAdmin(privilege: IPRIVILEGE!, from: String!): Boolean!
 
