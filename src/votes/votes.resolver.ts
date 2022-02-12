@@ -2,10 +2,11 @@ import { ForbiddenException, Inject } from '@nestjs/common'
 import { Args, Mutation, Parent, Query, ResolveField, Resolver, Subscription } from '@nestjs/graphql'
 import { PubSub } from 'graphql-subscriptions'
 
-import { CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
+import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { PUB_SUB_KEY } from '../constants'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { WithinArgs } from '../node/models/node.model'
@@ -35,6 +36,7 @@ export class VotesResolver {
 
   @Query(of => VotesConnection, { description: '某段时间内的所有点赞' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new ViewAppStatePolicyHandler())
   async votesCreatedWithin (@Args() { startTime, endTime }: WithinArgs, @Args(){ first, offset }: PagingConfigArgs) {
     return await this.votesService.votesCreatedWithin(startTime, endTime, first, offset)
   }

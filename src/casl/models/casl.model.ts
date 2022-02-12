@@ -11,5 +11,14 @@ export enum Action {
   Update = 'update',
   Delete = 'delete'
 }
-export type Subjects = InferSubjects<typeof Post | typeof User | typeof Subject> | 'all'
+
+export class ViewAppState {
+  kind: 'ViewAppState'
+}
+
+export class MustWithCredential {
+  kind: 'MustWithCredential'
+}
+
+export type Subjects = InferSubjects<typeof Post | typeof User | typeof Subject | typeof ViewAppState | typeof MustWithCredential> | 'all'
 export type AppAbility = Ability<[Action, Subjects]>

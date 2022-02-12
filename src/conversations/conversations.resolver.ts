@@ -1,7 +1,8 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
-import { CurrentUser, Roles } from '../auth/decorator'
+import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
+import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { MessagesService } from '../messages/messages.service'
 import { PagingConfigArgs, User } from '../user/models/user.model'
 import { ConversationsService } from './conversations.service'
@@ -23,12 +24,14 @@ export class ConversationsResolver {
 
   @Query(of => Conversation, { description: '以id获取会话' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async conversation (@Args('id') id: string) {
     return await this.conversationsService.conversation(id)
   }
 
   @Query(of => ConversationsConnection, { description: '获取所有会话' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async conversations (@Args() { first, offset }: PagingConfigArgs) {
     return await this.conversationsService.conversations(first, offset)
   }

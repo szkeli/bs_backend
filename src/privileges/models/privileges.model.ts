@@ -3,27 +3,42 @@ import { ArgsType, Field, Int, ObjectType, registerEnumType } from '@nestjs/grap
 export enum IPRIVILEGE {
   ROOT = 'ROOT',
   // 能够认证并创建管理员
-  CAN_CREATE_ADMIN = 'CAN_CREATE_ADMIN',
+  ADMIN_CAN_CREATE_ADMIN = 'ADMIN_CAN_CREATE_ADMIN',
   // 能删除Admin
-  CAN_DELETE_ADMIN = 'CAN_DELETE_ADMIN',
+  ADMIN_CAN_DELETE_ADMIN = 'ADMIN_CAN_DELETE_ADMIN',
   // 能删除User
-  CAN_DELETE_USER = 'CAN_DELETE_USER',
+  ADMIN_CAN_DELETE_USER = 'ADMIN_CAN_DELETE_USER',
   // 能创建User
-  CAN_CREATE_USER = 'CAN_CREATE_USER',
+  ADMIN_CAN_CREATE_USER = 'ADMIN_CAN_CREATE_USER',
   // 能更新User
-  CAN_UPDATE_USER = 'CAN_UPDATE_USER',
+  ADMIN_CAN_UPDATE_USER = 'ADMIN_CAN_UPDATE_USER',
   // 能通过一个举报
-  CAN_ACCEPT_REPORT = 'CAN_ACCEPT_REPORT',
+  ADMIN_CAN_ACCEPT_REPORT = 'ADMIN_CAN_ACCEPT_REPORT',
   // 能拒绝一个举报
-  CAN_REJECT_REPORT = 'CAN_REJECT_REPORT',
+  ADMIN_CAN_REJECT_REPORT = 'ADMIN_CAN_REJECT_REPORT',
   // 能查看全局状态数据数据 (某时间段内的注册数，点赞数，发帖数)
-  CAN_VIEW_STATE = 'CAN_VIEW_STATE',
+  ADMIN_CAN_VIEW_STATE = 'ADMIN_CAN_VIEW_STATE',
   // 用户能创建主题
   USER_CAN_CREATE_SUBJECT = 'USER_CAN_CREATE_SUBJECT'
 }
 
 registerEnumType(IPRIVILEGE, {
-  name: 'IPRIVILEGE'
+  name: 'IPRIVILEGE',
+  description: '全局权限值',
+  valuesMap: {
+    ADMIN_CAN_ACCEPT_REPORT: {
+      description: '管理员能通过一个举报'
+    },
+    ADMIN_CAN_CREATE_ADMIN: {
+      description: '管理员能创建一个新的管理员'
+    },
+    USER_CAN_CREATE_SUBJECT: {
+      description: '用户能创建一个新的主题'
+    },
+    ADMIN_CAN_VIEW_STATE: {
+      description: '管理员能查看全局数据(某段时间内的注册数，点赞数，发帖数)'
+    }
+  }
 })
 
 @ObjectType()

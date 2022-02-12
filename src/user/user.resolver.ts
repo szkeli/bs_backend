@@ -1,13 +1,14 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { AuthService } from 'src/auth/auth.service'
-import { CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
 import { PostsConnection } from 'src/posts/models/post.model'
 import { SubjectsConnection } from 'src/subject/model/subject.model'
 import { RawUser2UserWithPrivateProps, sign as sign_calculus } from 'src/tool'
 
 import { Admin } from '../admin/models/admin.model'
 import { Role, UserWithRoles } from '../auth/model/auth.model'
+import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { CommentService } from '../comment/comment.service'
 import { CommentsConnection } from '../comment/models/comment.model'
 import { ConversationsService } from '../conversations/conversations.service'
@@ -72,12 +73,14 @@ export class UserResolver {
 
   @Mutation(of => Boolean, { description: '用于调试的接口: 根据userId 删除一个刚创建的用户，该用户不能有点赞评论发帖等操作' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async pureDeleteUser (@CurrentUser() admin: Admin, @Args('userId') userId: string) {
     return await this.userService.pureDeleteUser(admin.id, userId)
   }
 
   @Query(of => UsersConnection, { description: '指定时间段内注册的所有用户' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new ViewAppStatePolicyHandler())
   async registerWithin (@Args() { startTime, endTime }: WithinArgs, @Args() { first, offset }: PagingConfigArgs) {
     return await this.userService.registerWithin(startTime, endTime, first, offset)
   }

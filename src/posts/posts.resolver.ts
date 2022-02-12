@@ -7,7 +7,7 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CurrentUser, MaybeAuth, Roles } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser, MaybeAuth, Roles } from 'src/auth/decorator'
 import {
   CommentsConnection
 } from 'src/comment/models/comment.model'
@@ -18,6 +18,7 @@ import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
 import { Role } from '../auth/model/auth.model'
+import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { CommentService } from '../comment/comment.service'
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete } from '../deletes/models/deletes.model'
@@ -61,6 +62,7 @@ export class PostsResolver {
 
   @Query(of => PostsConnection, { description: '获取指定时间段内的帖子' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new ViewAppStatePolicyHandler())
   async postsCreatedWithin (@Args() { startTime, endTime }: WithinArgs, @Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.postsCreatedWithin(startTime, endTime, first, offset)
   }
@@ -85,6 +87,7 @@ export class PostsResolver {
 
   @Query(of => PostsConnection, { description: '获取所有被删除的帖子' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async deletedPosts (@Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.deletedPosts(first, offset)
   }

@@ -172,6 +172,83 @@ type BlocksConnection {
   totalCount: Int!
 }
 
+type Privilege {
+  id: String!
+  createdAt: String!
+  value: IPRIVILEGE!
+
+  """权限作用的对象"""
+  to: AdminAndUserUnion!
+
+  """权限的创建者"""
+  creator: Admin!
+}
+
+"""全局权限值"""
+enum IPRIVILEGE {
+  ROOT
+
+  """管理员能创建一个新的管理员"""
+  ADMIN_CAN_CREATE_ADMIN
+  ADMIN_CAN_DELETE_ADMIN
+  ADMIN_CAN_DELETE_USER
+  ADMIN_CAN_CREATE_USER
+  ADMIN_CAN_UPDATE_USER
+
+  """管理员能通过一个举报"""
+  ADMIN_CAN_ACCEPT_REPORT
+  ADMIN_CAN_REJECT_REPORT
+
+  """管理员能查看全局数据(某段时间内的注册数，点赞数，发帖数)"""
+  ADMIN_CAN_VIEW_STATE
+
+  """用户能创建一个新的主题"""
+  USER_CAN_CREATE_SUBJECT
+}
+
+union AdminAndUserUnion = User | Admin
+
+type PrivilegesConnection {
+  nodes: [Privilege!]!
+  totalCount: Int!
+}
+
+type Subject {
+  id: String!
+  createdAt: String!
+  title: String!
+  description: String!
+  avatarImageUrl: String!
+  backgroundImageUrl: String!
+
+  """主题的创建者"""
+  creator: User!
+
+  """当前主题中的所有帖子"""
+  posts(first: Int = 10, offset: Int = 0): PostsConnection!
+  postsWithRelay(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PostsConnectionWithRelay!
+}
+
+type SubjectsConnection {
+  nodes: [Subject!]!
+  totalCount: Int!
+}
+
 """凭证是成为管理员的前提"""
 type ICredential {
   id: String!
@@ -215,38 +292,6 @@ type Pin {
 type PinsConnection {
   totalCount: Int!
   nodes: [Pin!]!
-}
-
-type Privilege {
-  id: String!
-  createdAt: String!
-  value: IPRIVILEGE!
-
-  """权限作用的对象"""
-  to: AdminAndUserUnion!
-
-  """权限的创建者"""
-  creator: Admin!
-}
-
-enum IPRIVILEGE {
-  ROOT
-  CAN_CREATE_ADMIN
-  CAN_DELETE_ADMIN
-  CAN_DELETE_USER
-  CAN_CREATE_USER
-  CAN_UPDATE_USER
-  CAN_ACCEPT_REPORT
-  CAN_REJECT_REPORT
-  CAN_VIEW_STATE
-  USER_CAN_CREATE_SUBJECT
-}
-
-union AdminAndUserUnion = User | Admin
-
-type PrivilegesConnection {
-  nodes: [Privilege!]!
-  totalCount: Int!
 }
 
 type Admin {
@@ -477,42 +522,6 @@ type LoginResult implements Node & Person {
 
 type UsersConnection {
   nodes: [User!]!
-  totalCount: Int!
-}
-
-type Subject {
-  id: String!
-  createdAt: String!
-  title: String!
-  description: String!
-  avatarImageUrl: String!
-  backgroundImageUrl: String!
-
-  """主题的创建者"""
-  creator: User!
-
-  """当前主题中的所有帖子"""
-  posts(first: Int = 10, offset: Int = 0): PostsConnection!
-  postsWithRelay(
-    """最新的n个对象"""
-    first: Int
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): PostsConnectionWithRelay!
-}
-
-type SubjectsConnection {
-  nodes: [Subject!]!
   totalCount: Int!
 }
 

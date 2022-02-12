@@ -1,7 +1,8 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
-import { CurrentUser, Roles } from '../auth/decorator'
+import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
+import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { Conversation } from '../conversations/models/conversations.model'
 import { PagingConfigArgs, User } from '../user/models/user.model'
 import { AddReportToArgs, Report, Report2Union, ReportsConnection } from './models/reports.model'
@@ -43,12 +44,14 @@ export class ReportsResolver {
 
   @Mutation(of => Boolean, { description: '管理员接口：认为举报无效' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async discardReport (@Args('reportId') reportId: string, @Args('content') content: string, @CurrentUser() user: User) {
     return await this.reportsService.discardReport(user.id, reportId, content)
   }
 
   @Mutation(of => Boolean, { description: '管理员接口：认为举报有效' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async acceptReport (@Args('reportId') reportId: string, @Args('content') content: string, @CurrentUser() user: User) {
     return await this.reportsService.acceptReport(user.id, reportId, content)
   }

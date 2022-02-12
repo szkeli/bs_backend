@@ -7,11 +7,12 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CurrentUser, Roles } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser, Roles } from 'src/auth/decorator'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
 import { Role } from '../auth/model/auth.model'
+import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete, PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { WithinArgs } from '../node/models/node.model'
@@ -37,6 +38,7 @@ export class CommentResolver {
 
   @Query(of => CommentsConnection, { description: '查询某时间段内发布的所有评论' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new ViewAppStatePolicyHandler())
   async commentsCreatedWithin (@Args() { startTime, endTime }: WithinArgs, @Args() { first, offset }: PagingConfigArgs) {
     return await this.commentService.commentsCreatedWithin(startTime, endTime, first, offset)
   }
@@ -48,6 +50,7 @@ export class CommentResolver {
 
   @Query(of => CommentsConnection, { description: '获取所有被删除的评论' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async deletedComments (@Args() { first, offset }: PagingConfigArgs) {
     return await this.commentService.deletedComments(first, offset)
   }

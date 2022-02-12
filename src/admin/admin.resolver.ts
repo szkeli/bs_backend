@@ -9,10 +9,11 @@ import {
 
 import { sign as sign_calculus } from 'src/tool'
 
-import { NoAuth, Roles } from '../auth/decorator'
+import { CheckPolicies, NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { BlocksService } from '../blocks/blocks.service'
 import { BlocksConnection } from '../blocks/models/blocks.model'
+import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { ICredential, ICredentialsConnection } from '../credentials/models/credentials.model'
 import { FoldsService } from '../folds/folds.service'
 import { FoldsConnection } from '../folds/models/folds.model'
@@ -45,12 +46,14 @@ export class AdminResolver {
 
   @Query(of => Admin, { description: '以id获取管理员' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async admin (@Args('id') id: string) {
     return await this.adminService.admin(id)
   }
 
   @Query(of => AdminsConnection, { description: '获取所有管理员' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async admins (@Args() { first, offset }: PagingConfigArgs) {
     return await this.adminService.admins(first, offset)
   }

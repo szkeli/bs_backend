@@ -1,4 +1,5 @@
 import { AppAbility } from '../../casl/models/casl.model'
+import { ICredential } from '../../credentials/models/credentials.model'
 import { Privilege } from '../../privileges/models/privileges.model'
 import { User } from '../../user/models/user.model'
 
@@ -22,6 +23,10 @@ export type UserWithRoles = User & {
 }
 export type UserWithRolesAndPrivileges = UserWithRoles & {
   privileges: Privilege[]
+}
+
+export type UserWithRolesAndPrivilegesAndCredential = UserWithRolesAndPrivileges & {
+  credential: ICredential
 }
 
 export interface IPolicyHandler {

@@ -3,7 +3,7 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
-import { UserWithRoles, UserWithRolesAndPrivileges } from '../auth/model/auth.model'
+import { UserWithRoles, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { Post, PostsConnection } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
@@ -299,7 +299,7 @@ export class UserService {
     }
   }
 
-  async getUserOrAdminWithRolesByUid (id: string): Promise<UserWithRolesAndPrivileges> {
+  async getUserOrAdminWithRolesByUid (id: string): Promise<UserWithRolesAndPrivilegesAndCredential> {
     const query = `
         query v($uid: string) {
           user(func: uid($uid)) @filter(type(User) OR type(Admin)) {
@@ -309,11 +309,14 @@ export class UserService {
               id: uid
               expand(_all_)
             }
+            credential @filter(type(Credential)) {
+              id: uid
+            }
             roles: dgraph.type
           }
         }
       `
-    const res = await this.dbService.commitQuery<{user: UserWithRolesAndPrivileges[]}>({ query, vars: { $uid: id } })
+    const res = await this.dbService.commitQuery<{user: UserWithRolesAndPrivilegesAndCredential[]}>({ query, vars: { $uid: id } })
 
     if (res.user.length !== 1) {
       throw new ForbiddenException(`用户或管理员 ${id} 不存在`)
