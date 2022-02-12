@@ -6,7 +6,7 @@ import { AuthGuard } from '@nestjs/passport'
 import { CaslAbilityFactory } from '../casl/casl-ability.factory'
 import { AppAbility } from '../casl/models/casl.model'
 import { CHECK_POLICIES_KEY, MAYBE_AUTH_KEY, NO_AUTH_KEY, ROLES_KEY } from './decorator'
-import { PolicyHandler, Role, UserWithRoles } from './model/auth.model'
+import { PolicyHandler, Role, UserWithRoles, UserWithRolesAndPrivileges } from './model/auth.model'
 
 interface Props {
   roles: Role[]
@@ -34,7 +34,7 @@ export class RoleAuthGuard implements CanActivate {
     const canActive = await guard.canActivate(context)
 
     const ctx = GqlExecutionContext.create(context)
-    const { user } = ctx.getContext().req as unknown as { user: UserWithRoles }
+    const { user } = ctx.getContext().req as unknown as { user: UserWithRolesAndPrivileges }
 
     const ability = this.caslAbilityFactory.createForAdminAndUser(user)
     const hasAccess = policies.every(handler => this.execPolicyHandler(handler, ability))

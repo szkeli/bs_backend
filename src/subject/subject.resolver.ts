@@ -7,11 +7,12 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CurrentUser, Roles } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser, Roles } from 'src/auth/decorator'
 import { PostsConnection } from 'src/posts/models/post.model'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
+import { CreateSubjectPolicyHandler } from '../casl/casl.handler'
 import { Delete } from '../deletes/models/deletes.model'
 import {
   CreateSubjectArgs,
@@ -51,6 +52,7 @@ export class SubjectResolver {
   }
 
   @Mutation(of => Subject, { description: '创建一个主题' })
+  @CheckPolicies(new CreateSubjectPolicyHandler())
   async createSubject (@CurrentUser() user: User, @Args() input: CreateSubjectArgs): Promise<Subject> {
     return await this.subjectService.createASubject(user.id, input)
   }
