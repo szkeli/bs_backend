@@ -172,6 +172,39 @@ type BlocksConnection {
   totalCount: Int!
 }
 
+type Admin {
+  id: String!
+  userId: String!
+  name: String!
+  avatarImageUrl: String!
+  createdAt: String!
+  updatedAt: String!
+  lastLoginedAt: String!
+
+  """管理员的凭证"""
+  credential: ICredential
+
+  """当前管理员认证过的其他管理员"""
+  credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
+
+  """当前管理员拥有的权限"""
+  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
+
+  """当前管理员折叠的评论"""
+  folds(first: Int = 10, offset: Int = 0): FoldsConnection!
+
+  """当前管理员拉黑的用户"""
+  blocks(first: Int = 10, offset: Int = 0): BlocksConnection!
+
+  """当前管理员创建的置顶"""
+  pins(first: Int = 10, offset: Int = 0): PinsConnection!
+}
+
+type AdminsConnection {
+  nodes: [Admin!]!
+  totalCount: Int!
+}
+
 type Privilege {
   id: String!
   createdAt: String!
@@ -187,6 +220,7 @@ type Privilege {
 """全局权限值"""
 enum IPRIVILEGE {
   ROOT
+  ADMIN_CAN_AUTHEN_OTHER
 
   """管理员能创建一个新的管理员"""
   ADMIN_CAN_CREATE_ADMIN
@@ -292,39 +326,6 @@ type Pin {
 type PinsConnection {
   totalCount: Int!
   nodes: [Pin!]!
-}
-
-type Admin {
-  id: String!
-  userId: String!
-  name: String!
-  avatarImageUrl: String!
-  createdAt: String!
-  updatedAt: String!
-  lastLoginedAt: String!
-
-  """管理员的凭证"""
-  credential: ICredential
-
-  """当前管理员认证过的其他管理员"""
-  credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
-
-  """当前管理员拥有的权限"""
-  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
-
-  """当前管理员折叠的评论"""
-  folds(first: Int = 10, offset: Int = 0): FoldsConnection!
-
-  """当前管理员拉黑的用户"""
-  blocks(first: Int = 10, offset: Int = 0): BlocksConnection!
-
-  """当前管理员创建的置顶"""
-  pins(first: Int = 10, offset: Int = 0): PinsConnection!
-}
-
-type AdminsConnection {
-  nodes: [Admin!]!
-  totalCount: Int!
 }
 
 type User implements Person & Node {

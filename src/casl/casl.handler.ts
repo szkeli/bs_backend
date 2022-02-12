@@ -1,5 +1,6 @@
 import { ForbiddenException } from '@nestjs/common'
 
+import { Admin } from '../admin/models/admin.model'
 import { IPolicyHandler } from '../auth/model/auth.model'
 import { PostWithCreatorId } from '../posts/models/post.model'
 import { IPRIVILEGE } from '../privileges/models/privileges.model'
@@ -35,5 +36,15 @@ export class ViewAppStatePolicyHandler implements IPolicyHandler {
     else {
       throw new ForbiddenException(`缺少 ${IPRIVILEGE.ADMIN_CAN_VIEW_STATE} 权限`)
     }
+  }
+}
+
+export class AuthenAdminPolicyHandler implements IPolicyHandler {
+  handle (ability: AppAbility) {
+    const can = ability.can(Action.Authen, Admin, 'all')
+    if (!can) {
+      throw new ForbiddenException(`缺少 ${IPRIVILEGE.ADMIN_CAN_AUTHEN_OTHER} 权限`)
+    }
+    return true
   }
 }

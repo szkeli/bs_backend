@@ -2,6 +2,8 @@ import { ArgsType, Field, Int, ObjectType, registerEnumType } from '@nestjs/grap
 
 export enum IPRIVILEGE {
   ROOT = 'ROOT',
+  // 能够认证其他管理员
+  ADMIN_CAN_AUTHEN_OTHER = 'ADMIN_CAN_AUTHEN_OTHER',
   // 能够认证并创建管理员
   ADMIN_CAN_CREATE_ADMIN = 'ADMIN_CAN_CREATE_ADMIN',
   // 能删除Admin

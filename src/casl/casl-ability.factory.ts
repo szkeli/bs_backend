@@ -1,6 +1,7 @@
 import { Ability, AbilityBuilder, AbilityClass, ExtractSubjectType } from '@casl/ability'
 import { Injectable } from '@nestjs/common'
 
+import { Admin } from '../admin/models/admin.model'
 import { Role, UserWithRolesAndPrivileges, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { PostWithCreatorId } from '../posts/models/post.model'
 import { IPRIVILEGE } from '../privileges/models/privileges.model'
@@ -22,6 +23,9 @@ export class CaslAbilityFactory {
       }
       if (this.personHasPrivilege(user, IPRIVILEGE.ADMIN_CAN_VIEW_STATE)) {
         can(Action.Read, ViewAppState, 'all')
+      }
+      if (this.personHasPrivilege(user, IPRIVILEGE.ADMIN_CAN_AUTHEN_OTHER)) {
+        can(Action.Authen, Admin, 'all')
       }
     } else if (this.personIsUser(user)) {
       if (!this.personHasPrivilege(user, IPRIVILEGE.USER_CAN_CREATE_SUBJECT)) {
