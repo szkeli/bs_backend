@@ -244,7 +244,7 @@ export class PrivilegesService {
       }
     `
     const res = await this.dbService.commitQuery<{privilege: Array<{creator: Admin}>}>({ query, vars: { $uid: id } })
-    return res.privilege[0].creator
+    return res.privilege[0]?.creator
   }
 
   async to (id: string) {
