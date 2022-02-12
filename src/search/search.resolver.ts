@@ -1,5 +1,6 @@
 import { Args, Query, Resolver } from '@nestjs/graphql'
 
+import { NoAuth } from '../auth/decorator'
 import { PagingConfigArgs } from '../user/models/user.model'
 import { Search, SearchArgs, SearchResultItemConnection, SEARCHTYPE } from './model/search.model'
 import { SearchService } from './search.service'
@@ -9,6 +10,7 @@ export class SearchResolver {
   constructor (private readonly searchService: SearchService) {}
 
   @Query(of => SearchResultItemConnection, { description: '简单的搜索' })
+  @NoAuth()
   async search (@Args() { query, type }: SearchArgs, @Args() args: PagingConfigArgs): Promise<SearchResultItemConnection> {
     if (type === SEARCHTYPE.POST) {
       return await this.searchService.searchPost(query, args.first, args.offset)
