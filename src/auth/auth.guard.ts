@@ -39,7 +39,7 @@ export class RoleAuthGuard implements CanActivate {
     const ability = this.caslAbilityFactory.createForAdminAndUser(user)
     const hasAccess = policies.every(handler => this.execPolicyHandler(handler, ability))
 
-    if (!hasAccess) throw new UnauthorizedException('权限不足')
+    if (!hasAccess) throw new ForbiddenException('权限不足')
 
     return canActive
   }
