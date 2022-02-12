@@ -1,6 +1,17 @@
 import { Type } from '@nestjs/common'
-import { Field, Int, ObjectType } from '@nestjs/graphql'
+import { Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 import { Connection as RelayConnection, Edge as RelayEdge, PageInfo as RelayPageInfo } from 'graphql-relay'
+
+export enum ORDER_BY {
+  // 按热度排序
+  TRENDING = 'TRENDING',
+  // 时间倒序
+  CREATED_AT_DESC = 'CREATED_AT_DESC'
+}
+
+registerEnumType(ORDER_BY, {
+  name: 'ORDER_BY'
+})
 
 export function Connection<GraphQLObject> (GenericClass?: Type<GraphQLObject>) {
   @ObjectType(`${GenericClass.name}PageInfo`, { isAbstract: true })

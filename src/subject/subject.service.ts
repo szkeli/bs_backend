@@ -3,8 +3,9 @@ import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
+import { ORDER_BY } from '../connections/models/connections.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, btoa, edgifyByCreatedAt, now } from '../tool'
+import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, now } from '../tool'
 import { User } from '../user/models/user.model'
 import {
   CreateSubjectArgs,
@@ -75,10 +76,94 @@ export class SubjectService {
     }
   }
 
-  async postsWithRelay (id: string, { first, after, last, before }: RelayPagingConfigArgs) {
+  async postsWithRelay (id: string, { first, after, last, before, orderBy }: RelayPagingConfigArgs) {
     after = btoa(after)
-    if (first) {
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.postsWithRelayForward(id, first, after)
+    }
+
+    if (first && orderBy === ORDER_BY.TRENDING) {
+      try {
+        after = JSON.parse(after).score
+      } catch {
+        throw new ForbiddenException(`解析游标失败 ${after}`)
+      }
+      return await this.trendingPostsWithRelayForward(id, first, after)
+    }
+  }
+
+  async trendingPostsWithRelayForward (subjectId: string, first: number, after: string) {
+    const q1 = 'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
+    const query = `
+      query v($subjectId: string, $after: string) {
+        var(func: uid($subjectId)) @filter(not has(delete)) {
+          tposts as posts @filter(not has(delete))  
+        }
+
+        v as var(func: uid(tposts)) @filter(not has(delete)) {
+          voteCount as count(votes @filter(type(Vote)))
+          # TODO
+          c as count(comments @filter(type(Comment)))
+          commentsCount as math(c * 3)
+          createdAt as createdAt
+        
+          hour as math(
+            0.75*(since(createdAt)/216000)
+          )
+          score as math((voteCount + commentsCount)* hour)
+        }
+        posts as var(func: uid(v)) @filter(gt(val(score), 0))
+
+        ${after ? q1 : ''}
+        
+        totalCount(func: uid(posts)) { count(uid) }
+        posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: val(score), first: ${first}) {
+          score: val(score)
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startPost(func: uid(posts), orderdesc: val(score), first: 1) {
+          id: uid
+          score: val(score)
+        }
+        # 结束游标
+        endPost(func: uid(posts), orderdesc: val(score), first: -1) {
+          id: uid
+          score: val(score)
+        }
+      }
+    `
+
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      posts: Array<Post & {score: number}>
+      startPost: Array<{score: number}>
+      endPost: Array<{score: number}>
+    }>({ query, vars: { $after: after, $subjectId: subjectId } })
+
+    const totalCount = res.totalCount[0]?.count ?? 0
+    const v = totalCount !== 0
+
+    const firstPost = res.posts[0]
+    const lastPost = res.posts?.slice(-1)[0]
+    const startPost = res.startPost[0]
+    const endPost = res.endPost[0]
+    const startCursor = getCurosrByScoreAndId(firstPost?.id, firstPost?.score)
+    const endCursor = getCurosrByScoreAndId(lastPost?.id, lastPost?.score)
+
+    const hasNextPage = endPost?.score !== lastPost?.score && res.posts.length === first && endPost?.score?.toString() !== after
+    const hasPreviousPage = after !== startPost?.score?.toString() && !!after
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      edges: edgifyByKey(res.posts ?? [], 'score'),
+      pageInfo: {
+        startCursor,
+        endCursor,
+        hasNextPage: hasNextPage && v,
+        hasPreviousPage: hasPreviousPage && v
+      }
     }
   }
 

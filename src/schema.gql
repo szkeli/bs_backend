@@ -23,6 +23,9 @@ type Comment {
 
     """向后分页游标"""
     before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
   ): CommentsConnectionWithRelay!
 
   """按热度获取该评论下的所有评论"""
@@ -45,6 +48,11 @@ type Comment {
 
   """评论的匿名信息，非匿名评论，此项为null"""
   anonymous: Anonymous
+}
+
+enum ORDER_BY {
+  TRENDING
+  CREATED_AT_DESC
 }
 
 union PostAndCommentUnion = Post | Comment
@@ -79,6 +87,9 @@ type Post {
 
     """向后分页游标"""
     before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
   ): CommentsConnectionWithRelay!
 
   """帖子所属的主题"""
@@ -494,6 +505,9 @@ type Subject {
 
     """向后分页游标"""
     before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
   ): PostsConnectionWithRelay!
 }
 
@@ -853,6 +867,9 @@ type Query {
 
     """向后分页游标"""
     before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
   ): PostsConnectionWithRelay!
 
   """按热度获取所有帖子"""
@@ -868,6 +885,9 @@ type Query {
 
     """向后分页游标"""
     before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
   ): PostsConnectionWithRelay!
   trendingPosts(first: Int = 10, offset: Int = 0): PostsConnection!
 

@@ -1,7 +1,7 @@
 import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
 import { Comment } from '../../comment/models/comment.model'
-import { Connection } from '../../connections/models/connections.model'
+import { Connection, ORDER_BY } from '../../connections/models/connections.model'
 
 export type Nullable<T> = T | null
 @ArgsType()
@@ -64,6 +64,9 @@ export class RelayPagingConfigArgs {
 
   @Field(of => String, { description: '向后分页游标', nullable: true })
     before?: string
+
+  @Field(of => ORDER_BY, { description: '排序方式', nullable: true, defaultValue: ORDER_BY.CREATED_AT_DESC })
+    orderBy?: ORDER_BY
 }
 
 @ObjectType()
