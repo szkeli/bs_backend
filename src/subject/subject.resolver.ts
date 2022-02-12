@@ -37,6 +37,11 @@ export class SubjectResolver {
     return await this.subjectService.subjects(args.first, args.offset)
   }
 
+  @Query(of => PostsConnectionWithRelay, { description: 'Relay版 以id获取某主题下所有帖子' })
+  async subjectPostsWithRelay (@Args('id') id: SubjectId, @Args() paging: RelayPagingConfigArgs) {
+    return await this.subjectService.postsWithRelay(id, paging)
+  }
+
   @Mutation(of => Delete, { description: '以id删除一个主题' })
   @Roles(Role.Admin, Role.User)
   async deleteSubject (@CurrentUser() user: User, @Args('id') id: string) {

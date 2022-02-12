@@ -904,6 +904,25 @@ type Query {
   """获取所有被删除的帖子"""
   deletedPosts(first: Int = 10, offset: Int = 0): PostsConnection!
 
+  """relay分页版 以id获取某帖子下所有评论"""
+  postCommentsWithRelay(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+    id: String!
+  ): CommentsConnectionWithRelay!
+
   """指定时间段内注册的所有用户"""
   registerWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): UsersConnection!
 
@@ -922,6 +941,25 @@ type Query {
   """以id获取一条评论"""
   comment(id: String!): Comment!
 
+  """Relay版 以id获取某评论下所有评论"""
+  commentCommentsWithRelay(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+    id: String!
+  ): CommentsConnectionWithRelay!
+
   """获取所有被删除的评论"""
   deletedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
@@ -939,6 +977,25 @@ type Query {
 
   """获取所有主题"""
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+
+  """Relay版 以id获取某主题下所有帖子"""
+  subjectPostsWithRelay(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+    id: String!
+  ): PostsConnectionWithRelay!
 
   """简单的搜索"""
   search(

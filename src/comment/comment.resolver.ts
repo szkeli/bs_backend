@@ -48,6 +48,11 @@ export class CommentResolver {
     return await this.commentService.comment(id)
   }
 
+  @Query(of => CommentsConnectionWithRelay, { description: 'Relay版 以id获取某评论下所有评论' })
+  async commentCommentsWithRelay (@Args('id') id: CommentId, @Args() paging: RelayPagingConfigArgs) {
+    return await this.commentService.commentsWithRelay(id, paging)
+  }
+
   @Query(of => CommentsConnection, { description: '获取所有被删除的评论' })
   @Roles(Role.Admin)
   @CheckPolicies(new MustWithCredentialPolicyHandler())

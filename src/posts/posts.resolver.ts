@@ -92,6 +92,11 @@ export class PostsResolver {
     return await this.postsService.deletedPosts(first, offset)
   }
 
+  @Query(of => CommentsConnectionWithRelay, { description: 'relay分页版 以id获取某帖子下所有评论' })
+  async postCommentsWithRelay (@Args('id') id: PostId, @Args() paging: RelayPagingConfigArgs) {
+    return await this.commentService.commentsWithRelay(id, paging)
+  }
+
   @Mutation(of => Post, { description: '创建一个帖子' })
   async createPost (@CurrentUser() user: User, @Args() args: CreatePostArgs) {
     return await this.postsService.createPost(user.id, args)
