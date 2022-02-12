@@ -6,6 +6,7 @@ import { PostWithCreatorId } from '../posts/models/post.model'
 import { IPRIVILEGE } from '../privileges/models/privileges.model'
 import { Subject } from '../subject/model/subject.model'
 import { Action, AppAbility, Subjects } from './models/casl.model'
+
 @Injectable()
 export class CaslAbilityFactory {
   createForAdminAndUser (user: UserWithRolesAndPrivileges) {

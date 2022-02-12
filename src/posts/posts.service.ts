@@ -9,10 +9,11 @@ import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { Delete } from '../deletes/models/deletes.model'
-import { atob, btoa, DeletePrivateValue, edgify, edgifyByKey, getCurosrByScoreAndId } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
+  CommentsConnectionWithRelay,
   CreatePostArgs,
   Nullable,
   Post,
@@ -50,8 +51,66 @@ export class PostsService {
     return res.post[0]?.anonymous
   }
 
-  async commentsWithRelay (id: string, paging: RelayPagingConfigArgs) {
+  async commentsWithRelayForward (postId: string, first: number, after: string | null): Promise<CommentsConnectionWithRelay> {
+    const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($postId: string, $after: string) {
+        var(func: uid($postId)) @filter(type(Post)) {
+          comments as comments(orderdesc: createdAt) @filter(type(Comment) and not has(delete))
+        }
+        ${after ? q1 : ''}
 
+        totalCount(func: uid(comments)) { count(uid) }
+        comments(func: uid(${after ? 'q' : 'comments'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startPost(func: uid(comments), first: -1) {
+          id: uid
+          createdAt
+        }
+        # 结束游标
+        endPost(func: uid(comments), first: 1) {
+          id: uid
+          createdAt
+        }
+      }
+    `
+
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      comments: Comment[]
+      startPost: Array<{id: string, createdAt: string}>
+      endPost: Array<{id: string, createdAt: string}>
+    }>({ query, vars: { $postId: postId, $after: after } })
+
+    const lastComment = res.comments?.slice(-1)[0]
+    const totalCount = res.totalCount[0]?.count ?? 0
+    const startComment = res.startPost[0]
+    const endComment = res.endPost[0]
+
+    const hasNextPage = endComment?.createdAt !== lastComment?.createdAt && endComment?.createdAt !== after && res.comments.length === first && totalCount !== first
+    const hasPreviousPage = after !== startComment?.createdAt && !!after
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      pageInfo: {
+        startCursor: atob(res.comments[0]?.createdAt),
+        endCursor: atob(lastComment?.createdAt),
+        hasNextPage,
+        hasPreviousPage
+      },
+      edges: edgifyByCreatedAt(res.comments ?? [])
+    }
+  }
+
+  async commentsWithRelay (postId: string, { first, after, last, before }: RelayPagingConfigArgs): Promise<CommentsConnectionWithRelay> {
+    after = btoa(after)
+    before = btoa(before)
+    if (first) {
+      return await this.commentsWithRelayForward(postId, first, after)
+    }
   }
 
   async postsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<PostsConnection> {
@@ -191,22 +250,38 @@ export class PostsService {
           id: uid
           expand(_all_)
         }
+        # 开始游标
+        startPost(func: uid(posts), orderdesc: val(score), first: 1) {
+          id: uid
+          score: val(score)
+        }
+        # 结束游标
+        endPost(func: uid(posts), orderdesc: val(score), first: -1) {
+          id: uid
+          score: val(score)
+        }
       }
     `
+
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
       posts: Array<Post & {score: number}>
+      startPost: Array<{score: number}>
+      endPost: Array<{score: number}>
     }>({ query, vars: { $after: after } })
 
-    const v = (res.posts.length ?? 0) !== 0
+    const totalCount = res.totalCount[0]?.count ?? 0
+    const v = totalCount !== 0
 
     const firstPost = res.posts[0]
     const lastPost = res.posts?.slice(-1)[0]
+    const startPost = res.startPost[0]
+    const endPost = res.endPost[0]
     const startCursor = getCurosrByScoreAndId(firstPost?.id, firstPost?.score)
     const endCursor = getCurosrByScoreAndId(lastPost?.id, lastPost?.score)
 
-    const hasNextPage = res.posts.length === first
-    const hasPreviousPage = after !== res.posts?.slice(-1)[0]?.score?.toString() && !!after
+    const hasNextPage = endPost?.score !== lastPost?.score && res.posts.length === first && endPost?.score?.toString() !== after
+    const hasPreviousPage = after !== startPost?.score?.toString() && !!after
 
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
@@ -430,7 +505,7 @@ export class PostsService {
     }
   }
 
-  async postsWithRelayForward (first: number, after?: string | null): Promise<PostsConnectionWithRelay> {
+  async postsWithRelayForward (first: number, after: string | null): Promise<PostsConnectionWithRelay> {
     const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {
@@ -444,12 +519,12 @@ export class PostsService {
           expand(_all_)
         }
         # 开始游标
-        startCursor(func: uid(posts), first: -1) {
+        startPost(func: uid(posts), first: -1) {
           id: uid
           createdAt
         }
         # 结束游标
-        endCursor(func: uid(posts), first: 1) {
+        endPost(func: uid(posts), first: 1) {
           id: uid
           createdAt
         }
@@ -458,27 +533,32 @@ export class PostsService {
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
       posts: Post[]
-      startCursor: Array<{id: string, createdAt: string}>
-      endCursor: Array<{id: string, createdAt: string}>
+      startPost: Array<{id: string, createdAt: string}>
+      endPost: Array<{id: string, createdAt: string}>
     }>({ query, vars: { $after: after } })
 
-    const v = (res.totalCount[0]?.count ?? 0) !== 0
-    const hasNextPage = res.endCursor[0]?.createdAt !== after && res.posts.length === first
-    const hasPreviousPage = after !== res.startCursor[0]?.createdAt && !!after
+    const totalCount = res.totalCount[0]?.count ?? 0
+    const v = totalCount !== 0
+    const startPost = res.startPost[0]
+    const endPost = res.endPost[0]
+    const lastPost = res.posts?.slice(-1)[0]
+
+    const hasNextPage = endPost?.createdAt !== lastPost?.createdAt && endPost?.createdAt !== after && res.posts.length === first && totalCount !== first
+    const hasPreviousPage = after !== startPost?.createdAt && !!after
 
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
-      edges: edgify(res.posts ?? []),
+      edges: edgifyByCreatedAt(res.posts ?? []),
       pageInfo: {
-        endCursor: res.posts.length !== 0 ? atob(res.posts.slice(-1)[0].createdAt) : null,
-        startCursor: res.posts.length !== 0 ? atob(res.posts[0].createdAt) : null,
+        endCursor: atob(lastPost?.createdAt),
+        startCursor: atob(res.posts[0]?.createdAt),
         hasNextPage: hasNextPage && v,
         hasPreviousPage: hasPreviousPage && v
       }
     }
   }
 
-  async postsWithRelayBackward (last: number, before?: string | null): Promise<PostsConnectionWithRelay> {
+  async postsWithRelayBackward (last: number, before: string | null): Promise<PostsConnectionWithRelay> {
     const q1 = `
       var(func: uid(posts), orderdesc: createdAt) @filter(gt(createdAt, $before)) { q as uid }
       var(func: uid(q), orderasc: createdAt, first: ${last}) { v as uid }
@@ -494,18 +574,19 @@ export class PostsService {
       totalCount(func: uid(posts)) {
         count(uid) 
       }
+
       ${before ? q1 : q2}
       posts(func: uid(v), orderdesc: createdAt) {
         id: uid
         expand(_all_)
       }
       # 开始游标
-      startCursor(func: uid(v), first: -1) {
+      startPost(func: uid(v), first: -1) {
         id: uid
         createdAt
       }
       # 结束游标
-      endCursor(func: uid(v), first: 1) {
+      endPost(func: uid(v), first: 1) {
         id: uid
         createdAt
       }
@@ -515,20 +596,23 @@ export class PostsService {
       totalCount: Array<{count: number}>
       posts: Post[]
       edge: Post[]
-      startCursor: Array<{id: string, createdAt: string}>
-      endCursor: Array<{id: string, createdAt: string}>
+      startPost: Array<{id: string, createdAt: string}>
+      endPost: Array<{id: string, createdAt: string}>
     }>({ query, vars: { $before: before } })
 
+    const startPost = res.startPost[0]
+    const endPost = res.endPost[0]
+    const lastPost = res.posts.slice(-1)[0]
     const v = (res.totalCount[0]?.count ?? 0) !== 0
-    const hasNextPage = res.startCursor[0]?.createdAt !== before && res.posts.length === last
-    const hasPreviousPage = before !== res.endCursor[0]?.createdAt && !!before
+    const hasNextPage = startPost?.createdAt !== before && res.posts.length === last
+    const hasPreviousPage = before !== endPost?.createdAt && !!before
 
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
       edges: edgify(res.posts ?? []),
       pageInfo: {
-        endCursor: res.posts.length !== 0 ? atob(res.posts.slice(-1)[0].createdAt) : null,
-        startCursor: res.posts.length !== 0 ? atob(res.posts[0].createdAt) : null,
+        endCursor: atob(lastPost?.createdAt),
+        startCursor: atob(res.posts[0]?.createdAt),
         hasNextPage: hasNextPage && v,
         hasPreviousPage: hasPreviousPage && v
       }

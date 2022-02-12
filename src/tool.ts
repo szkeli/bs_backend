@@ -126,7 +126,13 @@ export const btoa = function (content?: string | null): string | null {
 export const edgify = function <T>(vs: Array<T & {'createdAt': string}>): Array<{node: T, cursor: string}> {
   return vs.map(v => ({ node: v, cursor: atob(v.createdAt) }))
 }
+export const edgifyByCreatedAt = function <T>(vs: Array<T & {'createdAt': string}>) {
+  return vs.map(v => ({ node: v, cursor: atob(v.createdAt) }))
+}
 
+export const edgifyByXid = function <T>(vs: Array<T & {'id': string}>) {
+  return vs.map(v => ({ node: v, cursor: v.id }))
+}
 export const edgifyByKey = function <T>(vs: T[], key: string): Array<{node: T, cursor: string}> {
   return vs.map(v => ({ node: v, cursor: getCurosrByScoreAndId((v as any).id, v[key]) }))
 }
