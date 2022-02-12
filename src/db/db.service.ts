@@ -24,7 +24,6 @@ export class DbService {
 
   async init () {}
 
-  // testetstssssssssssssssssssssssssssssssssssss
   async dropAll () {
     const op = new Operation()
     op.setDropAll(true)
@@ -82,7 +81,7 @@ export class DbService {
   async commitQuery<T> ({ vars, query }: CommitQueryWithVarsProps): Promise<T> {
     if (!vars || Object.entries(vars).length === 0) {
       return (await this.dgraph
-        .newTxn({ readOnly: true })
+        .newTxn({ readOnly: true, bestEffort: true })
         .query(query))
         .getJson() as unknown as T
     } else {

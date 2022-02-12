@@ -482,6 +482,19 @@ type Subject {
 
   """当前主题中的所有帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
+  postsWithRelay(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+  ): PostsConnectionWithRelay!
 }
 
 type SubjectsConnection {

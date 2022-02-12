@@ -3,8 +3,8 @@ import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
-import { PostsConnection } from '../posts/models/post.model'
-import { now } from '../tool'
+import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { atob, btoa, edgifyByCreatedAt, now } from '../tool'
 import { User } from '../user/models/user.model'
 import {
   CreateSubjectArgs,
@@ -19,6 +19,67 @@ export class SubjectService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async postsWithRelayForward (subjectId: string, first: number, after: string | null) {
+    const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($subjectId: string, $after: string) {
+        var(func: uid($subjectId)) @filter(type(Subject)) {
+          posts as posts(orderdesc: createdAt) @filter(not has(delete))
+        }
+
+        ${after ? q1 : ''}
+        totalCount(func: uid(posts)) { count(uid) }
+        posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startPost(func: uid(posts), first: -1) {
+          id: uid
+          createdAt
+        }
+        # 结束游标
+        endPost(func: uid(posts), first: 1) {
+          id: uid
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      posts: Post[]
+      startPost: Array<{id: string, createdAt: string}>
+      endPost: Array<{id: string, createdAt: string}>
+    }>({ query, vars: { $subjectId: subjectId, $after: after } })
+
+    const totalCount = res.totalCount[0]?.count ?? 0
+    const v = totalCount !== 0
+    const startPost = res.startPost[0]
+    const endPost = res.endPost[0]
+    const lastPost = res.posts?.slice(-1)[0]
+
+    const hasNextPage = endPost?.createdAt !== lastPost?.createdAt && endPost?.createdAt !== after && res.posts.length === first && totalCount !== first
+    const hasPreviousPage = after !== startPost?.createdAt && !!after
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      edges: edgifyByCreatedAt(res.posts ?? []),
+      pageInfo: {
+        endCursor: atob(lastPost?.createdAt),
+        startCursor: atob(res.posts[0]?.createdAt),
+        hasNextPage: hasNextPage && v,
+        hasPreviousPage: hasPreviousPage && v
+      }
+    }
+  }
+
+  async postsWithRelay (id: string, { first, after, last, before }: RelayPagingConfigArgs) {
+    after = btoa(after)
+    if (first) {
+      return await this.postsWithRelayForward(id, first, after)
+    }
   }
 
   async deleteSubject (actorId: string, subjectId: string) {

@@ -8,7 +8,7 @@ import {
 } from '@nestjs/graphql'
 
 import { CheckPolicies, CurrentUser, Roles } from 'src/auth/decorator'
-import { PostsConnection } from 'src/posts/models/post.model'
+import { PostsConnection, PostsConnectionWithRelay, RelayPagingConfigArgs } from 'src/posts/models/post.model'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
@@ -65,5 +65,10 @@ export class SubjectResolver {
   @ResolveField(of => PostsConnection, { description: '当前主题中的所有帖子' })
   async posts (@Parent() subject: Subject, @Args() args: PagingConfigArgs): Promise<PostsConnection> {
     return await this.subjectService.findPostsBySubjectId(subject.id, args.first, args.offset)
+  }
+
+  @ResolveField(of => PostsConnectionWithRelay)
+  async postsWithRelay (@Parent() subject: Subject, @Args() paging: RelayPagingConfigArgs) {
+    return await this.subjectService.postsWithRelay(subject.id, paging)
   }
 }
