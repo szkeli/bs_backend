@@ -8,6 +8,7 @@ import { Anonymous } from '../anonymous/models/anonymous.model'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
+import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
@@ -154,14 +155,6 @@ export class PostsService {
   }
 
   async trendingPostsWithRelayForward (first: number, after: string): Promise<PostsConnectionWithRelay> {
-    after = btoa(after)
-    if (after) {
-      try {
-        after = JSON.parse(after).score
-      } catch {
-        throw new ForbiddenException('cursor解析错误')
-      }
-    }
     const q1 = 'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
     const query = `
       query v($after: string) {
@@ -229,6 +222,20 @@ export class PostsService {
         hasNextPage: hasNextPage && v,
         hasPreviousPage: hasPreviousPage && v
       }
+    }
+  }
+
+  async trendingPostsWithRelay ({ first, before, last, after, orderBy }: RelayPagingConfigArgs) {
+    after = btoa(after)
+    if (after) {
+      try {
+        after = JSON.parse(after).score
+      } catch {
+        throw new ForbiddenException(`游标 ${after} 解析错误`)
+      }
+    }
+    if (first) {
+      return await this.trendingPostsWithRelayForward(first, after)
     }
   }
 
@@ -556,7 +563,10 @@ export class PostsService {
     }
   }
 
-  async postsWithRelay ({ first, last, before, after }: RelayPagingConfigArgs): Promise<Nullable<PostsConnectionWithRelay>> {
+  async postsWithRelay ({ first, last, before, after, orderBy }: RelayPagingConfigArgs): Promise<Nullable<PostsConnectionWithRelay>> {
+    after = btoa(after)
+    before = btoa(before)
+
     if ((before && after) || (first && last)) {
       throw new ForbiddenException('同一时间只能使用after作为向后分页、before作为向前分页的游标')
     }
@@ -564,13 +574,22 @@ export class PostsService {
       throw new ForbiddenException('必须指定向前分页或者向后分页')
     }
 
-    if (first) {
-      after = btoa(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.postsWithRelayForward(first, after)
     }
 
+    if (first && orderBy === ORDER_BY.TRENDING) {
+      if (after) {
+        try {
+          after = JSON.parse(after).score
+        } catch {
+          throw new ForbiddenException(`游标 ${after} 解析失败`)
+        }
+      }
+      return await this.trendingPostsWithRelayForward(first, after)
+    }
+
     if (last) {
-      before = btoa(before)
       return await this.postsWithRelayBackward(last, before)
     }
 
