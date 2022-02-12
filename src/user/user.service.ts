@@ -3,7 +3,7 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
-import { UserWithRoles } from '../auth/model/auth.model'
+import { UserWithRoles, UserWithRolesAndPrivileges } from '../auth/model/auth.model'
 import { Post, PostsConnection } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
@@ -299,23 +299,23 @@ export class UserService {
     }
   }
 
-  async getUserOrAdminWithRolesByUid (id: string): Promise<UserWithRoles> {
+  async getUserOrAdminWithRolesByUid (id: string): Promise<UserWithRolesAndPrivileges> {
     const query = `
         query v($uid: string) {
           user(func: uid($uid)) @filter(type(User) OR type(Admin)) {
             id: uid
             expand(_all_)
+            privileges @filter(type(Privilege)) {
+              id: uid
+              expand(_all_)
+            }
             roles: dgraph.type
           }
         }
       `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $uid: id }))
-      .getJson() as unknown as {
-      user: UserWithRoles[]
-    }
-    if (!res || !res.user || res.user.length !== 1) {
+    const res = await this.dbService.commitQuery<{user: UserWithRolesAndPrivileges[]}>({ query, vars: { $uid: id } })
+
+    if (res.user.length !== 1) {
       throw new ForbiddenException(`用户或管理员 ${id} 不存在`)
     }
     return res.user[0]

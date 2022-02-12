@@ -1,4 +1,5 @@
 import { AppAbility } from '../../casl/models/casl.model'
+import { Privilege } from '../../privileges/models/privileges.model'
 import { User } from '../../user/models/user.model'
 
 export interface Payload {
@@ -18,6 +19,9 @@ export interface InviteTokenPayload {
 
 export type UserWithRoles = User & {
   roles: Role[]
+}
+export type UserWithRolesAndPrivileges = UserWithRoles & {
+  privileges: Privilege[]
 }
 
 export interface IPolicyHandler {
