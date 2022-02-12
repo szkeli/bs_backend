@@ -153,6 +153,7 @@ export class SubjectService {
         u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }
         x(func: uid($actorId)) @filter(type(Admin)) { x as uid }
         y(func: uid($subjectId)) @filter(uid_in(creator, $actorId)) { y as uid }
+        d(func: uid($subjectId)) @filter(type(Subject) and not has(delete)) { d as uid }
         subject(func: uid($subjectId)) @filter(type(Subject)) {
           id: uid
           expand(_all_)
@@ -176,6 +177,7 @@ export class SubjectService {
       u: Array<{uid: string}>
       x: Array<{uid: string}>
       y: Array<{uid: string}>
+      d: Array<{uid: string}>
       subject: Subject[]
     }>({
       mutations: [
@@ -194,6 +196,9 @@ export class SubjectService {
     }
     if (res.json.u.length !== 1) {
       throw new ForbiddenException(`主题 ${subjectId} 不存在`)
+    }
+    if (res.json.d.length !== 1) {
+      throw new ForbiddenException(`主题 ${subjectId} 已被删除`)
     }
     if (res.json.x.length !== 1 && res.json.y.length !== 1) {
       throw new ForbiddenException(`操作者 ${actorId} 既不是 ${subjectId} 的创建者也不是管理员`)
