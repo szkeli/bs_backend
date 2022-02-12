@@ -174,19 +174,20 @@ export class PrivilegesService {
       throw new ForbiddenException('不能对自己操作')
     }
     const query = `
-      query v($adminId: string, $privilege: string) {
+      query v($from: string, $adminId: string, $privilege: string) {
+        # 管理员存在
         v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
-        x(func: uid($adminId)) @filter(type(Admin)) {
+        # from 是管理员
+        u(func: uid($from)) @filter(type(Admin)) { u as uid }
+        x(func: uid($from)) @filter(type(Admin)) {
           privileges @filter(type(Privilege) and eq(value, $privilege)) {
             x as uid
-            creator @filter(type(Admin)) {
-              creator as uid
-            }
+            creator as creator @filter(type(Admin))
           }
         }
       }
     `
-    const condition = '@if( eq(len(v), 1) and eq(len(x), 1) )'
+    const condition = '@if( eq(len(v), 1) and eq(len(x), 1) and eq(len(u), 1) )'
     const mutation = {
       uid: 'uid(x)',
       'dgraph.type': 'Privilege',
@@ -195,7 +196,7 @@ export class PrivilegesService {
       },
       // 清除被授权人员的权限
       to: {
-        uid: 'uid(v)',
+        uid: from,
         privileges: {
           uid: 'uid(x)'
         }
@@ -204,14 +205,19 @@ export class PrivilegesService {
     const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
       v: Array<{uid: string}>
       x: Array<{}>
+      u: Array<{}>
     }>({
       mutations: [{ mutation, condition }],
       query,
       vars: {
-        $adminId: from,
+        $adminId: adminId,
+        $from: from,
         $privilege: privilege
       }
     })
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`管理员 ${from} 不存在`)
+    }
     if (res.json.x.length !== 1) {
       throw new ForbiddenException(`管理员 ${from} 没有 ${privilege} 权限`)
     }
