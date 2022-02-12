@@ -5,6 +5,7 @@ import { DbService } from 'src/db/db.service'
 
 import { UserWithRoles } from '../auth/model/auth.model'
 import { Post, PostsConnection } from '../posts/models/post.model'
+import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import { code2Session, now, UpdateUserArgs2User } from '../tool'
 import {
@@ -20,6 +21,27 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async privileges (id: string, first: number, offset: number): Promise<PrivilegesConnection> {
+    const query = `
+      query v($xid: string) {
+        var(func: uid($xid)) @filter(type(User)) {
+          privileges as privileges @filter(type(Privilege))
+        }
+        privileges(func: uid(privileges), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        } 
+        totalCount(func: uid(privileges)) { count(uid) }
+      }
+    `
+    const res = await this.dbService.commitQuery<{totalCount: Array<{count: number}>, privileges: Privilege[]}>({ query, vars: { $xid: id } })
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.privileges ?? []
+    }
   }
 
   async pureDeleteUser (adminId: string, userId: string) {

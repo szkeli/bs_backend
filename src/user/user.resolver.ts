@@ -17,6 +17,7 @@ import { CurriculumsConnection } from '../curriculums/models/curriculums.model'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { WithinArgs } from '../node/models/node.model'
+import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -162,5 +163,10 @@ export class UserResolver {
   @ResolveField(of => CurriculumsConnection, { description: '当前用户的课程信息' })
   async curriculums (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.curriculumsService.findCurriculumsByUid(user.id, first, offset)
+  }
+
+  @ResolveField(of => PrivilegesConnection, { description: '当前用户具有的权限' })
+  async privileges (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.userService.privileges(user.id, first, offset)
   }
 }

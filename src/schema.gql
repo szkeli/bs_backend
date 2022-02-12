@@ -290,6 +290,9 @@ type User implements Person & Node {
   """当前用户的课程信息"""
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
 
+  """当前用户具有的权限"""
+  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
+
   """学号"""
   studentId: Int
 
@@ -355,6 +358,9 @@ interface Person implements Node {
 
   """当前用户的课程信息"""
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
+
+  """当前用户具有的权限"""
+  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
 }
 
 interface Node {
@@ -399,6 +405,9 @@ type LoginResult implements Node & Person {
 
   """当前用户的课程信息"""
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
+
+  """当前用户具有的权限"""
+  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
 
   """学号"""
   studentId: Int
@@ -1033,6 +1042,9 @@ type UserWithPrivateProps implements Person & Node {
 
   """当前用户的课程信息"""
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
+
+  """当前用户具有的权限"""
+  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
 }
 
 enum SEARCHTYPE {
