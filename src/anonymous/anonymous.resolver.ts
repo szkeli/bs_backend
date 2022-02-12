@@ -12,7 +12,7 @@ export class AnonymousResolver {
 
   @ResolveField(of => User, { description: '匿名的创建者，只有创建者自己可见', nullable: true })
   async creator (@Parent() anonymous: Anonymous, @CurrentUser() user: User) {
-    return await this.anonymousService.creator(anonymous.id, user.id)
+    return await this.anonymousService.creator(anonymous.id, user?.id)
   }
 
   @ResolveField(of => PostAndCommentUnion, { description: '被匿名发布的对象', nullable: false })

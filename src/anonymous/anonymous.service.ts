@@ -35,6 +35,9 @@ export class AnonymousService {
   }
 
   async creator (anonymousId: string, viewerId: string) {
+    if (!viewerId) {
+      return null
+    }
     const query = `
         query v($anonymousId: string, $viewerId: string) {
             anonymous(func: uid($anonymousId)) @filter(uid_in(creator, $viewerId)) {
