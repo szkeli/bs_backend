@@ -83,10 +83,12 @@ export class SubjectService {
     }
 
     if (first && orderBy === ORDER_BY.TRENDING) {
-      try {
-        after = JSON.parse(after).score
-      } catch {
-        throw new ForbiddenException(`解析游标失败 ${after}`)
+      if (after) {
+        try {
+          after = JSON.parse(after).score
+        } catch {
+          throw new ForbiddenException(`解析游标失败 ${after}`)
+        }
       }
       return await this.trendingPostsWithRelayForward(id, first, after)
     }
