@@ -9,6 +9,8 @@ import { IPRIVILEGE, Privilege, PrivilegesConnection } from './models/privileges
 
 @Injectable()
 export class PrivilegesService {
+  constructor (private readonly dbService: DbService) {}
+
   async privileges (first: number, offset: number): Promise<PrivilegesConnection> {
     const query = `
       query {
@@ -31,7 +33,77 @@ export class PrivilegesService {
     }
   }
 
-  constructor (private readonly dbService: DbService) {}
+  async addPrivilegeOnUser (adminId: string, privilege: IPRIVILEGE, to: string): Promise<Privilege> {
+    const query = `
+      query v($adminId: string, $privilege: string, $to: string) {
+        v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
+        # 授权的管理员以认证
+        q(func: uid($adminId)) @filter(type(Admin) and has(credential)) { q as uid }
+        u(func: uid($to)) @filter(type(User)) { u as uid }
+        # 被授权用户没有该权限
+        x(func: uid($to)) @filter(type(User)) {
+          privileges @filter(type(Privilege) and eq(value, $privilege)) {
+            x as uid
+          }
+        }
+      }
+    `
+
+    const _now = now()
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 0) and eq(len(q), 1) )'
+    const mutation = {
+      uid: '_:privilege',
+      'dgraph.type': 'Privilege',
+      createdAt: _now,
+      value: privilege,
+      to: {
+        uid: to,
+        privileges: {
+          uid: '_:privilege'
+        }
+      },
+      creator: {
+        uid: adminId
+      }
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      q: Array<{uid: string}>
+      u: Array<{uid: string}>
+      x: Array<{uid: string}>
+    }>({
+      mutations: [
+        { mutation, condition }
+      ],
+      query,
+      vars: {
+        $adminId: adminId,
+        $privilege: privilege,
+        $to: to
+      }
+    })
+
+    if (res.json.q.length !== 1) {
+      throw new ForbiddenException(`管理员 ${adminId} 没有认证`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`用户 ${to} 不存在`)
+    }
+
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`管理员 ${adminId} 不存在`)
+    }
+    if (res.json.x.length !== 0) {
+      throw new ForbiddenException(`用户 ${to} 已拥有 ${privilege} 权限`)
+    }
+
+    return {
+      id: res.uids.get('privilege'),
+      createdAt: _now,
+      value: privilege
+    }
+  }
 
   async removePrivilegeOnAdmin (adminId: string, from: string, privilege: IPRIVILEGE) {
     if (adminId === from) {

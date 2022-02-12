@@ -17,7 +17,9 @@ export enum IPRIVILEGE {
   // 能拒绝一个举报
   CAN_REJECT_REPORT = 'CAN_REJECT_REPORT',
   // 能查看全局状态数据数据 (某时间段内的注册数，点赞数，发帖数)
-  CAN_VIEW_STATE = 'CAN_VIEW_STATE'
+  CAN_VIEW_STATE = 'CAN_VIEW_STATE',
+  // 用户能创建主题
+  USER_CAN_CREATE_SUBJECT = 'USER_CAN_CREATE_SUBJECT'
 }
 
 registerEnumType(IPRIVILEGE, {
@@ -43,6 +45,14 @@ export class AddPrivilegeOnAdmin {
 
   @Field(type => String)
     adminId: string
+}
+@ArgsType()
+export class AddPrivilegeOnUserArgs {
+  @Field(of => IPRIVILEGE)
+    privilege: IPRIVILEGE
+
+  @Field(of => String)
+    id: string
 }
 
 @ArgsType()

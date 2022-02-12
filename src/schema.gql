@@ -213,6 +213,7 @@ enum IPRIVILEGE {
   CAN_ACCEPT_REPORT
   CAN_REJECT_REPORT
   CAN_VIEW_STATE
+  USER_CAN_CREATE_SUBJECT
 }
 
 union AdminAndUserUnion = User | Admin
@@ -1258,6 +1259,9 @@ type Mutation {
 
   """添加一个权限到某管理员"""
   addPrivilegeOnAdmin(privilege: IPRIVILEGE!, adminId: String!): Privilege!
+
+  """添加一个权限到某用户"""
+  addPrivilegeOnUser(privilege: IPRIVILEGE!, id: String!): Privilege!
 
   """从某管理员移除一个权限"""
   removePrivilegeOnAdmin(privilege: IPRIVILEGE!, from: String!): Boolean!
