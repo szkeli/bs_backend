@@ -215,7 +215,7 @@ export class CommentService {
       # TODO 实现产品中要求的计算评论热度的方法
       query v($commentId: string) {
         var(func: uid($commentId)) @filter(type(Comment)) {
-          comments as comments @filter(type(Comment)) {
+          comments as comments @filter(type(Comment) and not has(delete)) {
             c as count(comments @filter(type(Comment)))
             voteCount as count(votes @filter(type(Vote)))
             commentScore as math(c * 3)
