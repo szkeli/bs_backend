@@ -128,7 +128,7 @@ export class UserResolver {
 
   @ResolveField(of => PostsConnectionWithRelay)
   async postsWithRelay (@CurrentUser() viewer: User, @Parent() user: User, @Args() paging: RelayPagingConfigArgs) {
-    return await this.userService.findPostsByXidWithRelay(viewer.id, user.id, paging)
+    return await this.userService.findPostsByXidWithRelay(viewer?.id, user.id, paging)
   }
 
   @ResolveField(of => VotesConnection, { description: '当前用户的所有点赞' })
