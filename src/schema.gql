@@ -1461,7 +1461,7 @@ type Mutation {
   """删除数据库所有数据，但保留schema"""
   dropData: Boolean!
 
-  """管理员删除一个帖子"""
+  """管理员或用户删除一个帖子"""
   deletePost(postId: String!): Delete!
 
   """管理员删除一个评论"""

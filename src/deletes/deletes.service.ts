@@ -6,6 +6,7 @@ import { Comment } from '../comment/models/comment.model'
 import { DbService } from '../db/db.service'
 import { Post } from '../posts/models/post.model'
 import { Subject } from '../subject/model/subject.model'
+import { now } from '../tool'
 import { Delete, DeletesConnection, PostAndCommentAndSubjectUnion } from './models/deletes.model'
 
 @Injectable()
@@ -184,24 +185,26 @@ export class DeletesService {
     }
   }
 
-  async deletePost (adminId: string, postId: string): Promise<Delete> {
-    const now = new Date().toISOString()
+  async deletePost (xid: string, postId: string): Promise<Delete> {
+    const _now = now()
 
     const query = `
-        query v($adminId: string, $postId: string) {
+        query v($xid: string, $postId: string) {
           # 管理员存在
-          v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
+          v(func: uid($xid)) @filter(type(Admin)) { v as uid }
           # 帖子存在
           u(func: uid($postId)) @filter(type(Post)) { u as uid }
+          # xid 是帖子的创建者
+          y(func: uid($postId)) @filter(type(Post) and uid_in(creator, $xid)) { y as uid }
           # 帖子未被删除
           x(func: uid($postId)) @filter(type(Post)) {
-            delete @filter(type(Delete)) {
-              x as uid
-            }
+            x as delete @filter(type(Delete))
           }
         }
       `
-    const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
+    // xid是管理员
+    const condition1 = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
+    const condition2 = '@if( eq(len(u), 1) and eq(len(y), 1) and eq(len(x), 0) )'
     const mutation = {
       uid: '_:delete',
       'dgraph.type': 'Delete',
@@ -213,37 +216,40 @@ export class DeletesService {
         }
       },
       creator: {
-        uid: adminId,
+        uid: xid,
         deletes: {
           uid: '_:delete'
         }
       }
     }
-    const res = await this.dbService.commitConditionalUpsertWithVars<Map<string, string>, {
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
+      y: Array<{uid: string}>
       x: Array<{}>
     }>({
-      conditions,
-      mutation,
+      mutations: [
+        { mutation, condition: condition1 },
+        { mutation, condition: condition2 }
+      ],
       query,
       vars: {
-        $adminId: adminId,
+        $xid: xid,
         $postId: postId
       }
     })
 
-    if (res.json.x.length !== 0) {
+    if (res.json.x.length !== 1) {
       throw new ForbiddenException(`帖子 ${postId} 已被删除`)
     }
-    if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`管理员 ${adminId} 不存在`)
+    if (res.json.v.length !== 1 && res.json.y.length !== 1) {
+      throw new ForbiddenException(`管理员不存在或 ${xid} 不是帖子 ${postId} 的创建者`)
     }
     if (res.json.u.length !== 1) {
       throw new ForbiddenException(`帖子 ${postId} 不存在`)
     }
     return {
-      createdAt: now,
+      createdAt: _now,
       id: res.uids.get('delete')
     }
   }

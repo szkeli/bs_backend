@@ -4,7 +4,7 @@ import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
-import { PagingConfigArgs } from '../user/models/user.model'
+import { PagingConfigArgs, User } from '../user/models/user.model'
 import { DeletesService } from './deletes.service'
 import { Delete, DeletesConnection, PostAndCommentAndSubjectUnion } from './models/deletes.model'
 
@@ -12,11 +12,11 @@ import { Delete, DeletesConnection, PostAndCommentAndSubjectUnion } from './mode
 export class DeletesResolver {
   constructor (private readonly deletesService: DeletesService) {}
 
-  @Mutation(() => Delete, { description: '管理员删除一个帖子' })
-  @Roles(Role.Admin)
+  @Mutation(() => Delete, { description: '管理员或用户删除一个帖子' })
+  @Roles(Role.Admin, Role.User)
   @CheckPolicies(new MustWithCredentialPolicyHandler())
-  async deletePost (@CurrentUser() admin: Admin, @Args('postId') postId: string) {
-    return await this.deletesService.deletePost(admin.id, postId)
+  async deletePost (@CurrentUser() user: User, @Args('postId') postId: string) {
+    return await this.deletesService.deletePost(user.id, postId)
   }
 
   @Mutation(() => Delete, { description: '管理员删除一个评论' })

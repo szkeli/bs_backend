@@ -28,6 +28,7 @@ export class CaslAbilityFactory {
         can(Action.Authen, Admin, 'all')
       }
     } else if (this.personIsUser(user)) {
+      can(Action.Manage, MustWithCredential)
       if (!this.personHasPrivilege(user, IPRIVILEGE.USER_CAN_CREATE_SUBJECT)) {
         cannot(Action.Create, Subject, 'all').because('缺少')
       }
