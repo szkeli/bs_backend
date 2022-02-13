@@ -31,13 +31,13 @@ export class CommentService {
 
   async findCommentsByXidWithRelayForward (viewerId: string, xid: string, first: number, after: string | null): Promise<CommentsConnectionWithRelay> {
     const cannotViewDelete = `
-      var(func: type(Comment)) @filter(not has(delete) and not has(anonymous)) {
+      var(func: type(Comment)) @filter(uid_in(creator, $xid) and not has(delete) and not has(anonymous)) {
         p as uid
       }
     `
     // 用户本人能查看除了被自己删除的评论
     const canViewDelete = `
-      var(func: type(Comment)) {
+      var(func: type(Comment)) @filter(uid_in(creator, $xid)) {
         t as uid
         # 除去所有自己删除的评论
         d1 as delete @filter(uid_in(creator, $xid))
