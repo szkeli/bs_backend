@@ -131,12 +131,14 @@ export class DeletesService {
     }
   }
 
-  async deleteComment (adminId: string, commentId: string): Promise<Delete> {
-    const now = new Date().toISOString()
+  async deleteComment (xid: string, commentId: string): Promise<Delete> {
+    const _now = now()
     const query = `
-        query v($adminId: string, $commentId: string) {
-          # 管理员存在
-          v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
+        query v($xid: string, $commentId: string) {
+          # xid是管理员
+          v(func: uid($xid)) @filter(type(Admin)) { v as uid }
+          # xid是评论的创建者
+          y(func: uid($commentId)) @filter(type(Comment) and uid_in(creator, $xid)) { y as uid }
           # 评论存在
           u(func: uid($commentId)) @filter(type(Comment)) { u as uid }
           # 评论未被删除
@@ -147,11 +149,15 @@ export class DeletesService {
           }
         }
       `
-    const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
+    // xid 是评论的创建者
+    const condition1 = '@if( eq(len(y), 1) and eq(len(u), 1) and eq(len(x), 0) )'
+    // xid 是管理员
+    const condition2 = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
+
     const mutation = {
       uid: '_:delete',
       'dgraph.type': 'Delete',
-      createdAt: now,
+      createdAt: _now,
       to: {
         uid: commentId,
         delete: {
@@ -159,22 +165,25 @@ export class DeletesService {
         }
       },
       creator: {
-        uid: adminId,
+        uid: xid,
         deletes: {
           uid: '_:delete'
         }
       }
     }
-    const res = await this.dbService.commitConditionalUpsertWithVars<Map<string, string>, {
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
+      y: Array<{uid: string}>
       u: Array<{uid: string}>
       x: Array<{}>
     }>({
-      conditions,
-      mutation,
+      mutations: [
+        { mutation, condition: condition1 },
+        { mutation, condition: condition2 }
+      ],
       query,
       vars: {
-        $adminId: adminId,
+        $xid: xid,
         $commentId: commentId
       }
     })
@@ -182,20 +191,19 @@ export class DeletesService {
     if (res.json.x.length !== 0) {
       throw new ForbiddenException(`评论 ${commentId} 已被删除`)
     }
-    if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`管理员 ${adminId} 不存在`)
+    if (res.json.v.length !== 1 && res.json.y.length !== 1) {
+      throw new ForbiddenException(`对象 ${xid} 既不是管理员也不是评论 ${commentId} 的创建者`)
     }
     if (res.json.u.length !== 1) {
       throw new ForbiddenException(`评论 ${commentId} 不存在`)
     }
     return {
-      createdAt: now,
+      createdAt: _now,
       id: res.uids.get('delete')
     }
   }
 
   async deletePost (xid: string, postId: string): Promise<Delete> {
-    console.error({ xid, postId })
     const _now = now()
 
     const query = `

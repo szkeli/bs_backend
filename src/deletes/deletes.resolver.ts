@@ -19,11 +19,11 @@ export class DeletesResolver {
     return await this.deletesService.deletePost(user.id, postId)
   }
 
-  @Mutation(() => Delete, { description: '管理员删除一个评论' })
-  @Roles(Role.Admin)
+  @Mutation(() => Delete, { description: '管理员或用户删除一个评论' })
+  @Roles(Role.Admin, Role.User)
   @CheckPolicies(new MustWithCredentialPolicyHandler())
-  async deleteComment (@CurrentUser() admin: Admin, @Args('commentId') commentId: string) {
-    return await this.deletesService.deleteComment(admin.id, commentId)
+  async deleteComment (@CurrentUser() user: User, @Args('commentId') commentId: string) {
+    return await this.deletesService.deleteComment(user.id, commentId)
   }
 
   @Query(of => Delete, { description: '以id获取删除' })

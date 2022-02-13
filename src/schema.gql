@@ -1545,7 +1545,7 @@ type Mutation {
   """管理员或用户删除一个帖子"""
   deletePost(postId: String!): Delete!
 
-  """管理员删除一个评论"""
+  """管理员或用户删除一个评论"""
   deleteComment(commentId: String!): Delete!
 
   """添加一个权限到某管理员"""
