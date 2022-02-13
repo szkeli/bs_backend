@@ -208,13 +208,13 @@ export class DeletesService {
 
     const query = `
         query v($xid: string, $postId: string) {
-          # 管理员存在
+          # 操作者xid是否存在
           v(func: uid($xid)) @filter(type(Admin)) { v as uid }
-          # 帖子存在
+          # 帖子是否存在
           u(func: uid($postId)) @filter(type(Post)) { u as uid }
           # xid 是帖子的创建者
           y(func: uid($postId)) @filter(type(Post) and uid_in(creator, $xid)) { y as uid }
-          # 帖子未被删除
+          # 帖子是否被创建者删除
           x(func: uid($postId)) @filter(type(Post)) {
             delete @filter(type(Delete)) {
               x as uid
@@ -259,10 +259,8 @@ export class DeletesService {
       }
     })
 
-    console.error(res)
-
     if (res.json.x.length !== 0) {
-      throw new ForbiddenException(`帖子 ${postId} 已被删除`)
+      throw new ForbiddenException(`帖子 ${postId} 已被管理员删除`)
     }
     if (res.json.v.length !== 1 && res.json.y.length !== 1) {
       throw new ForbiddenException(`管理员不存在或 ${xid} 不是帖子 ${postId} 的创建者`)
