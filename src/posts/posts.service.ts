@@ -104,7 +104,7 @@ export class PostsService {
     const query = `
       query v($postId: string) {
         var(func: uid($postId)) @filter(type(Post)) {
-          comments as comments @filter(type(Comment)) {
+          comments as comments @filter(type(Comment) and not has(delete)) {
             c as count(comments @filter(type(Comment)))
             voteCount as count(votes @filter(type(Vote)))
             commentScore as math(c * 3)

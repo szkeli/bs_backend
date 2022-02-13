@@ -5,6 +5,7 @@ import { GraphQLModule } from '@nestjs/graphql'
 import { join } from 'path'
 
 import { AdminModule } from './admin/admin.module'
+import { AnonymousModule } from './anonymous/anonymous.module'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { RoleAuthGuard } from './auth/auth.guard'
@@ -40,7 +41,6 @@ import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
-import { AnonymousModule } from './anonymous/anonymous.module';
 
 @Module({
   imports: [

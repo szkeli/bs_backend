@@ -526,6 +526,35 @@ type UsersConnection {
   totalCount: Int!
 }
 
+type Delete {
+  id: String!
+  createdAt: String!
+
+  """删除的创建者"""
+  creator: Admin!
+
+  """被删除的对象"""
+  to: PostAndCommentAndSubjectUnion!
+}
+
+union PostAndCommentAndSubjectUnion = Post | Comment | Subject
+
+type DeletesConnection {
+  nodes: [Delete!]!
+  totalCount: Int!
+}
+
+type Anonymous {
+  id: String!
+  createdAt: String!
+
+  """匿名的创建者，只有创建者自己可见"""
+  creator: User
+
+  """被匿名发布的对象"""
+  to: PostAndCommentUnion!
+}
+
 type CensorDetail {
   """违禁品"""
   contraband: [String!]
@@ -636,35 +665,6 @@ type Message implements Node {
 }
 
 union MessageCreatorUnion = User | Admin
-
-type Anonymous {
-  id: String!
-  createdAt: String!
-
-  """匿名的创建者，只有创建者自己可见"""
-  creator: User
-
-  """被匿名发布的对象"""
-  to: PostAndCommentUnion!
-}
-
-type Delete {
-  id: String!
-  createdAt: String!
-
-  """删除的创建者"""
-  creator: Admin!
-
-  """被删除的对象"""
-  to: PostAndCommentAndSubjectUnion!
-}
-
-union PostAndCommentAndSubjectUnion = Post | Comment | Subject
-
-type DeletesConnection {
-  nodes: [Delete!]!
-  totalCount: Int!
-}
 
 type Votable {
   """对象当前总赞数"""
