@@ -7,6 +7,7 @@ import { DbService } from '../db/db.service'
 import { Post } from '../posts/models/post.model'
 import { Subject } from '../subject/model/subject.model'
 import { now } from '../tool'
+import { AdminAndUserUnion, User } from '../user/models/user.model'
 import { Delete, DeletesConnection, PostAndCommentAndSubjectUnion } from './models/deletes.model'
 
 @Injectable()
@@ -74,15 +75,23 @@ export class DeletesService {
     const query = `
       query v($deleteId: string) {
         delete(func: uid($deleteId)) @filter(type(Delete)) {
-          creator @filter(type(Admin)) {
+          creator @filter(type(Admin) or type(User)) {
             id: uid
             expand(_all_)
+            dgraph.type
           }
         }
       }
     `
-    const res = await this.dbService.commitQuery<{delete: Array<{creator: Admin}>}>({ query, vars: { $deleteId: deleteId } })
-    return res.delete[0]?.creator
+    const res = await this.dbService.commitQuery<{delete: Array<{creator: (typeof AdminAndUserUnion) & {'dgraph.type': string[]}}>}>({ query, vars: { $deleteId: deleteId } })
+    const v = res.delete[0]?.creator
+
+    if (v['dgraph.type']?.includes('User')) {
+      return new User(v as unknown as User)
+    }
+    if (v['dgraph.type']?.includes('Admin')) {
+      return new Admin(v as unknown as Admin)
+    }
   }
 
   async delete (deleteId: string) {
@@ -186,6 +195,7 @@ export class DeletesService {
   }
 
   async deletePost (xid: string, postId: string): Promise<Delete> {
+    console.error({ xid, postId })
     const _now = now()
 
     const query = `
@@ -198,7 +208,9 @@ export class DeletesService {
           y(func: uid($postId)) @filter(type(Post) and uid_in(creator, $xid)) { y as uid }
           # 帖子未被删除
           x(func: uid($postId)) @filter(type(Post)) {
-            x as delete @filter(type(Delete))
+            delete @filter(type(Delete)) {
+              x as uid
+            }
           }
         }
       `
@@ -208,7 +220,7 @@ export class DeletesService {
     const mutation = {
       uid: '_:delete',
       'dgraph.type': 'Delete',
-      createdAt: now,
+      createdAt: _now,
       to: {
         uid: postId,
         delete: {
@@ -239,7 +251,9 @@ export class DeletesService {
       }
     })
 
-    if (res.json.x.length !== 1) {
+    console.error(res)
+
+    if (res.json.x.length !== 0) {
       throw new ForbiddenException(`帖子 ${postId} 已被删除`)
     }
     if (res.json.v.length !== 1 && res.json.y.length !== 1) {

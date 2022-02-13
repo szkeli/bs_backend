@@ -264,7 +264,12 @@ export class UserService {
     `
     const canViewDelete = `
       var(func: uid($xid)) @filter(type(User)) {
-        p as posts @filter(type(Post))
+        t as posts @filter(type(Post)) {
+          d1 as delete @filter(uid_in(creator, $xid))
+        }
+      }
+      var(func: uid(t)) @filter(not uid_in(delete, uid(d1))) {
+        p as uid
       }
     `
     const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
