@@ -4,10 +4,11 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 
 import { UserWithRoles, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
-import { Post, PostsConnection } from '../posts/models/post.model'
+import { ORDER_BY } from '../connections/models/connections.model'
+import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
-import { code2Session, now, UpdateUserArgs2User } from '../tool'
+import { atob, btoa, code2Session, edgifyByCreatedAt, now, UpdateUserArgs2User } from '../tool'
 import {
   CheckUserResult,
   CreateUserArgs,
@@ -253,6 +254,79 @@ export class UserService {
       totalCount: v.totalCount[0].count || 0
     }
     return u
+  }
+
+  async findPostsByXidWithRelayForward (viewerId: string, xid: string, first: number, after: string | null) {
+    const cannotViewDelete = `
+      var(func: uid($xid)) @filter(type(User)) {
+        p as posts @filter(type(Post) and not has(delete) and not has(anonymous))
+      }
+    `
+    const canViewDelete = `
+      var(func: uid($xid)) @filter(type(User)) {
+        p as posts @filter(type(Post))
+      }
+    `
+    const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($xid: string, $after: string) {
+        ${viewerId === xid ? canViewDelete : cannotViewDelete}
+        var(func: uid(p), orderdesc: createdAt) { 
+          posts as uid
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(posts)) { count(uid) }
+        posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startPost(func: uid(posts), first: -1) {
+          id: uid
+          createdAt
+        }
+        # 结束游标
+        endPost(func: uid(posts), first: 1) {
+          id: uid
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      posts: Post[]
+      startPost: Array<{id: string, createdAt: string}>
+      endPost: Array<{id: string, createdAt: string}>
+    }>({ query, vars: { $after: after, $xid: xid } })
+
+    const totalCount = res.totalCount[0]?.count ?? 0
+    const v = totalCount !== 0
+    const startPost = res.startPost[0]
+    const endPost = res.endPost[0]
+    const lastPost = res.posts?.slice(-1)[0]
+
+    const hasNextPage = endPost?.createdAt !== lastPost?.createdAt && endPost?.createdAt !== after && res.posts.length === first && totalCount !== first
+    const hasPreviousPage = after !== startPost?.createdAt && !!after
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      edges: edgifyByCreatedAt(res.posts ?? []),
+      pageInfo: {
+        endCursor: atob(lastPost?.createdAt),
+        startCursor: atob(res.posts[0]?.createdAt),
+        hasNextPage: hasNextPage && v,
+        hasPreviousPage: hasPreviousPage && v
+      }
+    }
+  }
+
+  async findPostsByXidWithRelay (viewerId: string, xid: string, { after, first, orderBy, last, before }: RelayPagingConfigArgs) {
+    after = btoa(after)
+    before = btoa(before)
+
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.findPostsByXidWithRelayForward(viewerId, xid, first, after)
+    }
   }
 
   async findPostsByUid (viewerId: string, id: string, first: number, offset: number): Promise<PostsConnection> {

@@ -2,7 +2,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 
 import { AuthService } from 'src/auth/auth.service'
 import { CheckPolicies, CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
-import { PostsConnection } from 'src/posts/models/post.model'
+import { PostsConnection, PostsConnectionWithRelay, RelayPagingConfigArgs } from 'src/posts/models/post.model'
 import { SubjectsConnection } from 'src/subject/model/subject.model'
 import { RawUser2UserWithPrivateProps, sign as sign_calculus } from 'src/tool'
 
@@ -116,12 +116,13 @@ export class UserResolver {
   }
 
   @ResolveField(of => PostsConnection, { description: '当前用户创建的所有帖子' })
-  async posts (
-  @CurrentUser() viewer: User,
-    @Parent() user: User,
-    @Args() { first, offset }: PagingConfigArgs
-  ) {
+  async posts (@CurrentUser() viewer: User, @Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.userService.findPostsByUid(viewer?.id, user.id, first, offset)
+  }
+
+  @ResolveField(of => PostsConnectionWithRelay)
+  async postsWithRelay (@CurrentUser() viewer: User, @Parent() user: User, @Args() paging: RelayPagingConfigArgs) {
+    return await this.userService.findPostsByXidWithRelay(viewer.id, user.id, paging)
   }
 
   @ResolveField(of => VotesConnection, { description: '当前用户的所有点赞' })
@@ -130,11 +131,7 @@ export class UserResolver {
   }
 
   @ResolveField(of => CommentsConnection, { description: '当前用户发布的评论' })
-  async comments (
-  @CurrentUser() viewer: User,
-    @Parent() user: User,
-    @Args() { first, offset }: PagingConfigArgs
-  ) {
+  async comments (@CurrentUser() viewer: User, @Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.commentsService.findCommentsByUid(viewer?.id, user.id, first, offset)
   }
 
