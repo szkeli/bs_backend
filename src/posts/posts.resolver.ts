@@ -142,7 +142,7 @@ export class PostsResolver {
     return await this.postsService.trendingComments(post.id.toString(), first, offset)
   }
 
-  @ResolveField(of => Delete, { description: '帖子未被删除时，此项为空' })
+  @ResolveField(of => Delete, { description: '帖子未被删除时，此项为空', nullable: true })
   async delete (@Parent() post: Post) {
     return await this.deletesService.findDeleteByPostId(post.id.toString())
   }

@@ -108,7 +108,7 @@ type Post {
   trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
   """帖子未被删除时，此项为空"""
-  delete: Delete!
+  delete: Delete
 
   """帖子的匿名信息，非匿名帖子此项为空"""
   anonymous: Anonymous
