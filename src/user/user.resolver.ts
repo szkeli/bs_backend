@@ -146,6 +146,12 @@ export class UserResolver {
     return await this.commentsService.findCommentsByXidWithRelay(viewer?.id, user.id, paging)
   }
 
+  @Query(of => CommentsConnectionWithRelay, { defaultValue: '测试接口' })
+  @MaybeAuth()
+  async userCommentsWithRelay (@CurrentUser() viewer: User, @Args('id') id: string, @Args() paging: RelayPagingConfigArgs) {
+    return await this.commentsService.findCommentsByXidWithRelay(viewer?.id, id, paging)
+  }
+
   @ResolveField(of => SubjectsConnection, { description: '当前用户创建的所有主题' })
   async subjects (@Parent() user: User, @Args() args: PagingConfigArgs) {
     return await this.userService.findSubjectsByUid(user.id, args.first, args.offset)
