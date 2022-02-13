@@ -3,6 +3,7 @@ import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
 import { ICredential, ICredentialsConnection } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
+import { Delete, DeletesConnection } from '../deletes/models/deletes.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import {
   Admin,
@@ -12,6 +13,30 @@ import {
 
 @Injectable()
 export class AdminService {
+  async deletes (id: string, first: number, offset: number): Promise<DeletesConnection> {
+    const query = `
+      query v($adminId: string) {
+        var(func: uid($adminId)) @filter(type(Admin)) {
+          deletes as deletes @filter(type(Delete))
+        }
+        totalCount(func: uid(deletes)) { count(uid) }
+        deletes(func: uid(deletes), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      deletes: Delete[]
+    }>({ query, vars: { $adminId: id } })
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: res.deletes ?? []
+    }
+  }
+
   async privileges (adminId: string, first: number, offset: number): Promise<PrivilegesConnection> {
     const query = `
       query v($adminId: string) {

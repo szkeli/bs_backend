@@ -15,6 +15,7 @@ import { BlocksService } from '../blocks/blocks.service'
 import { BlocksConnection } from '../blocks/models/blocks.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { ICredential, ICredentialsConnection } from '../credentials/models/credentials.model'
+import { DeletesConnection } from '../deletes/models/deletes.model'
 import { FoldsService } from '../folds/folds.service'
 import { FoldsConnection } from '../folds/models/folds.model'
 import { PinsConnection } from '../pins/models/pins.model'
@@ -86,5 +87,10 @@ export class AdminResolver {
   @ResolveField(of => PinsConnection, { description: '当前管理员创建的置顶' })
   async pins (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
     return await this.pinsService.findPinsByAdminId(admin.id, first, offset)
+  }
+
+  @ResolveField(of => DeletesConnection, { description: '当前管理员的所有删除操作' })
+  async deletes (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
+    return await this.adminService.deletes(admin.id, first, offset)
   }
 }

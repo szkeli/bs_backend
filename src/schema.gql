@@ -198,6 +198,9 @@ type Admin {
 
   """当前管理员创建的置顶"""
   pins(first: Int = 10, offset: Int = 0): PinsConnection!
+
+  """当前管理员的所有删除操作"""
+  deletes(first: Int = 10, offset: Int = 0): DeletesConnection!
 }
 
 type AdminsConnection {
@@ -293,6 +296,24 @@ type ICredential {
 
 type ICredentialsConnection {
   nodes: [ICredential!]!
+  totalCount: Int!
+}
+
+type Delete {
+  id: String!
+  createdAt: String!
+
+  """删除的创建者"""
+  creator: Admin!
+
+  """被删除的对象"""
+  to: PostAndCommentAndSubjectUnion!
+}
+
+union PostAndCommentAndSubjectUnion = Post | Comment | Subject
+
+type DeletesConnection {
+  nodes: [Delete!]!
   totalCount: Int!
 }
 
@@ -619,24 +640,6 @@ type LoginResult implements Node & Person {
 
 type UsersConnection {
   nodes: [User!]!
-  totalCount: Int!
-}
-
-type Delete {
-  id: String!
-  createdAt: String!
-
-  """删除的创建者"""
-  creator: Admin!
-
-  """被删除的对象"""
-  to: PostAndCommentAndSubjectUnion!
-}
-
-union PostAndCommentAndSubjectUnion = Post | Comment | Subject
-
-type DeletesConnection {
-  nodes: [Delete!]!
   totalCount: Int!
 }
 
