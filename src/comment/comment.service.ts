@@ -6,6 +6,7 @@ import { DbService } from 'src/db/db.service'
 import { Anonymous } from '../anonymous/models/anonymous.model'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
+import { ORDER_BY } from '../connections/models/connections.model'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt } from '../tool'
@@ -26,6 +27,85 @@ export class CommentService {
     private readonly censorsService: CensorsService
   ) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async findCommentsByXidWithRelayForward (viewerId: string, xid: string, first: number, after: string | null): Promise<CommentsConnectionWithRelay> {
+    const cannotViewDelete = `
+      var(func: type(Comment)) @filter(not has(delete) and not has(anonymous)) {
+        p as uid
+      }
+    `
+    // 用户本人能查看除了被自己删除的评论
+    const canViewDelete = `
+      var(func: type(Comment)) {
+        t as uid
+        # 除去所有自己删除的评论
+        d1 as delete @filter(uid_in(creator, $xid))
+      }
+      var(func: uid(t)) @filter(not uid_in(delete, uid(d1))) {
+        p as uid
+      }
+    `
+    const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($xid: string, $after: string) {
+        ${viewerId === xid ? canViewDelete : cannotViewDelete}
+        var(func: uid(p), orderdesc: createdAt) {
+          comments as uid
+        }
+        ${after ? q1 : ''}
+
+        totalCount(func: uid(comments)) { count(uid) }
+        comments(func: uid(${after ? 'q' : 'comments'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startComment(func: uid(comments), first: -1) {
+          id: uid
+          createdAt
+        }
+        # 结束游标
+        endComment(func: uid(comments), first: 1) {
+          id: uid
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      comments: Comment[]
+      startComment: Array<{id: string, createdAt: string}>
+      endComment: Array<{id: string, createdAt: string}>
+    }>({ query, vars: { $after: after, $xid: xid } })
+
+    const totalCount = res.totalCount[0]?.count ?? 0
+    const v = totalCount !== 0
+    const startComment = res.startComment[0]
+    const endComment = res.endComment[0]
+    const lastComment = res.comments?.slice(-1)[0]
+
+    const hasNextPage = endComment?.createdAt !== lastComment?.createdAt && endComment?.createdAt !== after && res.comments.length === first && totalCount !== first
+    const hasPreviousPage = after !== startComment?.createdAt && !!after
+
+    return {
+      totalCount,
+      edges: edgifyByCreatedAt(res.comments ?? []),
+      pageInfo: {
+        endCursor: atob(lastComment?.createdAt),
+        startCursor: atob(res.comments[0]?.createdAt),
+        hasNextPage: hasNextPage && v,
+        hasPreviousPage: hasPreviousPage && v
+      }
+    }
+  }
+
+  async findCommentsByXidWithRelay (viewerId: string, id: string, { first, last, after, before, orderBy }: RelayPagingConfigArgs) {
+    after = btoa(after)
+    before = btoa(before)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.findCommentsByXidWithRelayForward(viewerId, id, first, after)
+    }
   }
 
   async commentsWithRelayForward (id: string, first: number, after: string | null): Promise<CommentsConnectionWithRelay> {
