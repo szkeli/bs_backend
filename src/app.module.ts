@@ -41,6 +41,7 @@ import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -86,7 +87,8 @@ import { VotesModule } from './votes/votes.module'
     CensorsModule,
     PubsubsModule,
     ConnectionsModule,
-    AnonymousModule
+    AnonymousModule,
+    NotificationsModule
   ],
   controllers: [AppController],
   providers: [

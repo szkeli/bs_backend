@@ -953,6 +953,25 @@ type View {
   createdAt: String!
 }
 
+type Notification {
+  """通知的id"""
+  id: String!
+
+  """通知的创建时间"""
+  createdAt: String!
+
+  """通知涉及的操作"""
+  action: NOTIFICATION_ACTION!
+
+  """当前通知是否已被通知接收者设置为已读状态"""
+  isRead: Boolean!
+}
+
+enum NOTIFICATION_ACTION {
+  ADD_COMMENT_ON_POST
+  ADD_COMMENT_ON_COMMENT
+}
+
 type Query {
   """以postId获取一个帖子"""
   post(id: String!): Post!
