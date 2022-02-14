@@ -18,6 +18,8 @@ import { CurriculumsConnection } from '../curriculums/models/curriculums.model'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { WithinArgs } from '../node/models/node.model'
+import { NotificationsConnection } from '../notifications/models/notifications.model'
+import { NotificationsService } from '../notifications/notifications.service'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
@@ -48,7 +50,8 @@ export class UserResolver {
     private readonly deadlinesService: DeadlinesService,
     private readonly curriculumsService: CurriculumsService,
     private readonly votesService: VotesService,
-    private readonly commentsService: CommentService
+    private readonly commentsService: CommentService,
+    private readonly notificationsService: NotificationsService
   ) {}
 
   @Mutation(of => LoginResult, { description: '登录' })
@@ -185,5 +188,10 @@ export class UserResolver {
   @ResolveField(of => PrivilegesConnection, { description: '当前用户具有的权限' })
   async privileges (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.userService.privileges(user.id, first, offset)
+  }
+
+  @ResolveField(of => NotificationsConnection, { description: '当前用户的所有通知' })
+  async notifications (@Parent() user: User, @Args() paging: RelayPagingConfigArgs) {
+    return await this.notificationsService.findNotificationsByXid(user.id, paging)
   }
 }

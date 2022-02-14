@@ -11,6 +11,7 @@ import { CommentService } from '../comment/comment.service'
 import { ConversationsService } from '../conversations/conversations.service'
 import { CurriculumsService } from '../curriculums/curriculums.service'
 import { DeadlinesService } from '../deadlines/deadlines.service'
+import { NotificationsService } from '../notifications/notifications.service'
 import { ReportsService } from '../reports/reports.service'
 import { VotesService } from '../votes/votes.service'
 import { UserResolver } from './user.resolver'
@@ -30,7 +31,8 @@ import { UserService } from './user.service'
     CurriculumsService,
     VotesService,
     CommentService,
-    CensorsService
+    CensorsService,
+    NotificationsService
   ],
   imports: [
     SharedModule
