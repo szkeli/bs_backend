@@ -125,16 +125,16 @@ export class PinsService {
 
   async to (pinId: string) {
     const query = `
-            query v($pinId: string) {
-                pin(func: uid($pinId)) @filter(type(Pin)) {
-                    to @filter(type(Post) or type(Comment)) {
-                        id: uid
-                        dgraph.type
-                        expand(_all_)
-                    }
-                }
-            }
-          `
+      query v($pinId: string) {
+          pin(func: uid($pinId)) @filter(type(Pin)) {
+              to @filter(type(Post) or type(Comment) and not has(delete)) {
+                  id: uid
+                  dgraph.type
+                  expand(_all_)
+              }
+          }
+      }
+    `
     const res = await this.dbService.commitQuery<{pin: Array<{to: (typeof PostAndCommentUnion) & { 'dgraph.type': string}}>}>({ query, vars: { $pinId: pinId } })
     if (res.pin[0].to['dgraph.type'].includes('Post')) {
       return new Post(res.pin[0].to as unknown as Post)
@@ -147,15 +147,15 @@ export class PinsService {
 
   async creator (id: string) {
     const query = `
-          query v($pinId: string) {
-              pin(func: uid($pinId)) @filter(type(Pin)) {
-                  creator @filter(type(Admin)) {
-                      id: uid
-                      expand(_all_)
-                  }
+      query v($pinId: string) {
+          pin(func: uid($pinId)) @filter(type(Pin)) {
+              creator @filter(type(Admin)) {
+                  id: uid
+                  expand(_all_)
               }
           }
-      `
+      }
+    `
     const res = await this.dbService.commitQuery<{ pin: Array<{creator: User}>}>({
       query,
       vars: {

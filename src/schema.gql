@@ -340,8 +340,8 @@ type Pin {
   """置顶的创建者"""
   creator: Admin!
 
-  """被置顶的对象"""
-  to: PostAndCommentUnion!
+  """被置顶的对象，被置顶对象被删除时，返回null"""
+  to: PostAndCommentUnion
 }
 
 type PinsConnection {

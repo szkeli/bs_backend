@@ -42,7 +42,7 @@ export class PinsResolver {
     return await this.pinsService.creator(pin.id)
   }
 
-  @ResolveField(of => PostAndCommentUnion, { description: '被置顶的对象' })
+  @ResolveField(of => PostAndCommentUnion, { description: '被置顶的对象，被置顶对象被删除时，返回null', nullable: true })
   async to (@Parent() pin: Pin) {
     return await this.pinsService.to(pin.id)
   }
