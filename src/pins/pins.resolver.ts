@@ -41,8 +41,8 @@ export class PinsResolver {
   }
 
   @Query(of => PinsConnection, { description: '获取全部置顶信息' })
-  @Roles(Role.Admin)
-  @CheckPolicies(new MustWithCredentialPolicyHandler())
+  // @Roles(Role.Admin)
+  // @CheckPolicies(new MustWithCredentialPolicyHandler())
   async pins (@Args() { first, offset }: PagingConfigArgs) {
     return await this.pinsService.pins(first, offset)
   }
