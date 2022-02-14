@@ -72,32 +72,35 @@ export class SearchService {
     return u
   }
 
-  async searchUser (q: string, first: number, offset: number) {
+  async searchUser (q: string, first: number, offset: number): Promise<SearchResultItemConnection> {
     const query = `
         query v($query: string) {
-          totalCount(func: type(User)) @filter(alloftext(name, $query) OR alloftext(userId, $query)) {
+          var(func: type(User)) @filter(alloftext(name, $query) or alloftext(userId, $query)) {
+            q1 as uid
+          }
+          var(func: uid(q1)) @filter(not has(block)) {
+            users as uid
+          }
+          totalCount(func: uid(users)) {
             count(uid)
           }
-          search(func: type(User), first: ${first}, offset: ${offset}) @filter(alloftext(name, $query) OR alloftext(userId, $query)) {
+          search(func: uid(users), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
             id: uid
             expand(_all_)
           }
         }
       `
-    const res = await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $query: q })
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      search: User[]
+    }>({ query, vars: { $query: q } })
 
-    const result = res.getJson() as unknown as { search: [User], totalCount: Array<{count: number}>}
-    const v = []
-    result.search.forEach(user => {
-      v.push(new User(user))
-    })
-    const u: SearchResultItemConnection = {
-      nodes: v,
-      totalCount: result.totalCount[0].count
+    const users = res.search?.map(u => new User(u))
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: users
     }
-    return u
   }
 
   async searchPost (q: string, first: number, offset: number): Promise<SearchResultItemConnection> {
