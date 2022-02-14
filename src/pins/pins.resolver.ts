@@ -27,22 +27,12 @@ export class PinsResolver {
     return await this.pinsService.removePinOnPost(admin.id, from)
   }
 
-  //   @Mutation(of => Pin)
-  //   @Roles(Role.Admin)
-  //   async addPinOnComment (@CurrentUser() admin: Admin, @Args('commentId') commentId: string) {
-  //     return await this.pinsService.addPinOnComment(admin.id, commentId)
-  //   }
-
   @Query(of => Pin, { description: '获取一个置顶信息' })
-  @Roles(Role.Admin)
-  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async pin (@Args('id') pinId: string) {
     return await this.pinsService.pin(pinId)
   }
 
   @Query(of => PinsConnection, { description: '获取全部置顶信息' })
-  // @Roles(Role.Admin)
-  // @CheckPolicies(new MustWithCredentialPolicyHandler())
   async pins (@Args() { first, offset }: PagingConfigArgs) {
     return await this.pinsService.pins(first, offset)
   }
