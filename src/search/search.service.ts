@@ -44,32 +44,30 @@ export class SearchService {
     return u
   }
 
-  async searchComment (q: string, first: number, offset: number) {
+  async searchComment (q: string, first: number, offset: number): Promise<SearchResultItemConnection> {
     const query = `
         query v($query: string) {
-          totalCount(func: type(Comment)) @filter(alloftext(content, $query)) {
+          comments as var(func: type(Comment)) @filter(alloftext(content, $query) and not has(delete))
+          totalCount(func: uid(comments)) {
             count(uid)
           }
-          search(func: type(Comment), first: ${first}, offset: ${offset}) @filter(alloftext(content, $query)) {
+          search(func: uid(comments), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
             id: uid
             expand(_all_)
           }
         }
       `
-    const res = await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $query: q })
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      search: Comment[]
+    }>({ query, vars: { $query: q } })
 
-    const result = res.getJson() as unknown as { search: [Comment], totalCount: Array<{count: number}>}
-    const v = []
-    result.search.forEach(comment => {
-      v.push(new Comment(comment))
-    })
-    const u: SearchResultItemConnection = {
-      nodes: v,
-      totalCount: result.totalCount[0].count
+    const comments = res.search?.map(c => new Comment(c))
+
+    return {
+      totalCount: res.totalCount[0]?.count ?? 0,
+      nodes: comments
     }
-    return u
   }
 
   async searchUser (q: string, first: number, offset: number): Promise<SearchResultItemConnection> {
