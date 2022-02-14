@@ -216,7 +216,7 @@ export class DeletesService {
           y(func: uid($postId)) @filter(type(Post) and uid_in(creator, $xid)) { y as uid }
           # 帖子是否被创建者删除
           x(func: uid($postId)) @filter(type(Post)) {
-            delete @filter(type(Delete)) {
+            delete @filter(type(Delete) and not uid_in(creator, $xid)) {
               x as uid
             }
           }

@@ -132,7 +132,7 @@ export const btoa = function (content?: string | null): string | null {
 export const edgify = function <T>(vs: Array<T & {'createdAt': string}>): Array<{node: T, cursor: string}> {
   return vs.map(v => ({ node: v, cursor: atob(v.createdAt) }))
 }
-export const edgifyByCreatedAt = function <T>(vs: Array<T & {'createdAt': string}>) {
+export const edgifyByCreatedAt = function <T extends {createdAt: string}>(vs: T[]) {
   return vs.map(v => ({ node: v, cursor: atob(v.createdAt) }))
 }
 
@@ -146,4 +146,40 @@ export const edgifyByKey = function <T>(vs: T[], key: string): Array<{node: T, c
 export const getCurosrByScoreAndId = function (id: string, score: number): string {
   if (score === null || score === undefined) return null
   return atob(JSON.stringify({ id, score: score.toString() }))
+}
+
+export const relayfyArrayForward = function<T extends {createdAt: string}> ({
+  totalCount,
+  objs,
+  startO,
+  endO,
+  first,
+  after
+}: {
+  totalCount: Array<{count: number}>
+  objs: T[]
+  startO: Array<{createdAt: string}>
+  endO: Array<{createdAt: string}>
+  first: number
+  after: string | null
+}) {
+  const _lastO = objs?.slice(-1)[0]
+  const _totalCount = totalCount[0]?.count ?? 0
+  const _startO = startO[0]
+  const _endO = endO[0]
+
+  const v = _totalCount !== 0
+  const hasNextPage = _endO?.createdAt !== _lastO?.createdAt && _endO?.createdAt !== after && objs?.length === first && _totalCount !== first
+  const hasPreviousPage = after !== _startO?.createdAt && !!after
+
+  return {
+    totalCount: _totalCount,
+    pageInfo: {
+      startCursor: atob(objs[0]?.createdAt),
+      endCursor: atob(_lastO?.createdAt),
+      hasNextPage: hasNextPage && v,
+      hasPreviousPage: hasPreviousPage && v
+    },
+    edges: edgifyByCreatedAt<T>(objs ?? [])
+  }
 }

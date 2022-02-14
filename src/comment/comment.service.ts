@@ -10,7 +10,7 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { MutationsWithCondition } from '../db/model/db.model'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, now, sha1 } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, now, relayfyArrayForward, sha1 } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
@@ -143,24 +143,14 @@ export class CommentService {
       endPost: Array<{id: string, createdAt: string}>
     }>({ query, vars: { $id: id, $after: after } })
 
-    const lastComment = res.comments?.slice(-1)[0]
-    const totalCount = res.totalCount[0]?.count ?? 0
-    const startComment = res.startPost[0]
-    const endComment = res.endPost[0]
-
-    const hasNextPage = endComment?.createdAt !== lastComment?.createdAt && endComment?.createdAt !== after && res.comments.length === first && totalCount !== first
-    const hasPreviousPage = after !== startComment?.createdAt && !!after
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      pageInfo: {
-        startCursor: atob(res.comments[0]?.createdAt),
-        endCursor: atob(lastComment?.createdAt),
-        hasNextPage,
-        hasPreviousPage
-      },
-      edges: edgifyByCreatedAt(res.comments ?? [])
-    }
+    return relayfyArrayForward<Comment>({
+      totalCount: res.totalCount,
+      objs: res.comments,
+      startO: res.startPost,
+      endO: res.endPost,
+      first,
+      after
+    })
   }
 
   async commentsWithRelay (id: string, { first, after, last, before }: RelayPagingConfigArgs): Promise<CommentsConnectionWithRelay> {
