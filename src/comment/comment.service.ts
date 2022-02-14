@@ -9,6 +9,7 @@ import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { MutationsWithCondition } from '../db/model/db.model'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
+import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
 import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, now, relayfyArrayForward, sha1 } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
@@ -507,7 +508,7 @@ export class CommentService {
 
   async addCommentOnPost (creator: string, { content, to: postId, isAnonymous }: AddCommentArgs): Promise<Comment> {
     const _now = now()
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
+    const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
     const query = `
       query v($creator: string, $postId: string) {
         # 系统
@@ -518,7 +519,13 @@ export class CommentService {
           # 帖子存在
           u as uid 
           # 帖子的创建者
-          postCreator as creator @filter(type(User))
+          creator @filter(type(User)) {
+            postCreator as uid
+          }
+        }
+        # 评论者是帖子的创建者
+        y(func: uid($postId)) @filter(type(Post) and uid_in(creator, $creator)) {
+          y as uid
         }
       }
     `
@@ -575,13 +582,13 @@ export class CommentService {
         }
       }
     }
+
+    // 评论自己的帖子不发通知
+    const condition2 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(y), 0) )'
     // 创建通知
     const mutation2 = {
       uid: '_:notification',
       'dgraph.type': 'Notification',
-      creator: {
-        uid: creator
-      },
       createdAt: _now,
       to: {
         uid: 'uid(postCreator)',
@@ -592,20 +599,23 @@ export class CommentService {
       about: {
         uid: '_:comment'
       },
-      action: 'ADD_COMMENT_ON_POST',
+      action: NOTIFICATION_ACTION.ADD_COMMENT_ON_POST,
       isRead: false
     }
 
     if (isAnonymous) {
       Object.assign(mutation1.comments, { anonymous })
+    } else {
+      // 非匿名发布评论添加通知创建者信息
+      Object.assign(mutation2, { creator: { uid: creator } })
     }
 
-    const mutations: MutationsWithCondition[] = [{ mutation: mutation1, condition }]
+    const mutations: MutationsWithCondition[] = [{ mutation: mutation1, condition: condition1 }]
 
     if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
       Object.assign(mutation1.comments, { delete: iDelete })
     } else {
-      mutations.push({ mutation: mutation2, condition })
+      mutations.push({ mutation: mutation2, condition: condition2 })
     }
 
     // TODO 将疑似违规帖子添加到复查队列
