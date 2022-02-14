@@ -40,6 +40,7 @@ export class SubjectResolver {
   }
 
   @Query(of => PostsConnectionWithRelay, { description: 'Relay版 以id获取某主题下所有帖子' })
+  @NoAuth()
   async subjectPostsWithRelay (@Args('id') id: SubjectId, @Args() paging: RelayPagingConfigArgs) {
     return await this.subjectService.postsWithRelay(id, paging)
   }
