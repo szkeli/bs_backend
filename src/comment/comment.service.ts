@@ -10,7 +10,7 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { MutationsWithCondition } from '../db/model/db.model'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, now } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, now, sha1 } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
@@ -175,6 +175,13 @@ export class CommentService {
     const query = `
       query v($commentId: string) {
         comment(func: uid($commentId)) @filter(type(Comment)) {
+          creator @filter(type(User)) {
+            id: uid
+          }
+          # 被评论的对象的id
+          to @filter(type(Post) or type(Comment)) {
+            id: uid
+          }
           anonymous @filter(type(Anonymous)) {
             id: uid
             expand(_all_)
@@ -182,8 +189,19 @@ export class CommentService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{comment: Array<{anonymous: Anonymous}>}>({ query, vars: { $commentId: id } })
-    return res.comment[0]?.anonymous
+    const res = await this.dbService.commitQuery<{
+      comment: Array<{to: {id: string}, creator: {id: string}, anonymous: Anonymous}>
+    }>({ query, vars: { $commentId: id } })
+
+    const anonymous = res.comment[0]?.anonymous
+    const beenCommentedObjectId = res.comment[0]?.to?.id
+    const creatorId = res.comment[0]?.creator?.id
+
+    if (anonymous) {
+      anonymous.watermark = sha1(`${beenCommentedObjectId}${creatorId}`)
+    }
+
+    return anonymous
   }
 
   async commentsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<CommentsConnection> {

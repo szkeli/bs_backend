@@ -10,7 +10,7 @@ import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
-import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, sha1 } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
@@ -33,10 +33,14 @@ export class PostsService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async anonymous (id: string) {
+  async anonymous (id: string): Promise<Anonymous> {
     const query = `
       query v($postId: string) {
         post(func: uid($postId)) @filter(type(Post)) {
+          id: uid
+          creator @filter(type(User)) {
+            id: uid
+          }
           anonymous @filter(type(Anonymous)) {
             id: uid
             expand(_all_)
@@ -45,10 +49,18 @@ export class PostsService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      post: Array<{anonymous: Anonymous}>
+      post: Array<{id: string, anonymous: Anonymous, creator: {id: string}}>
     }>({ query, vars: { $postId: id } })
 
-    return res.post[0]?.anonymous
+    const anonymous = res.post[0]?.anonymous
+    const postId = res.post[0]?.id
+    const creatorId = res.post[0]?.creator?.id
+
+    if (anonymous) {
+      anonymous.watermark = sha1(`${postId}${creatorId}`)
+    }
+
+    return anonymous
   }
 
   async postsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<PostsConnection> {

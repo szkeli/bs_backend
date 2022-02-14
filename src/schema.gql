@@ -646,6 +646,7 @@ type UsersConnection {
 type Anonymous {
   id: String!
   createdAt: String!
+  watermark: String!
 
   """匿名的创建者，只有创建者自己可见"""
   creator: User

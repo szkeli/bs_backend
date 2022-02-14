@@ -7,4 +7,7 @@ export class Anonymous {
 
   @Field()
     createdAt: string
+
+  @Field()
+    watermark: string
 }
