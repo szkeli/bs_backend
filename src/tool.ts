@@ -107,7 +107,7 @@ export const UpdateUserArgs2User = function <T>(updateUserArgs: UpdateUserArgs) 
 export const RawUser2UserWithPrivateProps = function (user: User): UserWithPrivateProps {
   const map = new Map(Object.entries(user))
 
-  const upper = (v: string) => v.slice(0, 1).toUpperCase() + v.slice(1).toLowerCase()
+  const upper = (v: string) => v.slice(0, 1).toUpperCase() + v.slice(1)
   for (const [key, value] of map.entries()) {
     const lv = key.split('|')
     if (typeof value === 'boolean' && lv.length === 2) {
