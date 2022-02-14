@@ -11,7 +11,7 @@ import { Action, AppAbility, MustWithCredential, Subjects, ViewAppState } from '
 @Injectable()
 export class CaslAbilityFactory {
   createForAdminAndUser (user: UserWithRolesAndPrivilegesAndCredential) {
-    const { can, cannot, build } = new AbilityBuilder<Ability<[Action, Subjects]>>(
+    const { can, build } = new AbilityBuilder<Ability<[Action, Subjects]>>(
       Ability as AbilityClass<AppAbility>
     )
 
