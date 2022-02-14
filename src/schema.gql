@@ -1015,6 +1015,15 @@ type Notification {
 
   """当前通知是否已被通知接收者设置为已读状态"""
   isRead: Boolean!
+
+  """通知涉及的对象"""
+  about: PostAndCommentUnion!
+
+  """被通知的对象"""
+  to: User!
+
+  """通知的创建者，匿名评论时为空"""
+  creator: User
 }
 
 enum NOTIFICATION_ACTION {
