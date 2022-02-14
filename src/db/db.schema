@@ -15,6 +15,7 @@ deadlines: [uid] @reverse .
 views: [uid] @reverse .
 curriculums: [uid] @reverse .
 pins: [uid] @reverse .
+notifications: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -28,6 +29,7 @@ block: uid @reverse .
 educator: uid @reverse .
 anonymous: uid @reverse .
 pin: uid @reverse .
+about: uid @reverse .
 
 images: [string] .
 
@@ -61,6 +63,7 @@ sourceDataType: string @index(term) .
 sourceType: string @index(term) .
 curriculumId: string @index(hash) .
 circle: string @index(term) .
+action: string @index(term) .
 
 notificationIds: [int] .
 
@@ -78,6 +81,7 @@ studentId: int .
 
 dataPending: bool .
 seen: bool .
+isRead: bool .
 
 dateAdded: dateTime @index(hour) .
 startDate: dateTime @index(hour) .
@@ -175,6 +179,8 @@ type User {
   deadlines
   # 当前用户的浏览
   views
+  # 用户收到的通知
+  notifications
 }
 
 # 帖子
@@ -286,6 +292,22 @@ type Subject {
   posts
   # 主题的删除信息
   delete
+}
+
+# 用户收到的通知 
+type Notification {
+  # 通知创建者
+  creator
+  # 通知的创建时间
+  createdAt
+  # 被通知的对象
+  to
+  # 通知的负载（比如 A用户点赞了B帖子 B帖子即为负载
+  about
+  # 枚举值，什么操作触发的通知（点赞 评论 关注 系统通知
+  action
+  # 通知接收者是否已读该通知
+  isRead
 }
 
 # 置顶

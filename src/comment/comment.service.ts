@@ -7,9 +7,10 @@ import { Anonymous } from '../anonymous/models/anonymous.model'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { ORDER_BY } from '../connections/models/connections.model'
+import { MutationsWithCondition } from '../db/model/db.model'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, now } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
@@ -497,7 +498,7 @@ export class CommentService {
   }
 
   async addCommentOnPost (creator: string, { content, to: postId, isAnonymous }: AddCommentArgs): Promise<Comment> {
-    const now = new Date().toISOString()
+    const _now = now()
     const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
     const query = `
       query v($creator: string, $postId: string) {
@@ -505,8 +506,12 @@ export class CommentService {
         s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
         # 评论的创建者存在
         v(func: uid($creator)) @filter(type(User)) { v as uid }
-        # 帖子存在
-        u(func: uid($postId)) @filter(type(Post)) { u as uid }
+        u(func: uid($postId)) @filter(type(Post)) { 
+          # 帖子存在
+          u as uid 
+          # 帖子的创建者
+          postCreator as creator @filter(type(User))
+        }
       }
     `
 
@@ -517,7 +522,7 @@ export class CommentService {
     const iDelete = {
       uid: '_:delete',
       'dgraph.type': 'Delete',
-      createdAt: now,
+      createdAt: _now,
       to: {
         uid: '_:comment',
         delete: {
@@ -536,20 +541,20 @@ export class CommentService {
       creator: {
         uid: creator
       },
-      createdAt: now,
+      createdAt: _now,
       to: {
         uid: '_:comment'
       }
     }
 
-    const mutation = {
+    // 创建一条新的评论
+    const mutation1 = {
       uid: postId,
-      // 创建一条新的评论
       comments: {
         uid: '_:comment',
         'dgraph.type': 'Comment',
         content,
-        createdAt: now,
+        createdAt: _now,
         // 被评论的对象
         to: {
           uid: postId,
@@ -562,13 +567,37 @@ export class CommentService {
         }
       }
     }
-
-    if (isAnonymous) {
-      Object.assign(mutation.comments, { anonymous })
+    // 创建通知
+    const mutation2 = {
+      uid: '_:notification',
+      'dgraph.type': 'Notification',
+      creator: {
+        uid: creator
+      },
+      createdAt: _now,
+      to: {
+        uid: 'uid(postCreator)',
+        notifications: {
+          uid: '_:notification'
+        }
+      },
+      about: {
+        uid: '_:comment'
+      },
+      action: 'ADD_COMMENT_ON_POST',
+      isRead: false
     }
 
+    if (isAnonymous) {
+      Object.assign(mutation1.comments, { anonymous })
+    }
+
+    const mutations: MutationsWithCondition[] = [{ mutation: mutation1, condition }]
+
     if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
-      Object.assign(mutation.comments, { delete: iDelete })
+      Object.assign(mutation1.comments, { delete: iDelete })
+    } else {
+      mutations.push({ mutation: mutation2, condition })
     }
 
     // TODO 将疑似违规帖子添加到复查队列
@@ -578,7 +607,7 @@ export class CommentService {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
     }>({
-      mutations: [{ mutation, condition }],
+      mutations,
       query,
       vars: {
         $creator: creator,
@@ -600,7 +629,7 @@ export class CommentService {
 
     return {
       content,
-      createdAt: now,
+      createdAt: _now,
       id: res.uids.get('comment')
     }
   }
