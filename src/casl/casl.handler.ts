@@ -15,7 +15,11 @@ export class ReadPostPolicyHandler implements IPolicyHandler {
 
 export class CreateSubjectPolicyHandler implements IPolicyHandler {
   handle (ability: AppAbility) {
-    return ability.can(Action.Create, Subject)
+    const can = ability.can(Action.Create, Subject)
+    if (!can) {
+      throw new ForbiddenException(`缺少 ${IPRIVILEGE.USER_CAN_CREATE_SUBJECT} 权限`)
+    }
+    return true
   }
 }
 
