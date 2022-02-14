@@ -7,7 +7,7 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CheckPolicies, CurrentUser, Roles } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
 import { PostsConnection, PostsConnectionWithRelay, RelayPagingConfigArgs } from 'src/posts/models/post.model'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
@@ -28,11 +28,13 @@ export class SubjectResolver {
   constructor (private readonly subjectService: SubjectService) {}
 
   @Query(of => Subject, { description: '以id获取主题' })
+  @NoAuth()
   async subject (@Args('id') id: SubjectId) {
     return await this.subjectService.subject(id)
   }
 
   @Query(of => SubjectsConnection, { description: '获取所有主题' })
+  @NoAuth()
   async subjects (@Args() args: PagingConfigArgs): Promise<SubjectsConnection> {
     return await this.subjectService.subjects(args.first, args.offset)
   }
