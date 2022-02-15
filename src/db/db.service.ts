@@ -14,7 +14,7 @@ export class DbService {
   private readonly dgraphStub: DgraphClientStub
   private readonly dgraph: DgraphClient
   constructor () {
-    this.dgraphStub = new DgraphClientStub('api.szlikeyou.com:9080')
+    this.dgraphStub = new DgraphClientStub(process.env.BACKEND)
     this.dgraph = new DgraphClient(this.dgraphStub)
   }
 
