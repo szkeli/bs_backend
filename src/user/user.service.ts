@@ -99,7 +99,7 @@ export class UserService {
   async registerWithin (startTime: string, endTime: string, first: number, offset: number): Promise<UsersConnection> {
     const query = `
       query v($startTime: string, $endTime: string) {
-        var(func: between(createdAt, $startTime, $endTime)) @filter(type(User)) {
+        var(func: between(createdAt, $startTime, $endTime)) @filter(type(User) and not eq(openId, "") and not eq(unionId, "")) {
           users as uid
         }
         totalCount(func: uid(users)) {
