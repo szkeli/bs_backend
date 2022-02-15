@@ -878,6 +878,8 @@ type Notification {
 enum NOTIFICATION_ACTION {
   ADD_COMMENT_ON_POST
   ADD_COMMENT_ON_COMMENT
+  ADD_UPVOTE_ON_POST
+  ADD_UPVOTE_ON_COMMENT
 }
 
 type NotificationsConnection {

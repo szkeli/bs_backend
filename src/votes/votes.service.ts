@@ -5,6 +5,7 @@ import { DbService } from 'src/db/db.service'
 
 import { Comment } from '../comment/models/comment.model'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
+import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
 import { Post } from '../posts/models/post.model'
 import { User } from '../user/models/user.model'
 import { Votable, Vote, VotesConnection } from './model/votes.model'
@@ -173,8 +174,35 @@ export class VotesService {
     // 1. 用户存在
     // 2. 帖子存在
     // 3. 用户没有为帖子点过赞
-    const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
-    const mutation = {
+    const query = `
+      query v($voter: string, $to: string){
+        # 发起点赞的用户存在
+        v(func: uid($voter)) @filter(type(User)) { v as uid }
+        # 被点赞的帖子存在
+        u(func: uid($to)) @filter(type(Post)) { u as uid }
+        # 发起点赞的用户没有为当前帖子点赞
+        x(func: uid($voter)) @filter(type(User)) {
+          votes @filter(type(Vote)) {
+            to @filter(uid($to) and type(Post)) {
+              x as uid
+            }
+          }
+        }
+        # 帖子的创建者 用于通知该User 帖子被点赞
+        creator(func: uid($to)) @filter(type(Post)) {
+          creator @filter(type(User)) {
+            postCreator as uid
+          }
+        }
+        # 帖子的创建者是否点赞的发起者
+        y(func: uid($to)) @filter(type(Post) and uid_in(creator, $voter)) {
+          y as uid
+        }
+        voteCountOfPost(func: uid(${to})) @filter(type(Post)) { voteCount: count(votes) }
+      }
+    `
+    const addUpvoteOnPostCondition = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
+    const addUpvoteOnPostMutation = {
       uid: '_:vote',
       'dgraph.type': 'Vote',
       createdAt: now,
@@ -192,26 +220,44 @@ export class VotesService {
         }
       }
     }
-    const query = `
-        query {
-          v(func: uid(${voter})) @filter(type(User)) { v as uid }
-          u(func: uid(${to})) @filter(type(Post)) { u as uid }
-          x(func: uid(${voter})) @filter(type(User)) {
-            votes @filter(type(Vote)) {
-              to @filter(uid(${to}) AND type(Post)) {
-                x as uid
-              }
-            }
-          }
-          voteCountOfPost(func: uid(${to})) @filter(type(Post)) { voteCount: count(votes) }
+
+    const addNotificationCondition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 0) and eq(len(y), 0) )'
+    const addNotificationMutation = {
+      uid: '_:notification',
+      'dgraph.type': 'Notification',
+      createdAt: now,
+      // 通知评论的创建者
+      to: {
+        uid: 'uid(postCreator)',
+        notifications: {
+          uid: '_:notification'
         }
-      `
-    const res = await this.dbService.commitConditionalUpsertWithVars<Map<string, string>, {
+      },
+      // 通知的创建者
+      creator: {
+        uid: voter
+      },
+      about: {
+        uid: to
+      },
+      action: NOTIFICATION_ACTION.ADD_UPVOTE_ON_POST,
+      isRead: false
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v?: [{uid: string}]
       u?: [{uid: string}]
       x?: Array<{votes: any}>
+      y: Array<{uid: string}>
       voteCountOfPost: [{ voteCount: number }]
-    }>({ conditions, mutation, query, vars: {} })
+    }>({
+      mutations: [
+        { mutation: addUpvoteOnPostMutation, condition: addUpvoteOnPostCondition },
+        { mutation: addNotificationMutation, condition: addNotificationCondition }
+      ],
+      query,
+      vars: { $voter: voter, $to: to }
+    })
 
     if (res.json.x?.length !== 0) {
       throw new ForbiddenException('不能重复点赞')
