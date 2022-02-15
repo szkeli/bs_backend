@@ -411,19 +411,29 @@ export class CommentService {
   async addCommentOnComment (creator: string, { content, to: commentId, isAnonymous }: AddCommentArgs): Promise<Comment> {
     const now = new Date().toISOString()
 
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
     const query = `
         query v($creator: string, $commentId: string) {
           # 系统 
           s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
           # 评论创建者存在
           v(func: uid(${creator})) @filter(type(User)) { v as uid }
-          # 评论存在
-          u(func: uid(${commentId})) @filter(type(Comment)) { u as uid }
+          u(func: uid(${commentId})) @filter(type(Comment)) {
+            # 评论存在
+            u as uid
+            # 评论的创建者
+            creator @filter(type(User)) {
+              commentCreator as uid
+            }
+          }
+          # 评论者是否评论的创建者
+          y(func: uid($commentId)) @filter(type(Comment) and uid_in(creator, $creator)) {
+            y as uid
+          }
         }
       `
 
     const textCensor = await this.censorsService.textCensor(content)
+
     // 评论的删除信息
     const iDelete = {
       uid: '_:delete',
@@ -450,7 +460,10 @@ export class CommentService {
         uid: '_:comment'
       }
     }
-    const mutation = {
+
+    // 创建一条新评论
+    const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
+    const mutation1 = {
       // 被评论的评论
       uid: commentId,
       comments: {
@@ -469,26 +482,51 @@ export class CommentService {
       }
     }
 
+    const condition2 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(y), 0) )'
+    const mutation2 = {
+      uid: '_:notification',
+      'dgraph.type': 'Notification',
+      createdAt: now,
+      to: {
+        uid: 'uid(commentCreator)',
+        notifications: {
+          uid: '_:notification'
+        }
+      },
+      about: {
+        uid: '_:comment'
+      },
+      action: NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT,
+      isRead: false
+    }
+
     if (isAnonymous) {
-      Object.assign(mutation.comments, { anonymous })
+      Object.assign(mutation1.comments, { anonymous })
+    } else {
+      Object.assign(mutation2, { creator: { uid: creator } })
     }
 
     if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
-      Object.assign(mutation.comments, { delete: iDelete })
+      Object.assign(mutation1.comments, { delete: iDelete })
     }
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
       s: Array<{uid: string}>
+      y: Array<{uid: string}>
     }>({
-      mutations: [{ mutation, condition }],
+      mutations: [
+        { mutation: mutation1, condition: condition1 },
+        { mutation: mutation2, condition: condition2 }
+      ],
       query,
       vars: {
         $creator: creator,
         $commentId: commentId
       }
     })
+
     if (res.json.s.length !== 1) {
       throw new ForbiddenException('请先创建userId为system的管理员')
     }
