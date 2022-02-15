@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { Comment } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
@@ -11,6 +11,45 @@ import { Notification, NotificationsConnection } from './models/notifications.mo
 
 @Injectable()
 export class NotificationsService {
+  async setReadNotification (xid: string, notificationId: string) {
+    const query = `
+      query v($xid: string, $notificationId: string) {
+        # xid 是 notification 的被通知对象
+        i(func: uid($notificationId)) @filter(type(Notification) and uid_in(to, $xid)) {
+          i as uid
+        }
+        notification(func: uid($notificationId)) @filter(type(Notification)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const condition = '@if( eq(len(i), 1) )'
+    const mutation = {
+      uid: notificationId,
+      isRead: true
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      notification: Notification[]
+      i: Array<{uid: string}>
+    }>({
+      mutations: [{ mutation, condition }],
+      query,
+      vars: { $xid: xid, $notificationId: notificationId }
+    })
+
+    if (res.json.i.length !== 1) {
+      throw new ForbiddenException(`用户 ${xid} 不是通知 ${notificationId} 的接收者`)
+    }
+
+    const notification = res.json.notification[0]
+    if (notification) {
+      notification.isRead = true
+    }
+
+    return notification
+  }
+
   async to (id: string) {
     const query = `
         query v($notificationId: string) {

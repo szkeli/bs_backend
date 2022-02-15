@@ -1,5 +1,6 @@
-import { Parent, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql'
 
+import { CurrentUser } from '../auth/decorator'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { User } from '../user/models/user.model'
 import { Notification } from './models/notifications.model'
@@ -8,6 +9,11 @@ import { NotificationsService } from './notifications.service'
 @Resolver(of => Notification)
 export class NotificationsResolver {
   constructor (private readonly notificationsService: NotificationsService) {}
+
+  @Mutation(of => Notification, { description: '通知接收者本人已读一个通知' })
+  async setReadNotification (@CurrentUser() user: User, @Args('id') notificationId: string) {
+    return await this.notificationsService.setReadNotification(user.id, notificationId)
+  }
 
   @ResolveField(of => PostAndCommentUnion, { description: '通知涉及的对象' })
   async about (@Parent() notification: Notification) {

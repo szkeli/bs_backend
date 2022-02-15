@@ -1740,6 +1740,9 @@ type Mutation {
 
   """对一个帖子取消置顶"""
   removePinOnPost(from: String!): Boolean!
+
+  """通知接收者本人已读一个通知"""
+  setReadNotification(id: String!): Notification!
 }
 
 input UserStringPropMap {
