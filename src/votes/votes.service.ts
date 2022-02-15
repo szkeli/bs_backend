@@ -12,6 +12,11 @@ import { Votable, Vote, VotesConnection } from './model/votes.model'
 
 @Injectable()
 export class VotesService {
+  private readonly dgraph: DgraphClient
+  constructor (private readonly dbService: DbService) {
+    this.dgraph = dbService.getDgraphIns()
+  }
+
   async votesCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<VotesConnection> {
     const query = `
       query v($startTime: string, $endTime: string) {
@@ -63,11 +68,6 @@ export class VotesService {
     }
   }
 
-  private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
-    this.dgraph = dbService.getDgraphIns()
-  }
-
   async creator (id: string) {
     const query = `
       query v($voteId: string) {
@@ -107,8 +107,37 @@ export class VotesService {
 
   async addUpvoteOnComment (voter: string, to: string): Promise<Votable> {
     const now = new Date().toISOString()
-    const conditions = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
-    const mutation = {
+    const query = `
+      query v($voter: string, $to: string) {
+        # 1. 用户存在
+        v(func: uid($voter)) @filter(type(User)) { v as uid }
+        # 2. 评论存在
+        u(func: uid($to)) @filter(type(Comment)) { u as uid }
+        # 3. 用户没有为评论点过赞
+        x(func: uid($voter)) @filter(type(User)) {
+          votes @filter(type(Vote)) {
+            to @filter(uid($to) AND type(Comment)) {
+              x as uid
+            }
+          }
+        }
+        # 评论的创建者
+        comment(func: uid($to)) @filter(type(Comment)) {
+          creator @filter(type(User)) {
+            commentCreator as uid
+          }
+        }
+        # 评论的创建者是否点赞的发起者
+        y(func: uid($to)) @filter(type(Comment) and uid_in(creator, $to)) {
+          creator @filter(type(User)) {
+            y as uid
+          }
+        }
+        voteCountOfComment(func: uid($to)) @filter(type(Comment)) { voteCount: count(votes) }
+      }
+    `
+    const addUpvoteOnCommentCondition = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
+    const addUpvoteOnCommentMutation = {
       uid: '_:vote',
       'dgraph.type': 'Vote',
       createdAt: now,
@@ -126,29 +155,42 @@ export class VotesService {
         }
       }
     }
-    const query = `
-        query {
-          # 1. 用户存在
-          v(func: uid(${voter})) @filter(type(User)) { v as uid }
-          # 2. 评论存在
-          u(func: uid(${to})) @filter(type(Comment)) { u as uid }
-          # 3. 用户没有为评论点过赞
-          x(func: uid(${voter})) @filter(type(User)) {
-            votes @filter(type(Vote)) {
-              to @filter(uid(${to}) AND type(Comment)) {
-                x as uid
-              }
-            }
-          }
-          voteCountOfComment(func: uid(${to})) @filter(type(Comment)) { voteCount: count(votes) }
+
+    const addNotificationCondition = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) and eq(len(y), 0) )'
+    const addNotificationMutation = {
+      uid: '_:notification',
+      'dgraph.type': 'Notification',
+      createdAt: now,
+      to: {
+        uid: 'uid(commentCreator)',
+        notifications: {
+          uid: '_:notification'
         }
-      `
-    const res = await this.dbService.commitConditionalUpsertWithVars<Map<string, string>, {
-      v?: [{uid: string}]
-      u?: [{uid: string}]
-      x?: Array<{votes: any}>
+      },
+      creator: {
+        uid: voter
+      },
+      about: {
+        uid: to
+      },
+      action: NOTIFICATION_ACTION.ADD_UPVOTE_ON_COMMENT,
+      isRead: false
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: [{uid: string}]
+      u: [{uid: string}]
+      x: Array<{votes: any}>
+      y: Array<{uid: string}>
       voteCountOfComment: [{ voteCount: number }]
-    }>({ conditions, mutation, query, vars: {} })
+    }>({
+      mutations: [
+        { mutation: addUpvoteOnCommentMutation, condition: addUpvoteOnCommentCondition },
+        { mutation: addNotificationMutation, condition: addNotificationCondition }
+      ],
+      query,
+      vars: { $voter: voter, $to: to }
+    })
 
     if (res.json.x?.length !== 0) {
       throw new ForbiddenException('不能重复点赞')
