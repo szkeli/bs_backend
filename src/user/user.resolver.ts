@@ -190,12 +190,14 @@ export class UserResolver {
     return await this.userService.privileges(user.id, first, offset)
   }
 
-  @ResolveField(of => NotificationsConnection, { description: '当前用户的所有通知' })
+  @ResolveField(of => NotificationsConnection, { description: '当前用户的所有通知', nullable: true })
   async notifications (
-  @Parent() user: User,
+  @CurrentUser() currentUser: User,
+    @Parent() user: User,
     @Args('type', { type: () => NOTIFICATION_TYPE, nullable: true, defaultValue: NOTIFICATION_TYPE.ALL }) type: NOTIFICATION_TYPE,
     @Args() paging: RelayPagingConfigArgs
   ) {
+    if (currentUser?.id !== user.id) return null
     return await this.notificationsService.findNotificationsByXid(user.id, type, paging)
   }
 }

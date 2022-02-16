@@ -435,7 +435,7 @@ type User implements Person & Node {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
     type: NOTIFICATION_TYPE = ALL
-  ): NotificationsConnection!
+  ): NotificationsConnection
 
   """学号"""
   studentId: Int
@@ -555,7 +555,7 @@ interface Person implements Node {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
     type: NOTIFICATION_TYPE = ALL
-  ): NotificationsConnection!
+  ): NotificationsConnection
 }
 
 interface Node {
@@ -659,7 +659,7 @@ type LoginResult implements Node & Person {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
     type: NOTIFICATION_TYPE = ALL
-  ): NotificationsConnection!
+  ): NotificationsConnection
 
   """学号"""
   studentId: Int
@@ -1457,7 +1457,7 @@ type UserWithPrivateProps implements Person & Node {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
     type: NOTIFICATION_TYPE = ALL
-  ): NotificationsConnection!
+  ): NotificationsConnection
 }
 
 enum SEARCHTYPE {
