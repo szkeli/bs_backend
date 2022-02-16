@@ -7,7 +7,7 @@ import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { btoa, relayfyArrayForward } from '../tool'
 import { User } from '../user/models/user.model'
-import { Notification, NotificationsConnection } from './models/notifications.model'
+import { Notification, NOTIFICATION_TYPE, NotificationsConnection } from './models/notifications.model'
 
 @Injectable()
 export class NotificationsService {
@@ -108,21 +108,25 @@ export class NotificationsService {
     }
   }
 
-  async findNotificationsByXid (id: string, { orderBy, first, last, after, before }: RelayPagingConfigArgs) {
+  async findNotificationsByXid (id: string, type: NOTIFICATION_TYPE, { orderBy, first, last, after, before }: RelayPagingConfigArgs) {
     after = btoa(after)
     before = btoa(before)
 
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.findNotificationsByXidForward(id, first, after)
+      return await this.findNotificationsByXidForward(id, type, first, after)
     }
   }
 
-  async findNotificationsByXidForward (xid: string, first: number, after: string | null): Promise<NotificationsConnection> {
+  async findNotificationsByXidForward (xid: string, type: NOTIFICATION_TYPE, first: number, after: string | null): Promise<NotificationsConnection> {
     const q1 = 'var(func: uid(notifications), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const mayGetAll = type === NOTIFICATION_TYPE.ALL ? 'and has(isRead)' : ''
+    const mayGetRead = type === NOTIFICATION_TYPE.READ ? 'and eq(isRead, true)' : ''
+    const mayGetUnRead = type === NOTIFICATION_TYPE.UN_READ ? 'and eq(isRead, false)' : ''
+
     const query = `
         query v($xid: string, $after: string) {
             var(func: uid($xid)) @filter(type(User)) {
-                notifications as notifications @filter(type(Notification))
+                notifications as notifications @filter(type(Notification) ${mayGetAll} ${mayGetRead} ${mayGetUnRead})
             }
             ${after ? q1 : ''}
 

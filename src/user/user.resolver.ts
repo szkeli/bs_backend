@@ -18,7 +18,7 @@ import { CurriculumsConnection } from '../curriculums/models/curriculums.model'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { WithinArgs } from '../node/models/node.model'
-import { NotificationsConnection } from '../notifications/models/notifications.model'
+import { NOTIFICATION_TYPE, NotificationsConnection } from '../notifications/models/notifications.model'
 import { NotificationsService } from '../notifications/notifications.service'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { ReportsConnection } from '../reports/models/reports.model'
@@ -191,7 +191,11 @@ export class UserResolver {
   }
 
   @ResolveField(of => NotificationsConnection, { description: '当前用户的所有通知' })
-  async notifications (@Parent() user: User, @Args() paging: RelayPagingConfigArgs) {
-    return await this.notificationsService.findNotificationsByXid(user.id, paging)
+  async notifications (
+  @Parent() user: User,
+    @Args('type', { type: () => NOTIFICATION_TYPE, nullable: true, defaultValue: NOTIFICATION_TYPE.ALL }) type: NOTIFICATION_TYPE,
+    @Args() paging: RelayPagingConfigArgs
+  ) {
+    return await this.notificationsService.findNotificationsByXid(user.id, type, paging)
   }
 }

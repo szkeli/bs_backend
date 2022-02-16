@@ -434,6 +434,7 @@ type User implements Person & Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
+    type: NOTIFICATION_TYPE = ALL
   ): NotificationsConnection!
 
   """学号"""
@@ -553,11 +554,18 @@ interface Person implements Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
+    type: NOTIFICATION_TYPE = ALL
   ): NotificationsConnection!
 }
 
 interface Node {
   id: String!
+}
+
+enum NOTIFICATION_TYPE {
+  ALL
+  READ
+  UN_READ
 }
 
 enum GENDER {
@@ -650,6 +658,7 @@ type LoginResult implements Node & Person {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
+    type: NOTIFICATION_TYPE = ALL
   ): NotificationsConnection!
 
   """学号"""
@@ -1447,6 +1456,7 @@ type UserWithPrivateProps implements Person & Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
+    type: NOTIFICATION_TYPE = ALL
   ): NotificationsConnection!
 }
 

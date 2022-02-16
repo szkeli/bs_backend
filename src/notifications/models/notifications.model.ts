@@ -9,6 +9,16 @@ export enum NOTIFICATION_ACTION {
   ADD_UPVOTE_ON_COMMENT = 'ADD_UPVOTE_ON_COMMENT'
 }
 
+export enum NOTIFICATION_TYPE {
+  ALL = 'ALL',
+  READ = 'READ',
+  UN_READ = 'UN_READ'
+}
+
+registerEnumType(NOTIFICATION_TYPE, {
+  name: 'NOTIFICATION_TYPE'
+})
+
 registerEnumType(NOTIFICATION_ACTION, {
   name: 'NOTIFICATION_ACTION'
 })
