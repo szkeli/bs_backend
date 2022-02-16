@@ -93,6 +93,7 @@ export class PostsResolver {
   }
 
   @Query(of => CommentsConnectionWithRelay, { description: 'relay分页版 以id获取某帖子下所有评论' })
+  @MaybeAuth()
   async postCommentsWithRelay (@Args('id') id: PostId, @Args() paging: RelayPagingConfigArgs) {
     return await this.commentService.commentsWithRelay(id, paging)
   }
