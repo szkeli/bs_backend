@@ -171,16 +171,17 @@ export class PostsService {
     const query = `
       query v($after: string) {
         v as var(func: type(Post)) @filter(not has(delete)) {
-          voteCount as count(votes @filter(type(Vote)))
+          vc as count(votes @filter(type(Vote)))
+          votesCount as math(ln(vc))
           # TODO
           c as count(comments @filter(type(Comment)))
-          commentsCount as math(c * 3)
-          createdAt as createdAt
+          commentsCount as math(c * 0.6)
+          # createdAt as createdAt
         
-          hour as math(
-            0.75*(since(createdAt)/216000)
-          )
-          score as math((voteCount + commentsCount)* hour)
+          # hour as math(
+          #  0.75*(since(createdAt)/216000)
+          # )
+          score as math(votesCount + commentsCount)
         }
         posts as var(func: uid(v)) @filter(gt(val(score), 0))
 
