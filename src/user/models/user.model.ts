@@ -15,6 +15,7 @@ import { UserId } from 'src/db/model/db.model'
 import { Admin } from '../../admin/models/admin.model'
 import { Role } from '../../auth/model/auth.model'
 import { Node } from '../../node/models/node.model'
+import { NOTIFICATION_ACTION, NOTIFICATION_TYPE } from '../../notifications/models/notifications.model'
 
 export enum ORDERBY {
   // 时间戳从大到小
@@ -307,4 +308,13 @@ export class DeadlinesPagingArgs {
 
   @Field(type => Int)
     first: number
+}
+
+@ArgsType()
+export class NotificationArgs {
+  @Field(of => NOTIFICATION_TYPE, { description: '获取', nullable: true, defaultValue: NOTIFICATION_TYPE.ALL })
+    type: NOTIFICATION_TYPE
+
+  @Field(of => [NOTIFICATION_ACTION], { description: '按action获取通知', nullable: true, defaultValue: [NOTIFICATION_ACTION.ADD_COMMENT_ON_POST] })
+    actions: NOTIFICATION_ACTION[]
 }

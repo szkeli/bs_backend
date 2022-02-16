@@ -18,7 +18,7 @@ import { CurriculumsConnection } from '../curriculums/models/curriculums.model'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { WithinArgs } from '../node/models/node.model'
-import { NOTIFICATION_TYPE, NotificationsConnection } from '../notifications/models/notifications.model'
+import { NotificationsConnection } from '../notifications/models/notifications.model'
 import { NotificationsService } from '../notifications/notifications.service'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { ReportsConnection } from '../reports/models/reports.model'
@@ -30,6 +30,7 @@ import {
   CreateUserArgs,
   DeadlinesPagingArgs,
   LoginResult,
+  NotificationArgs,
   PagingConfigArgs,
   Person,
   PersonLoginArgs,
@@ -194,10 +195,10 @@ export class UserResolver {
   async notifications (
   @CurrentUser() currentUser: User,
     @Parent() user: User,
-    @Args('type', { type: () => NOTIFICATION_TYPE, nullable: true, defaultValue: NOTIFICATION_TYPE.ALL }) type: NOTIFICATION_TYPE,
+    @Args() config: NotificationArgs,
     @Args() paging: RelayPagingConfigArgs
   ) {
     if (currentUser?.id !== user.id) return null
-    return await this.notificationsService.findNotificationsByXid(user.id, type, paging)
+    return await this.notificationsService.findNotificationsByXid(user.id, config, paging)
   }
 }
