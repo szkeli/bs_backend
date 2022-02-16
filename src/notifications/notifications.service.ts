@@ -5,12 +5,46 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { btoa, relayfyArrayForward } from '../tool'
+import { btoa, ids2String, relayfyArrayForward } from '../tool'
 import { User } from '../user/models/user.model'
 import { Notification, NOTIFICATION_TYPE, NotificationsConnection } from './models/notifications.model'
 
 @Injectable()
 export class NotificationsService {
+  async setReadNotifications (xid: string, notificationIds: string[]) {
+    const query = `
+      query v($xid: string) {
+        var(func: uid(${ids2String(notificationIds)})) @filter(type(Notification) and uid_in(to, $xid)) {
+          i as uid
+        }
+
+        patchCount(uid(i)) {
+          count(uid)
+        }
+        notifications(func: uid(i)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const condition = `@if( eq(len(i), ${notificationIds.length}))`
+    const mutation = {
+      uid: 'uid(i)',
+      isRead: true
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      patchCount: Array<{count: number}>
+      notifications: Notification[]
+    }>({ mutations: [{ mutation, condition }], query, vars: { $xid: xid } })
+
+    if (res.json.patchCount[0]?.count !== notificationIds.length) {
+      throw new ForbiddenException(`存在非 ${xid} 所有的通知`)
+    }
+
+    return true
+  }
+
   async setReadNotification (xid: string, notificationId: string) {
     const query = `
       query v($xid: string, $notificationId: string) {
@@ -47,7 +81,7 @@ export class NotificationsService {
       notification.isRead = true
     }
 
-    return notification
+    return true
   }
 
   async to (id: string) {

@@ -183,3 +183,8 @@ export const relayfyArrayForward = function<T extends {createdAt: string}> ({
     edges: edgifyByCreatedAt<T>(objs ?? [])
   }
 }
+
+export const ids2String = function (ids: string[]) {
+  ids?.map(id => `"${id}"`)
+  return ids?.toString()
+}

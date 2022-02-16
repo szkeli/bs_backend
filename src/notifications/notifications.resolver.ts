@@ -10,9 +10,14 @@ import { NotificationsService } from './notifications.service'
 export class NotificationsResolver {
   constructor (private readonly notificationsService: NotificationsService) {}
 
-  @Mutation(of => Notification, { description: '通知接收者本人已读一个通知' })
+  @Mutation(of => Boolean, { description: '通知接收者本人已读一个通知' })
   async setReadNotification (@CurrentUser() user: User, @Args('id') notificationId: string) {
     return await this.notificationsService.setReadNotification(user.id, notificationId)
+  }
+
+  @Mutation(of => Boolean, { description: '批量设置通知已读' })
+  async setReadNotifications (@CurrentUser() user: User, @Args('ids', { type: () => [String] }) notificationIds: string[]) {
+    return await this.notificationsService.setReadNotifications(user.id, notificationIds)
   }
 
   @ResolveField(of => PostAndCommentUnion, { description: '通知涉及的对象' })

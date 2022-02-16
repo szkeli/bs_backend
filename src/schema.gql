@@ -1752,7 +1752,10 @@ type Mutation {
   removePinOnPost(from: String!): Boolean!
 
   """通知接收者本人已读一个通知"""
-  setReadNotification(id: String!): Notification!
+  setReadNotification(id: String!): Boolean!
+
+  """批量设置通知已读"""
+  setReadNotifications(ids: [String!]!): Boolean!
 }
 
 input UserStringPropMap {
