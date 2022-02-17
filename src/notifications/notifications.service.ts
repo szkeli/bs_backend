@@ -54,9 +54,10 @@ export class NotificationsService {
     const query = `
       query v($xid: string, $after: string) {
         var(func: uid($xid)) @filter(type(User)) {
-          notifications @filter((eq(action, ${q1}) or eq(action, ${q2})) and eq(isRead, false)) @groupby(about) {
-            abouts as count(uid)
-          }
+          notifications as notifications @filter((eq(action, ${q1}) or eq(action, ${q2})) and eq(isRead, false))
+        }
+        var(func: uid(notifications), orderdesc: createdAt) @groupby(about) {
+          abouts as count(uid)
         }
         var(func: uid(abouts)) @filter(type(Post) or type(Comment)) {
           votes (orderdesc: createdAt, first: 1) {
