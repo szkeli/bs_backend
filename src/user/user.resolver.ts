@@ -191,6 +191,18 @@ export class UserResolver {
     return await this.userService.privileges(user.id, first, offset)
   }
 
+  @Query(of => NotificationsConnection, { description: '测试接口，某用户的所有回复通知，非当前用户获取到null', nullable: true })
+  async userReplyNotifications (@CurrentUser() currentUser: User, @Args('id') id: string, @Args() config: NotificationArgs, @Args() paging: RelayPagingConfigArgs) {
+    if (currentUser?.id !== id) return null
+    return await this.notificationsService.findReplyNotificationsByXid(id, config, paging)
+  }
+
+  @Query(of => VotesConnectionWithRelay, { description: '测试接口，获取某用户所有的点赞通知，非当前用户获取到null', nullable: true })
+  async userUpvoteNotifications (@CurrentUser() currentUser: User, @Args('id') id: string, @Args() paging: RelayPagingConfigArgs) {
+    if (currentUser?.id !== id) return null
+    return await this.notificationsService.findUpvoteNotificationsByXid(id, paging)
+  }
+
   @ResolveField(of => NotificationsConnection, { description: '回复的通知', nullable: true })
   async replyNotifications (
   @CurrentUser() currentUser: User,
