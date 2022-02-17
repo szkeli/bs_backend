@@ -17,6 +17,7 @@ import { CurriculumsService } from '../curriculums/curriculums.service'
 import { CurriculumsConnection } from '../curriculums/models/curriculums.model'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
+import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { WithinArgs } from '../node/models/node.model'
 import { NotificationsConnection } from '../notifications/models/notifications.model'
 import { NotificationsService } from '../notifications/notifications.service'
@@ -191,14 +192,20 @@ export class UserResolver {
     return await this.userService.privileges(user.id, first, offset)
   }
 
-  @ResolveField(of => NotificationsConnection, { description: '当前用户的所有通知', nullable: true })
-  async notifications (
+  @ResolveField(of => NotificationsConnection, { description: '回复的通知', nullable: true })
+  async replyNotifications (
   @CurrentUser() currentUser: User,
     @Parent() user: User,
     @Args() config: NotificationArgs,
     @Args() paging: RelayPagingConfigArgs
   ) {
     if (currentUser?.id !== user.id) return null
-    return await this.notificationsService.findNotificationsByXid(user.id, config, paging)
+    return await this.notificationsService.findReplyNotificationsByXid(user.id, config, paging)
+  }
+
+  @ResolveField(of => PostAndCommentUnion, { description: '点赞的通知', nullable: true })
+  async upvoteNotifications (@CurrentUser() currentUser: User, @Parent() user: User) {
+    if (currentUser?.id !== user.id) return null
+    return await this.notificationsService.findUpvoteNotificationsByXid(user.id)
   }
 }

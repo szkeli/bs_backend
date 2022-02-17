@@ -466,8 +466,8 @@ type User implements Person & Node {
   """当前用户具有的权限"""
   privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
 
-  """当前用户的所有通知"""
-  notifications(
+  """回复的通知"""
+  replyNotifications(
     """最新的n个对象"""
     first: Int
 
@@ -489,6 +489,9 @@ type User implements Person & Node {
     """按action获取通知"""
     actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST]
   ): NotificationsConnection
+
+  """点赞的通知"""
+  upvoteNotifications: PostAndCommentUnion
 
   """学号"""
   studentId: Int
@@ -591,8 +594,8 @@ interface Person implements Node {
   """当前用户具有的权限"""
   privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
 
-  """当前用户的所有通知"""
-  notifications(
+  """回复的通知"""
+  replyNotifications(
     """最新的n个对象"""
     first: Int
 
@@ -614,6 +617,9 @@ interface Person implements Node {
     """按action获取通知"""
     actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST]
   ): NotificationsConnection
+
+  """点赞的通知"""
+  upvoteNotifications: PostAndCommentUnion
 }
 
 interface Node {
@@ -700,8 +706,8 @@ type LoginResult implements Node & Person {
   """当前用户具有的权限"""
   privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
 
-  """当前用户的所有通知"""
-  notifications(
+  """回复的通知"""
+  replyNotifications(
     """最新的n个对象"""
     first: Int
 
@@ -723,6 +729,9 @@ type LoginResult implements Node & Person {
     """按action获取通知"""
     actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST]
   ): NotificationsConnection
+
+  """点赞的通知"""
+  upvoteNotifications: PostAndCommentUnion
 
   """学号"""
   studentId: Int
@@ -1455,8 +1464,8 @@ type UserWithPrivateProps implements Person & Node {
   """当前用户具有的权限"""
   privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
 
-  """当前用户的所有通知"""
-  notifications(
+  """回复的通知"""
+  replyNotifications(
     """最新的n个对象"""
     first: Int
 
@@ -1478,6 +1487,9 @@ type UserWithPrivateProps implements Person & Node {
     """按action获取通知"""
     actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST]
   ): NotificationsConnection
+
+  """点赞的通知"""
+  upvoteNotifications: PostAndCommentUnion
 }
 
 enum SEARCHTYPE {
@@ -1771,11 +1783,11 @@ type Mutation {
   """对一个帖子取消置顶"""
   removePinOnPost(from: String!): Boolean!
 
-  """通知接收者本人已读一个通知"""
-  setReadNotification(id: String!): Boolean!
-
   """批量设置通知已读"""
-  setReadNotifications(ids: [String!]!): Boolean!
+  setReadReplyNotifications(notificationIds: [String!]!): Boolean!
+
+  """设置创建时间小于当前系统时间的所有通知为已读"""
+  setReadAllNotifications: Boolean!
 }
 
 input UserStringPropMap {

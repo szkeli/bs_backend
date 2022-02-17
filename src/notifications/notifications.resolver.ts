@@ -10,14 +10,14 @@ import { NotificationsService } from './notifications.service'
 export class NotificationsResolver {
   constructor (private readonly notificationsService: NotificationsService) {}
 
-  @Mutation(of => Boolean, { description: '通知接收者本人已读一个通知' })
-  async setReadNotification (@CurrentUser() user: User, @Args('id') notificationId: string) {
-    return await this.notificationsService.setReadNotification(user.id, notificationId)
+  @Mutation(of => Boolean, { description: '批量设置通知已读' })
+  async setReadReplyNotifications (@CurrentUser() user: User, @Args('notificationIds', { type: () => [String] }) notificationIds: string[]) {
+    return await this.notificationsService.setReadReplyNotifications(user.id, notificationIds)
   }
 
-  @Mutation(of => Boolean, { description: '批量设置通知已读' })
-  async setReadNotifications (@CurrentUser() user: User, @Args('ids', { type: () => [String] }) notificationIds: string[]) {
-    return await this.notificationsService.setReadNotifications(user.id, notificationIds)
+  @Mutation(of => Boolean, { description: '设置创建时间小于当前系统时间的所有通知为已读' })
+  async setReadAllNotifications (@CurrentUser() user: User) {
+    return await this.notificationsService.setReadAllNotifications(user.id)
   }
 
   @ResolveField(of => PostAndCommentUnion, { description: '通知涉及的对象' })

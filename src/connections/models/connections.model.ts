@@ -13,7 +13,7 @@ registerEnumType(ORDER_BY, {
   name: 'ORDER_BY'
 })
 
-export function Connection<GraphQLObject> (GenericClass?: Type<GraphQLObject>) {
+export function Connection<GraphQLObject> (GenericClass?: Type<GraphQLObject> | {name: string}) {
   @ObjectType(`${GenericClass.name}PageInfo`, { isAbstract: true })
   abstract class PageInfo implements RelayPageInfo {
     @Field(of => String, { nullable: true })
