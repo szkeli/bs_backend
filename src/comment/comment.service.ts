@@ -7,7 +7,6 @@ import { Anonymous } from '../anonymous/models/anonymous.model'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { ORDER_BY } from '../connections/models/connections.model'
-import { MutationsWithCondition } from '../db/model/db.model'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
 import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
@@ -648,12 +647,8 @@ export class CommentService {
       Object.assign(mutation2, { creator: { uid: creator } })
     }
 
-    const mutations: MutationsWithCondition[] = [{ mutation: mutation1, condition: condition1 }]
-
     if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
       Object.assign(mutation1.comments, { delete: iDelete })
-    } else {
-      mutations.push({ mutation: mutation2, condition: condition2 })
     }
 
     // TODO 将疑似违规帖子添加到复查队列
@@ -663,7 +658,10 @@ export class CommentService {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
     }>({
-      mutations,
+      mutations: [
+        { mutation: mutation1, condition: condition1 },
+        { mutation: mutation2, condition: condition2 }
+      ],
       query,
       vars: {
         $creator: creator,
