@@ -1861,8 +1861,17 @@ type Mutation {
   """对一个帖子取消置顶"""
   removePinOnPost(from: String!): Boolean!
 
-  """批量设置通知已读"""
-  setReadReplyNotifications(notificationIds: [String!]!): Boolean!
+  """批量已读回复通知"""
+  setReadReplyNotifications(
+    """通知id"""
+    ids: [String!]!
+  ): Boolean!
+
+  """批量已读点赞通知"""
+  setReadUpvoteNotifications(
+    """被点赞的对象的id，通常是帖子或者评论的id"""
+    ids: [String!]!
+  ): Boolean!
 
   """设置创建时间小于当前系统时间的所有通知为已读"""
   setReadAllNotifications: Boolean!

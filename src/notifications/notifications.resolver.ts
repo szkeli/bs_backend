@@ -3,16 +3,21 @@ import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql'
 import { CurrentUser } from '../auth/decorator'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { User } from '../user/models/user.model'
-import { Notification } from './models/notifications.model'
+import { Notification, SetReadReplyNotificationsArgs, SetReadUpvoteNotificationsArgs } from './models/notifications.model'
 import { NotificationsService } from './notifications.service'
 
 @Resolver(of => Notification)
 export class NotificationsResolver {
   constructor (private readonly notificationsService: NotificationsService) {}
 
-  @Mutation(of => Boolean, { description: '批量设置通知已读' })
-  async setReadReplyNotifications (@CurrentUser() user: User, @Args('notificationIds', { type: () => [String] }) notificationIds: string[]) {
-    return await this.notificationsService.setReadReplyNotifications(user.id, notificationIds)
+  @Mutation(of => Boolean, { description: '批量已读回复通知' })
+  async setReadReplyNotifications (@CurrentUser() user: User, @Args() { ids }: SetReadReplyNotificationsArgs) {
+    return await this.notificationsService.setReadReplyNotifications(user.id, ids)
+  }
+
+  @Mutation(of => Boolean, { description: '批量已读点赞通知' })
+  async setReadUpvoteNotifications (@CurrentUser() user: User, @Args() { ids }: SetReadUpvoteNotificationsArgs) {
+    return await this.notificationsService.setReadUpvoteNotifications(user.id, ids)
   }
 
   @Mutation(of => Boolean, { description: '设置创建时间小于当前系统时间的所有通知为已读' })

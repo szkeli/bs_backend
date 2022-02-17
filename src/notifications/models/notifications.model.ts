@@ -1,6 +1,18 @@
-import { Field, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { ArgsType, Field, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 import { Connection } from '../../connections/models/connections.model'
+
+@ArgsType()
+export class SetReadReplyNotificationsArgs {
+  @Field(of => [String], { description: '通知id' })
+    ids: string[]
+}
+
+@ArgsType()
+export class SetReadUpvoteNotificationsArgs {
+  @Field(of => [String], { description: '被点赞的对象的id，通常是帖子或者评论的id' })
+    ids: string[]
+}
 
 export enum NOTIFICATION_ACTION {
   ADD_COMMENT_ON_POST = 'ADD_COMMENT_ON_POST',

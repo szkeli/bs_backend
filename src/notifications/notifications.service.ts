@@ -112,8 +112,39 @@ export class NotificationsService {
     }
   }
 
-  async setReadUpvoteNotifications (xid: string, aboutId: string[]) {
+  async setReadUpvoteNotifications (xid: string, ids: string[]) {
+    const query = `
+      query v($xid: string) {
+        var(func: uid($xid)) @filter(type(User)) {
+          notifications as notifications @filter(uid_in(about, ${ids2String(ids)}) and type(Notification))
+        }
+        totalCount(func: uid(notifications)) {
+          count(uid)
+        }
+      }
+    `
 
+    const condition = `@if( eq(len(notifications), ${ids.length}))`
+    const mutation = {
+      uid: 'uid(notifications)',
+      isRead: true
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      totalCount: Array<{count: number}>
+    }>({
+      mutations: [
+        { mutation, condition }
+      ],
+      query,
+      vars: { $xid: xid }
+    })
+
+    if (res.json.totalCount[0]?.count !== ids.length) {
+      throw new ForbiddenException(`存在不属于用户 ${xid} 的通知`)
+    }
+
+    return true
   }
 
   async setReadReplyNotifications (xid: string, notificationIds: string[]) {
