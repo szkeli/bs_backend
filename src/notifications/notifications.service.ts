@@ -7,6 +7,7 @@ import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { btoa, ids2String, now, relayfyArrayForward } from '../tool'
 import { NotificationArgs, User } from '../user/models/user.model'
+import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import { Notification, NOTIFICATION_ACTION, NOTIFICATION_TYPE, NotificationsConnection } from './models/notifications.model'
 
 @Injectable()
@@ -46,32 +47,67 @@ export class NotificationsService {
     return true
   }
 
-  async findUpvoteNotificationsByXid (id: string) {
+  async findUpvoteNotificationsByXidWithRelayForward (xid: string, first: number, after: string | null): Promise<VotesConnectionWithRelay> {
     const q1 = NOTIFICATION_ACTION.ADD_UPVOTE_ON_COMMENT
     const q2 = NOTIFICATION_ACTION.ADD_UPVOTE_ON_POST
+    const q3 = 'var(func: uid(upvotes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-      query v($xid: string) {
-        user(func: uid($xid)) @filter(type(User)) {
+      query v($xid: string, $after: string) {
+        var(func: uid($xid)) @filter(type(User)) {
           notifications @filter((eq(action, ${q1}) or eq(action, ${q2})) and eq(isRead, false)) @groupby(about) {
             abouts as count(uid)
           }
         }
-        about(func: uid(abouts)) @filter(type(Post) or type(Comment)) {
+        var(func: uid(abouts)) @filter(type(Post) or type(Comment)) {
+          votes (orderdesc: createdAt, first: 1) {
+            lastUpvotes as uid
+          }
+        }
+        # sorted by createdTime
+        var(func: uid(lastUpvotes), orderdesc: createdAt) {
+          upvotes as uid
+        }
+
+        ${after ? q3 : ''}
+        upvoteNotifications(func: uid(${after ? 'q' : 'upvotes'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
-          dgraph.type
+        }
+        
+        totalCount(func: uid(upvotes)) { count(uid) }
+        # 开始游标
+        startNotification(func: uid(upvotes), first: -1) {
+          createdAt
+        }
+        # 结束游标
+        endNotification(func: uid(upvotes), first: 1) {
+          createdAt
         }
       }
     `
-    const res = await this.dbService.commitQuery<{about: Array<(typeof PostAndCommentUnion) & {'dgraph.type': string[]}>}>({ query, vars: { $xid: id } })
-    console.error(res)
-    const about = res.about[0]
+    const res = await this.dbService.commitQuery<{
+      upvoteNotifications: Vote[]
+      totalCount: Array<{count: number}>
+      startNotification: Array<{createdAt: string}>
+      endNotification: Array<{createdAt: string}>
+    }>({ query, vars: { $xid: xid, $after: after } })
 
-    if (about?.['dgraph.type']?.includes('Post')) {
-      return new Post(about as unknown as Post)
-    }
-    if (about?.['dgraph.type']?.includes('Comment')) {
-      return new Comment(about as unknown as Comment)
+    return relayfyArrayForward<Vote>({
+      startO: res.startNotification,
+      endO: res.endNotification,
+      objs: res.upvoteNotifications,
+      first,
+      after,
+      totalCount: res.totalCount
+    })
+  }
+
+  async findUpvoteNotificationsByXid (id: string, { first, after, before, last, orderBy }: RelayPagingConfigArgs) {
+    after = btoa(after)
+    before = btoa(before)
+
+    if (first) {
+      return await this.findUpvoteNotificationsByXidWithRelayForward(id, first, after)
     }
   }
 
@@ -174,11 +210,11 @@ export class NotificationsService {
     before = btoa(before)
 
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.findReplyNotificationsByXidForward(id, config, first, after)
+      return await this.findReplyNotificationsByXidWithRelayForward(id, config, first, after)
     }
   }
 
-  async findReplyNotificationsByXidForward (xid: string, { type, actions }: NotificationArgs, first: number, after: string | null): Promise<NotificationsConnection> {
+  async findReplyNotificationsByXidWithRelayForward (xid: string, { type, actions }: NotificationArgs, first: number, after: string | null): Promise<NotificationsConnection> {
     const q1 = 'var(func: uid(notifications), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const mayGetAll = type === NOTIFICATION_TYPE.ALL ? 'and has(isRead)' : ''
     const mayGetRead = type === NOTIFICATION_TYPE.READ ? 'and eq(isRead, true)' : ''

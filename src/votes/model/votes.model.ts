@@ -1,5 +1,7 @@
 import { Field, Int, ObjectType } from '@nestjs/graphql'
 
+import { Connection } from '../../connections/models/connections.model'
+
 @ObjectType()
 export class Votable {
   @Field(type => Int, { description: '对象当前总赞数' })
@@ -38,3 +40,6 @@ export class Vote {
   @Field()
     createdAt: string
 }
+
+@ObjectType()
+export class VotesConnectionWithRelay extends Connection<Vote>(Vote) {}
