@@ -506,7 +506,7 @@ type User implements Person & Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): VotesConnectionWithRelay
+  ): VoteWithUnreadCountsConnection
 
   """学号"""
   studentId: Int
@@ -649,7 +649,7 @@ interface Person implements Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): VotesConnectionWithRelay
+  ): VoteWithUnreadCountsConnection
 }
 
 interface Node {
@@ -776,7 +776,7 @@ type LoginResult implements Node & Person {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): VotesConnectionWithRelay
+  ): VoteWithUnreadCountsConnection
 
   """学号"""
   studentId: Int
@@ -967,9 +967,19 @@ type VotesConnection {
   nodes: [Vote!]!
 }
 
-type Vote {
+type Vote implements VoteInterface {
   id: String!
+
+  """点赞的创建者"""
+  creator: User!
+
+  """被点赞的对象"""
+  to: PostAndCommentUnion!
   createdAt: String!
+}
+
+interface VoteInterface {
+  id: String!
 
   """点赞的创建者"""
   creator: User!
@@ -978,18 +988,30 @@ type Vote {
   to: PostAndCommentUnion!
 }
 
-type VotesConnectionWithRelay {
-  edges: [VoteEdge!]!
-  pageInfo: VotePageInfo!
+type VoteWithUnreadCount implements VoteInterface {
+  id: String!
+
+  """点赞的创建者"""
+  creator: User!
+
+  """被点赞的对象"""
+  to: PostAndCommentUnion!
+  createdAt: String!
+  unreadCount: Int!
+}
+
+type VoteWithUnreadCountsConnection {
+  edges: [VoteWithUnreadCountEdge!]!
+  pageInfo: VoteWithUnreadCountPageInfo!
   totalCount: Int!
 }
 
-type VoteEdge {
-  node: Vote
+type VoteWithUnreadCountEdge {
+  node: VoteWithUnreadCount
   cursor: String
 }
 
-type VotePageInfo {
+type VoteWithUnreadCountPageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!
@@ -1311,7 +1333,7 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
     id: String!
-  ): VotesConnectionWithRelay
+  ): VoteWithUnreadCountsConnection
 
   """查询某时间段内发布的所有评论"""
   commentsCreatedWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): CommentsConnection!
@@ -1611,7 +1633,7 @@ type UserWithPrivateProps implements Person & Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): VotesConnectionWithRelay
+  ): VoteWithUnreadCountsConnection
 }
 
 enum SEARCHTYPE {

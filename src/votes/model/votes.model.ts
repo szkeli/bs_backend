@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql'
+import { Field, Int, InterfaceType, ObjectType } from '@nestjs/graphql'
 
 import { Connection } from '../../connections/models/connections.model'
 
@@ -32,8 +32,16 @@ export class VotesConnection {
     nodes: Vote[]
 }
 
-@ObjectType()
-export class Vote {
+@InterfaceType()
+export abstract class VoteInterface {
+  @Field(of => String)
+    id: string
+}
+
+@ObjectType({
+  implements: [VoteInterface]
+})
+export class Vote implements VoteInterface {
   @Field()
     id: string
 
@@ -42,4 +50,10 @@ export class Vote {
 }
 
 @ObjectType()
-export class VotesConnectionWithRelay extends Connection<Vote>(Vote) {}
+export class VoteWithUnreadCount extends Vote {
+  @Field(of => Int)
+    unreadCount: number
+}
+
+@ObjectType()
+export class VoteWithUnreadCountsConnection extends Connection<VoteWithUnreadCount>(VoteWithUnreadCount) {}

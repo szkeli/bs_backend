@@ -23,7 +23,7 @@ import { NotificationsService } from '../notifications/notifications.service'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
-import { VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
+import { VotesConnection, VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
 import { VotesService } from '../votes/votes.service'
 import {
   AdminAndUserWithPrivatePropsUnion,
@@ -197,7 +197,7 @@ export class UserResolver {
     return await this.notificationsService.findReplyNotificationsByXid(id, config, paging)
   }
 
-  @Query(of => VotesConnectionWithRelay, { description: '测试接口，获取某用户所有的点赞通知，非当前用户获取到null', nullable: true })
+  @Query(of => VoteWithUnreadCountsConnection, { description: '测试接口，获取某用户所有的点赞通知，非当前用户获取到null', nullable: true })
   async userUpvoteNotifications (@CurrentUser() currentUser: User, @Args('id') id: string, @Args() paging: RelayPagingConfigArgs) {
     if (currentUser?.id !== id) return null
     return await this.notificationsService.findUpvoteNotificationsByXid(id, paging)
@@ -214,7 +214,7 @@ export class UserResolver {
     return await this.notificationsService.findReplyNotificationsByXid(user.id, config, paging)
   }
 
-  @ResolveField(of => VotesConnectionWithRelay, { description: '点赞的通知', nullable: true })
+  @ResolveField(of => VoteWithUnreadCountsConnection, { description: '点赞的通知', nullable: true })
   async upvoteNotifications (@CurrentUser() currentUser: User, @Parent() user: User, @Args() paging: RelayPagingConfigArgs) {
     if (currentUser?.id !== user.id) return null
     return await this.notificationsService.findUpvoteNotificationsByXid(user.id, paging)

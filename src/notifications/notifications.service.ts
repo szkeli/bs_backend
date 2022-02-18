@@ -7,7 +7,7 @@ import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { btoa, ids2String, now, relayfyArrayForward } from '../tool'
 import { NotificationArgs, User } from '../user/models/user.model'
-import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
+import { VoteWithUnreadCount, VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
 import { Notification, NOTIFICATION_ACTION, NOTIFICATION_TYPE, NotificationsConnection } from './models/notifications.model'
 
 @Injectable()
@@ -47,7 +47,7 @@ export class NotificationsService {
     return true
   }
 
-  async findUpvoteNotificationsByXidWithRelayForward (xid: string, first: number, after: string | null): Promise<VotesConnectionWithRelay> {
+  async findUpvoteNotificationsByXidWithRelayForward (xid: string, first: number, after: string | null): Promise<VoteWithUnreadCountsConnection> {
     const q1 = NOTIFICATION_ACTION.ADD_UPVOTE_ON_COMMENT
     const q2 = NOTIFICATION_ACTION.ADD_UPVOTE_ON_POST
     const q3 = 'var(func: uid(upvotes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
@@ -60,8 +60,10 @@ export class NotificationsService {
           abouts as count(uid)
         }
         var(func: uid(abouts)) @filter(type(Post) or type(Comment)) {
+          tmp as math(abouts)
           votes (orderdesc: createdAt, first: 1) {
             lastUpvotes as uid
+            unreadUpvoteCount as math(tmp)
           }
         }
         # sorted by createdTime
@@ -72,6 +74,7 @@ export class NotificationsService {
         ${after ? q3 : ''}
         upvoteNotifications(func: uid(${after ? 'q' : 'upvotes'}), orderdesc: createdAt, first: ${first}) {
           id: uid
+          unreadCount: val(unreadUpvoteCount)
           expand(_all_)
         }
         
@@ -87,13 +90,13 @@ export class NotificationsService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      upvoteNotifications: Vote[]
+      upvoteNotifications: VoteWithUnreadCount[]
       totalCount: Array<{count: number}>
       startNotification: Array<{createdAt: string}>
       endNotification: Array<{createdAt: string}>
     }>({ query, vars: { $xid: xid, $after: after } })
 
-    return relayfyArrayForward<Vote>({
+    return relayfyArrayForward<VoteWithUnreadCount>({
       startO: res.startNotification,
       endO: res.endNotification,
       objs: res.upvoteNotifications,
