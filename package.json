@@ -42,6 +42,7 @@
     "apollo-server-fastify": "^3.6.2",
     "axios": "^0.24.0",
     "class-validator": "^0.13.2",
+    "cos-nodejs-sdk-v5": "^2.11.6",
     "dgraph-js": "^21.3.1",
     "graphql": "15.3.0",
     "graphql-relay": "^0.10.0",

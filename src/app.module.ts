@@ -27,6 +27,7 @@ import { DeletesModule } from './deletes/deletes.module'
 import { FoldsModule } from './folds/folds.module'
 import { MessagesModule } from './messages/messages.module'
 import { NodeModule } from './node/node.module'
+import { NotificationsModule } from './notifications/notifications.module'
 import { PinsModule } from './pins/pins.module'
 import { PostsModule } from './posts/posts.module'
 import { PostsService } from './posts/posts.service'
@@ -41,7 +42,8 @@ import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
-import { NotificationsModule } from './notifications/notifications.module';
+import { WxModule } from './wx/wx.module'
+import { CosModule } from './cos/cos.module';
 
 @Module({
   imports: [
@@ -88,7 +90,9 @@ import { NotificationsModule } from './notifications/notifications.module';
     PubsubsModule,
     ConnectionsModule,
     AnonymousModule,
-    NotificationsModule
+    NotificationsModule,
+    WxModule,
+    CosModule
   ],
   controllers: [AppController],
   providers: [
