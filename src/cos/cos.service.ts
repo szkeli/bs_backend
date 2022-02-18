@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import * as COS from 'cos-nodejs-sdk-v5'
+import { resolve } from 'path/posix'
 
 @Injectable()
 export class CosService {
@@ -14,32 +15,54 @@ export class CosService {
     })
   }
 
+  getWXacodeKey (configSign: string) {
+    return `${this.wxacodeP}${configSign}.png`
+  }
+
   async putWXacodeInCOS (buffer: Buffer, configSign: string): Promise<string> {
     return await new Promise(resolve => {
       this.getCOSInstance().putObject({
         Bucket: this.bucket,
         Region: this.region,
-        Key: `${this.wxacodeP}${configSign}`,
+        Key: this.getWXacodeKey(configSign),
         StorageClass: 'STANDARD',
         Body: buffer
       }, (err, data) => {
         if (err) {
           throw new ForbiddenException(`上传小程序码到COS失败：${err.message}`)
         }
-        resolve(data.Location)
+        resolve(`https://${data.Location}`)
       })
     })
   }
 
   async tryToGetWXacodeFromCOS (configSign: string): Promise<string | null> {
-    return await new Promise((resolve, reject) => {
+    const key = this.getWXacodeKey(configSign)
+    const ex = await this.doesObjectExist(key)
+
+    if (!ex) {
+      return null
+    }
+    return await new Promise(resolve => {
       this.getCOSInstance().getObjectUrl({
         Bucket: this.bucket,
         Region: this.region,
-        Key: `${this.wxacodeP}${configSign}`,
-        Sign: true
+        Key: this.getWXacodeKey(configSign),
+        Sign: false
       }, (_err, data) => {
         resolve(data?.Url)
+      })
+    })
+  }
+
+  async doesObjectExist (key: string): Promise<boolean> {
+    return await new Promise(resolve => {
+      this.getCOSInstance().headObject({
+        Bucket: this.bucket,
+        Region: this.region,
+        Key: key
+      }, (_err, data) => {
+        resolve(!!data)
       })
     })
   }
