@@ -3,8 +3,7 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 import { Comment } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
-import { PostAndCommentUnion } from '../deletes/models/deletes.model'
-import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { btoa, ids2String, now, relayfyArrayForward } from '../tool'
 import { NotificationArgs, User } from '../user/models/user.model'
 import { VoteWithUnreadCount, VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
@@ -220,24 +219,17 @@ export class NotificationsService {
     const query = `
         query v($notificationId: string) {
             var(func: uid($notificationId)) @filter(type(Notification)) {
-                about as about @filter(type(Post) or type(Comment))
+                about as about @filter(type(Comment))
             }
             about(func: uid(about)) {
                 id: uid
                 expand(_all_)
-                dgraph.type
             }
         }
       `
-    const res = await this.dbService.commitQuery<{about: Array<(typeof PostAndCommentUnion) & {'dgraph.type': string[]}>}>({ query, vars: { $notificationId: id } })
-    const about = res.about[0]
+    const res = await this.dbService.commitQuery<{about: Comment}>({ query, vars: { $notificationId: id } })
 
-    if (about?.['dgraph.type']?.includes('Post')) {
-      return new Post(about as unknown as Post)
-    }
-    if (about?.['dgraph.type']?.includes('Comment')) {
-      return new Comment(about as unknown as Comment)
-    }
+    return res.about[0]
   }
 
   async findReplyNotificationsByXid (id: string, config: NotificationArgs, { orderBy, first, last, after, before }: RelayPagingConfigArgs) {

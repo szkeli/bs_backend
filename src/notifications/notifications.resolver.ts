@@ -1,7 +1,7 @@
 import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { CurrentUser } from '../auth/decorator'
-import { PostAndCommentUnion } from '../deletes/models/deletes.model'
+import { Comment } from '../comment/models/comment.model'
 import { User } from '../user/models/user.model'
 import { Notification, SetReadReplyNotificationsArgs, SetReadUpvoteNotificationsArgs } from './models/notifications.model'
 import { NotificationsService } from './notifications.service'
@@ -25,7 +25,7 @@ export class NotificationsResolver {
     return await this.notificationsService.setReadAllNotifications(user.id)
   }
 
-  @ResolveField(of => PostAndCommentUnion, { description: '通知涉及的对象：用户User A 对帖子 Post或评论Comment B 发布了评论 Comment C，则C是about' })
+  @ResolveField(of => Comment, { description: '通知涉及的对象：用户User A 对帖子 Post或评论Comment B 发布了评论 Comment C，则C是about' })
   async about (@Parent() notification: Notification) {
     return await this.notificationsService.about(notification.id)
   }
