@@ -362,7 +362,7 @@ type Notification {
   """当前通知是否已被通知接收者设置为已读状态"""
   isRead: Boolean!
 
-  """通知涉及的对象"""
+  """通知涉及的对象：用户User A 对帖子 Post或评论Comment B 发布了评论 Comment C，则C是about"""
   about: PostAndCommentUnion!
 
   """被通知的对象"""

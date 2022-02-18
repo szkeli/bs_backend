@@ -25,7 +25,7 @@ export class NotificationsResolver {
     return await this.notificationsService.setReadAllNotifications(user.id)
   }
 
-  @ResolveField(of => PostAndCommentUnion, { description: '通知涉及的对象' })
+  @ResolveField(of => PostAndCommentUnion, { description: '通知涉及的对象：用户User A 对帖子 Post或评论Comment B 发布了评论 Comment C，则C是about' })
   async about (@Parent() notification: Notification) {
     return await this.notificationsService.about(notification.id)
   }
