@@ -30,6 +30,22 @@ export class CommentService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async findOriginPostByCommentId (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @recurse(depth: 100, loop: false) {
+          p as ~comments
+        }
+        originPost(func: uid(p)) @filter(type(Post)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{originPost: Post[]}>({ query, vars: { $id: id } })
+    return res.originPost[0]
+  }
+
   async findCommentsByXidWithRelayForward (viewerId: string, xid: string, first: number, after: string | null): Promise<CommentsConnectionWithRelay> {
     const cannotViewDelete = `
       var(func: type(Comment)) @filter(uid_in(creator, $xid) and not has(delete) and not has(anonymous)) {

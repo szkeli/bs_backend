@@ -1401,6 +1401,9 @@ type Query {
     id: String!
   ): CommentsConnectionWithRelay!
 
+  """根据评论获取原帖子"""
+  findOriginPostByCommentId(id: String!): Post!
+
   """获取所有被删除的评论"""
   deletedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 

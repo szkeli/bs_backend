@@ -7,7 +7,7 @@ import {
   Resolver
 } from '@nestjs/graphql'
 
-import { CheckPolicies, CurrentUser, Roles } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
@@ -16,7 +16,7 @@ import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../c
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete, PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { WithinArgs } from '../node/models/node.model'
-import { CommentsConnectionWithRelay, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -51,6 +51,12 @@ export class CommentResolver {
   @Query(of => CommentsConnectionWithRelay, { description: 'Relay版 以id获取某评论下所有评论' })
   async commentCommentsWithRelay (@Args('id') id: CommentId, @Args() paging: RelayPagingConfigArgs) {
     return await this.commentService.commentsWithRelay(id, paging)
+  }
+
+  @Query(of => Post, { description: '根据评论获取原帖子' })
+  @NoAuth()
+  async findOriginPostByCommentId (@Args('id') id: string) {
+    return await this.commentService.findOriginPostByCommentId(id)
   }
 
   @Query(of => CommentsConnection, { description: '获取所有被删除的评论' })
