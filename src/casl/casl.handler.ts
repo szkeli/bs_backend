@@ -52,3 +52,13 @@ export class AuthenAdminPolicyHandler implements IPolicyHandler {
     return true
   }
 }
+
+export class DeleteSubjectPolicyHandler implements IPolicyHandler {
+  handle (ability: AppAbility) {
+    const can = ability.can(Action.Delete, Subject)
+    if (!can) {
+      throw new ForbiddenException(`缺少 ${IPRIVILEGE.ADMIN_CAN_DELETE_SUBJECT} 权限`)
+    }
+    return true
+  }
+}

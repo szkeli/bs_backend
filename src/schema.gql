@@ -238,6 +238,7 @@ enum IPRIVILEGE {
 
   """管理员能查看全局数据(某段时间内的注册数，点赞数，发帖数)"""
   ADMIN_CAN_VIEW_STATE
+  ADMIN_CAN_DELETE_SUBJECT
 
   """用户能创建一个新的主题"""
   USER_CAN_CREATE_SUBJECT

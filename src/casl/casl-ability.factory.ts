@@ -27,8 +27,12 @@ export class CaslAbilityFactory {
       if (this.personHasPrivilege(user, IPRIVILEGE.ADMIN_CAN_AUTHEN_OTHER)) {
         can(Action.Authen, Admin, 'all')
       }
+      if (this.personHasPrivilege(user, IPRIVILEGE.ADMIN_CAN_DELETE_SUBJECT)) {
+        can(Action.Delete, Subject, 'all')
+      }
     } else if (this.personIsUser(user)) {
       can(Action.Manage, MustWithCredential)
+      can(Action.Delete, Subject, 'all')
       if (this.personHasPrivilege(user, IPRIVILEGE.USER_CAN_CREATE_SUBJECT)) {
         can(Action.Create, Subject, 'all')
       }

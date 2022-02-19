@@ -1,6 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import * as COS from 'cos-nodejs-sdk-v5'
-import { resolve } from 'path/posix'
 
 @Injectable()
 export class CosService {
