@@ -18,7 +18,7 @@ import { CurriculumsConnection } from '../curriculums/models/curriculums.model'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { WithinArgs } from '../node/models/node.model'
-import { NotificationsConnection } from '../notifications/models/notifications.model'
+import { NOTIFICATION_TYPE, NotificationsConnection } from '../notifications/models/notifications.model'
 import { NotificationsService } from '../notifications/notifications.service'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { ReportsConnection } from '../reports/models/reports.model'
@@ -198,9 +198,14 @@ export class UserResolver {
   }
 
   @Query(of => VoteWithUnreadCountsConnection, { description: '测试接口，获取某用户所有的点赞通知，非当前用户获取到null', nullable: true })
-  async userUpvoteNotifications (@CurrentUser() currentUser: User, @Args('id') id: string, @Args() paging: RelayPagingConfigArgs) {
+  async userUpvoteNotifications (
+  @CurrentUser() currentUser: User,
+    @Args('type', { type: () => NOTIFICATION_TYPE, defaultValue: NOTIFICATION_TYPE.ALL, nullable: true }) type: NOTIFICATION_TYPE,
+    @Args('id') id: string,
+    @Args() paging: RelayPagingConfigArgs
+  ) {
     if (currentUser?.id !== id) return null
-    return await this.notificationsService.findUpvoteNotificationsByXid(id, paging)
+    return await this.notificationsService.findUpvoteNotificationsByXid(id, paging, type)
   }
 
   @ResolveField(of => NotificationsConnection, { description: '回复的通知', nullable: true })
@@ -215,8 +220,13 @@ export class UserResolver {
   }
 
   @ResolveField(of => VoteWithUnreadCountsConnection, { description: '点赞的通知', nullable: true })
-  async upvoteNotifications (@CurrentUser() currentUser: User, @Parent() user: User, @Args() paging: RelayPagingConfigArgs) {
+  async upvoteNotifications (
+  @CurrentUser() currentUser: User,
+    @Parent() user: User,
+    @Args('type', { type: () => NOTIFICATION_TYPE, defaultValue: NOTIFICATION_TYPE.ALL, nullable: true }) type: NOTIFICATION_TYPE,
+    @Args() paging: RelayPagingConfigArgs
+  ) {
     if (currentUser?.id !== user.id) return null
-    return await this.notificationsService.findUpvoteNotificationsByXid(user.id, paging)
+    return await this.notificationsService.findUpvoteNotificationsByXid(user.id, paging, type)
   }
 }

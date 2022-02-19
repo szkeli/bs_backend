@@ -46,14 +46,15 @@ export class NotificationsService {
     return true
   }
 
-  async findUpvoteNotificationsByXidWithRelayForward (xid: string, first: number, after: string | null): Promise<VoteWithUnreadCountsConnection> {
+  async findUpvoteNotificationsByXidWithRelayForward (xid: string, first: number, after: string | null, type: NOTIFICATION_TYPE): Promise<VoteWithUnreadCountsConnection> {
     const q1 = NOTIFICATION_ACTION.ADD_UPVOTE_ON_COMMENT
     const q2 = NOTIFICATION_ACTION.ADD_UPVOTE_ON_POST
     const q3 = 'var(func: uid(upvotes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const q4 = type === NOTIFICATION_TYPE.READ ? 'and eq(isRead, true)' : type === NOTIFICATION_TYPE.UN_READ ? 'and eq(isRead, false)' : ''
     const query = `
       query v($xid: string, $after: string) {
         var(func: uid($xid)) @filter(type(User)) {
-          notifications as notifications @filter((eq(action, ${q1}) or eq(action, ${q2})) and eq(isRead, false))
+          notifications as notifications @filter((eq(action, ${q1}) or eq(action, ${q2})) ${q4})
         }
         var(func: uid(notifications), orderdesc: createdAt) @groupby(about) {
           abouts as count(uid)
@@ -105,12 +106,12 @@ export class NotificationsService {
     })
   }
 
-  async findUpvoteNotificationsByXid (id: string, { first, after, before, last, orderBy }: RelayPagingConfigArgs) {
+  async findUpvoteNotificationsByXid (id: string, { first, after, before, last, orderBy }: RelayPagingConfigArgs, type: NOTIFICATION_TYPE) {
     after = btoa(after)
     before = btoa(before)
 
     if (first) {
-      return await this.findUpvoteNotificationsByXidWithRelayForward(id, first, after)
+      return await this.findUpvoteNotificationsByXidWithRelayForward(id, first, after, type)
     }
   }
 
