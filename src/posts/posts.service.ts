@@ -10,7 +10,7 @@ import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
-import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, sha1 } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, relayfyArrayForward, sha1 } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
@@ -31,6 +31,59 @@ export class PostsService {
     private readonly censorsService: CensorsService
   ) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async foldedCommentsWithRelay (id: string, { first, after, last, before, orderBy }: RelayPagingConfigArgs) {
+    after = btoa(after)
+    before = btoa(before)
+
+    if (first && ORDER_BY.CREATED_AT_DESC === orderBy) {
+      return await this.foldedCommentsWithRelayForward(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async foldedCommentsWithRelayForward (postId: string, first: number, after: string) {
+    const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($postId: string, $after: string) {
+        var(func: uid($postId)) @filter(type(Post)) {
+          comments as comments (orderdesc: createdAt) @filter(type(Comment) and has(fold))
+        }
+
+        ${after ? q1 : ''}
+        totalCount(func: uid(comments)) {
+          count(uid)
+        }
+        comments(func: uid(${after ? 'q' : 'comments'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startComment(func: uid(comments), first: -1) {
+          createdAt
+        }
+        # 结束游标
+        endComment(func: uid(comments), first: 1) {
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      startComment: Array<{createdAt: string}>
+      endComment: Array<{createdAt: string}>
+      comments: Comment[]
+    }>({ query, vars: { $postId: postId, $after: after } })
+
+    return relayfyArrayForward({
+      totalCount: res.totalCount,
+      startO: res.startComment,
+      endO: res.endComment,
+      objs: res.comments,
+      first,
+      after
+    })
   }
 
   async anonymous (id: string): Promise<Anonymous> {

@@ -34,7 +34,7 @@ export class SubjectResolver {
     return await this.subjectService.subject(id)
   }
 
-  @Query(of => SubjectsConnection, { description: '获取所有主题' })
+  @Query(of => SubjectsConnection, { description: '获取所有主题', deprecationReason: '请使用 subjectsWithRelay' })
   @NoAuth()
   async subjects (@Args() args: PagingConfigArgs): Promise<SubjectsConnection> {
     return await this.subjectService.subjects(args.first, args.offset)
@@ -46,7 +46,7 @@ export class SubjectResolver {
     return await this.subjectService.subjectsWithRelay(paging)
   }
 
-  @Query(of => PostsConnectionWithRelay, { description: 'Relay版 以id获取某主题下所有帖子' })
+  @Query(of => PostsConnectionWithRelay, { description: 'Relay版 以id获取某主题下所有帖子', deprecationReason: '请使用 subjects.postsWithRelay' })
   @NoAuth()
   async subjectPostsWithRelay (@Args('id') id: SubjectId, @Args() paging: RelayPagingConfigArgs) {
     return await this.subjectService.postsWithRelay(id, paging)
@@ -78,7 +78,7 @@ export class SubjectResolver {
     return await this.subjectService.getCreatorOfSubject(subject.id)
   }
 
-  @ResolveField(of => PostsConnection, { description: '当前主题中的所有帖子' })
+  @ResolveField(of => PostsConnection, { description: '当前主题中的所有帖子', deprecationReason: '请使用 postsWithRelay' })
   async posts (@Parent() subject: Subject, @Args() args: PagingConfigArgs): Promise<PostsConnection> {
     return await this.subjectService.findPostsBySubjectId(subject.id, args.first, args.offset)
   }

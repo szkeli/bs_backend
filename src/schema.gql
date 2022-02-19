@@ -72,7 +72,7 @@ type Post {
   creator: User
 
   """帖子的所有评论"""
-  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection! @deprecated(reason: "请使用commentsWithRelay")
 
   """获取所有评论 relay分页版"""
   commentsWithRelay(
@@ -103,6 +103,24 @@ type Post {
 
   """帖子的折叠评论"""
   foldedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """帖子的所有折叠评论"""
+  foldedCommentsWithRelay(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): CommentsConnectionWithRelay!
 
   """按热度返回评论"""
   trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
@@ -263,7 +281,7 @@ type Subject {
   creator: User!
 
   """当前主题中的所有帖子"""
-  posts(first: Int = 10, offset: Int = 0): PostsConnection!
+  posts(first: Int = 10, offset: Int = 0): PostsConnection! @deprecated(reason: "请使用 postsWithRelay")
   postsWithRelay(
     """最新的n个对象"""
     first: Int
@@ -1238,7 +1256,7 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): PostsConnectionWithRelay!
-  trendingPosts(first: Int = 10, offset: Int = 0): PostsConnection!
+  trendingPosts(first: Int = 10, offset: Int = 0): PostsConnection! @deprecated(reason: "请使用 trendingPostsWithRelay")
 
   """获取所有被删除的帖子"""
   deletedPosts(first: Int = 10, offset: Int = 0): PostsConnection!
@@ -1260,7 +1278,7 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
     id: String!
-  ): CommentsConnectionWithRelay!
+  ): CommentsConnectionWithRelay! @deprecated(reason: "请使用 Post.commentsWithRelay")
 
   """指定时间段内注册的所有用户"""
   registerWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): UsersConnection!
@@ -1395,7 +1413,7 @@ type Query {
   subject(id: String!): Subject!
 
   """获取所有主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection! @deprecated(reason: "请使用 subjectsWithRelay")
 
   """获取所有主题"""
   subjectsWithRelay(
@@ -1432,7 +1450,7 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
     id: String!
-  ): PostsConnectionWithRelay!
+  ): PostsConnectionWithRelay! @deprecated(reason: "请使用 subjects.postsWithRelay")
 
   """简单的搜索"""
   search(

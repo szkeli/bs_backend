@@ -79,7 +79,7 @@ export class PostsResolver {
     return await this.postsService.trendingPostsWithRelay(paging)
   }
 
-  @Query(of => PostsConnection)
+  @Query(of => PostsConnection, { deprecationReason: '请使用 trendingPostsWithRelay' })
   @MaybeAuth()
   async trendingPosts (@Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.trendingPosts(first, offset)
@@ -92,7 +92,7 @@ export class PostsResolver {
     return await this.postsService.deletedPosts(first, offset)
   }
 
-  @Query(of => CommentsConnectionWithRelay, { description: 'relay分页版 以id获取某帖子下所有评论' })
+  @Query(of => CommentsConnectionWithRelay, { description: 'relay分页版 以id获取某帖子下所有评论', deprecationReason: '请使用 Post.commentsWithRelay' })
   @MaybeAuth()
   async postCommentsWithRelay (@Args('id') id: PostId, @Args() paging: RelayPagingConfigArgs) {
     return await this.commentService.commentsWithRelay(id, paging)
@@ -108,7 +108,7 @@ export class PostsResolver {
     return await this.postsService.creator(post.id.toString())
   }
 
-  @ResolveField(of => CommentsConnection, { description: '帖子的所有评论' })
+  @ResolveField(of => CommentsConnection, { description: '帖子的所有评论', deprecationReason: '请使用commentsWithRelay' })
   async comments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.comments(post.id.toString(), first, offset)
   }
@@ -136,6 +136,11 @@ export class PostsResolver {
   @ResolveField(of => CommentsConnection, { description: '帖子的折叠评论' })
   async foldedComments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
     return await this.postsService.findFoldedCommentsByPostId(post.id.toString(), first, offset)
+  }
+
+  @ResolveField(of => CommentsConnectionWithRelay, { description: '帖子的所有折叠评论' })
+  async foldedCommentsWithRelay (@Parent() post: Post, @Args() paging: RelayPagingConfigArgs) {
+    return await this.postsService.foldedCommentsWithRelay(post.id, paging)
   }
 
   @ResolveField(of => CommentsConnection, { description: '按热度返回评论' })
