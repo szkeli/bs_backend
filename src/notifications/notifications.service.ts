@@ -131,7 +131,7 @@ export class NotificationsService {
       }
     `
 
-    const condition = `@if( eq(len(notifications), ${ids.length}))`
+    const condition = `@if( ge(len(notifications), ${ids.length}))`
     const mutation = {
       uid: 'uid(notifications)',
       isRead: true
@@ -147,7 +147,7 @@ export class NotificationsService {
       vars: { $xid: xid }
     })
 
-    if (res.json.totalCount[0]?.count !== ids.length) {
+    if (res.json.totalCount[0]?.count < ids.length) {
       throw new ForbiddenException(`存在不属于用户 ${xid} 的通知`)
     }
 
