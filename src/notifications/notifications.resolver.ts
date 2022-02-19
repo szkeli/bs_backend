@@ -12,6 +12,7 @@ export class NotificationsResolver {
 
   @Mutation(of => Boolean, { description: '批量已读回复通知' })
   async setReadReplyNotifications (@CurrentUser() user: User, @Args() { ids }: SetReadReplyNotificationsArgs) {
+    ids = Array.from(new Set(ids))
     return await this.notificationsService.setReadReplyNotifications(user.id, ids)
   }
 

@@ -185,6 +185,7 @@ export const relayfyArrayForward = function<T extends {createdAt: string}> ({
 }
 
 export const ids2String = function (ids: string[]) {
+  ids = Array.from(new Set(ids))
   ids?.map(id => `"${id}"`)
   return ids?.toString()
 }
