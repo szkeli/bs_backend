@@ -524,7 +524,7 @@ type User implements Person & Node {
     type: NOTIFICATION_TYPE = ALL
 
     """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST]
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_POST]
   ): NotificationsConnection
 
   """点赞的通知"""
@@ -667,7 +667,7 @@ interface Person implements Node {
     type: NOTIFICATION_TYPE = ALL
 
     """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST]
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_POST]
   ): NotificationsConnection
 
   """点赞的通知"""
@@ -794,7 +794,7 @@ type LoginResult implements Node & Person {
     type: NOTIFICATION_TYPE = ALL
 
     """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST]
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_POST]
   ): NotificationsConnection
 
   """点赞的通知"""
@@ -1349,7 +1349,7 @@ type Query {
     type: NOTIFICATION_TYPE = ALL
 
     """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST]
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_POST]
     id: String!
   ): NotificationsConnection
 
@@ -1704,7 +1704,7 @@ type UserWithPrivateProps implements Person & Node {
     type: NOTIFICATION_TYPE = ALL
 
     """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST]
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_POST]
   ): NotificationsConnection
 
   """点赞的通知"""
