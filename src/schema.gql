@@ -287,6 +287,24 @@ type SubjectsConnection {
   totalCount: Int!
 }
 
+type SubjectsConnectionWithRelay {
+  edges: [SubjectEdge!]!
+  pageInfo: SubjectPageInfo!
+  totalCount: Int!
+}
+
+type SubjectEdge {
+  node: Subject
+  cursor: String
+}
+
+type SubjectPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 """凭证是成为管理员的前提"""
 type ICredential {
   id: String!
@@ -1378,6 +1396,24 @@ type Query {
 
   """获取所有主题"""
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+
+  """获取所有主题"""
+  subjectsWithRelay(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubjectsConnectionWithRelay!
 
   """Relay版 以id获取某主题下所有帖子"""
   subjectPostsWithRelay(

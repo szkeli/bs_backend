@@ -19,6 +19,7 @@ import {
   Subject,
   SubjectId,
   SubjectsConnection,
+  SubjectsConnectionWithRelay,
   UpdateSubjectArgs
 } from './model/subject.model'
 import { SubjectService } from './subject.service'
@@ -37,6 +38,12 @@ export class SubjectResolver {
   @NoAuth()
   async subjects (@Args() args: PagingConfigArgs): Promise<SubjectsConnection> {
     return await this.subjectService.subjects(args.first, args.offset)
+  }
+
+  @Query(of => SubjectsConnectionWithRelay, { description: '获取所有主题' })
+  @NoAuth()
+  async subjectsWithRelay (@Args() paging: RelayPagingConfigArgs): Promise<SubjectsConnectionWithRelay> {
+    return await this.subjectService.subjectsWithRelay(paging)
   }
 
   @Query(of => PostsConnectionWithRelay, { description: 'Relay版 以id获取某主题下所有帖子' })

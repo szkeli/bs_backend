@@ -5,13 +5,14 @@ import { DbService } from 'src/db/db.service'
 
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, now } from '../tool'
+import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, now, relayfyArrayForward } from '../tool'
 import { User } from '../user/models/user.model'
 import {
   CreateSubjectArgs,
   Subject,
   SubjectId,
   SubjectsConnection,
+  SubjectsConnectionWithRelay,
   UpdateSubjectArgs
 } from './model/subject.model'
 
@@ -20,6 +21,59 @@ export class SubjectService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async subjectsWithRelay ({ orderBy, first, after, before, last }: RelayPagingConfigArgs): Promise<SubjectsConnectionWithRelay> {
+    after = btoa(after)
+    before = btoa(before)
+
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.subjectsWithRelayForward(first, after)
+    }
+
+    throw new ForbiddenException('undefined')
+  }
+
+  async subjectsWithRelayForward (first: number, after: string): Promise<SubjectsConnectionWithRelay> {
+    const q1 = 'var(func: uid(subjects), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($after: string) {
+        var(func: type(Subject), orderdesc: createdAt) @filter(not has(delete)) {
+          subjects as uid
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(subjects)) {
+          count(uid)
+        }
+        subjects(func: uid(${after ? 'q' : 'subjects'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startSubject(func: uid(subjects), first: -1) {
+          createdAt
+        }
+        # 结束游标
+        endSubject(func: uid(subjects), first: 1) {
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      subjects: Subject[]
+      startSubject: Array<{createdAt: string}>
+      endSubject: Array<{createdAt: string}>
+    }>({ query, vars: { $after: after } })
+
+    return relayfyArrayForward({
+      startO: res.startSubject,
+      endO: res.endSubject,
+      objs: res.subjects,
+      totalCount: res.totalCount,
+      first,
+      after
+    })
   }
 
   async postsWithRelayForward (subjectId: string, first: number, after: string | null) {
