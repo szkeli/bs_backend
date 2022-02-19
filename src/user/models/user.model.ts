@@ -315,6 +315,6 @@ export class NotificationArgs {
   @Field(of => NOTIFICATION_TYPE, { description: '获取', nullable: true, defaultValue: NOTIFICATION_TYPE.ALL })
     type: NOTIFICATION_TYPE
 
-  @Field(of => [NOTIFICATION_ACTION], { description: '按action获取通知', nullable: true, defaultValue: [NOTIFICATION_ACTION.ADD_COMMENT_ON_POST, NOTIFICATION_ACTION.ADD_COMMENT_ON_POST] })
+  @Field(of => [NOTIFICATION_ACTION], { description: '按action获取通知', nullable: true, defaultValue: [NOTIFICATION_ACTION.ADD_COMMENT_ON_POST, NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT] })
     actions: NOTIFICATION_ACTION[]
 }
