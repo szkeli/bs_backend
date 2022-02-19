@@ -115,10 +115,15 @@ export class NotificationsService {
   }
 
   async setReadUpvoteNotifications (xid: string, ids: string[]) {
+    if (!ids || ids.length === 0) {
+      throw new ForbiddenException('ids 长度不能为0')
+    }
+    const v = ids2String(ids)
+
     const query = `
       query v($xid: string) {
         var(func: uid($xid)) @filter(type(User)) {
-          notifications as notifications @filter(uid_in(about, ${ids2String(ids)}) and type(Notification))
+          notifications as notifications @filter(uid_in(about, [${v}]) and type(Notification))
         }
         totalCount(func: uid(notifications)) {
           count(uid)
