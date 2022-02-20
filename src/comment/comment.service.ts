@@ -8,6 +8,7 @@ import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
+import { NlpService } from '../nlp/nlp.service'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
 import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, now, relayfyArrayForward, sha1 } from '../tool'
@@ -25,7 +26,8 @@ export class CommentService {
   private readonly dgraph: DgraphClient
   constructor (
     private readonly dbService: DbService,
-    private readonly censorsService: CensorsService
+    private readonly censorsService: CensorsService,
+    private readonly nlpService: NlpService
   ) {
     this.dgraph = dbService.getDgraphIns()
   }
@@ -448,6 +450,7 @@ export class CommentService {
       `
 
     const textCensor = await this.censorsService.textCensor(content)
+    const _sentiment = await this.nlpService.sentimentAnalysis(content)
 
     // 评论的删除信息
     const iDelete = {
@@ -462,6 +465,15 @@ export class CommentService {
           uid: '_:delete'
         }
       }
+    }
+    // 评论的情感信息
+    const sentiment = {
+      uid: '_:sentiment',
+      'dgraph.type': 'Sentiment',
+      negative: _sentiment.negative,
+      positive: _sentiment.positive,
+      neutral: _sentiment.neutral,
+      value: _sentiment.sentiment
     }
     // 评论的匿名信息
     const anonymous = {
@@ -493,7 +505,8 @@ export class CommentService {
         // 评论的创建者
         creator: {
           uid: creator
-        }
+        },
+        sentiment
       }
     }
 
@@ -585,6 +598,7 @@ export class CommentService {
 
     // 审查内容
     const textCensor = await this.censorsService.textCensor(content)
+    const _sentiment = await this.nlpService.sentimentAnalysis(content)
 
     // 评论的删除信息
     const iDelete = {
@@ -600,6 +614,16 @@ export class CommentService {
       creator: {
         uid: 'uid(system)'
       }
+    }
+
+    // 评论的情感信息
+    const sentiment = {
+      uid: '_:sentiment',
+      'dgraph.type': 'Sentiment',
+      negative: _sentiment.negative,
+      neutral: _sentiment.neutral,
+      positive: _sentiment.positive,
+      value: _sentiment.sentiment
     }
 
     // 评论的匿名信息
@@ -632,7 +656,8 @@ export class CommentService {
         },
         creator: {
           uid: creator
-        }
+        },
+        sentiment
       }
     }
 

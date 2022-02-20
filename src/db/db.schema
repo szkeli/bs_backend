@@ -279,6 +279,8 @@ type Comment {
   anonymous
   # 置顶信息
   pin
+  # 评论的情感信息
+  sentiment
 }
 
 # 帖子的主题
