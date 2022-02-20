@@ -1214,6 +1214,44 @@ type View {
   createdAt: String!
 }
 
+type SentimentAnalysisResult {
+  """正面分数"""
+  positive: Float!
+
+  """中性分数"""
+  neutral: Float!
+
+  """负面分数"""
+  negative: Float!
+
+  """文本情感"""
+  sentiment: NLP_SENTIMENT!
+}
+
+enum NLP_SENTIMENT {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+type KeywordsExtractionResult {
+  score: Float!
+  word: String!
+}
+
+type TextClassificationResult {
+  firstClassName: String
+  firstClassProbability: Float
+  secondClassName: String
+  secondClassProbability: Float
+  thirdClassName: String
+  thirdClassProbability: Float
+  fourthClassName: String
+  fourthClassProbability: Float
+  fifthClassName: String
+  fifthClassProbability: Float
+}
+
 type Query {
   """以postId获取一个帖子"""
   post(id: String!): Post!
@@ -1571,6 +1609,12 @@ type Query {
     """是否需要透明底色，为 true 时，生成透明底色的小程序"""
     is_hyaline: Boolean = false
   ): String!
+
+  """分析一段文本的情感"""
+  sentimentAnalysis(content: String!): SentimentAnalysisResult!
+  keywordsExtraction(keywordNum: Int = 5, content: String!): [KeywordsExtractionResult!]!
+  textClassification(content: String!): TextClassificationResult!
+  autoSummarization(length: Int = 200, content: String!): String!
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin

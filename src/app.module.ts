@@ -44,6 +44,7 @@ import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
 import { WxModule } from './wx/wx.module'
 import { CosModule } from './cos/cos.module';
+import { NlpModule } from './nlp/nlp.module';
 
 @Module({
   imports: [
@@ -92,7 +93,8 @@ import { CosModule } from './cos/cos.module';
     AnonymousModule,
     NotificationsModule,
     WxModule,
-    CosModule
+    CosModule,
+    NlpModule
   ],
   controllers: [AppController],
   providers: [
