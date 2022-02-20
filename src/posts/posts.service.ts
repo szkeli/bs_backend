@@ -10,6 +10,7 @@ import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
+import { NlpService } from '../nlp/nlp.service'
 import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, relayfyArrayForward, sha1 } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
@@ -28,7 +29,8 @@ export class PostsService {
   private readonly dgraph: DgraphClient
   constructor (
     private readonly dbService: DbService,
-    private readonly censorsService: CensorsService
+    private readonly censorsService: CensorsService,
+    private readonly nlpService: NlpService
   ) {
     this.dgraph = dbService.getDgraphIns()
   }
@@ -369,6 +371,8 @@ export class PostsService {
 
     // 审查帖子文本内容
     const textCensor = await this.censorsService.textCensor(content)
+    // 获取帖子文本的情感信息
+    const _sentiment = await this.nlpService.sentimentAnalysis(content)
 
     // 帖子所属的主题
     const subject = {
@@ -389,6 +393,15 @@ export class PostsService {
       to: {
         uid: '_:post'
       }
+    }
+    // 帖子的情感信息
+    const sentiment = {
+      uid: '_:sentiment',
+      'dgraph.type': 'Sentiment',
+      negative: _sentiment.negative,
+      neutral: _sentiment.neutral,
+      positive: _sentiment.positive,
+      value: _sentiment.sentiment
     }
 
     // 帖子的创建者
@@ -435,6 +448,8 @@ export class PostsService {
 
     // 帖子的创建者
     Object.assign(mutation.posts, { creator })
+
+    Object.assign(mutation.posts, { sentiment })
 
     // 发布具有主题的帖子
     if (subjectId) {

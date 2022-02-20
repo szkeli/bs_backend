@@ -18,6 +18,7 @@ import { CommentModule } from './comment/comment.module'
 import { CommentService } from './comment/comment.service'
 import { ConnectionsModule } from './connections/connections.module'
 import { ConversationsModule } from './conversations/conversations.module'
+import { CosModule } from './cos/cos.module'
 import { CredentialsModule } from './credentials/credentials.module'
 import { CurriculumsModule } from './curriculums/curriculums.module'
 import { DbModule } from './db/db.module'
@@ -26,6 +27,7 @@ import { DeadlinesModule } from './deadlines/deadlines.module'
 import { DeletesModule } from './deletes/deletes.module'
 import { FoldsModule } from './folds/folds.module'
 import { MessagesModule } from './messages/messages.module'
+import { NlpModule } from './nlp/nlp.module'
 import { NodeModule } from './node/node.module'
 import { NotificationsModule } from './notifications/notifications.module'
 import { PinsModule } from './pins/pins.module'
@@ -43,8 +45,6 @@ import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
 import { WxModule } from './wx/wx.module'
-import { CosModule } from './cos/cos.module';
-import { NlpModule } from './nlp/nlp.module';
 
 @Module({
   imports: [

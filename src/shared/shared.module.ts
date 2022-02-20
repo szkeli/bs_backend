@@ -7,6 +7,8 @@ import { JwtStrategy } from 'src/auth/jwt.strategy'
 import { DbService } from 'src/db/db.service'
 import { UserService } from 'src/user/user.service'
 
+import { NlpService } from '../nlp/nlp.service'
+
 @Module({
   imports: [
     PassportModule.register({
@@ -28,12 +30,14 @@ import { UserService } from 'src/user/user.service'
   providers: [
     JwtStrategy,
     UserService,
-    DbService
+    DbService,
+    NlpService
   ],
   exports: [
     JwtStrategy,
     PassportModule,
-    JwtModule
+    JwtModule,
+    NlpService
   ]
 })
 export class SharedModule {}

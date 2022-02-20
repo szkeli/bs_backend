@@ -5,24 +5,6 @@ import { KeywordsExtractionResult, NLP_SENTIMENT, TextClassificationResult } fro
 
 @Injectable()
 export class NlpService {
-  async autoSummarization (content: string, length: number) {
-    return await this.nlpClient.AutoSummarization({
-      Text: content,
-      Length: length
-    }).then(r => r.Summary)
-  }
-
-  async textClassification (content: string): Promise<TextClassificationResult> {
-    return await this.nlpClient.TextClassification({
-      Text: content
-    }).then(r =>
-      Object.fromEntries(Object.entries(r.Classes[0])?.map(v => {
-        v[0] = v[0].replace(v[0][0], v[0][0].toLowerCase())
-        return v
-      })) as TextClassificationResult
-    )
-  }
-
   private readonly nlpClient: NLPClient
   constructor () {
     const clientConfig = {
@@ -39,6 +21,24 @@ export class NlpService {
     }
 
     this.nlpClient = new NLPClient(clientConfig)
+  }
+
+  async autoSummarization (content: string, length: number) {
+    return await this.nlpClient.AutoSummarization({
+      Text: content,
+      Length: length
+    }).then(r => r.Summary)
+  }
+
+  async textClassification (content: string): Promise<TextClassificationResult> {
+    return await this.nlpClient.TextClassification({
+      Text: content
+    }).then(r =>
+      Object.fromEntries(Object.entries(r.Classes[0])?.map(v => {
+        v[0] = v[0].replace(v[0][0], v[0][0].toLowerCase())
+        return v
+      })) as TextClassificationResult
+    )
   }
 
   async keywordsExtraction (content: string, num: number): Promise<KeywordsExtractionResult[]> {

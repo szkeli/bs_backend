@@ -30,6 +30,7 @@ educator: uid @reverse .
 anonymous: uid @reverse .
 pin: uid @reverse .
 about: uid @reverse .
+sentiment: uid @reverse .
 
 images: [string] .
 
@@ -78,6 +79,10 @@ viewId: int .
 start: int .
 end: int .
 studentId: int .
+
+positive: float .
+negative: float .
+neutral: float .
 
 dataPending: bool .
 seen: bool .
@@ -211,6 +216,8 @@ type Post {
   anonymous
   # 置顶信息
   pin
+  # 帖子的情感信息
+  sentiment
 }
 
 # 用户在blackboard上的ddl
@@ -292,6 +299,17 @@ type Subject {
   posts
   # 主题的删除信息
   delete
+}
+
+type Sentiment {
+  # 正面分数
+  positive
+  # 中性分数
+  neutral
+  # 负面分数
+  negative
+  # 文本情感
+  value
 }
 
 # 用户收到的通知 

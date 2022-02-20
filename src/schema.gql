@@ -1157,6 +1157,44 @@ type DeadlinesConnection {
   totalCount: Int!
 }
 
+type SentimentAnalysisResult {
+  """正面分数"""
+  positive: Float!
+
+  """中性分数"""
+  neutral: Float!
+
+  """负面分数"""
+  negative: Float!
+
+  """文本情感"""
+  sentiment: NLP_SENTIMENT!
+}
+
+enum NLP_SENTIMENT {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+type KeywordsExtractionResult {
+  score: Float!
+  word: String!
+}
+
+type TextClassificationResult {
+  firstClassName: String
+  firstClassProbability: Float
+  secondClassName: String
+  secondClassProbability: Float
+  thirdClassName: String
+  thirdClassProbability: Float
+  fourthClassName: String
+  fourthClassProbability: Float
+  fifthClassName: String
+  fifthClassProbability: Float
+}
+
 type SearchResultItemConnection {
   totalCount: Int!
   nodes: [SearchResultItem!]!
@@ -1212,44 +1250,6 @@ type AvatarImageUploadCredentialInfo {
 type View {
   id: String!
   createdAt: String!
-}
-
-type SentimentAnalysisResult {
-  """正面分数"""
-  positive: Float!
-
-  """中性分数"""
-  neutral: Float!
-
-  """负面分数"""
-  negative: Float!
-
-  """文本情感"""
-  sentiment: NLP_SENTIMENT!
-}
-
-enum NLP_SENTIMENT {
-  POSITIVE
-  NEGATIVE
-  NEUTRAL
-}
-
-type KeywordsExtractionResult {
-  score: Float!
-  word: String!
-}
-
-type TextClassificationResult {
-  firstClassName: String
-  firstClassProbability: Float
-  secondClassName: String
-  secondClassProbability: Float
-  thirdClassName: String
-  thirdClassProbability: Float
-  fourthClassName: String
-  fourthClassProbability: Float
-  fifthClassName: String
-  fifthClassProbability: Float
 }
 
 type Query {
