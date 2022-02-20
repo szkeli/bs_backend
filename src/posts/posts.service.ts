@@ -227,7 +227,7 @@ export class PostsService {
       query v($after: string) {
         v as var(func: type(Post)) @filter(not has(delete)) {
           vc as count(votes @filter(type(Vote)))
-          votesCount as math(ln(vc * 2))
+          votesCount as math(sqrt(vc * 2))
           # TODO
           c as count(comments @filter(type(Comment)))
           commentsCount as math(c * 0.5)
@@ -271,7 +271,6 @@ export class PostsService {
       endPost: Array<{score: number}>
     }>({ query, vars: { $after: after } })
 
-    console.error(res)
     const totalCount = res.totalCount[0]?.count ?? 0
     const v = totalCount !== 0
 
