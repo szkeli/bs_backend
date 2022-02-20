@@ -232,7 +232,7 @@ export class PostsService {
           createdAt as createdAt
         
           hour as math(
-           2*exp(-(since(createdAt)/3600))
+           2*exp(-(since(createdAt)/7200))
           )
           score as math(votesCount + commentsCount + hour)
         }
@@ -243,6 +243,9 @@ export class PostsService {
         totalCount(func: uid(posts)) { count(uid) }
         posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: val(score), first: ${first}) {
           score: val(score)
+          timeScore: val(hour)
+          voteScore: val(votesCount)
+          commentScore: val(commentsCount)
           id: uid
           expand(_all_)
         }
@@ -266,6 +269,7 @@ export class PostsService {
       endPost: Array<{score: number}>
     }>({ query, vars: { $after: after } })
 
+    console.error(res)
     const totalCount = res.totalCount[0]?.count ?? 0
     const v = totalCount !== 0
 
