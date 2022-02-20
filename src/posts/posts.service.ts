@@ -225,14 +225,14 @@ export class PostsService {
       query v($after: string) {
         v as var(func: type(Post)) @filter(not has(delete)) {
           vc as count(votes @filter(type(Vote)))
-          votesCount as math(ln(vc * 1.2))
+          votesCount as math(ln(vc * 2))
           # TODO
           c as count(comments @filter(type(Comment)))
           commentsCount as math(c * 0.5)
           createdAt as createdAt
         
           hour as math(
-           3.14/(since(createdAt)/3600)
+           2*exp(-(since(createdAt)/3600))
           )
           score as math(votesCount + commentsCount + hour)
         }
