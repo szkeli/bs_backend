@@ -4,10 +4,12 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 
 import { Comment } from '../comment/models/comment.model'
-import { Post } from '../posts/models/post.model'
+import { ORDER_BY } from '../connections/models/connections.model'
+import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Subject } from '../subject/model/subject.model'
+import { btoa, relayfyArrayForward } from '../tool'
 import { User } from '../user/models/user.model'
-import { SearchResultItemConnection } from './model/search.model'
+import { SearchArgs, SearchResultItemConnection, SEARCHTYPE } from './model/search.model'
 
 @Injectable()
 export class SearchService {
@@ -16,115 +18,190 @@ export class SearchService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async searchSubject (q: string, first: number, offset: number) {
+  async search ({ type, query }: SearchArgs, { after, orderBy, first, before }: RelayPagingConfigArgs): Promise<SearchResultItemConnection> {
+    after = btoa(after)
+    before = btoa(before)
+
+    if (type === SEARCHTYPE.POST && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.searchPost(query, first, after)
+    }
+    if (type === SEARCHTYPE.USER && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.searchUser(query, first, after)
+    }
+    if (type === SEARCHTYPE.COMMENT && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.searchComment(query, first, after)
+    }
+    if (type === SEARCHTYPE.SUBJECT && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.searchSubject(query, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async searchSubject (q: string, first: number, after: string) {
+    const q1 = 'var(func: uid(subjects), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-        query v($query: string) {
-          totalCount(func: type(Subject)) @filter(alloftext(title, $query) OR alloftext(description, $query)) {
+        query v($query: string, $after: string) {
+          subjects as var(func: type(Subject), orderdesc: createdAt) @filter((alloftext(title, $query) or alloftext(description, $query)) and not has(delete))
+          totalCount(func: uid(subjects)) {
             count(uid)
           }
-          search(func: type(Subject), first: ${first}, offset: ${offset}) @filter(alloftext(title, $query) OR alloftext(description, $query)) {
+          ${after ? q1 : ''}
+          results(func: uid(${after ? 'q' : 'subjects'}), orderdesc: createdAt, first: ${first}) {
             id: uid
             expand(_all_)
+            dgraph.type
+          }
+          # 开始游标 
+          startSubject(func: uid(subjects), first: -1) {
+            createdAt
+          }
+          # 结束游标
+          endSubject(func: uid(subjects), first: 1) {
+            createdAt
           }
         }
       `
-    const res = await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $query: q })
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      results: Subject[]
+      startSubject: Array<{createdAt: string}>
+      endSubject: Array<{createdAt: string}>
+    }>({ query, vars: { $query: q, $after: after } })
 
-    const result = res.getJson() as unknown as { search: [Subject], totalCount: Array<{count: number}>}
-    const v = []
-    result.search.forEach(subject => {
-      v.push(new Subject(subject))
+    return relayfyArrayForward({
+      totalCount: res.totalCount,
+      startO: res.startSubject,
+      endO: res.endSubject,
+      objs: res.results,
+      first,
+      after
     })
-    const u: SearchResultItemConnection = {
-      nodes: v,
-      totalCount: result.totalCount[0].count
-    }
-    return u
   }
 
-  async searchComment (q: string, first: number, offset: number): Promise<SearchResultItemConnection> {
+  async searchComment (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+    const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-        query v($query: string) {
-          comments as var(func: type(Comment)) @filter(alloftext(content, $query) and not has(delete))
+        query v($query: string, $after: string) {
+          comments as var(func: type(Comment), orderdesc: createdAt) @filter(alloftext(content, $query) and not has(delete))
+          
           totalCount(func: uid(comments)) {
             count(uid)
           }
-          search(func: uid(comments), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          ${after ? q1 : ''}
+          search(func: uid(${after ? 'q' : 'comments'}), orderdesc: createdAt, first: ${first}) {
             id: uid
             expand(_all_)
+            dgraph.type
+          }
+          # 开始游标
+          startComment(func: uid(comments), first: -1) {
+            createdAt
+          }
+          # 结束游标
+          endComment(func: uid(comments), first: 1) {
+            createdAt
           }
         }
       `
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
-      search: Comment[]
-    }>({ query, vars: { $query: q } })
+      results: Comment[]
+      startComment: Array<{createdAt: string}>
+      endComment: Array<{createdAt: string}>
+    }>({ query, vars: { $query: q, $after: after } })
 
-    const comments = res.search?.map(c => new Comment(c))
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: comments
-    }
+    return relayfyArrayForward({
+      totalCount: res.totalCount,
+      startO: res.startComment,
+      endO: res.endComment,
+      objs: res.results,
+      first,
+      after
+    })
   }
 
-  async searchUser (q: string, first: number, offset: number): Promise<SearchResultItemConnection> {
+  async searchUser (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+    const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-        query v($query: string) {
-          var(func: type(User)) @filter(alloftext(name, $query) or alloftext(userId, $query)) {
-            q1 as uid
-          }
-          var(func: uid(q1)) @filter(not has(block)) {
-            users as uid
-          }
+        query v($query: string, $after: string) {
+          users as var(func: type(User), orderdesc: createdAt) @filter((alloftext(name, $query) or alloftext(userId, $query)) and not has(block)) 
+
           totalCount(func: uid(users)) {
             count(uid)
           }
-          search(func: uid(users), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+          ${after ? q1 : ''}
+          results(func: uid(${after ? 'q' : 'users'}), orderdesc: createdAt, first: ${first}) {
             id: uid
             expand(_all_)
+            dgraph.type
+          }
+
+          # 开始游标
+          startUser(func: uid(users), first: -1) {
+            createdAt
+          }
+          # 结束游标
+          endUser(func: uid(users), first: 1) {
+            createdAt
           }
         }
       `
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
-      search: User[]
-    }>({ query, vars: { $query: q } })
+      startUser: Array<{createdAt: string}>
+      endUser: Array<{createdAt: string}>
+      results: User[]
+    }>({ query, vars: { $query: q, $after: after } })
 
-    const users = res.search?.map(u => new User(u))
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: users
-    }
+    return relayfyArrayForward({
+      totalCount: res.totalCount,
+      startO: res.startUser,
+      endO: res.endUser,
+      objs: res.results,
+      first,
+      after
+    })
   }
 
-  async searchPost (q: string, first: number, offset: number): Promise<SearchResultItemConnection> {
+  async searchPost (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+    const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-    query v($query: string) {
-      var(func: type(Post)) @filter(alloftext(content, $query) and not has(delete)) {
-        posts as uid
-      }
+    query v($query: string, $after: string) {
+      posts as var(func: type(Post), orderdesc: createdAt) @filter(alloftext(content, $query) and not has(delete))
+
       totalCount(func: uid(posts)) {
         count(uid)
       }
-      search(func: uid(posts), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+      ${after ? q1 : ''}
+      results(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
         id: uid
         expand(_all_)
+        dgraph.type
+      }
+      # 开始游标
+      startPost(func: uid(posts), first: -1) {
+        createdAt
+      }
+      # 结束游标
+      endPost(func: uid(posts), first: 1) {
+        createdAt
       }
     }
   `
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
-      search: Post[]
-    }>({ query, vars: { $query: q } })
-    const posts = res.search?.map(p => new Post(p))
+      results: Post[]
+      startPost: Array<{createdAt: string}>
+      endPost: Array<{createdAt: string}>
+    }>({ query, vars: { $query: q, $after: after } })
 
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: posts
-    }
+    return relayfyArrayForward({
+      totalCount: res.totalCount,
+      startO: res.startPost,
+      endO: res.endPost,
+      objs: res.results,
+      first,
+      after
+    })
   }
 }

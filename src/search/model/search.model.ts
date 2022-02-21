@@ -3,6 +3,7 @@ import { ArgsType, createUnionType, Field, Int, ObjectType, registerEnumType } f
 import { Time } from 'src/db/model/db.model'
 
 import { Comment } from '../../comment/models/comment.model'
+import { Connection, ValueRef } from '../../connections/models/connections.model'
 import { Post } from '../../posts/models/post.model'
 import { Subject } from '../../subject/model/subject.model'
 import { User } from '../../user/models/user.model'
@@ -30,17 +31,23 @@ export class Search {
     keys: string
 }
 
-@ObjectType()
-export class SearchResultItemConnection {
-  @Field(type => Int)
-    totalCount: number
-
-  @Field(type => [SearchResultItem])
-    nodes: Array<typeof SearchResultItem>
-}
 export const SearchResultItem = createUnionType({
   name: 'SearchResultItem',
-  types: () => [Post, User, Comment, Subject]
+  types: () => [Post, User, Comment, Subject],
+  resolveType (v: {'dgraph.type': Array<string | null> | null}) {
+    if (v['dgraph.type']?.includes('Subject')) {
+      return Subject
+    }
+    if (v['dgraph.type']?.includes('Post')) {
+      return Post
+    }
+    if (v['dgraph.type']?.includes('Comment')) {
+      return Comment
+    }
+    if (v['dgraph.type']?.includes('User')) {
+      return User
+    }
+  }
 })
 
 @ArgsType()
@@ -51,3 +58,9 @@ export class SearchArgs {
   @Field({ nullable: false, description: '待检索的关键字' })
     query: string
 }
+
+@ObjectType()
+export class SearchResultItemConnection extends Connection(new ValueRef({
+  value: SearchResultItem,
+  name: 'SearchResultItem'
+})) {}
