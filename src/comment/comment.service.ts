@@ -18,7 +18,8 @@ import {
   AddCommentArgs,
   Comment,
   CommentId,
-  CommentsConnection
+  CommentsConnection,
+  CommentWithTo
 } from './models/comment.model'
 
 @Injectable()
@@ -425,7 +426,7 @@ export class CommentService {
     }
   }
 
-  async addCommentOnComment (creator: string, { content, to: commentId, isAnonymous }: AddCommentArgs): Promise<Comment> {
+  async addCommentOnComment (creator: string, { content, to: commentId, isAnonymous }: AddCommentArgs): Promise<CommentWithTo> {
     const now = new Date().toISOString()
 
     const query = `
@@ -568,11 +569,12 @@ export class CommentService {
     return {
       content,
       createdAt: now,
-      id: res.uids.get('comment')
+      id: res.uids.get('comment'),
+      to: commentId
     }
   }
 
-  async addCommentOnPost (creator: string, { content, to: postId, isAnonymous }: AddCommentArgs): Promise<Comment> {
+  async addCommentOnPost (creator: string, { content, to: postId, isAnonymous }: AddCommentArgs): Promise<CommentWithTo> {
     const _now = now()
     const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
     const query = `
@@ -725,7 +727,8 @@ export class CommentService {
     return {
       content,
       createdAt: _now,
-      id: res.uids.get('comment')
+      id: res.uids.get('comment'),
+      to: postId
     }
   }
 

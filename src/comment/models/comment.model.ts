@@ -19,6 +19,12 @@ export class Comment {
 }
 
 @ObjectType()
+export class CommentWithTo extends Comment {
+  @Field()
+    to: string
+}
+
+@ObjectType()
 export class CommentsConnection {
   @Field(type => [Comment])
     nodes: Comment[]

@@ -1,11 +1,14 @@
+import { ForbiddenException, Inject } from '@nestjs/common'
 import {
   Args,
   Mutation,
   Parent,
   Query,
   ResolveField,
-  Resolver
+  Resolver,
+  Subscription
 } from '@nestjs/graphql'
+import { PubSub } from 'graphql-subscriptions'
 
 import { CheckPolicies, CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
@@ -13,6 +16,7 @@ import { PagingConfigArgs, User } from 'src/user/models/user.model'
 import { Anonymous } from '../anonymous/models/anonymous.model'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
+import { PUB_SUB_KEY } from '../constants'
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete, PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { WithinArgs } from '../node/models/node.model'
@@ -25,7 +29,8 @@ import {
   AddCommentArgs,
   Comment,
   CommentId,
-  CommentsConnection
+  CommentsConnection,
+  CommentWithTo
 } from './models/comment.model'
 
 @Resolver(_of => Comment)
@@ -33,8 +38,23 @@ export class CommentResolver {
   constructor (
     private readonly commentService: CommentService,
     private readonly reportsService: ReportsService,
-    private readonly deletesService: DeletesService
+    private readonly deletesService: DeletesService,
+    @Inject(PUB_SUB_KEY)private readonly pubSub: PubSub
   ) {}
+
+  @Subscription(of => Comment, {
+    filter: (payload: {addCommented: CommentWithTo}, variables: {ids: String[]}) => {
+      return variables.ids?.includes(payload.addCommented.to)
+    },
+    description: '监听置顶帖子或评论的评论'
+  })
+  @NoAuth()
+  addCommented (@Args('ids', { type: () => [String] }) ids: string[]) {
+    if (!ids || ids.length === 0) {
+      throw new ForbiddenException('ids 不能为null')
+    }
+    return this.pubSub.asyncIterator('addCommented')
+  }
 
   @Query(of => CommentsConnection, { description: '查询某时间段内发布的所有评论' })
   @Roles(Role.Admin)
@@ -67,13 +87,17 @@ export class CommentResolver {
   }
 
   @Mutation(of => Comment, { description: '添加一条评论到评论' })
-  async addCommentOnComment (@CurrentUser() user: User, @Args() args: AddCommentArgs) {
-    return await this.commentService.addCommentOnComment(user.id, args)
+  async addCommentOnComment (@CurrentUser() user: User, @Args() args: AddCommentArgs): Promise<Comment> {
+    const commentWithTo = await this.commentService.addCommentOnComment(user.id, args)
+    await this.pubSub.publish('addCommented', { addCommented: commentWithTo })
+    return commentWithTo
   }
 
   @Mutation(of => Comment, { description: '添加一条评论到帖子' })
-  async addCommentOnPost (@CurrentUser() user: User, @Args() args: AddCommentArgs) {
-    return await this.commentService.addCommentOnPost(user.id, args)
+  async addCommentOnPost (@CurrentUser() user: User, @Args() args: AddCommentArgs): Promise<Comment> {
+    const commentWithTo = await this.commentService.addCommentOnPost(user.id, args)
+    await this.pubSub.publish('addCommented', { addCommented: commentWithTo })
+    return commentWithTo
   }
 
   @ResolveField(of => CommentsConnection, { description: '获取该评论下的所有评论' })

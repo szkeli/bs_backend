@@ -2191,6 +2191,9 @@ input UserGenderPropMap {
 }
 
 type Subscription {
+  """监听置顶帖子或评论的评论"""
+  addCommented(ids: [String!]!): Comment!
+
   """监听指定帖子或评论的点赞数"""
   votesChanged(
     """帖子或评论的id"""
