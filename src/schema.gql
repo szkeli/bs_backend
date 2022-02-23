@@ -215,7 +215,22 @@ type Admin {
   blocks(first: Int = 10, offset: Int = 0): BlocksConnection!
 
   """当前管理员创建的置顶"""
-  pins(first: Int = 10, offset: Int = 0): PinsConnection!
+  pins(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PinsConnection!
 
   """当前管理员的所有删除操作"""
   deletes(first: Int = 10, offset: Int = 0): DeletesConnection!
@@ -382,8 +397,21 @@ type Pin {
 }
 
 type PinsConnection {
+  edges: [PinEdge!]!
+  pageInfo: PinPageInfo!
   totalCount: Int!
-  nodes: [Pin!]!
+}
+
+type PinEdge {
+  node: Pin
+  cursor: String
+}
+
+type PinPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
 }
 
 type Notification {
@@ -1595,7 +1623,22 @@ type Query {
   pin(id: String!): Pin!
 
   """获取全部置顶信息"""
-  pins(first: Int = 10, offset: Int = 0): PinsConnection!
+  pins(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PinsConnection!
 
   """文本审查的测试接口，测试一段文本是否违规"""
   censorText(content: String!): CensorResponse!

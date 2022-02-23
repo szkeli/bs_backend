@@ -1,10 +1,11 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { Comment } from '../comment/models/comment.model'
+import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
-import { Post } from '../posts/models/post.model'
-import { now } from '../tool'
+import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { btoa, now, relayfyArrayForward } from '../tool'
 import { User } from '../user/models/user.model'
 import { Pin, PinsConnection } from './models/pins.model'
 
@@ -12,23 +13,54 @@ import { Pin, PinsConnection } from './models/pins.model'
 export class PinsService {
   constructor (private readonly dbService: DbService) {}
 
-  async findPinsByAdminId (id: any, first: number, offset: number): Promise<PinsConnection> {
+  async findPinsByAdminId (adminId: string, { first, last, after, before, orderBy }: RelayPagingConfigArgs) {
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.findPinsByAdminIdWithRelayForward(adminId, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async findPinsByAdminIdWithRelayForward (adminId: string, first: number, after: string) {
+    const q1 = 'var(func: uid(pins), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($adminId: string) {
-        admin(func: uid($adminId)) @filter(type(Admin)) {
-          totalCount: count(pins @filter(type(Pin)))
-          pins (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Pin)) {
-            id: uid
-            expand(_all_)
-          }
-        } 
+        var(func: uid($adminId)) @filter(type(Admin)) {
+          pins as pin (orderdesc: createdAt) @filter(type(Pin))
+        }
+        
+        ${after ? q1 : ''}
+        totalCount(func: uid(pins)) {
+          count(uid)
+        }
+        pins(func: uid(${after ? 'q' : 'pins'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startPin(func: uid(pins), first: -1) {
+          createdAt
+        }
+        # 结束游标
+        endPin(func: uid(pins), first: 1) {
+          createdAt
+        }
       }
     `
-    const res = await this.dbService.commitQuery<{admin: Array<{pins: Pin[], totalCount: number}>}>({ query, vars: { $adminId: id } })
-    return {
-      totalCount: res.admin[0]?.totalCount ?? 0,
-      nodes: res.admin[0]?.pins ?? []
-    }
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      startPin: Array<{createdAt: string}>
+      endPin: Array<{createdAt: string}>
+      pins: Pin[]
+    }>({ query, vars: { $adminId: adminId } })
+
+    return relayfyArrayForward({
+      startO: res.startPin,
+      endO: res.endPin,
+      objs: res.pins,
+      totalCount: res.totalCount,
+      first,
+      after
+    })
   }
 
   async removePinOnPost (i: string, from: string) {
@@ -89,36 +121,73 @@ export class PinsService {
     return true
   }
 
-  async pins (first: number, offset: number) {
+  async pins ({ orderBy, first, after, last, before }: RelayPagingConfigArgs) {
+    after = btoa(after)
+    before = btoa(before)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.pinsWithRelayForward(first, after)
+    }
+
+    throw new Error('Method not implemented.')
+  }
+
+  async pinsWithRelayForward (first: number, after: string): Promise<PinsConnection> {
+    const q1 = 'var(func: uid(pins), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-          query {
-              totalCount(func: type(Pin)) { count(uid) }
-              pins (func: type(Pin), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
-                  id: uid
-                  expand(_all_)
-              }
-          }
-        `
+      query v($after: string) {
+        var(func: type(Post)) @filter(has(pin) and not has(delete)) {
+          posts as uid
+        }
+        var(func: uid(posts)) {
+          v as pin
+        }
+        pins as var(func: uid(v), orderdesc: createdAt)
+
+        ${after ? q1 : ''}
+
+        totalCount(func: uid(pins)) {
+          count(uid)
+        }
+        pins(func: uid(${after ? 'q' : 'pins'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startPin(func: uid(pins), first: -1) {
+          createdAt
+        }
+        # 结束游标
+        endPin(func: uid(pins), first: 1) {
+          createdAt
+        }
+      }
+    `
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{ count: number }>
       pins: Pin[]
-    }>({ query })
+      startPin: Array<{createdAt: string}>
+      endPin: Array<{createdAt: string}>
+    }>({ query, vars: { $after: after } })
 
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.pins ?? []
-    }
+    return relayfyArrayForward({
+      startO: res.startPin,
+      endO: res.endPin,
+      objs: res.pins,
+      first,
+      after,
+      totalCount: res.totalCount
+    })
   }
 
   async pin (pinId: string) {
     const query = `
-          query v($pinId: string) {
-              pin(func: uid($pinId)) @filter(type(Pin)) {
-                  id: uid
-                  createdAt
-              }
+      query v($pinId: string) {
+          pin(func: uid($pinId)) @filter(type(Pin)) {
+              id: uid
+              createdAt
           }
-        `
+      }
+    `
     const res = await this.dbService.commitQuery<{pin: Pin[]}>({ query, vars: { $pinId: pinId } })
     return res.pin[0]
   }
@@ -191,19 +260,17 @@ export class PinsService {
      */
   async addPinOnPost (i: string, postId: string): Promise<Pin> {
     const query = `
-          query v($adminId: string, $postId: string) {
-              # 当前管理员存在
-              x(func: uid($adminId)) @filter(type(Admin)) { x as uid }
-              # 帖子存在
-              v(func: uid($postId)) @filter(type(Post) and not has(delete)) { v as uid }
-              # 该帖子未被置顶
-              q(func: uid($postId)) @filter(type(Post) and not has(pin)) { q as uid }
-              # 全局一个时间只能有一个置顶
-              u(func: type(Post)) @filter(has(pin)) { u as uid }
-          }
+        query v($adminId: string, $postId: string) {
+            # 当前管理员存在
+            x(func: uid($adminId)) @filter(type(Admin)) { x as uid }
+            # 帖子存在
+            v(func: uid($postId)) @filter(type(Post) and not has(delete)) { v as uid }
+            # 该帖子未被置顶
+            q(func: uid($postId)) @filter(type(Post) and not has(pin)) { q as uid }
+        }
       `
     const _now = now()
-    const condition = '@if( eq(len(x), 1) and eq(len(v), 1) and eq(len(u), 0) and eq(len(q), 1) )'
+    const condition = '@if( eq(len(x), 1) and eq(len(v), 1) and eq(len(q), 1) )'
     const mutation = {
       uid: '_:pin',
       'dgraph.type': 'Pin',
@@ -221,9 +288,9 @@ export class PinsService {
         }
       }
     }
+
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       x: Array<{uid: string}>
-      u: Array<{uid: string}>
       v: Array<{uid: string}>
       q: Array<{uid: string}>
     }>({
@@ -243,9 +310,6 @@ export class PinsService {
     }
     if (res.json.q.length !== 1) {
       throw new ForbiddenException(`帖子 ${postId} 已被置顶`)
-    }
-    if (res.json.u.length !== 0) {
-      throw new ForbiddenException('已存在置顶帖子，请先取消该帖子的置顶')
     }
 
     return {

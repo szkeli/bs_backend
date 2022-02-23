@@ -1,11 +1,11 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { Admin } from '../admin/models/admin.model'
-import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
+import { CheckPolicies, CurrentUser, NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
-import { PagingConfigArgs } from '../user/models/user.model'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Pin, PinsConnection } from './models/pins.model'
 import { PinsService } from './pins.service'
 
@@ -33,8 +33,9 @@ export class PinsResolver {
   }
 
   @Query(of => PinsConnection, { description: '获取全部置顶信息' })
-  async pins (@Args() { first, offset }: PagingConfigArgs) {
-    return await this.pinsService.pins(first, offset)
+  @NoAuth()
+  async pins (@Args() paging: RelayPagingConfigArgs) {
+    return await this.pinsService.pins(paging)
   }
 
   @ResolveField(of => Admin, { description: '置顶的创建者' })

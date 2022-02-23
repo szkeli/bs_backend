@@ -20,6 +20,7 @@ import { FoldsService } from '../folds/folds.service'
 import { FoldsConnection } from '../folds/models/folds.model'
 import { PinsConnection } from '../pins/models/pins.model'
 import { PinsService } from '../pins/pins.service'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { PagingConfigArgs } from '../user/models/user.model'
 import { AdminService } from './admin.service'
@@ -85,8 +86,8 @@ export class AdminResolver {
   }
 
   @ResolveField(of => PinsConnection, { description: '当前管理员创建的置顶' })
-  async pins (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.pinsService.findPinsByAdminId(admin.id, first, offset)
+  async pins (@Parent() admin: Admin, @Args() paging: RelayPagingConfigArgs) {
+    return await this.pinsService.findPinsByAdminId(admin.id, paging)
   }
 
   @ResolveField(of => DeletesConnection, { description: '当前管理员的所有删除操作' })
