@@ -1,6 +1,12 @@
-import { ArgsType, Field, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { ArgsType, Field, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 import { Connection } from '../../connections/models/connections.model'
+
+@InterfaceType()
+export abstract class Notifiable {
+  @Field(of => String)
+    id: string
+}
 
 @ArgsType()
 export class SetReadReplyNotificationsArgs {
@@ -35,8 +41,10 @@ registerEnumType(NOTIFICATION_ACTION, {
   name: 'NOTIFICATION_ACTION'
 })
 
-@ObjectType()
-export class Notification {
+@ObjectType({
+  implements: [Notifiable]
+})
+export class Notification implements Notifiable {
   @Field({ description: '通知的id' })
     id: string
 

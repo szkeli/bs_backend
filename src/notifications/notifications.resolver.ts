@@ -3,10 +3,10 @@ import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql'
 import { CurrentUser } from '../auth/decorator'
 import { Comment } from '../comment/models/comment.model'
 import { User } from '../user/models/user.model'
-import { Notification, SetReadReplyNotificationsArgs, SetReadUpvoteNotificationsArgs } from './models/notifications.model'
+import { Notifiable, Notification, SetReadReplyNotificationsArgs, SetReadUpvoteNotificationsArgs } from './models/notifications.model'
 import { NotificationsService } from './notifications.service'
 
-@Resolver(of => Notification)
+@Resolver(of => Notifiable)
 export class NotificationsResolver {
   constructor (private readonly notificationsService: NotificationsService) {}
 

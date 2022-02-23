@@ -416,9 +416,18 @@ type FoldsConnection {
   totalCount: Int!
 }
 
-type Notification {
+type Notification implements Notifiable {
   """通知的id"""
   id: String!
+
+  """通知涉及的对象：用户User A 对帖子 Post或评论Comment B 发布了评论 Comment C，则C是about"""
+  about: Comment!
+
+  """被通知的对象"""
+  to: User!
+
+  """通知的创建者，匿名评论时为空"""
+  creator: User
 
   """通知的创建时间"""
   createdAt: String!
@@ -428,6 +437,10 @@ type Notification {
 
   """当前通知是否已被通知接收者设置为已读状态"""
   isRead: Boolean!
+}
+
+interface Notifiable {
+  id: String!
 
   """通知涉及的对象：用户User A 对帖子 Post或评论Comment B 发布了评论 Comment C，则C是about"""
   about: Comment!
