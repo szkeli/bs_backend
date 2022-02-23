@@ -225,7 +225,7 @@ export class PostsService {
     const q1 = 'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
     const query = `
       query v($after: string) {
-        v as var(func: type(Post)) @filter(not has(delete)) {
+        v as var(func: type(Post)) @filter(not has(delete) and not has(pin)) {
           vc as count(votes @filter(type(Vote)))
           votesCount as math(sqrt(vc * 2))
           # TODO
@@ -537,7 +537,7 @@ export class PostsService {
     const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {
-        var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
+        var(func: type(Post), orderdesc: createdAt) @filter(not has(delete) and not has(pin)) { 
           posts as uid
         }
         ${after ? q1 : ''}
