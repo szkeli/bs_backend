@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
 import { Role, UserWithRolesAndPrivileges, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
+import { Pin } from '../pins/models/pins.model'
 import { PostWithCreatorId } from '../posts/models/post.model'
 import { IPRIVILEGE } from '../privileges/models/privileges.model'
 import { Subject } from '../subject/model/subject.model'
@@ -29,6 +30,12 @@ export class CaslAbilityFactory {
       }
       if (this.personHasPrivilege(user, IPRIVILEGE.ADMIN_CAN_DELETE_SUBJECT)) {
         can(Action.Delete, Subject, 'all')
+      }
+      if (this.personHasPrivilege(user, IPRIVILEGE.ADMIN_CAN_ADD_PIN_ON_POST)) {
+        can(Action.Create, Pin, 'add')
+      }
+      if (this.personHasPrivilege(user, IPRIVILEGE.ADMIN_CAN_REMOVE_PIN_ON_POST)) {
+        can(Action.Delete, Pin, 'all')
       }
     } else if (this.personIsUser(user)) {
       can(Action.Manage, MustWithCredential)

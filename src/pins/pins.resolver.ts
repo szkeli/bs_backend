@@ -3,7 +3,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
-import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
+import { CreatePinPolicyHandler, DeletePinPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Pin, PinsConnection } from './models/pins.model'
@@ -15,14 +15,14 @@ export class PinsResolver {
 
   @Mutation(of => Pin, { description: '置顶一个帖子' })
   @Roles(Role.Admin)
-  @CheckPolicies(new MustWithCredentialPolicyHandler())
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new CreatePinPolicyHandler())
   async addPinOnPost (@CurrentUser() admin: Admin, @Args('postId') postId: string) {
     return await this.pinsService.addPinOnPost(admin.id, postId)
   }
 
   @Mutation(of => Boolean, { description: '对一个帖子取消置顶' })
   @Roles(Role.Admin)
-  @CheckPolicies(new MustWithCredentialPolicyHandler())
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new DeletePinPolicyHandler())
   async removePinOnPost (@CurrentUser() admin: Admin, @Args('from') from: string) {
     return await this.pinsService.removePinOnPost(admin.id, from)
   }

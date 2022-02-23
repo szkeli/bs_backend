@@ -241,6 +241,35 @@ type AdminsConnection {
   totalCount: Int!
 }
 
+type Pin {
+  id: String!
+  createdAt: String!
+
+  """置顶的创建者"""
+  creator: Admin!
+
+  """被置顶的对象，被置顶对象被删除时，返回null"""
+  to: PostAndCommentUnion
+}
+
+type PinsConnection {
+  edges: [PinEdge!]!
+  pageInfo: PinPageInfo!
+  totalCount: Int!
+}
+
+type PinEdge {
+  node: Pin
+  cursor: String
+}
+
+type PinPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type Privilege {
   id: String!
   createdAt: String!
@@ -272,6 +301,8 @@ enum IPRIVILEGE {
   """管理员能查看全局数据(某段时间内的注册数，点赞数，发帖数)"""
   ADMIN_CAN_VIEW_STATE
   ADMIN_CAN_DELETE_SUBJECT
+  ADMIN_CAN_ADD_PIN_ON_POST
+  ADMIN_CAN_REMOVE_PIN_ON_POST
 
   """用户能创建一个新的主题"""
   USER_CAN_CREATE_SUBJECT
@@ -383,35 +414,6 @@ type Fold {
 type FoldsConnection {
   nodes: [Fold!]!
   totalCount: Int!
-}
-
-type Pin {
-  id: String!
-  createdAt: String!
-
-  """置顶的创建者"""
-  creator: Admin!
-
-  """被置顶的对象，被置顶对象被删除时，返回null"""
-  to: PostAndCommentUnion
-}
-
-type PinsConnection {
-  edges: [PinEdge!]!
-  pageInfo: PinPageInfo!
-  totalCount: Int!
-}
-
-type PinEdge {
-  node: Pin
-  cursor: String
-}
-
-type PinPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
 }
 
 type Notification {
