@@ -25,7 +25,7 @@ export class PinsService {
     const query = `
       query v($adminId: string) {
         var(func: uid($adminId)) @filter(type(Admin)) {
-          pins as pin (orderdesc: createdAt) @filter(type(Pin))
+          pins as pins (orderdesc: createdAt) @filter(type(Pin))
         }
         
         ${after ? q1 : ''}
@@ -263,7 +263,7 @@ export class PinsService {
         query v($adminId: string, $postId: string) {
             # 当前管理员存在
             x(func: uid($adminId)) @filter(type(Admin)) { x as uid }
-            # 帖子存在
+            # 帖子存在且未被删除
             v(func: uid($postId)) @filter(type(Post) and not has(delete)) { v as uid }
             # 该帖子未被置顶
             q(func: uid($postId)) @filter(type(Post) and not has(pin)) { q as uid }
