@@ -54,7 +54,7 @@ export const RoleGuard = ({ roles, maybeAuth }: Props) => {
   return class GqlAuthGuard extends AuthGuard('jwt') {
     getRequest (context: ExecutionContext) {
       const ctx = GqlExecutionContext.create(context)
-      const req = ctx?.getContext()?.req
+      const { req } = ctx?.getContext()
       if (!req) {
         throw new ForbiddenException('undefined')
       }

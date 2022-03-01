@@ -2,7 +2,7 @@ import { ForbiddenException, Inject } from '@nestjs/common'
 import { Args, Mutation, Parent, Query, ResolveField, Resolver, Subscription } from '@nestjs/graphql'
 import { PubSub } from 'graphql-subscriptions'
 
-import { CheckPolicies, CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser, MaybeAuth, Roles } from 'src/auth/decorator'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
@@ -28,7 +28,7 @@ export class VotesResolver {
     },
     description: '监听指定帖子或评论的点赞数'
   })
-  @NoAuth()
+  @MaybeAuth()
   votesChanged (@Args('ids', { type: () => [String], description: '帖子或评论的id' }) ids: string[]) {
     if (ids.length === 0) {
       throw new ForbiddenException('监听的列表不能为空')
