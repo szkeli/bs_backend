@@ -2,14 +2,17 @@ import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import { GraphQLModule } from '@nestjs/graphql'
+import { Strategy } from 'passport-jwt'
 import { join } from 'path'
 
 import { AdminModule } from './admin/admin.module'
 import { AnonymousModule } from './anonymous/anonymous.module'
 import { AppController } from './app.controller'
 import { AppService } from './app.service'
+import { subscriptionTokenExtractor } from './auth/auth.extractor'
 import { RoleAuthGuard } from './auth/auth.guard'
 import { AuthModule } from './auth/auth.module'
+import { Payload, SubscriptionParams } from './auth/model/auth.model'
 import { BlocksModule } from './blocks/blocks.module'
 import { CaslModule } from './casl/casl.module'
 import { CensorsModule } from './censors/censors.module'
@@ -50,9 +53,27 @@ import { WxModule } from './wx/wx.module'
   imports: [
     GraphQLModule.forRoot({
       installSubscriptionHandlers: true,
-      // subscriptions: {
-      //   'graphql-ws': true
-      // },
+      subscriptions: {
+        'subscriptions-transport-ws': {
+          onConnect: async (connectionParams: SubscriptionParams) => {
+            if (!connectionParams.authToken) {
+              return null
+            }
+            const u = await (async () => {
+              return await new Promise<{id: string}>(resolve => {
+                void new Strategy({
+                  jwtFromRequest: subscriptionTokenExtractor(connectionParams),
+                  ignoreExpiration: false,
+                  secretOrKey: process.env.JWT_SECRET
+                }, (payload: Payload, done) => {
+                  resolve({ id: payload.id })
+                })
+              })
+            })()
+            return u
+          }
+        }
+      },
       context: ({ req }) => ({ req }),
       debug: true,
       playground: true,

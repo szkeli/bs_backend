@@ -124,7 +124,7 @@ export class PostsResolver {
   }
 
   @ResolveField(of => VotesConnection, { description: '帖子的点赞' })
-  async votes (@Parent() post: Post, @CurrentUser() user: User, @Args() args: PagingConfigArgs) {
+  async votes (@CurrentUser() user: User, @Parent() post: Post, @Args() args: PagingConfigArgs) {
     return await this.postsService.getVotesByPostId(user?.id, post.id.toString(), args.first, args.offset)
   }
 
