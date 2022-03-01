@@ -56,7 +56,8 @@ import { WxModule } from './wx/wx.module'
       subscriptions: {
         'subscriptions-transport-ws': {
           onConnect: async (connectionParams: SubscriptionParams) => {
-            if (!connectionParams.authToken) {
+            console.error({ connectionParams })
+            if (!connectionParams || !connectionParams.authToken) {
               return null
             }
             const u = await (async () => {
@@ -70,6 +71,7 @@ import { WxModule } from './wx/wx.module'
                 })
               })
             })()
+            console.error({ u })
             return u
           }
         }
