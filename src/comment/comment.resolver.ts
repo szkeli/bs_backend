@@ -10,7 +10,7 @@ import {
 } from '@nestjs/graphql'
 import { PubSub } from 'graphql-subscriptions'
 
-import { CheckPolicies, CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
+import { CheckPolicies, CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
@@ -48,7 +48,7 @@ export class CommentResolver {
     },
     description: '监听置顶帖子或评论的评论'
   })
-  @NoAuth()
+  @MaybeAuth()
   addCommented (@Args('ids', { type: () => [String] }) ids: string[]) {
     if (!ids || ids.length === 0) {
       throw new ForbiddenException('ids 不能为null')
