@@ -53,7 +53,7 @@ import { WxModule } from './wx/wx.module'
       subscriptions: {
         'subscriptions-transport-ws': {
           onConnect: (_: {[key: string]: string}, websocket: {[key: string]: {[key: string]: any}}) => {
-            websocket.upgradeReq.headers.authorization = _.Authorization || _.authorization
+            Object.assign(websocket.upgradeReq.headers, _)
             return {
               req: websocket.upgradeReq
             }
