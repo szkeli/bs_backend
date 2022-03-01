@@ -1029,20 +1029,6 @@ type Message implements Node {
 
 union MessageCreatorUnion = User | Admin
 
-type Votable {
-  """对象当前总赞数"""
-  totalCount: Int!
-
-  """浏览者是否能点赞"""
-  viewerCanUpvote: Boolean!
-
-  """浏览者是否已经点赞"""
-  viewerHasUpvoted: Boolean!
-
-  """被点赞或取消点赞的对象的id"""
-  to: String!
-}
-
 type VotesConnection {
   totalCount: Int!
   viewerCanUpvote: Boolean!
@@ -1993,16 +1979,16 @@ type Mutation {
   ): Comment!
 
   """点赞一个帖子"""
-  addUpvoteOnPost(postId: String!): Votable!
+  addUpvoteOnPost(postId: String!): Post!
 
   """点赞一条评论"""
-  addUpvoteOnComment(commentId: String!): Votable!
+  addUpvoteOnComment(commentId: String!): Comment!
 
   """取消点赞"""
-  removeUpvoteOnComment(from: String!): Votable!
+  removeUpvoteOnComment(from: String!): Comment!
 
   """取消点赞"""
-  removeUpvoteOnPost(from: String!): Votable!
+  removeUpvoteOnPost(from: String!): Post!
 
   """注册一个管理员，需要使用authen认证新注册的管理员"""
   registerAdmin(
@@ -2198,5 +2184,5 @@ type Subscription {
   votesChanged(
     """帖子或评论的id"""
     ids: [String!]!
-  ): Votable!
+  ): PostAndCommentUnion!
 }

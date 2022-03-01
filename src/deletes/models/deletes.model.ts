@@ -29,5 +29,13 @@ export const PostAndCommentAndSubjectUnion = createUnionType({
 
 export const PostAndCommentUnion = createUnionType({
   name: 'PostAndCommentUnion',
-  types: () => [Post, Comment]
+  types: () => [Post, Comment],
+  resolveType (v: {'dgraph.type': string[]}) {
+    if (v['dgraph.type']?.includes('Post')) {
+      return Post
+    }
+    if (v['dgraph.type']?.includes('Comment')) {
+      return Comment
+    }
+  }
 })

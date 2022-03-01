@@ -7,10 +7,12 @@ import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
+import { Comment } from '../comment/models/comment.model'
 import { PUB_SUB_KEY } from '../constants'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { WithinArgs } from '../node/models/node.model'
-import { Votable, Vote, VoteInterface, VotesConnection } from './model/votes.model'
+import { Post } from '../posts/models/post.model'
+import { Vote, VoteInterface, VotesConnection } from './model/votes.model'
 import { VotesService } from './votes.service'
 
 @Resolver(_of => VoteInterface)
@@ -20,9 +22,9 @@ export class VotesResolver {
     @Inject(PUB_SUB_KEY) private readonly pubSub: PubSub
   ) {}
 
-  @Subscription(of => Votable, {
-    filter: (payload: {votesChanged: Votable}, variables: {ids: String[]}) => {
-      return variables.ids.includes(payload.votesChanged.to)
+  @Subscription(of => PostAndCommentUnion, {
+    filter: (payload: {votesChanged: typeof PostAndCommentUnion}, variables: {ids: String[]}) => {
+      return variables.ids.includes(payload.votesChanged.id)
     },
     description: '监听指定帖子或评论的点赞数'
   })
@@ -41,36 +43,36 @@ export class VotesResolver {
     return await this.votesService.votesCreatedWithin(startTime, endTime, first, offset)
   }
 
-  @Mutation(_of => Votable, { description: '点赞一个帖子' })
+  @Mutation(_of => Post, { description: '点赞一个帖子' })
   async addUpvoteOnPost (@CurrentUser() user: User, @Args('postId') postId: string) {
-    const votable = await this.votesService.addUpvoteOnPost(user.id, postId)
-    await this.pubSub.publish('votesChanged', { votesChanged: votable })
+    const post = await this.votesService.addUpvoteOnPost(user.id, postId)
+    await this.pubSub.publish('votesChanged', { votesChanged: post })
 
-    return votable
+    return post
   }
 
-  @Mutation(_of => Votable, { description: '点赞一条评论' })
+  @Mutation(_of => Comment, { description: '点赞一条评论' })
   async addUpvoteOnComment (@CurrentUser() user: User, @Args('commentId') commentId: string) {
-    const votable = await this.votesService.addUpvoteOnComment(user.id, commentId)
-    await this.pubSub.publish('votesChanged', { votesChanged: votable })
+    const comment = await this.votesService.addUpvoteOnComment(user.id, commentId)
+    await this.pubSub.publish('votesChanged', { votesChanged: comment })
 
-    return votable
+    return comment
   }
 
-  @Mutation(_of => Votable, { description: '取消点赞' })
+  @Mutation(_of => Comment, { description: '取消点赞' })
   async removeUpvoteOnComment (@CurrentUser() user: User, @Args('from') from: string) {
-    const votable = await this.votesService.removeUpvoteOnComment(user.id, from)
-    await this.pubSub.publish('votesChanged', { votesChanged: votable })
+    const comment = await this.votesService.removeUpvoteOnComment(user.id, from)
+    await this.pubSub.publish('votesChanged', { votesChanged: comment })
 
-    return votable
+    return comment
   }
 
-  @Mutation(_of => Votable, { description: '取消点赞' })
+  @Mutation(_of => Post, { description: '取消点赞' })
   async removeUpvoteOnPost (@CurrentUser() user: User, @Args('from') from: string) {
-    const votable = await this.votesService.removeUpvoteOnPost(user.id, from)
-    await this.pubSub.publish('votesChanged', { votesChanged: votable })
+    const post = await this.votesService.removeUpvoteOnPost(user.id, from)
+    await this.pubSub.publish('votesChanged', { votesChanged: post })
 
-    return votable
+    return post
   }
 
   @ResolveField(_of => User, { description: '点赞的创建者' })
