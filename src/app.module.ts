@@ -52,16 +52,18 @@ import { WxModule } from './wx/wx.module'
       installSubscriptionHandlers: true,
       subscriptions: {
         'subscriptions-transport-ws': {
-          onConnect: (_: Record<string, string>, websocket: Record<string, Record<string, string>>) => {
-            Object.assign(websocket.upgradeReq.headers, _)
-            return {
-              req: websocket.upgradeReq
+          onConnect: (connectionParams: Record<string, any>, webSocket: WebSocket & { upgradeReq: Request }) => {
+            // @ts-expect-error
+            webSocket.upgradeReq.headers = {
+              ...webSocket.upgradeReq.headers,
+              ...connectionParams.headers ?? {}
             }
+            return { req: webSocket.upgradeReq }
           },
           keepAlive: 5000
         }
       },
-      context: ({ req, res, connection }) => connection ? { req: connection.context, res } : { req, res },
+      context: ({ req }) => ({ req }),
       debug: true,
       playground: true,
       sortSchema: false,
