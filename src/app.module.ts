@@ -57,7 +57,8 @@ import { WxModule } from './wx/wx.module'
             return {
               req: websocket.upgradeReq
             }
-          }
+          },
+          keepAlive: 5000
         }
       },
       context: ({ req, res, connection }) => ({ req, res, connection }),
