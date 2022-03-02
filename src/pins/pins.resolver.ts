@@ -1,7 +1,7 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { Admin } from '../admin/models/admin.model'
-import { CheckPolicies, CurrentUser, NoAuth, Roles } from '../auth/decorator'
+import { CheckPolicies, CurrentUser, MaybeAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { CreatePinPolicyHandler, DeletePinPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
@@ -28,12 +28,13 @@ export class PinsResolver {
   }
 
   @Query(of => Pin, { description: '获取一个置顶信息' })
+  @MaybeAuth()
   async pin (@Args('id') pinId: string) {
     return await this.pinsService.pin(pinId)
   }
 
   @Query(of => PinsConnection, { description: '获取全部置顶信息' })
-  @NoAuth()
+  @MaybeAuth()
   async pins (@Args() paging: RelayPagingConfigArgs) {
     return await this.pinsService.pins(paging)
   }
