@@ -47,7 +47,6 @@ export class VotesResolver {
   async addUpvoteOnPost (@CurrentUser() user: User, @Args('postId') postId: string) {
     const post = await this.votesService.addUpvoteOnPost(user.id, postId)
     await this.pubSub.publish('votesChanged', { votesChanged: post })
-
     return post
   }
 

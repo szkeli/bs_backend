@@ -1,14 +1,34 @@
-import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql'
+import { ForbiddenException, Inject } from '@nestjs/common'
+import { Args, Mutation, Parent, ResolveField, Resolver, Subscription } from '@nestjs/graphql'
+import { PubSub } from 'graphql-subscriptions'
 
 import { CurrentUser } from '../auth/decorator'
 import { Comment } from '../comment/models/comment.model'
-import { User } from '../user/models/user.model'
-import { Notifiable, Notification, SetReadReplyNotificationsArgs, SetReadUpvoteNotificationsArgs } from './models/notifications.model'
+import { PUB_SUB_KEY } from '../constants'
+import { Person, User } from '../user/models/user.model'
+import { Notifiable, Notification, SetReadReplyNotificationsArgs, SetReadUpvoteNotificationsArgs, UpvoteNotificationAndReplyNotificationUnion } from './models/notifications.model'
 import { NotificationsService } from './notifications.service'
 
 @Resolver(of => Notifiable)
 export class NotificationsResolver {
-  constructor (private readonly notificationsService: NotificationsService) {}
+  constructor (
+    private readonly notificationsService: NotificationsService,
+    @Inject(PUB_SUB_KEY) private readonly pubSub: PubSub
+  ) {}
+
+  @Subscription(of => UpvoteNotificationAndReplyNotificationUnion, {
+    filter: (payload: {notificationsAdded: typeof UpvoteNotificationAndReplyNotificationUnion & {to: string}}, variables: {id: string}) => {
+      // console.error({ payload, variables })
+      return payload.notificationsAdded.to === variables.id
+    },
+    description: '监听当前用户接收到的通知'
+  })
+  notificationsAdded (@CurrentUser() user: Person, @Args('id', { description: '当前用户的id' }) id: string) {
+    if (user?.id !== id) {
+      throw new ForbiddenException(`用户 ${user?.id} 无权限访问用户 ${id} 的通知`)
+    }
+    return this.pubSub.asyncIterator('notificationsAdded')
+  }
 
   @Mutation(of => Boolean, { description: '批量已读回复通知' })
   async setReadReplyNotifications (@CurrentUser() user: User, @Args() { ids }: SetReadReplyNotificationsArgs) {

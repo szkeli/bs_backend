@@ -459,6 +459,25 @@ enum NOTIFICATION_ACTION {
   ADD_UPVOTE_ON_COMMENT
 }
 
+type UpvoteNotification implements Notifiable {
+  """通知的id"""
+  id: String!
+
+  """通知涉及的对象：用户User A 对帖子 Post或评论Comment B 发布了评论 Comment C，则C是about"""
+  about: Comment!
+
+  """被通知的对象"""
+  to: User!
+
+  """通知的创建者，匿名评论时为空"""
+  creator: User
+
+  """通知的创建时间"""
+  createdAt: String!
+  action: NOTIFICATION_ACTION!
+  isRead: Boolean!
+}
+
 type NotificationsConnection {
   edges: [NotificationEdge!]!
   pageInfo: NotificationPageInfo!
@@ -1456,6 +1475,9 @@ type Query {
     type: NOTIFICATION_TYPE = ALL
   ): VoteWithUnreadCountsConnection
 
+  """某段时间内的所有点赞"""
+  votesCreatedWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): VotesConnection!
+
   """查询某时间段内发布的所有评论"""
   commentsCreatedWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): CommentsConnection!
 
@@ -1486,9 +1508,6 @@ type Query {
 
   """获取所有被删除的评论"""
   deletedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """某段时间内的所有点赞"""
-  votesCreatedWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): VotesConnection!
 
   """以id获取管理员"""
   admin(id: String!): Admin!
@@ -1964,6 +1983,18 @@ type Mutation {
     grade: UserStringPropMap
   ): User!
 
+  """点赞一个帖子"""
+  addUpvoteOnPost(postId: String!): Post!
+
+  """点赞一条评论"""
+  addUpvoteOnComment(commentId: String!): Comment!
+
+  """取消点赞"""
+  removeUpvoteOnComment(from: String!): Comment!
+
+  """取消点赞"""
+  removeUpvoteOnPost(from: String!): Post!
+
   """添加一条评论到评论"""
   addCommentOnComment(
     """评论的内容"""
@@ -1987,18 +2018,6 @@ type Mutation {
     """是否匿名发布这条评论"""
     isAnonymous: Boolean = false
   ): Comment!
-
-  """点赞一个帖子"""
-  addUpvoteOnPost(postId: String!): Post!
-
-  """点赞一条评论"""
-  addUpvoteOnComment(commentId: String!): Comment!
-
-  """取消点赞"""
-  removeUpvoteOnComment(from: String!): Comment!
-
-  """取消点赞"""
-  removeUpvoteOnPost(from: String!): Post!
 
   """注册一个管理员，需要使用authen认证新注册的管理员"""
   registerAdmin(
@@ -2187,12 +2206,43 @@ input UserGenderPropMap {
 }
 
 type Subscription {
-  """监听置顶帖子或评论的评论"""
-  addCommented(ids: [String!]!): Comment!
-
   """监听指定帖子或评论的点赞数"""
   votesChanged(
     """帖子或评论的id"""
     ids: [String!]!
   ): PostAndCommentUnion!
+
+  """监听置顶帖子或评论的评论"""
+  addCommented(ids: [String!]!): Comment!
+
+  """监听当前用户接收到的通知"""
+  notificationsAdded(
+    """当前用户的id"""
+    id: String!
+  ): UpvoteNotificationAndReplyNotificationUnion!
+}
+
+union UpvoteNotificationAndReplyNotificationUnion = UpvoteNotification | ReplyNotification
+
+type ReplyNotification implements Notifiable {
+  """通知的id"""
+  id: String!
+
+  """通知涉及的对象：用户User A 对帖子 Post或评论Comment B 发布了评论 Comment C，则C是about"""
+  about: Comment!
+
+  """被通知的对象"""
+  to: User!
+
+  """通知的创建者，匿名评论时为空"""
+  creator: User
+
+  """通知的创建时间"""
+  createdAt: String!
+
+  """通知涉及的操作"""
+  action: NOTIFICATION_ACTION!
+
+  """是否已读"""
+  isRead: Boolean!
 }

@@ -14,6 +14,9 @@ import { VotesService } from './votes.service'
     VotesService,
     VotesResolver,
     DbService
+  ],
+  exports: [
+    VotesService
   ]
 })
 export class VotesModule {}

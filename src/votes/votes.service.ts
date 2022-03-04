@@ -1,9 +1,11 @@
-import { ForbiddenException, Injectable } from '@nestjs/common'
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common'
 import { DgraphClient } from 'dgraph-js'
+import { PubSub } from 'graphql-subscriptions'
 
 import { DbService } from 'src/db/db.service'
 
 import { Comment } from '../comment/models/comment.model'
+import { PUB_SUB_KEY } from '../constants'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
 import { Post } from '../posts/models/post.model'
@@ -13,7 +15,10 @@ import { Vote, VotesConnection } from './model/votes.model'
 @Injectable()
 export class VotesService {
   private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
+  constructor (
+    @Inject(PUB_SUB_KEY) private readonly pubSub: PubSub,
+    private readonly dbService: DbService
+  ) {
     this.dgraph = dbService.getDgraphIns()
   }
 
@@ -186,6 +191,7 @@ export class VotesService {
       u: Comment[]
       x: Array<{votes: any}>
       y: Array<{uid: string}>
+      comment: Array<{creator: {uid: string}}>
       voteCountOfComment: [{ voteCount: number }]
     }>({
       mutations: [
@@ -194,6 +200,17 @@ export class VotesService {
       ],
       query,
       vars: { $voter: voter, $to: to }
+    })
+
+    // 发送通知到websocket
+    await this.pubSub.publish('notificationsAdded', {
+      notificationsAdded: {
+        id: res.uids.get('notification'),
+        createdAt: now,
+        action: NOTIFICATION_ACTION.ADD_UPVOTE_ON_COMMENT,
+        isRead: false,
+        to: res.json.comment[0]?.creator?.uid
+      }
     })
 
     if (res.json.x?.length !== 0) {
@@ -294,6 +311,7 @@ export class VotesService {
       u: Post[]
       x: Array<{votes: any}>
       y: Array<{uid: string}>
+      creator: Array<{creator: {uid: string}}>
       voteCountOfPost: [{ voteCount: number }]
     }>({
       mutations: [
@@ -303,6 +321,20 @@ export class VotesService {
       query,
       vars: { $voter: voter, $to: to }
     })
+
+    // 向websocket发送通知
+    await this.pubSub.publish(
+      'notificationsAdded',
+      {
+        notificationsAdded: {
+          id: res.uids.get('notification'),
+          createdAt: now,
+          action: NOTIFICATION_ACTION.ADD_UPVOTE_ON_POST,
+          isRead: false,
+          to: res.json.creator[0]?.creator?.uid
+        }
+      }
+    )
 
     if (res.json.x?.length !== 0) {
       throw new ForbiddenException('不能重复点赞')

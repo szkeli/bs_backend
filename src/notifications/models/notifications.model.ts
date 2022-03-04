@@ -1,4 +1,4 @@
-import { ArgsType, Field, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { ArgsType, createUnionType, Field, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 import { Connection } from '../../connections/models/connections.model'
 
@@ -58,5 +58,53 @@ export class Notification implements Notifiable {
     isRead: boolean
 }
 
+@ObjectType({
+  implements: [Notifiable]
+})
+export class ReplyNotification implements Notifiable {
+  @Field({ description: '通知的id' })
+    id: string
+
+  @Field({ description: '通知的创建时间' })
+    createdAt: string
+
+  @Field(of => NOTIFICATION_ACTION, { description: '通知涉及的操作' })
+    action: NOTIFICATION_ACTION
+
+  @Field(of => Boolean, { description: '是否已读' })
+    isRead: boolean
+}
+
+@ObjectType({
+  implements: [Notifiable]
+})
+export class UpvoteNotification implements Notifiable {
+  @Field({ description: '通知的id' })
+    id: string
+
+  @Field({ description: '通知的创建时间' })
+    createdAt: string
+
+  @Field(of => NOTIFICATION_ACTION)
+    action: NOTIFICATION_ACTION
+
+  @Field(of => Boolean)
+    isRead: boolean
+}
+
 @ObjectType()
 export class NotificationsConnection extends Connection<Notification>(Notification) {}
+
+@ObjectType()
+export class UpvoteNotificationsConnection extends Connection<UpvoteNotification>(UpvoteNotification) {}
+
+export const UpvoteNotificationAndReplyNotificationUnion = createUnionType({
+  name: 'UpvoteNotificationAndReplyNotificationUnion',
+  types: () => [UpvoteNotification, ReplyNotification],
+  resolveType (v: {action: string | null}) {
+    if (v.action === NOTIFICATION_ACTION.ADD_UPVOTE_ON_COMMENT || v.action === NOTIFICATION_ACTION.ADD_UPVOTE_ON_POST) {
+      return UpvoteNotification
+    }
+    return ReplyNotification
+  }
+})

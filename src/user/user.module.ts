@@ -12,12 +12,18 @@ import { ConversationsService } from '../conversations/conversations.service'
 import { CurriculumsService } from '../curriculums/curriculums.service'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { NotificationsService } from '../notifications/notifications.service'
+import { PubsubsModule } from '../pubsubs/pubsubs.module'
 import { ReportsService } from '../reports/reports.service'
-import { VotesService } from '../votes/votes.service'
+import { VotesModule } from '../votes/votes.module'
 import { UserResolver } from './user.resolver'
 import { UserService } from './user.service'
 
 @Module({
+  imports: [
+    SharedModule,
+    VotesModule,
+    PubsubsModule
+  ],
   providers: [
     UserResolver,
     UserService,
@@ -29,13 +35,9 @@ import { UserService } from './user.service'
     AdminService,
     DeadlinesService,
     CurriculumsService,
-    VotesService,
     CommentService,
     CensorsService,
     NotificationsService
-  ],
-  imports: [
-    SharedModule
   ]
 })
 export class UserModule {}
