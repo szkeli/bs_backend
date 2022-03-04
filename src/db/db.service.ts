@@ -79,16 +79,15 @@ export class DbService {
   }
 
   async commitQuery<T> ({ vars, query }: CommitQueryWithVarsProps): Promise<T> {
-    if (!vars || Object.entries(vars).length === 0) {
-      return (await this.dgraph
-        .newTxn({ readOnly: true, bestEffort: true })
-        .query(query))
-        .getJson() as unknown as T
-    } else {
-      return (await this.dgraph
-        .newTxn({ readOnly: true })
-        .queryWithVars(query, vars))
-        .getJson() as unknown as T
+    const txn = this.dgraph.newTxn({ readOnly: true, bestEffort: true })
+    try {
+      if (!vars || Object.entries(vars).length === 0) {
+        return (await txn.query(query)).getJson() as unknown as T
+      } else {
+        return (await txn.queryWithVars(query, vars)).getJson() as unknown as T
+      }
+    } finally {
+      await txn.discard()
     }
   }
 

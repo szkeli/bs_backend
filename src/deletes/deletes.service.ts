@@ -1,5 +1,4 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
-import { DgraphClient } from 'dgraph-js'
 
 import { Admin } from '../admin/models/admin.model'
 import { Comment } from '../comment/models/comment.model'
@@ -12,10 +11,7 @@ import { Delete, DeletesConnection, PostAndCommentAndSubjectUnion } from './mode
 
 @Injectable()
 export class DeletesService {
-  private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
-    this.dgraph = dbService.getDgraphIns()
-  }
+  constructor (private readonly dbService: DbService) {}
 
   async findDeleteByCommentId (id: string) {
     const query = `
