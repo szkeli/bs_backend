@@ -3,7 +3,7 @@ import axios from 'axios'
 
 import { CosService } from '../cos/cos.service'
 import { sha1 } from '../tool'
-import { GetUnlimitedWXacodeArgs } from './models/wx.model'
+import { GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs } from './models/wx.model'
 
 @Injectable()
 export class WxService {
@@ -33,6 +33,23 @@ export class WxService {
       throw new ForbiddenException(res.errmsg)
     }
     return res.access_token
+  }
+
+  async getWXMiniProgrameShortLink (config: GetWXMiniProgrameShortLinkArgs) {
+    const accessToken = await this.getAccessToken()
+    return await axios({
+      method: 'POST',
+      url: 'https://api.weixin.qq.com/wxa/genwxashortlink',
+      params: {
+        access_token: accessToken
+      },
+      data: config
+    }).then((r: {data: string}) => {
+      if (typeof r.data === 'object') {
+        throw new ForbiddenException(`获取短链失败：${JSON.stringify(r.data)}`)
+      }
+      return r.data
+    })
   }
 
   async getUnlimitedWXacodeBuffer (config: GetUnlimitedWXacodeArgs) {

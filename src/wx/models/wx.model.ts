@@ -38,3 +38,15 @@ export class GetUnlimitedWXacodeArgs {
   @Field(of => Boolean, { defaultValue: false, nullable: true, description: '是否需要透明底色，为 true 时，生成透明底色的小程序' })
     is_hyaline: boolean|null
 }
+
+@ArgsType()
+export class GetWXMiniProgrameShortLinkArgs {
+  @Field(of => String, { description: '通过 Short Link 进入的小程序页面路径，必须是已经发布的小程序存在的页面，可携带 query，最大1024个字符' })
+    page_url: string
+
+  @Field(of => String, { description: '页面标题，不能包含违法信息，超过20字符会用... 截断代替' })
+    page_title: string
+
+  @Field(of => Boolean, { defaultValue: false, nullable: true, description: '生成的 Short Link 类型，短期有效：false，永久有效：true' })
+    is_permanent: boolean
+}
