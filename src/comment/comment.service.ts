@@ -216,7 +216,14 @@ export class CommentService {
   async commentsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<CommentsConnection> {
     const query = `
       query v($startTime: string, $endTime: string) {
-        var(func: between(createdAt, $startTime, $endTime)) @filter(type(Comment) and not has(delete)) {
+        var(func: type(Comment)) @filter(not has(delete)) {
+          a as creator @filter(not eq(openId, "") and not eq(unionId, "")) {
+            q as math(1)
+          }
+        }
+        creator as var(func: uid(a)) @filter(eq(val(q), 1))
+        c as var(func: type(Comment)) @filter(uid_in(creator, uid(creator)))
+        var(func: between(createdAt, $startTime, $endTime)) @filter(uid(c)) {
           comments as uid
         }
         totalCount(func: uid(comments)) {
