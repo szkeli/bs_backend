@@ -121,7 +121,10 @@ export class PostsService {
   async postsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<PostsConnection> {
     const query = `
       query v($startTime: string, $endTime: string) {
-        var(func: between(createdAt, $startTime, $endTime)) @filter(type(Post) and not has(delete)) {
+        var(func: type(User)) @filter(not eq(openId, "") and not eq(unionId, "")) {
+          v as posts @filter(not has(delete))
+        }
+        var(func: between(createdAt, $startTime, $endTime)) @filter(uid(v)) {
           posts as uid
         }
         totalCount(func: uid(posts)) {
