@@ -79,7 +79,7 @@ export class DbService {
   }
 
   async commitQuery<T> ({ vars, query }: CommitQueryWithVarsProps): Promise<T> {
-    const txn = this.dgraph.newTxn({ readOnly: true, bestEffort: true })
+    const txn = this.dgraph.newTxn({ readOnly: true })
     try {
       if (!vars || Object.entries(vars).length === 0) {
         return (await txn.query(query)).getJson() as unknown as T
