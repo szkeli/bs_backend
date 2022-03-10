@@ -202,16 +202,18 @@ export class VotesService {
       vars: { $voter: voter, $to: to }
     })
 
-    // 发送通知到websocket
-    await this.pubSub.publish('notificationsAdded', {
-      notificationsAdded: {
-        id: res.uids.get('notification'),
-        createdAt: now,
-        action: NOTIFICATION_ACTION.ADD_UPVOTE_ON_COMMENT,
-        isRead: false,
-        to: res.json.comment[0]?.creator?.uid
-      }
-    })
+    if (res.uids.get('notification')) {
+      // 发送通知到websocket
+      await this.pubSub.publish('notificationsAdded', {
+        notificationsAdded: {
+          id: res.uids.get('notification'),
+          createdAt: now,
+          action: NOTIFICATION_ACTION.ADD_UPVOTE_ON_COMMENT,
+          isRead: false,
+          to: res.json.comment[0]?.creator?.uid
+        }
+      })
+    }
 
     if (res.json.x?.length !== 0) {
       throw new ForbiddenException('不能重复点赞')
@@ -322,19 +324,21 @@ export class VotesService {
       vars: { $voter: voter, $to: to }
     })
 
-    // 向websocket发送通知
-    await this.pubSub.publish(
-      'notificationsAdded',
-      {
-        notificationsAdded: {
-          id: res.uids.get('notification'),
-          createdAt: now,
-          action: NOTIFICATION_ACTION.ADD_UPVOTE_ON_POST,
-          isRead: false,
-          to: res.json.creator[0]?.creator?.uid
+    if (res.uids.get('notification')) {
+      // 向websocket发送通知
+      await this.pubSub.publish(
+        'notificationsAdded',
+        {
+          notificationsAdded: {
+            id: res.uids.get('notification'),
+            createdAt: now,
+            action: NOTIFICATION_ACTION.ADD_UPVOTE_ON_POST,
+            isRead: false,
+            to: res.json.creator[0]?.creator?.uid
+          }
         }
-      }
-    )
+      )
+    }
 
     if (res.json.x?.length !== 0) {
       throw new ForbiddenException('不能重复点赞')

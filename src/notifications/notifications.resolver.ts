@@ -3,10 +3,16 @@ import { Args, Mutation, Parent, ResolveField, Resolver, Subscription } from '@n
 import { PubSub } from 'graphql-subscriptions'
 
 import { CurrentUser } from '../auth/decorator'
-import { Comment } from '../comment/models/comment.model'
 import { PUB_SUB_KEY } from '../constants'
+import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { Person, User } from '../user/models/user.model'
-import { Notifiable, Notification, SetReadReplyNotificationsArgs, SetReadUpvoteNotificationsArgs, UpvoteNotificationAndReplyNotificationUnion } from './models/notifications.model'
+import {
+  Notifiable,
+  Notification,
+  SetReadReplyNotificationsArgs,
+  SetReadUpvoteNotificationsArgs,
+  UpvoteNotificationAndReplyNotificationUnion
+} from './models/notifications.model'
 import { NotificationsService } from './notifications.service'
 
 @Resolver(of => Notifiable)
@@ -46,7 +52,7 @@ export class NotificationsResolver {
     return await this.notificationsService.setReadAllNotifications(user.id)
   }
 
-  @ResolveField(of => Comment, { description: '通知涉及的对象：用户User A 对帖子 Post或评论Comment B 发布了评论 Comment C，则C是about' })
+  @ResolveField(of => PostAndCommentUnion, { description: '通知涉及的对象：用户User A 对帖子 Post或评论Comment B 发布了评论 Comment C，则C是about；用户User A点赞帖子Post 或评论Comment B则B是about' })
   async about (@Parent() notification: Notification) {
     return await this.notificationsService.about(notification.id)
   }

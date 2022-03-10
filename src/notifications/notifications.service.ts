@@ -1,8 +1,8 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
-import { Comment } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
+import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { btoa, ids2String, now, relayfyArrayForward } from '../tool'
 import { NotificationArgs, User } from '../user/models/user.model'
@@ -230,15 +230,16 @@ export class NotificationsService {
     const query = `
         query v($notificationId: string) {
             var(func: uid($notificationId)) @filter(type(Notification)) {
-                about as about @filter(type(Comment))
+                about as about @filter(type(Comment) or type(Post))
             }
             about(func: uid(about)) {
                 id: uid
                 expand(_all_)
+                dgraph.type
             }
         }
       `
-    const res = await this.dbService.commitQuery<{about: Comment}>({ query, vars: { $notificationId: id } })
+    const res = await this.dbService.commitQuery<{about: typeof PostAndCommentUnion}>({ query, vars: { $notificationId: id } })
 
     return res.about[0]
   }
