@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common'
+import { ForbiddenException, Inject, Injectable } from '@nestjs/common'
 import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
@@ -7,6 +7,7 @@ import { Anonymous } from '../anonymous/models/anonymous.model'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { ORDER_BY } from '../connections/models/connections.model'
+import { PUB_SUB_KEY } from '../constants'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
@@ -28,7 +29,8 @@ export class CommentService {
   constructor (
     private readonly dbService: DbService,
     private readonly censorsService: CensorsService,
-    private readonly nlpService: NlpService
+    private readonly nlpService: NlpService,
+    @Inject(PUB_SUB_KEY) private readonly pubSub
   ) {
     this.dgraph = dbService.getDgraphIns()
   }
@@ -434,7 +436,7 @@ export class CommentService {
   }
 
   async addCommentOnComment (creator: string, { content, to: commentId, isAnonymous }: AddCommentArgs): Promise<CommentWithTo> {
-    const now = new Date().toISOString()
+    const _now = now()
 
     const query = `
         query v($creator: string, $commentId: string) {
@@ -447,7 +449,7 @@ export class CommentService {
             u as uid
             # 评论的创建者
             creator @filter(type(User)) {
-              commentCreator as uid
+              uid: commentCreator as uid
             }
           }
           # 评论者是否评论的创建者
@@ -490,7 +492,7 @@ export class CommentService {
       creator: {
         uid: creator
       },
-      createdAt: now,
+      createdAt: _now,
       to: {
         uid: '_:comment'
       }
@@ -505,7 +507,7 @@ export class CommentService {
         uid: '_:comment',
         'dgraph.type': 'Comment',
         content,
-        createdAt: now,
+        createdAt: _now,
         // 被评论的对象
         to: {
           uid: commentId
@@ -522,7 +524,7 @@ export class CommentService {
     const mutation2 = {
       uid: '_:notification',
       'dgraph.type': 'Notification',
-      createdAt: now,
+      createdAt: _now,
       to: {
         uid: 'uid(commentCreator)',
         notifications: {
@@ -548,7 +550,7 @@ export class CommentService {
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
-      u: Array<{uid: string}>
+      u: Array<{uid: string, creator: {uid: string}}>
       s: Array<{uid: string}>
       y: Array<{uid: string}>
     }>({
@@ -563,6 +565,22 @@ export class CommentService {
       }
     })
 
+    if (res.uids.get('notification')) {
+      // 向websocket发送通知
+      await this.pubSub.publish(
+        'notificationsAdded',
+        {
+          notificationsAdded: {
+            id: res.uids.get('notification'),
+            createdAt: _now,
+            action: NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT,
+            isRead: false,
+            to: res.json.u[0]?.creator?.uid
+          }
+        }
+      )
+    }
+
     if (res.json.s.length !== 1) {
       throw new ForbiddenException('请先创建userId为system的管理员')
     }
@@ -575,7 +593,7 @@ export class CommentService {
 
     return {
       content,
-      createdAt: now,
+      createdAt: _now,
       id: res.uids.get('comment'),
       to: commentId
     }
@@ -595,7 +613,7 @@ export class CommentService {
           u as uid 
           # 帖子的创建者
           creator @filter(type(User)) {
-            postCreator as uid
+            uid: postCreator as uid
           }
         }
         # 评论者是帖子的创建者
@@ -706,7 +724,7 @@ export class CommentService {
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       s: Array<{uid: string}>
       v: Array<{uid: string}>
-      u: Array<{uid: string}>
+      u: Array<{uid: string, creator: {uid: string}}>
     }>({
       mutations: [
         { mutation: mutation1, condition: condition1 },
@@ -718,6 +736,22 @@ export class CommentService {
         $postId: postId
       }
     })
+
+    if (res.uids.get('notification')) {
+      // 向websocket发送通知
+      await this.pubSub.publish(
+        'notificationsAdded',
+        {
+          notificationsAdded: {
+            id: res.uids.get('notification'),
+            createdAt: _now,
+            action: NOTIFICATION_ACTION.ADD_COMMENT_ON_POST,
+            isRead: false,
+            to: res.json.u[0]?.creator?.uid
+          }
+        }
+      )
+    }
 
     if (res.json.s.length !== 1) {
       throw new ForbiddenException('请先创建system管理员作为系统')
