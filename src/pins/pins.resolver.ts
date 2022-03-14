@@ -23,7 +23,7 @@ export class PinsResolver {
   @Mutation(of => Boolean, { description: '对一个帖子取消置顶' })
   @Roles(Role.Admin)
   @CheckPolicies(new MustWithCredentialPolicyHandler(), new DeletePinPolicyHandler())
-  async removePinOnPost (@CurrentUser() admin: Admin, @Args('from') from: string) {
+  async removePinOnPost (@CurrentUser() admin: Admin, @Args('from', { description: '被置顶的帖子的id' }) from: string) {
     return await this.pinsService.removePinOnPost(admin.id, from)
   }
 
