@@ -22,7 +22,7 @@ export class BlocksResolver {
   @Mutation(of => Boolean, { description: '解除拉黑一个用户' })
   @Roles(Role.Admin)
   @CheckPolicies(new MustWithCredentialPolicyHandler())
-  async removeBlockOnUser (@Args('from') from: string) {
+  async removeBlockOnUser (@Args('from', { description: '被拉黑的用户的id' }) from: string) {
     return await this.blocksService.removeBlockOnUser(from)
   }
 
