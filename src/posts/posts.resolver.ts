@@ -49,7 +49,6 @@ export class PostsResolver {
 
   @Query(of => Post, { description: '以postId获取一个帖子' })
   @MaybeAuth()
-  // @CheckPolicies(new ReadPostPolicyHandler())
   async post (@Args('id') id: PostId): Promise<Post> {
     return await this.postsService.post(id)
   }
