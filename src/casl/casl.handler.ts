@@ -6,6 +6,7 @@ import { Pin } from '../pins/models/pins.model'
 import { PostWithCreatorId } from '../posts/models/post.model'
 import { IPRIVILEGE } from '../privileges/models/privileges.model'
 import { Subject } from '../subject/model/subject.model'
+import { User } from '../user/models/user.model'
 import { Action, AppAbility, MustWithCredential, ViewAppState } from './models/casl.model'
 
 export class ReadPostPolicyHandler implements IPolicyHandler {
@@ -49,6 +50,16 @@ export class AuthenAdminPolicyHandler implements IPolicyHandler {
     const can = ability.can(Action.Authen, Admin, 'all')
     if (!can) {
       throw new ForbiddenException(`缺少 ${IPRIVILEGE.ADMIN_CAN_AUTHEN_OTHER} 权限`)
+    }
+    return true
+  }
+}
+
+export class AuthenUserPolicyHandler implements IPolicyHandler {
+  handle (ability: AppAbility) {
+    const can = ability.can(Action.Authen, User, 'all')
+    if (!can) {
+      throw new ForbiddenException(`缺少 ${IPRIVILEGE.ADMIN_CAN_AUTHEN_USER} 权限`)
     }
     return true
   }

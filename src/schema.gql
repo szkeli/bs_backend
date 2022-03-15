@@ -303,6 +303,7 @@ enum IPRIVILEGE {
   ADMIN_CAN_DELETE_SUBJECT
   ADMIN_CAN_ADD_PIN_ON_POST
   ADMIN_CAN_REMOVE_PIN_ON_POST
+  ADMIN_CAN_AUTHEN_USER
 
   """用户能创建一个新的主题"""
   USER_CAN_CREATE_SUBJECT
@@ -367,53 +368,6 @@ type SubjectPageInfo {
   endCursor: String
   hasPreviousPage: Boolean!
   hasNextPage: Boolean!
-}
-
-"""凭证是成为管理员的前提"""
-type ICredential {
-  id: String!
-  createdAt: String!
-  creator: Admin!
-  to: Admin!
-}
-
-type ICredentialsConnection {
-  nodes: [ICredential!]!
-  totalCount: Int!
-}
-
-type Delete {
-  id: String!
-  createdAt: String!
-
-  """删除的创建者"""
-  creator: Admin!
-
-  """被删除的对象"""
-  to: PostAndCommentAndSubjectUnion!
-}
-
-union PostAndCommentAndSubjectUnion = Post | Comment | Subject
-
-type DeletesConnection {
-  nodes: [Delete!]!
-  totalCount: Int!
-}
-
-type Fold {
-  id: String!
-  createdAt: String!
-
-  """折叠的创建者"""
-  creator: Admin!
-
-  """被折叠的对象"""
-  to: Comment!
-}
-
-type FoldsConnection {
-  nodes: [Fold!]!
-  totalCount: Int!
 }
 
 type Notification implements Notifiable {
@@ -937,6 +891,53 @@ type LoginResult implements Node & Person {
 
 type UsersConnection {
   nodes: [User!]!
+  totalCount: Int!
+}
+
+"""凭证是成为管理员的前提"""
+type ICredential {
+  id: String!
+  createdAt: String!
+  creator: Admin!
+  to: Admin!
+}
+
+type ICredentialsConnection {
+  nodes: [ICredential!]!
+  totalCount: Int!
+}
+
+type Delete {
+  id: String!
+  createdAt: String!
+
+  """删除的创建者"""
+  creator: Admin!
+
+  """被删除的对象"""
+  to: PostAndCommentAndSubjectUnion!
+}
+
+union PostAndCommentAndSubjectUnion = Post | Comment | Subject
+
+type DeletesConnection {
+  nodes: [Delete!]!
+  totalCount: Int!
+}
+
+type Fold {
+  id: String!
+  createdAt: String!
+
+  """折叠的创建者"""
+  creator: Admin!
+
+  """被折叠的对象"""
+  to: Comment!
+}
+
+type FoldsConnection {
+  nodes: [Fold!]!
   totalCount: Int!
 }
 

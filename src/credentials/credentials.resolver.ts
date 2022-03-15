@@ -3,7 +3,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
-import { AuthenAdminPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
+import { AuthenAdminPolicyHandler, AuthenUserPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { PagingConfigArgs } from '../user/models/user.model'
 import { CredentialsService } from './credentials.service'
 import { ICredential, ICredentialsConnection } from './models/credentials.model'
@@ -21,6 +21,7 @@ export class CredentialsResolver {
 
   @Mutation(of => ICredential, { description: '管理员认证一个新注册的用户' })
   @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new AuthenUserPolicyHandler())
   async authenUser (@CurrentUser() admin: Admin, @Args('to')to: string) {
     return await this.credentialsService.authenUser(admin.id, to)
   }
