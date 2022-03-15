@@ -571,6 +571,9 @@ type User implements Person & Node {
   """当前用户具有的权限"""
   privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
 
+  """当前用户的认证凭证，未认证用户为null"""
+  credential: ICredential
+
   """回复的通知"""
   replyNotifications(
     """最新的n个对象"""
@@ -715,6 +718,9 @@ interface Person implements Node {
   """当前用户具有的权限"""
   privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
 
+  """当前用户的认证凭证，未认证用户为null"""
+  credential: ICredential
+
   """回复的通知"""
   replyNotifications(
     """最新的n个对象"""
@@ -842,6 +848,9 @@ type LoginResult implements Node & Person {
 
   """当前用户具有的权限"""
   privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
+
+  """当前用户的认证凭证，未认证用户为null"""
+  credential: ICredential
 
   """回复的通知"""
   replyNotifications(
@@ -1838,6 +1847,9 @@ type UserWithPrivateProps implements Person & Node {
   """当前用户具有的权限"""
   privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
 
+  """当前用户的认证凭证，未认证用户为null"""
+  credential: ICredential
+
   """回复的通知"""
   replyNotifications(
     """最新的n个对象"""
@@ -2165,7 +2177,10 @@ type Mutation {
   addFoldOnComment(commentId: String!): Fold!
 
   """解除拉黑一个用户"""
-  removeBlockOnUser(from: String!): Boolean!
+  removeBlockOnUser(
+    """被拉黑的用户的id"""
+    from: String!
+  ): Boolean!
 
   """拉黑一个用户"""
   addBlockOnUser(id: String!, description: String!): Block!
@@ -2177,7 +2192,10 @@ type Mutation {
   addPinOnPost(postId: String!): Pin!
 
   """对一个帖子取消置顶"""
-  removePinOnPost(from: String!): Boolean!
+  removePinOnPost(
+    """被置顶的帖子的id"""
+    from: String!
+  ): Boolean!
 
   """批量已读回复通知"""
   setReadReplyNotifications(

@@ -5,6 +5,7 @@ import { DbService } from 'src/db/db.service'
 
 import { UserWithRoles, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY } from '../connections/models/connections.model'
+import { ICredential } from '../credentials/models/credentials.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
@@ -22,6 +23,23 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async credential (id: string) {
+    const query = `
+      query v($xid: string) {
+        var(func: uid($xid)) @filter(type(User)) {
+          c as credential @filter(type(Credential))
+        }
+        credential(func: uid(c)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{credential: ICredential[]}>({ query, vars: { $xid: id } })
+
+    return res.credential[0]
   }
 
   async privileges (id: string, first: number, offset: number): Promise<PrivilegesConnection> {

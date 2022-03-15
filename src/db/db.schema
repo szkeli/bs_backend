@@ -186,6 +186,8 @@ type User {
   views
   # 用户收到的通知
   notifications
+  # 当前用户的认证凭证
+  credential
 }
 
 # 帖子

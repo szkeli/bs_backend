@@ -13,6 +13,7 @@ import { CommentService } from '../comment/comment.service'
 import { CommentsConnection } from '../comment/models/comment.model'
 import { ConversationsService } from '../conversations/conversations.service'
 import { ConversationsConnection } from '../conversations/models/conversations.model'
+import { ICredential } from '../credentials/models/credentials.model'
 import { CurriculumsService } from '../curriculums/curriculums.service'
 import { CurriculumsConnection } from '../curriculums/models/curriculums.model'
 import { DeadlinesService } from '../deadlines/deadlines.service'
@@ -189,6 +190,11 @@ export class UserResolver {
   @ResolveField(of => PrivilegesConnection, { description: '当前用户具有的权限' })
   async privileges (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.userService.privileges(user.id, first, offset)
+  }
+
+  @ResolveField(of => ICredential, { description: '当前用户的认证凭证，未认证用户为null', nullable: true })
+  async credential (@Parent() user: User) {
+    return await this.userService.credential(user.id)
   }
 
   @Query(of => NotificationsConnection, { description: '测试接口，某用户的所有回复通知，非当前用户获取到null', nullable: true })
