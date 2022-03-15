@@ -2188,6 +2188,9 @@ type Mutation {
   """已存在的管理员认证一个新注册的管理员"""
   authenAdmin(to: String!): ICredential!
 
+  """管理员认证一个新注册的用户"""
+  authenUser(to: String!): ICredential!
+
   """置顶一个帖子"""
   addPinOnPost(postId: String!): Pin!
 

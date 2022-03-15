@@ -19,6 +19,12 @@ export class CredentialsResolver {
     return await this.credentialsService.authenAdmin(admin.id, to)
   }
 
+  @Mutation(of => ICredential, { description: '管理员认证一个新注册的用户' })
+  @Roles(Role.Admin)
+  async authenUser (@CurrentUser() admin: Admin, @Args('to')to: string) {
+    return await this.credentialsService.authenUser(admin.id, to)
+  }
+
   @Query(of => ICredential, { description: '获取一个凭证' })
   @Roles(Role.Admin)
   @CheckPolicies(new MustWithCredentialPolicyHandler())

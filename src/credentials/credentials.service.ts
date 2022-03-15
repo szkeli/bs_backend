@@ -8,6 +8,80 @@ import { ICredential, ICredentialsConnection } from './models/credentials.model'
 export class CredentialsService {
   constructor (private readonly dbService: DbService) {}
 
+  async authenUser (id: string, to: string) {
+    const now = new Date().toISOString()
+    const query = `
+      query v($adminId: string, $to: string) {
+        # 授权的管理员存在
+        v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
+        # 被授权的用户存在
+        u(func: uid($to)) @filter(type(User)) { u as uid }
+        # 授权者已认证
+        x(func: uid($adminId)) @filter(type(Admin)) {
+          credential @filter(type(Credential)) {
+            x as uid
+          }
+        }
+        # 被授权者未认证
+        y(func: uid($to)) @filter(type(User)) {
+          credential @filter(type(Credential)) {
+            y as uid
+          }
+        }
+      }
+    `
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 0) )'
+    const mutation = {
+      uid: '_:credential',
+      'dgraph.type': 'Credential',
+      createdAt: now,
+      to: {
+        uid: to,
+        credential: {
+          uid: '_:credential'
+        }
+      },
+      creator: {
+        uid: id,
+        credentials: {
+          uid: '_:credential'
+        }
+      }
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+      x: Array<{credential: {uid: string}}>
+      y: Array<{credential: {uid: string}}>
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: {
+        $adminId: id,
+        $to: to
+      }
+    })
+
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`管理员 ${id} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`用户 ${to} 不存在`)
+    }
+    if (res.json.x.length !== 1) {
+      throw new ForbiddenException(`管理员 ${id} 未认证`)
+    }
+    if (res.json.y.length !== 0) {
+      throw new ForbiddenException(`用户 ${to} 已认证`)
+    }
+
+    return {
+      createdAt: now,
+      id: res.uids.get('credential')
+    }
+  }
+
   /**
    * 授权一个已注册管理员
    * @param i 已授权的管理员
