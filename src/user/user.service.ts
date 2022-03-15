@@ -509,33 +509,70 @@ export class UserService {
     const _now = now()
     const query = `
       query v($id: string) {
+        system(func: eq(userId, "system")) {
+          system as uid
+        }
         u(func: uid($id)) @filter(type(User)) { u as uid }
         user(func: uid($id)) @filter(type(User)) {
           id: uid
+          credential @filter(type(Credential)) {
+            c as uid
+          }
           expand(_all_)
         }
       }
     `
-    const condition = '@if  ( eq(len(u), 1) )'
-    const mutation = {
+    const updateCondition = '@if  ( eq(len(u), 1) and eq(len(c), 1) and eq(len(system), 1) )'
+    const updateMutation = {
       uid: id,
       updatedAt: _now
     }
+    const updateWithCredentialCondition = '@if( eq(len(u), 1) and eq(len(c), 0) and eq(len(system), 1) )'
+    const updateWithCredentialMutation = {
+      uid: id,
+      updatedAt: _now,
+      credential: {
+        uid: '_:credential',
+        'dgraph.type': 'Credential',
+        createdAt: _now,
+        to: {
+          uid: id,
+          credential: {
+            uid: '_:credential'
+          }
+        },
+        creator: {
+          uid: 'uid(system)',
+          credentials: {
+            uid: '_:credential'
+          }
+        }
+      }
+    }
 
-    Object.assign(mutation, _args)
+    Object.assign(updateMutation, _args)
+    Object.assign(updateWithCredentialMutation, _args)
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       u: Array<{uid: string}>
       user: User[]
+      system: Array<{uid: string}>
     }>({
-      mutations: [{ mutation, condition }],
+      mutations: [
+        { mutation: updateMutation, condition: updateCondition },
+        { mutation: updateWithCredentialMutation, condition: updateWithCredentialCondition }
+      ],
       query,
       vars: {
         $id: id
       }
     })
+
     Object.assign(res.json.user[0], _args)
     if (res.json.u.length !== 1) {
       throw new ForbiddenException(`用户 ${id} 不存在`)
+    }
+    if (res.json.system.length !== 1) {
+      throw new ForbiddenException('请先创建 userId 为 system 的管理员作为系统默认管理员')
     }
     return res.json.user[0]
   }

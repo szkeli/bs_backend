@@ -98,6 +98,7 @@ export class PostsResolver {
   }
 
   @Mutation(of => Post, { description: '创建一个帖子' })
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async createPost (@CurrentUser() user: User, @Args() args: CreatePostArgs) {
     return await this.postsService.createPost(user.id, args)
   }
