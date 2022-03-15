@@ -29,7 +29,7 @@ export class MustWithCredentialPolicyHandler implements IPolicyHandler {
   handle (ability: AppAbility) {
     const can = ability.can(Action.Manage, MustWithCredential)
     if (!can) {
-      throw new ForbiddenException('管理员必须通过认证')
+      throw new ForbiddenException('缺少认证凭证')
     }
     return true
   }

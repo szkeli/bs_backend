@@ -12,7 +12,7 @@ import { PostsConnection, PostsConnectionWithRelay, RelayPagingConfigArgs } from
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
-import { CreateSubjectPolicyHandler, DeleteSubjectPolicyHandler } from '../casl/casl.handler'
+import { CreateSubjectPolicyHandler, DeleteSubjectPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { Delete } from '../deletes/models/deletes.model'
 import {
   CreateSubjectArgs,
@@ -54,13 +54,14 @@ export class SubjectResolver {
 
   @Mutation(of => Delete, { description: '以id删除一个主题' })
   @Roles(Role.Admin, Role.User)
-  @CheckPolicies(new DeleteSubjectPolicyHandler())
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new DeleteSubjectPolicyHandler())
   async deleteSubject (@CurrentUser() user: User, @Args('id') id: string) {
     return await this.subjectService.deleteSubject(user.id, id)
   }
 
   @Mutation(of => Subject, { description: '以id更新一个主题' })
   @Roles(Role.Admin, Role.User)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
   async updateSubject (@CurrentUser() user: User, @Args() args: UpdateSubjectArgs) {
     const subjectId = args.id
     delete args.id
@@ -68,7 +69,7 @@ export class SubjectResolver {
   }
 
   @Mutation(of => Subject, { description: '创建一个主题' })
-  @CheckPolicies(new CreateSubjectPolicyHandler())
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new CreateSubjectPolicyHandler())
   async createSubject (@CurrentUser() user: User, @Args() input: CreateSubjectArgs): Promise<Subject> {
     return await this.subjectService.createASubject(user.id, input)
   }

@@ -4,7 +4,6 @@ import { Injectable } from '@nestjs/common'
 import { Admin } from '../admin/models/admin.model'
 import { Role, UserWithRolesAndPrivileges, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { Pin } from '../pins/models/pins.model'
-import { PostWithCreatorId } from '../posts/models/post.model'
 import { IPRIVILEGE } from '../privileges/models/privileges.model'
 import { Subject } from '../subject/model/subject.model'
 import { User } from '../user/models/user.model'
@@ -17,12 +16,15 @@ export class CaslAbilityFactory {
       Ability as AbilityClass<AppAbility>
     )
 
+    if (user?.credential) {
+      can(Action.Manage, MustWithCredential)
+    }
+
     if (this.personIdAdmin(user)) {
-      if (['root', 'system'].includes(user?.userId)) {
+      if (['system'].includes(user?.userId)) {
         can(Action.Manage, 'all')
-      } else if (user?.credential) {
-        can(Action.Manage, MustWithCredential)
       }
+
       if (this.personHasPrivilege(user, IPRIVILEGE.ADMIN_CAN_VIEW_STATE)) {
         can(Action.Read, ViewAppState, 'all')
       }
@@ -42,14 +44,11 @@ export class CaslAbilityFactory {
         can(Action.Delete, Pin, 'all')
       }
     } else if (this.personIsUser(user)) {
-      can(Action.Manage, MustWithCredential)
       can(Action.Delete, Subject, 'all')
       if (this.personHasPrivilege(user, IPRIVILEGE.USER_CAN_CREATE_SUBJECT)) {
         can(Action.Create, Subject, 'all')
       }
     }
-
-    can(Action.Read, PostWithCreatorId, 'all')
 
     return build({
       detectSubjectType: item => item.constructor as ExtractSubjectType<Subjects>
