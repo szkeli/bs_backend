@@ -187,7 +187,7 @@ export class NotificationsService {
       notifications: Notification[]
     }>({ mutations: [{ mutation, condition }], query, vars: { $xid: xid } })
 
-    if (res.json.patchCount[0]?.count === notificationIds.length) {
+    if (res.json.patchCount[0]?.count !== notificationIds.length) {
       throw new ForbiddenException(`存在非 ${xid} 所有的通知`)
     }
 
