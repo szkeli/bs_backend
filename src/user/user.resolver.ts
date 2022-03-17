@@ -28,13 +28,13 @@ import { VotesConnection, VoteWithUnreadCountsConnection } from '../votes/model/
 import { VotesService } from '../votes/votes.service'
 import {
   AdminAndUserWithPrivatePropsUnion,
-  CreateUserArgs,
   DeadlinesPagingArgs,
   LoginResult,
   NotificationArgs,
   PagingConfigArgs,
   Person,
   PersonLoginArgs,
+  RegisterUserArgs,
   UpdateUserArgs,
   User,
   UsersConnection,
@@ -71,7 +71,7 @@ export class UserResolver {
 
   @Mutation(of => User, { description: '注册' })
   @NoAuth()
-  async register (@Args() args: CreateUserArgs) {
+  async register (@Args() args: RegisterUserArgs) {
     args.sign = sign_calculus(args.sign)
     return await this.userService.registerUser(args)
   }

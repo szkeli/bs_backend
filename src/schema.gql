@@ -194,7 +194,7 @@ type Admin {
   id: String!
   userId: String!
   name: String!
-  avatarImageUrl: String!
+  avatarImageUrl: String
   createdAt: String!
   updatedAt: String!
   lastLoginedAt: String!
@@ -605,7 +605,7 @@ type User implements Person & Node {
   lastLoginedAt: String!
 
   """用户头像链接"""
-  avatarImageUrl: String!
+  avatarImageUrl: String
 }
 
 interface Person implements Node {
@@ -883,7 +883,7 @@ type LoginResult implements Node & Person {
   lastLoginedAt: String!
 
   """用户头像链接"""
-  avatarImageUrl: String!
+  avatarImageUrl: String
 
   """token"""
   token: String!
@@ -1787,7 +1787,7 @@ type UserWithPrivateProps implements Person & Node {
   lastLoginedAt: String!
 
   """用户头像链接"""
-  avatarImageUrl: String!
+  avatarImageUrl: String
 
   """当前用户创建的所有帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
@@ -1938,38 +1938,17 @@ type Mutation {
 
   """注册"""
   register(
-    """学号"""
-    studentId: Int
-
-    """学院"""
-    college: UserStringPropMap!
-
-    """校区"""
-    subCampus: UserStringPropMap!
-
-    """用户账号"""
-    userId: String!
-
-    """用户密码"""
-    sign: String!
-
-    """微信login code"""
-    code: String
+    """用户名"""
+    userId: String
 
     """用户昵称"""
     name: String!
 
-    """用户性别"""
-    gender: UserGenderPropMap!
+    """用户密码"""
+    sign: String!
 
-    """用户头像链接"""
-    avatarImageUrl: String!
-
-    """学校"""
-    school: UserStringPropMap!
-
-    """年级"""
-    grade: UserStringPropMap!
+    """code"""
+    code: String
   ): User!
 
   """用于调试的接口: 根据userId 删除一个刚创建的用户，该用户不能有点赞评论发帖等操作"""

@@ -95,6 +95,21 @@ export class UpdateUserArgs {
 }
 
 @ArgsType()
+export class RegisterUserArgs {
+  @Field({ description: '用户名', nullable: true })
+    userId?: string | null
+
+  @Field({ description: '用户昵称' })
+    name: string
+
+  @Field({ description: '用户密码' })
+    sign: string
+
+  @Field({ description: 'code', nullable: true })
+    code?: string | null
+}
+
+@ArgsType()
 export class CreateUserArgs {
   @Field(of => Int, { description: '学号', nullable: true })
     studentId?: number
@@ -143,8 +158,8 @@ export class User implements Person, Node {
   @Field({ description: 'id 自动生成' })
     id: string
 
-  @Field(type => Int, { description: '学号', nullable: true })
-    studentId?: number
+  @Field(of => Int, { description: '学号', nullable: true })
+    studentId?: number | null
 
   @Field({ description: '用户昵称' })
     name: string
@@ -159,19 +174,19 @@ export class User implements Person, Node {
     unionId: string
 
   @Field(of => GENDER, { nullable: true, description: '用户性别' })
-    gender?: GENDER
+    gender?: GENDER | null
 
   @Field({ description: '学院', nullable: true })
-    college?: string
+    college?: string | null
 
   @Field({ description: '校区', nullable: true })
-    subCampus?: string
+    subCampus?: string | null
 
   @Field({ description: '学校', nullable: true })
-    school?: string
+    school?: string | null
 
   @Field({ description: '年级', nullable: true })
-    grade?: string
+    grade?: string | null
 
   @Field({ description: '用户创建时间' })
     createdAt: string
@@ -182,8 +197,8 @@ export class User implements Person, Node {
   @Field({ description: '用户上一次调用login接口获取token的系统时间' })
     lastLoginedAt: string
 
-  @Field({ description: '用户头像链接' })
-    avatarImageUrl: string
+  @Field({ description: '用户头像链接', nullable: true })
+    avatarImageUrl?: string | null
 }
 
 @ObjectType()

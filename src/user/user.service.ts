@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
+import { randomUUID } from 'crypto'
 import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
@@ -12,7 +13,7 @@ import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import { atob, btoa, code2Session, edgifyByCreatedAt, now, UpdateUserArgs2User } from '../tool'
 import {
   CheckUserResult,
-  CreateUserArgs,
+  RegisterUserArgs,
   UpdateUserArgs,
   User,
   UsersConnection
@@ -396,6 +397,24 @@ export class UserService {
     }
   }
 
+  async getRandomUserId (): Promise<string> {
+    while (1) {
+      const userId = randomUUID()
+      const query = `
+        query c($userId: string) {
+          v(func: eq(userId, $userId)) @filter(type(User) or type(Admin)) {
+            count(uid)
+          }
+        }
+      `
+      const res = await this.dbService.commitQuery<{v: Array<{count: number}>}>({ query, vars: { $userId: userId } })
+
+      if ((res.v[0]?.count ?? 0) === 0) {
+        return userId
+      }
+    }
+  }
+
   async getUserOrAdminWithRolesByUid (id: string): Promise<UserWithRolesAndPrivilegesAndCredential> {
     const query = `
         query v($uid: string) {
@@ -421,9 +440,9 @@ export class UserService {
     return res.user[0]
   }
 
-  async registerUser (input: CreateUserArgs): Promise<User> {
-    if (input.userId.length <= 2) {
-      throw new ForbiddenException('userId 不能少于三个字符')
+  async registerUser (input: RegisterUserArgs): Promise<User> {
+    if (!input.userId) {
+      input.userId = await this.getRandomUserId()
     }
     let unionId: string = ''
     let openId: string = ''
@@ -443,20 +462,8 @@ export class UserService {
       uid: '_:user',
       'dgraph.type': 'User',
       userId: input.userId,
-      studentId: input.studentId,
       sign: input.sign,
       name: input.name,
-      avatarImageUrl: input.avatarImageUrl,
-      gender: input.gender.value,
-      'gender|private': input.gender.isPrivate,
-      school: input.school.value,
-      'school|private': input.school.isPrivate,
-      subCampus: input.subCampus.value,
-      'subCampus|private': input.subCampus.isPrivate,
-      college: input.college.value,
-      'college|private': input.college.isPrivate,
-      grade: input.grade.value,
-      'grade|private': input.grade.isPrivate,
       openId,
       unionId,
       createdAt: now,
@@ -488,16 +495,9 @@ export class UserService {
       userId: input.userId,
       openId,
       unionId,
-      gender: input.gender.value,
       createdAt: now,
       updatedAt: now,
-      lastLoginedAt: now,
-      avatarImageUrl: input.avatarImageUrl,
-      studentId: input.studentId,
-      school: input.school.value,
-      subCampus: input.subCampus.value,
-      college: input.college.value,
-      grade: input.grade.value
+      lastLoginedAt: now
     }
   }
 

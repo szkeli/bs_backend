@@ -32,8 +32,8 @@ export class Admin {
   @Field()
     name: string
 
-  @Field()
-    avatarImageUrl: string
+  @Field({ nullable: true })
+    avatarImageUrl?: string | null
 
   @Field()
     createdAt: string
