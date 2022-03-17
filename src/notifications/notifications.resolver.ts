@@ -24,7 +24,6 @@ export class NotificationsResolver {
 
   @Subscription(of => UpvoteNotificationAndReplyNotificationUnion, {
     filter: (payload: {notificationsAdded: typeof UpvoteNotificationAndReplyNotificationUnion & {to: string}}, variables: {id: string}) => {
-      // console.error({ payload, variables })
       return payload.notificationsAdded.to === variables.id
     },
     description: '监听当前用户接收到的通知'

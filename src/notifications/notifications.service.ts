@@ -155,11 +155,11 @@ export class NotificationsService {
     return true
   }
 
-  async setReadReplyNotifications (xid: string, notificationIds: string[]) {
-    if (!notificationIds || notificationIds.length === 0) {
+  async setReadReplyNotifications (xid: string, ids: string[]) {
+    if (!ids || ids.length === 0) {
       throw new ForbiddenException('ids 长度不能为0')
     }
-    const v = ids2String(notificationIds)
+    const v = ids2String(ids)
 
     const query = `
       query v($xid: string) {
@@ -176,7 +176,7 @@ export class NotificationsService {
         }
       }
     `
-    const condition = `@if( gt(len(i), ${notificationIds.length}))`
+    const condition = `@if( ge(len(i), ${ids.length}))`
     const mutation = {
       uid: 'uid(i)',
       isRead: true
@@ -187,7 +187,7 @@ export class NotificationsService {
       notifications: Notification[]
     }>({ mutations: [{ mutation, condition }], query, vars: { $xid: xid } })
 
-    if (res.json.patchCount[0]?.count !== notificationIds.length) {
+    if (res.json.patchCount[0]?.count !== ids.length) {
       throw new ForbiddenException(`存在非 ${xid} 所有的通知`)
     }
 
