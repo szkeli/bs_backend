@@ -362,6 +362,30 @@ type Credential {
   creator
 }
 
+# User的认证审核信息
+type UserAuthenInfo {
+  # 被审核的User
+  to
+  # 创建时间
+  createdAt
+  # 学号
+  studentId
+  # 学院
+  college
+  # 校区
+  subCampus
+  # 学校
+  school
+  # 年级
+  grade
+  # 性别
+  gender
+  # 图片
+  images
+  # 头像
+  avatarImageUrl
+}
+
 # 权限
 type Privilege {
   # 创建时间
