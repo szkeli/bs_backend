@@ -3,6 +3,7 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
+import { UserNotFoundException } from '../app.exception'
 import { UserWithRoles, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
@@ -479,7 +480,7 @@ export class UserService {
     const uid = res.uids.get('user')
 
     if (!uid || res.json.q.length !== 0) {
-      throw new ForbiddenException(`userId ${input.userId} 已被使用`)
+      throw new UserNotFoundException(input.userId)
     }
 
     return {
