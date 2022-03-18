@@ -237,7 +237,7 @@ export class PostsService {
           createdAt as createdAt
         
           hour as math(
-           2*exp(-(since(createdAt)/7200))
+           2*exp(-(since(createdAt)/72000))
           )
           dayScore as math(since(createdAt)/86400)
           score as math(votesCount + commentsCount + hour)
