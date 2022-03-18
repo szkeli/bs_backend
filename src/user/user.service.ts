@@ -52,7 +52,7 @@ export class UserService {
         }
       }
     `
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 1) )'
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) )'
 
     delete info.images
     const mutation = {
@@ -87,12 +87,23 @@ export class UserService {
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
+      n: Array<{uid: string}>
       user: User[]
     }>({
       query,
       mutations: [{ mutation, condition }],
       vars: { $actorId: actorId, $id: id }
     })
+
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`管理员 ${actorId} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`用户 ${id} 不存在`)
+    }
+    if (res.json.n.length !== 0) {
+      throw new ForbiddenException(`用户 ${id} 已认证`)
+    }
 
     const user = res.json.user[0]
     Object.assign(user, info)
