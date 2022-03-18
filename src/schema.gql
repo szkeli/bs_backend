@@ -1951,6 +1951,18 @@ type Mutation {
     code: String
   ): User!
 
+  """认证用户"""
+  authenticateUser(
+    """待认证的用户id"""
+    id: String!
+
+    """自助认证时 szu 后端提供的token (以保证不被篡改，用 jwt 实现)"""
+    token: String
+
+    """手动认证时的认证信息"""
+    info: AuthenticationInfo
+  ): User!
+
   """用于调试的接口: 根据userId 删除一个刚创建的用户，该用户不能有点赞评论发帖等操作"""
   pureDeleteUser(userId: String!): Boolean!
 
@@ -2194,6 +2206,32 @@ type Mutation {
 
   """设置创建时间小于当前系统时间的所有通知为已读"""
   setReadAllNotifications: Boolean!
+}
+
+input AuthenticationInfo {
+  """头像"""
+  avatarImageUrl: String!
+
+  """学号"""
+  studentId: Float!
+
+  """学院"""
+  college: String!
+
+  """校区"""
+  subCampus: String!
+
+  """学校"""
+  school: String!
+
+  """年级"""
+  grade: String!
+
+  """性别"""
+  gender: GENDER!
+
+  """有效信息图片(e.g. 校园卡照片)的链接"""
+  images: [String!]!
 }
 
 input UserStringPropMap {

@@ -1,3 +1,4 @@
+import { ForbiddenException } from '@nestjs/common'
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { AuthService } from 'src/auth/auth.service'
@@ -28,12 +29,14 @@ import { VotesConnection, VoteWithUnreadCountsConnection } from '../votes/model/
 import { VotesService } from '../votes/votes.service'
 import {
   AdminAndUserWithPrivatePropsUnion,
+  AuthenticateUserArgs,
   DeadlinesPagingArgs,
   LoginResult,
   NotificationArgs,
   PagingConfigArgs,
   Person,
   PersonLoginArgs,
+  PersonWithRoles,
   RegisterUserArgs,
   UpdateUserArgs,
   User,
@@ -74,6 +77,24 @@ export class UserResolver {
   async register (@Args() args: RegisterUserArgs) {
     args.sign = sign_calculus(args.sign)
     return await this.userService.registerUser(args)
+  }
+
+  @Mutation(of => User, { description: '认证用户' })
+  @Roles(Role.Admin, Role.User)
+  async authenticateUser (@CurrentUser() person: PersonWithRoles, @Args() { id, token, info }: AuthenticateUserArgs) {
+    if (person.id === id && token) {
+      return await this.userService.autoAuthenUserSelf(id, token)
+    }
+
+    if (person.id === id && info) {
+      return await this.userService.addInfoForAuthenUser(id, info)
+    }
+
+    if (person.roles.includes(Role.Admin) && info) {
+      return await this.userService.authenticateUser(person.id, id, info)
+    }
+
+    throw new ForbiddenException()
   }
 
   @Mutation(of => Boolean, { description: '用于调试的接口: 根据userId 删除一个刚创建的用户，该用户不能有点赞评论发帖等操作' })

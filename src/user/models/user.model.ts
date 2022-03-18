@@ -67,6 +67,45 @@ export class PersonLoginArgs {
     sign: string
 }
 
+@InputType()
+export class AuthenticationInfo {
+  @Field({ description: '头像' })
+    avatarImageUrl: string
+
+  @Field({ description: '学号' })
+    studentId: number | null
+
+  @Field({ description: '学院' })
+    college: string
+
+  @Field({ description: '校区' })
+    subCampus: string
+
+  @Field({ description: '学校' })
+    school: string
+
+  @Field({ description: '年级' })
+    grade: string
+
+  @Field(of => GENDER, { description: '性别' })
+    gender: GENDER
+
+  @Field(of => [String], { description: '有效信息图片(e.g. 校园卡照片)的链接' })
+    images: string[]
+}
+
+@ArgsType()
+export class AuthenticateUserArgs {
+  @Field({ description: '待认证的用户id' })
+    id: string
+
+  @Field({ nullable: true, description: '自助认证时 szu 后端提供的token (以保证不被篡改，用 jwt 实现)' })
+    token?: string
+
+  @Field({ nullable: true, description: '手动认证时的认证信息' })
+    info?: AuthenticationInfo
+}
+
 @ArgsType()
 export class UpdateUserArgs {
   @Field(of => UserStringPropMap, { description: '学院', nullable: true })
@@ -107,42 +146,6 @@ export class RegisterUserArgs {
 
   @Field({ description: 'code', nullable: true })
     code?: string | null
-}
-
-@ArgsType()
-export class CreateUserArgs {
-  @Field(of => Int, { description: '学号', nullable: true })
-    studentId?: number
-
-  @Field(of => UserStringPropMap, { description: '学院' })
-    college: UserStringPropMap
-
-  @Field(of => UserStringPropMap, { description: '校区' })
-    subCampus: UserStringPropMap
-
-  @Field({ description: '用户账号' })
-    userId: UserId
-
-  @Field({ description: '用户密码' })
-    sign: RawSign
-
-  @Field({ nullable: true, description: '微信login code' })
-    code?: string
-
-  @Field({ description: '用户昵称' })
-    name: string
-
-  @Field(of => UserGenderPropMap, { description: '用户性别' })
-    gender: UserGenderPropMap
-
-  @Field({ description: '用户头像链接' })
-    avatarImageUrl: string
-
-  @Field(of => UserStringPropMap, { description: '学校' })
-    school: UserStringPropMap
-
-  @Field(of => UserStringPropMap, { description: '年级' })
-    grade: UserStringPropMap
 }
 
 export type RawSign = string
@@ -282,6 +285,10 @@ export abstract class Person implements Node {
 
   @Field()
     id: string
+}
+
+export type PersonWithRoles = Person & {
+  roles: Role[]
 }
 
 @ObjectType()

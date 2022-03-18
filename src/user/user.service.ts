@@ -12,6 +12,7 @@ import { Privilege, PrivilegesConnection } from '../privileges/models/privileges
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import { atob, btoa, code2Session, edgifyByCreatedAt, now, UpdateUserArgs2User } from '../tool'
 import {
+  AuthenticationInfo,
   CheckUserResult,
   RegisterUserArgs,
   UpdateUserArgs,
@@ -24,6 +25,87 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  /**
+   * 管理员通过认证
+   * @param actorId 管理员id
+   * @param id 用户id
+   * @param info 认证信息
+   */
+  async authenticateUser (actorId: string, id: string, info: AuthenticationInfo) {
+    // 将info附加到用户画像并添加credential信息
+    const query = `
+      query v($actorId: string, $id: string) {
+        v(func: uid($actorId)) @filter(type(Admin)) { v as uid }
+        u(func: uid($id)) @filter(type(User)) { 
+          u as uid
+        }
+        n(func: uid($id)) @filter(type(User)) {
+          credential @filter(type(Credential)) {
+            n as uid
+          }
+        }
+        user(func: uid(u)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 1) )'
+
+    delete info.images
+    const mutation = {
+      uid: id,
+      'dgraph.type': 'User',
+      updatedAt: now(),
+      ...info,
+      'school|private': false,
+      'grade|private': false,
+      'gender|private': false,
+      'subCampus|private': false,
+      'college|private': false,
+      credential: {
+        uid: '_:credential',
+        'dgraph.type': 'Credential',
+        createdAt: now(),
+        creator: {
+          uid: actorId,
+          credentials: {
+            uid: '_:credential'
+          }
+        },
+        to: {
+          uid: id,
+          credential: {
+            uid: '_:credential'
+          }
+        }
+      }
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+      user: User[]
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $actorId: actorId, $id: id }
+    })
+
+    const user = res.json.user[0]
+    Object.assign(user, info)
+
+    return user
+  }
+
+  async addInfoForAuthenUser (id: string, info: AuthenticationInfo) {
+    throw new Error('Method not implemented.')
+  }
+
+  async autoAuthenUserSelf (id: string, token: string) {
+    throw new Error('Method not implemented.')
   }
 
   async credential (id: string) {
