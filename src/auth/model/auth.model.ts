@@ -1,7 +1,57 @@
+import { Field, InterfaceType, ObjectType } from '@nestjs/graphql'
+
 import { AppAbility } from '../../casl/models/casl.model'
+import { Connection } from '../../connections/models/connections.model'
 import { ICredential } from '../../credentials/models/credentials.model'
 import { Privilege } from '../../privileges/models/privileges.model'
-import { User } from '../../user/models/user.model'
+import { GENDER, User } from '../../user/models/user.model'
+
+@InterfaceType()
+export abstract class Authenable {
+  @Field()
+    id: string
+
+  @Field()
+    createdAt: string
+}
+
+@ObjectType({
+  implements: [Authenable]
+})
+export class UserAuthenInfo implements Authenable {
+  @Field()
+    id: string
+
+  @Field()
+    createdAt: string
+
+  @Field({ description: '头像' })
+    avatarImageUrl: string
+
+  @Field({ description: '学号' })
+    studentId: number | null
+
+  @Field({ description: '学院' })
+    college: string
+
+  @Field({ description: '校区' })
+    subCampus: string
+
+  @Field({ description: '学校' })
+    school: string
+
+  @Field({ description: '年级' })
+    grade: string
+
+  @Field(of => GENDER, { description: '性别' })
+    gender: GENDER
+
+  @Field(of => [String], { nullable: true, description: '有效信息图片(e.g. 校园卡照片)的链接' })
+    images?: string[]
+}
+
+@ObjectType()
+export class UserAuthenInfosConnection extends Connection<UserAuthenInfo>(UserAuthenInfo) {}
 
 export interface Payload {
   id: string
@@ -12,10 +62,6 @@ export enum Role {
   User = 'User',
   Admin = 'Admin',
   None = 'None'
-}
-
-export interface InviteTokenPayload {
-  id: string
 }
 
 export type UserWithRoles = User & {
@@ -36,7 +82,3 @@ export interface IPolicyHandler {
 type PolicyHandlerCallback = (ability: AppAbility) => boolean
 
 export type PolicyHandler = IPolicyHandler | PolicyHandlerCallback
-
-export interface SubscriptionParams {
-  authToken: string
-}
