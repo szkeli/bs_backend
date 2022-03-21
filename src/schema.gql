@@ -755,6 +755,9 @@ type UserAuthenInfo implements Authenable {
   """提交信息的用户"""
   to: User!
 
+  """审核信息的删除者"""
+  delete: Delete
+
   """头像"""
   avatarImageUrl: String!
 
@@ -786,6 +789,9 @@ interface Authenable {
 
   """提交信息的用户"""
   to: User!
+
+  """审核信息的删除者"""
+  delete: Delete
 }
 
 type UserAuthenInfosConnection {

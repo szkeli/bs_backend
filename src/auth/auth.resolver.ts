@@ -4,6 +4,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { Admin } from '../admin/models/admin.model'
 import { AuthenAdminPolicyHandler, AuthenUserPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { ICredential } from '../credentials/models/credentials.model'
+import { Delete } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { AuthenticateUserArgs, PersonWithRoles, User } from '../user/models/user.model'
 import { AuthService } from './auth.service'
@@ -17,6 +18,11 @@ export class AuthResolver {
   @ResolveField(of => User, { description: '提交信息的用户' })
   async to (@Parent() authenable: Authenable) {
     return await this.authService.to(authenable.id)
+  }
+
+  @ResolveField(of => Delete, { description: '审核信息的删除者', nullable: true })
+  async delete (@Parent() authenable: Authenable) {
+    return await this.authService.delete(authenable.id)
   }
 
   @Query(of => UserAuthenInfosConnection, { description: '待通过审核的用户信息' })

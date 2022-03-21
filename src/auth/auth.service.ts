@@ -9,6 +9,7 @@ import { SystemAdminNotFoundException, UserHadAuthenedException, UserNotFoundExc
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
+import { Delete } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { atob, now, relayfyArrayForward } from '../tool'
 import { UserService } from '../user/user.service'
@@ -22,6 +23,22 @@ export class AuthService {
     private readonly adminService: AdminService,
     private readonly dbService: DbService
   ) {}
+
+  async delete (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(UserAuthenInfo)) {
+          d as delete @filter(type(Delete))
+        }
+        delete(func: uid(d)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{delete: Delete[]}>({ query, vars: { $id: id } })
+    return res.delete[0]
+  }
 
   async to (id: string) {
     const query = `
