@@ -43,7 +43,7 @@ export class AuthService {
   async to (id: string) {
     const query = `
       query v($id: string) {
-        var(func: uid($id)) @filter(type(UserAuthenInfo) and not has(delete)) {
+        var(func: uid($id)) @filter(type(UserAuthenInfo)) {
           u as to @filter(type(User))
         }
         user(func: uid(u)) {
