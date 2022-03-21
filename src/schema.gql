@@ -2019,18 +2019,6 @@ type Mutation {
     code: String
   ): User!
 
-  """认证用户"""
-  authenticateUser(
-    """待认证的用户id"""
-    id: String!
-
-    """自助认证时 szu 后端提供的token (以保证不被篡改，用 jwt 实现)"""
-    token: String
-
-    """手动认证时的认证信息"""
-    info: AuthenticationInfo
-  ): User!
-
   """用于调试的接口: 根据userId 删除一个刚创建的用户，该用户不能有点赞评论发帖等操作"""
   pureDeleteUser(userId: String!): Boolean!
 
@@ -2106,6 +2094,24 @@ type Mutation {
     """管理员密码"""
     sign: String!
   ): Admin!
+
+  """认证用户"""
+  authenticateUser(
+    """待认证的用户id"""
+    id: String!
+
+    """自助认证时 szu 后端提供的token (以保证不被篡改，用 jwt 实现)"""
+    token: String
+
+    """手动认证时的认证信息"""
+    info: AuthenticationInfo
+  ): User!
+
+  """已存在的管理员认证一个新注册的管理员"""
+  authenAdmin(to: String!): ICredential!
+
+  """管理员认证一个新注册的用户"""
+  authenUser(to: String!): ICredential!
 
   """以id删除一个主题"""
   deleteSubject(id: String!): Delete!
@@ -2245,12 +2251,6 @@ type Mutation {
   """拉黑一个用户"""
   addBlockOnUser(id: String!, description: String!): Block!
 
-  """已存在的管理员认证一个新注册的管理员"""
-  authenAdmin(to: String!): ICredential!
-
-  """管理员认证一个新注册的用户"""
-  authenUser(to: String!): ICredential!
-
   """置顶一个帖子"""
   addPinOnPost(postId: String!): Pin!
 
@@ -2274,6 +2274,22 @@ type Mutation {
 
   """设置创建时间小于当前系统时间的所有通知为已读"""
   setReadAllNotifications: Boolean!
+}
+
+input UserStringPropMap {
+  """属性的值"""
+  value: String!
+
+  """是否私有属性"""
+  isPrivate: Boolean = false
+}
+
+input UserGenderPropMap {
+  """属性的值"""
+  value: GENDER!
+
+  """是否私有属性"""
+  isPrivate: Boolean = false
 }
 
 input AuthenticationInfo {
@@ -2300,22 +2316,6 @@ input AuthenticationInfo {
 
   """有效信息图片(e.g. 校园卡照片)的链接"""
   images: [String!]!
-}
-
-input UserStringPropMap {
-  """属性的值"""
-  value: String!
-
-  """是否私有属性"""
-  isPrivate: Boolean = false
-}
-
-input UserGenderPropMap {
-  """属性的值"""
-  value: GENDER!
-
-  """是否私有属性"""
-  isPrivate: Boolean = false
 }
 
 type Subscription {

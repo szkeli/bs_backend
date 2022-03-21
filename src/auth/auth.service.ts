@@ -1,13 +1,16 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import { verify } from 'jsonwebtoken'
 
-import { LoginResult } from 'src/user/models/user.model'
+import { AuthenticationInfo, LoginResult, User } from 'src/user/models/user.model'
 
 import { AdminService } from '../admin/admin.service'
+import { SystemAdminNotFoundException, UserHadAuthenedException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
+import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, relayfyArrayForward } from '../tool'
+import { atob, now, relayfyArrayForward } from '../tool'
 import { UserService } from '../user/user.service'
 import { Payload, UserAuthenInfo } from './model/auth.model'
 
@@ -19,6 +22,386 @@ export class AuthService {
     private readonly adminService: AdminService,
     private readonly dbService: DbService
   ) {}
+
+  async authenUser (id: string, to: string) {
+    const now = new Date().toISOString()
+    const query = `
+      query v($adminId: string, $to: string) {
+        # 授权的管理员存在
+        v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
+        # 被授权的用户存在
+        u(func: uid($to)) @filter(type(User)) { u as uid }
+        # 授权者已认证
+        x(func: uid($adminId)) @filter(type(Admin)) {
+          credential @filter(type(Credential)) {
+            x as uid
+          }
+        }
+        # 被授权者未认证
+        y(func: uid($to)) @filter(type(User)) {
+          credential @filter(type(Credential)) {
+            y as uid
+          }
+        }
+      }
+    `
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 0) )'
+    const mutation = {
+      uid: '_:credential',
+      'dgraph.type': 'Credential',
+      createdAt: now,
+      to: {
+        uid: to,
+        credential: {
+          uid: '_:credential'
+        }
+      },
+      creator: {
+        uid: id,
+        credentials: {
+          uid: '_:credential'
+        }
+      }
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+      x: Array<{credential: {uid: string}}>
+      y: Array<{credential: {uid: string}}>
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: {
+        $adminId: id,
+        $to: to
+      }
+    })
+
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`管理员 ${id} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`用户 ${to} 不存在`)
+    }
+    if (res.json.x.length !== 1) {
+      throw new ForbiddenException(`管理员 ${id} 未认证`)
+    }
+    if (res.json.y.length !== 0) {
+      throw new ForbiddenException(`用户 ${to} 已认证`)
+    }
+
+    return {
+      createdAt: now,
+      id: res.uids.get('credential')
+    }
+  }
+
+  /**
+   * 授权一个已注册管理员
+   * @param i 已授权的管理员
+   * @param to 未授权的管理员
+   * @returns {Promise<Credential>}
+   */
+  async authenAdmin (i: string, to: string): Promise<ICredential> {
+    if (i === to) {
+      throw new ForbiddenException('不能对自己授权')
+    }
+    const now = new Date().toISOString()
+
+    // 1. 当前认证的管理员存在
+    // 2. 当前管理员已被认证
+    // 3. 被认证的管理员存在
+    // 4. 被认证的管理员未被认证
+    const condition1 = '@if( eq(len(x), 0) and eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) )'
+
+    // 当前授权者是system
+    const condition2 = '@if( eq(len(x), 0) and eq(len(v), 1) and eq(len(u), 1) and eq(len(s), 1) )'
+    const query = `
+          query v($i: string, $to: string) {
+            # 授权者存在
+            v(func: uid($i)) @filter(type(Admin)) { v as uid }
+            # 被授权者存在
+            u(func: uid($to)) @filter(type(Admin)) { u as uid }
+            # 授权者是system
+            s(func: uid($i)) @filter(type(Admin) and eq(userId, "system") and uid($i)) { s as uid }
+            # 被授权者的授权
+            x(func: uid($to)) @filter(type(Admin)) { 
+              credential @filter(type(Credential)) {
+                x as uid
+              }
+            }
+            # 授权者的授权
+            q(func: uid($i)) @filter(type(Admin)) {
+              credential @filter(type(Credential)) {
+                q as uid
+              }
+            }
+          }
+        `
+    const mutation = {
+      uid: '_:credential',
+      'dgraph.type': 'Credential',
+      createdAt: now,
+      to: {
+        uid: to,
+        credential: {
+          uid: '_:credential'
+        }
+      },
+      creator: {
+        uid: i,
+        credentials: {
+          uid: '_:credential'
+        }
+      }
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+      s: Array<{uid: string}>
+      x: Array<{credential: {uid: string}}>
+      q: Array<{credential: {uid: string}}>
+    }>({
+      mutations: [
+        { mutation, condition: condition1 },
+        { mutation, condition: condition2 }
+      ],
+      query,
+      vars: {
+        $i: i,
+        $to: to
+      }
+    })
+
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`授权者 ${i} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`管理员 ${to} 不存在`)
+    }
+    if (res.json.x.length !== 0) {
+      throw new ForbiddenException(`管理员 ${to} 已被认证`)
+    }
+    if (res.json.q.length === 0 && res.json.s.length === 0) {
+      throw new ForbiddenException(`授权者 ${i} 未认证`)
+    }
+
+    return {
+      createdAt: now,
+      id: res.uids.get('credential')
+    }
+  }
+
+  /**
+   * 管理员通过认证
+   * @param actorId 管理员id
+   * @param id 用户id
+   * @param info 认证信息
+   */
+  async authenticateUser (actorId: string, id: string, info: AuthenticationInfo) {
+    // 将info附加到用户画像并添加credential信息
+    const query = `
+      query v($actorId: string, $id: string) {
+        v(func: uid($actorId)) @filter(type(Admin)) { v as uid }
+        u(func: uid($id)) @filter(type(User)) { 
+          u as uid
+        }
+        n(func: uid($id)) @filter(type(User)) {
+          credential @filter(type(Credential)) {
+            n as uid
+          }
+        }
+        user(func: uid(u)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) )'
+
+    delete info.images
+    const mutation = {
+      uid: id,
+      'dgraph.type': 'User',
+      updatedAt: now(),
+      ...info,
+      'school|private': false,
+      'grade|private': false,
+      'gender|private': false,
+      'subCampus|private': false,
+      'college|private': false,
+      credential: {
+        uid: '_:credential',
+        'dgraph.type': 'Credential',
+        createdAt: now(),
+        creator: {
+          uid: actorId,
+          credentials: {
+            uid: '_:credential'
+          }
+        },
+        to: {
+          uid: id,
+          credential: {
+            uid: '_:credential'
+          }
+        }
+      }
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+      n: Array<{uid: string}>
+      user: User[]
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $actorId: actorId, $id: id }
+    })
+
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`管理员 ${actorId} 不存在`)
+    }
+    if (res.json.u.length !== 1) {
+      throw new ForbiddenException(`用户 ${id} 不存在`)
+    }
+    if (res.json.n.length !== 0) {
+      throw new ForbiddenException(`用户 ${id} 已认证`)
+    }
+
+    const user = res.json.user[0]
+    Object.assign(user, info)
+
+    return user
+  }
+
+  async addInfoForAuthenUser (id: string, info: AuthenticationInfo) {
+    const query = `
+      query v($id: string) {
+        v(func: uid($id)) @filter(type(User)) { v as uid }
+        u(func: type(UserAuthenInfo)) @filter(uid_in(to, $id)) {
+          u as uid
+        }
+        user(func: uid(v)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 0) )'
+    const mutation = {
+      uid: '_:user-authen-info',
+      'dgraph.type': 'UserAuthenInfo',
+      createdAt: now(),
+      ...info,
+      to: {
+        uid: id
+      }
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+      user: User[]
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id }
+    })
+
+    if (res.json.v.length !== 1) {
+      throw new ForbiddenException(`用户 ${id} 不存在`)
+    }
+    if (res.json.u.length !== 0) {
+      throw new ForbiddenException(`用户 ${id} 已提交认证信息`)
+    }
+
+    return res.json.user[0]
+  }
+
+  /**
+   * 用户从可信通道自我认证，比如从校园网提供自己的学生信息
+   * @param id 用户id
+   * @param token token
+   */
+  async autoAuthenUserSelf (id: string, token: string) {
+    // 测试并解析token
+    const tokenRes = verify(token, process.env.USER_AUTHEN_JWT_SECRET) as AuthenticationInfo
+    const query = `
+      query v($id: string) {
+        # 系统管理员
+        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
+        u(func: uid($id)) @filter(type(User)) { u as uid }
+        # 用户未通过认证
+        v(func: uid($id)) @filter(type(User)) {
+          credential @filter(type(Credential)) {
+            v as uid
+          }
+        }
+        user(func: uid(u)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) and eq(len(v), 0) and eq(len(system), 1) )'
+    const mutation = {
+      uid: id,
+      // TODO 清除res.payload中不必要的信息
+      ...tokenRes,
+      updatedAt: now(),
+      'school|private': false,
+      'grade|private': false,
+      'gender|private': false,
+      'subCampus|private': false,
+      'college|private': false,
+      credential: {
+        uid: '_:credential',
+        'dgraph.type': 'Credential',
+        createdAt: now(),
+        creator: {
+          uid: 'uid(system)',
+          credentials: {
+            uid: '_:credential'
+          }
+        },
+        to: {
+          uid: id,
+          credential: {
+            uid: '_:credential'
+          }
+        }
+      }
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      s: Array<{uid: string}>
+      u: Array<{uid: string}>
+      v: Array<{uid: string}>
+      user: User[]
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id }
+    })
+
+    if (res.json.s.length !== 1) {
+      throw new SystemAdminNotFoundException()
+    }
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+    if (res.json.v.length !== 0) {
+      throw new UserHadAuthenedException(id)
+    }
+
+    const user = res.json.user[0]
+
+    Object.assign(user, tokenRes)
+
+    return user
+  }
 
   async userAuthenInfos ({ orderBy, first, after, last, before }: RelayPagingConfigArgs) {
     after = atob(after)

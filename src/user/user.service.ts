@@ -1,11 +1,10 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { randomUUID } from 'crypto'
 import { DgraphClient } from 'dgraph-js'
-import { verify } from 'jsonwebtoken'
 
 import { DbService } from 'src/db/db.service'
 
-import { SystemAdminNotFoundException, UserHadAuthenedException, UserNotFoundException } from '../app.exception'
+import { UserNotFoundException } from '../app.exception'
 import { UserWithRoles, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
@@ -14,7 +13,6 @@ import { Privilege, PrivilegesConnection } from '../privileges/models/privileges
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import { atob, btoa, code2Session, edgifyByCreatedAt, now, UpdateUserArgs2User } from '../tool'
 import {
-  AuthenticationInfo,
   CheckUserResult,
   RegisterUserArgs,
   UpdateUserArgs,
@@ -27,217 +25,6 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
-  }
-
-  /**
-   * 管理员通过认证
-   * @param actorId 管理员id
-   * @param id 用户id
-   * @param info 认证信息
-   */
-  async authenticateUser (actorId: string, id: string, info: AuthenticationInfo) {
-    // 将info附加到用户画像并添加credential信息
-    const query = `
-      query v($actorId: string, $id: string) {
-        v(func: uid($actorId)) @filter(type(Admin)) { v as uid }
-        u(func: uid($id)) @filter(type(User)) { 
-          u as uid
-        }
-        n(func: uid($id)) @filter(type(User)) {
-          credential @filter(type(Credential)) {
-            n as uid
-          }
-        }
-        user(func: uid(u)) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) )'
-
-    delete info.images
-    const mutation = {
-      uid: id,
-      'dgraph.type': 'User',
-      updatedAt: now(),
-      ...info,
-      'school|private': false,
-      'grade|private': false,
-      'gender|private': false,
-      'subCampus|private': false,
-      'college|private': false,
-      credential: {
-        uid: '_:credential',
-        'dgraph.type': 'Credential',
-        createdAt: now(),
-        creator: {
-          uid: actorId,
-          credentials: {
-            uid: '_:credential'
-          }
-        },
-        to: {
-          uid: id,
-          credential: {
-            uid: '_:credential'
-          }
-        }
-      }
-    }
-
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string}>
-      n: Array<{uid: string}>
-      user: User[]
-    }>({
-      query,
-      mutations: [{ mutation, condition }],
-      vars: { $actorId: actorId, $id: id }
-    })
-
-    if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`管理员 ${actorId} 不存在`)
-    }
-    if (res.json.u.length !== 1) {
-      throw new ForbiddenException(`用户 ${id} 不存在`)
-    }
-    if (res.json.n.length !== 0) {
-      throw new ForbiddenException(`用户 ${id} 已认证`)
-    }
-
-    const user = res.json.user[0]
-    Object.assign(user, info)
-
-    return user
-  }
-
-  async addInfoForAuthenUser (id: string, info: AuthenticationInfo) {
-    const query = `
-      query v($id: string) {
-        v(func: uid($id)) @filter(type(User)) { v as uid }
-        u(func: type(UserAuthenInfo)) @filter(uid_in(to, $id)) {
-          u as uid
-        }
-        user(func: uid(v)) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 0) )'
-    const mutation = {
-      uid: '_:user-authen-info',
-      'dgraph.type': 'UserAuthenInfo',
-      createdAt: now(),
-      ...info,
-      to: {
-        uid: id
-      }
-    }
-
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string}>
-      user: User[]
-    }>({
-      query,
-      mutations: [{ mutation, condition }],
-      vars: { $id: id }
-    })
-
-    if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`用户 ${id} 不存在`)
-    }
-    if (res.json.u.length !== 0) {
-      throw new ForbiddenException(`用户 ${id} 已提交认证信息`)
-    }
-
-    return res.json.user[0]
-  }
-
-  /**
-   * 直接通过用户认证
-   * @param id 用户id
-   * @param token token
-   */
-
-  async autoAuthenUserSelf (id: string, token: string) {
-    // 测试并解析token
-    const tokenRes = verify(token, process.env.USER_AUTHEN_JWT_SECRET) as AuthenticationInfo
-    const query = `
-      query v($id: string) {
-        # 系统管理员
-        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
-        u(func: uid($id)) @filter(type(User)) { u as uid }
-        # 用户未通过认证
-        v(func: uid($id)) @filter(type(User)) {
-          credential @filter(type(Credential)) {
-            v as uid
-          }
-        }
-        user(func: uid(u)) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const condition = '@if( eq(len(u), 1) and eq(len(v), 0) and eq(len(system), 1) )'
-    const mutation = {
-      uid: id,
-      // TODO 清除res.payload中不必要的信息
-      ...tokenRes,
-      updatedAt: now(),
-      'school|private': false,
-      'grade|private': false,
-      'gender|private': false,
-      'subCampus|private': false,
-      'college|private': false,
-      credential: {
-        uid: '_:credential',
-        'dgraph.type': 'Credential',
-        createdAt: now(),
-        creator: {
-          uid: 'uid(system)',
-          credentials: {
-            uid: '_:credential'
-          }
-        },
-        to: {
-          uid: id,
-          credential: {
-            uid: '_:credential'
-          }
-        }
-      }
-    }
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      s: Array<{uid: string}>
-      u: Array<{uid: string}>
-      v: Array<{uid: string}>
-      user: User[]
-    }>({
-      query,
-      mutations: [{ mutation, condition }],
-      vars: { $id: id }
-    })
-
-    if (res.json.s.length !== 1) {
-      throw new SystemAdminNotFoundException()
-    }
-    if (res.json.u.length !== 1) {
-      throw new UserNotFoundException(id)
-    }
-    if (res.json.v.length !== 0) {
-      throw new UserHadAuthenedException(id)
-    }
-
-    const user = res.json.user[0]
-
-    Object.assign(user, tokenRes)
-
-    return user
   }
 
   async credential (id: string) {
