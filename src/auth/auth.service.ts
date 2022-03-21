@@ -60,7 +60,6 @@ export class AuthService {
       infos: UserAuthenInfo[]
     }>({ query, vars: { $after: after } })
 
-    console.error(res)
     return relayfyArrayForward({
       totalCount: res.totalCount,
       startO: res.startInfo,

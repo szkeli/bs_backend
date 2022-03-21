@@ -4,7 +4,7 @@ import { AppAbility } from '../../casl/models/casl.model'
 import { Connection } from '../../connections/models/connections.model'
 import { ICredential } from '../../credentials/models/credentials.model'
 import { Privilege } from '../../privileges/models/privileges.model'
-import { GENDER, User } from '../../user/models/user.model'
+import { AuthenticationInfo, GENDER, User } from '../../user/models/user.model'
 
 @InterfaceType()
 export abstract class Authenable {
