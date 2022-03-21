@@ -8,7 +8,7 @@ import {
 } from 'dgraph-js'
 import { readFileSync } from 'fs'
 
-import { CommitConditionalUpertsProps, CommitConditionalUpsertWithVarsProps, CommitQueryWithVarsProps } from './model/db.model'
+import { CommitConditionalUpertsProps, CommitConditionalUpsertWithVarsProps, CommitMutationProps, CommitQueryWithVarsProps } from './model/db.model'
 @Injectable()
 export class DbService {
   private readonly dgraphStub: DgraphClientStub
@@ -43,6 +43,43 @@ export class DbService {
     op.setSchema(schema)
     const res = await this.dgraph.alter(op)
     return res
+  }
+
+  async commitMutation<U, V>({ mutations, query, vars }: CommitMutationProps) {
+    const txn = this.dgraph.newTxn()
+    try {
+      if (mutations.length === 0) {
+        throw new ForbiddenException('变更不能为空')
+      }
+      const mus = mutations.map(m => {
+        const mu = new Mutation()
+        if (m.delete) {
+          mu.setDeleteJson(m.mutation)
+        } else {
+          mu.setSetJson(m.mutation)
+        }
+        mu.setCond(m.condition)
+        return mu
+      })
+
+      const req = new Request()
+      if (vars && Object.entries(vars).length !== 0) {
+        const _vars = req.getVarsMap()
+        Object.entries(vars).forEach(r => _vars.set(r[0], r[1]))
+      }
+      req.setQuery(query)
+      req.setMutationsList(mus)
+      req.setCommitNow(true)
+
+      const res = await txn.doRequest(req)
+
+      return {
+        uids: res.getUidsMap() as unknown as U,
+        json: res.getJson() as unknown as V
+      }
+    } finally {
+      await txn.discard()
+    }
   }
 
   async commitConditionalDeletions<U, V> ({ mutations, query, vars }: CommitConditionalUpertsProps) {

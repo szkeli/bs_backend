@@ -31,6 +31,18 @@ export interface CommitConditionalUpertsProps {
   vars: Vars
 }
 
+export interface CommitMutationProps {
+  mutations: Mutations[]
+  query: string
+  vars: Vars
+}
+
+export interface Mutations {
+  mutation: object
+  condition: string
+  delete: boolean
+}
+
 export interface MutationsWithCondition {
   mutation: object
   condition: string
