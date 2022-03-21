@@ -23,6 +23,23 @@ export class AuthService {
     private readonly dbService: DbService
   ) {}
 
+  async to (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(UserAuthenInfo)) {
+          u as to @filter(type(User))
+        }
+        user(func: uid(u)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{user: User[]}>({ query, vars: { $id: id } })
+
+    return res.user[0]
+  }
+
   async authenUser (id: string, to: string) {
     const now = new Date().toISOString()
     const query = `

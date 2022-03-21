@@ -1,5 +1,5 @@
 import { ForbiddenException } from '@nestjs/common'
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { Admin } from '../admin/models/admin.model'
 import { AuthenAdminPolicyHandler, AuthenUserPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
@@ -14,7 +14,12 @@ import { Authenable, Role, UserAuthenInfosConnection } from './model/auth.model'
 export class AuthResolver {
   constructor (private readonly authService: AuthService) {}
 
-  @Query(of => UserAuthenInfosConnection)
+  @ResolveField(of => User, { description: '提交信息的用户' })
+  async to (@Parent() authenable: Authenable) {
+    return await this.authService.to(authenable.id)
+  }
+
+  @Query(of => UserAuthenInfosConnection, { description: '待通过审核的用户信息' })
   @Roles(Role.Admin)
   async userAuthenInfos (@Args() args: RelayPagingConfigArgs) {
     return await this.authService.userAuthenInfos(args)

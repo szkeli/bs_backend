@@ -752,6 +752,9 @@ type UserAuthenInfo implements Authenable {
   id: String!
   createdAt: String!
 
+  """提交信息的用户"""
+  to: User!
+
   """头像"""
   avatarImageUrl: String!
 
@@ -780,6 +783,9 @@ type UserAuthenInfo implements Authenable {
 interface Authenable {
   id: String!
   createdAt: String!
+
+  """提交信息的用户"""
+  to: User!
 }
 
 type UserAuthenInfosConnection {
@@ -1582,6 +1588,8 @@ type Query {
 
   """获取所有管理员"""
   admins(first: Int = 10, offset: Int = 0): AdminsConnection!
+
+  """待通过审核的用户信息"""
   userAuthenInfos(
     """最新的n个对象"""
     first: Int
