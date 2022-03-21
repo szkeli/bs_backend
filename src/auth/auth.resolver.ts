@@ -21,7 +21,7 @@ export class AuthResolver {
   @NoAuth()
   async login (@Args() args: PersonLoginArgs): Promise<LoginResult> {
     const v = sign_calculus(args.sign)
-    return await this.authService.login(args.userId, v)
+    return await this.authService.login(args.userId, args.id, v)
   }
 
   @Mutation(of => LoginResult, { description: '通过小程序的code进行登录' })

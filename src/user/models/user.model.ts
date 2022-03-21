@@ -60,8 +60,11 @@ export class UserGenderPropMap {
 
 @ArgsType()
 export class PersonLoginArgs {
-  @Field({ description: '用户账号' })
-    userId: string
+  @Field({ description: '用户账号', nullable: true })
+    userId?: string | null
+
+  @Field({ description: '用户id', nullable: true })
+    id?: string | null
 
   @Field({ description: '用户密码' })
     sign: string

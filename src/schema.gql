@@ -2100,7 +2100,10 @@ type Mutation {
   """登录"""
   login(
     """用户账号"""
-    userId: String!
+    userId: String
+
+    """用户id"""
+    id: String
 
     """用户密码"""
     sign: String!

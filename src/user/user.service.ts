@@ -5,7 +5,7 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 
 import { UserNotFoundException } from '../app.exception'
-import { UserWithRoles, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
+import { UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
@@ -13,7 +13,6 @@ import { Privilege, PrivilegesConnection } from '../privileges/models/privileges
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import { atob, btoa, code2Session, edgifyByCreatedAt, now, UpdateUserArgs2User } from '../tool'
 import {
-  CheckUserResult,
   RegisterUserArgs,
   UpdateUserArgs,
   User,
@@ -154,74 +153,6 @@ export class UserService {
       `
     const res = await this.dbService.commitQuery<{user: User[]}>({ query, vars: { $uid: id } })
     return res.user[0]
-  }
-
-  async checkUserByCode (code: string) {
-    const { openId, unionId } = await code2Session(code)
-    const _now = now()
-    const query = `
-      query v($openId: string, $unionId: string) {
-        user(func: type(User)) @filter(eq(openId, $openId) and eq(unionId, $unionId)) {
-          id: v as uid
-          expand(_all_)
-          roles: dgraph.type
-        }
-      }
-    `
-    const condition = '@if( eq(len(v), 1) )'
-    const mutation = {
-      uid: 'uid(v)',
-      lastLoginedAt: _now
-    }
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      user: UserWithRoles[]
-    }>({
-      mutations: [{ mutation, condition }],
-      vars: {
-        $openId: openId,
-        $unionId: unionId
-      },
-      query
-    })
-
-    return res.json.user[0]
-  }
-
-  async checkUserPasswordAndGetUser (userId: string, sign: string) {
-    if (userId.length <= 2) {
-      throw new ForbiddenException('userId 不能少于3个字符')
-    }
-    const query = `
-      query v($sign: string, $userId: string) {
-        user(func: eq(userId, $userId)) @filter(type(User) OR type(Admin)) {
-          id: t as uid
-          expand(_all_)
-          success: checkpwd(sign, $sign)
-          roles: dgraph.type
-        }
-      }
-      `
-    const now = new Date().toISOString()
-    const condition = '@if( eq(len(t), 1) )'
-    const mutation = {
-      uid: 'uid(t)',
-      lastLoginedAt: now
-    }
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {user: CheckUserResult[]}>({
-      query,
-      vars: {
-        $userId: userId,
-        $sign: sign
-      },
-      mutations: [{ mutation, condition }]
-    })
-    if (res.json.user.length !== 1 || !res.json.user[0].success) {
-      throw new ForbiddenException('用户名或密码错误')
-    }
-    Object.assign(res.json.user[0], {
-      lastLoginedAt: now
-    })
-    return res.json.user[0]
   }
 
   async findSubjectsByUid (id: string, first: number, offset: number) {
