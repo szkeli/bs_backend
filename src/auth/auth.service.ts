@@ -220,19 +220,25 @@ export class AuthService {
     // 将info附加到用户画像并添加credential信息
     const query = `
       query v($actorId: string, $id: string) {
+        # 系统
+        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
+        # 管理员是否存在
         v(func: uid($actorId)) @filter(type(Admin)) { v as uid }
-        u(func: uid($id)) @filter(type(User)) { 
-          u as uid
-        }
+        # 用户是否存在
+        u(func: uid($id)) @filter(type(User)) { u as uid }
+        # 用户是否已经认证
         n(func: uid($id)) @filter(type(User)) {
           credential @filter(type(Credential)) {
             n as uid
           }
         }
+        # 用户原信息
         user(func: uid(u)) {
           id: uid
           expand(_all_)
         }
+        # 用户提交的认证信息
+        c(func: type(UserAuthenInfo)) @filter(uid_in(to, $id)) { c as uid }
       }
     `
     const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) )'
@@ -267,6 +273,26 @@ export class AuthService {
       }
     }
 
+    // 如果该用户存在提交的认证信息，标记删除它！
+    const deleteTheUserAuthenInfoCondi = '@if( eq(len(system), 1) and eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) and eq(len(c), 1) )'
+    const addDeleteOnTheUserAuthenInfoMutation = {
+      uid: 'uid(c)',
+      delete: {
+        uid: '_:delete',
+        'dgraph.type': 'Delete',
+        createdAt: now(),
+        description: '系统自动删除无效的UserAuthenInfo',
+        creator: {
+          uid: 'uid(system)',
+          deletes: {
+            uid: '_:delete'
+          }
+        },
+        to: {
+          uid: 'uid(c)'
+        }
+      }
+    }
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
@@ -274,7 +300,10 @@ export class AuthService {
       user: User[]
     }>({
       query,
-      mutations: [{ mutation, condition }],
+      mutations: [
+        { mutation, condition },
+        { mutation: addDeleteOnTheUserAuthenInfoMutation, condition: deleteTheUserAuthenInfoCondi }
+      ],
       vars: { $actorId: actorId, $id: id }
     })
 

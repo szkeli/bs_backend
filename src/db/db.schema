@@ -366,6 +366,8 @@ type Credential {
 type UserAuthenInfo {
   # 被审核的User
   to
+  # 删除
+  delete
   # 创建时间
   createdAt
   # 学号
