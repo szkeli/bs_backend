@@ -26,7 +26,7 @@ export class AuthService {
   async to (id: string) {
     const query = `
       query v($id: string) {
-        var(func: uid($id)) @filter(type(UserAuthenInfo)) {
+        var(func: uid($id)) @filter(type(UserAuthenInfo) and not has(delete)) {
           u as to @filter(type(User))
         }
         user(func: uid(u)) {
@@ -238,7 +238,7 @@ export class AuthService {
           expand(_all_)
         }
         # 用户提交的认证信息
-        c(func: type(UserAuthenInfo)) @filter(uid_in(to, $id)) { c as uid }
+        c(func: type(UserAuthenInfo)) @filter(uid_in(to, $id) and not has(delete)) { c as uid }
       }
     `
     const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) )'
@@ -327,7 +327,7 @@ export class AuthService {
     const query = `
       query v($id: string) {
         v(func: uid($id)) @filter(type(User)) { v as uid }
-        u(func: type(UserAuthenInfo)) @filter(uid_in(to, $id)) {
+        u(func: type(UserAuthenInfo)) @filter(uid_in(to, $id) and not has(delete)) {
           u as uid
         }
         user(func: uid(v)) {
