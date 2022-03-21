@@ -2006,18 +2006,6 @@ type Mutation {
     isAnonymous: Boolean = false
   ): Post!
 
-  """登录"""
-  login(
-    """用户账号"""
-    userId: String!
-
-    """用户密码"""
-    sign: String!
-  ): LoginResult!
-
-  """通过小程序的code进行登录"""
-  loginByCode(code: String!): LoginResult!
-
   """注册"""
   register(
     """用户名"""
@@ -2109,8 +2097,20 @@ type Mutation {
     sign: String!
   ): Admin!
 
+  """登录"""
+  login(
+    """用户账号"""
+    userId: String!
+
+    """用户密码"""
+    sign: String!
+  ): LoginResult!
+
+  """通过小程序的code进行登录"""
+  loginByCode(code: String!): LoginResult!
+
   """认证用户"""
-  authenticateUser(
+  authenUser(
     """待认证的用户id"""
     id: String!
 
@@ -2123,9 +2123,6 @@ type Mutation {
 
   """已存在的管理员认证一个新注册的管理员"""
   authenAdmin(to: String!): ICredential!
-
-  """管理员认证一个新注册的用户"""
-  authenUser(to: String!): ICredential!
 
   """以id删除一个主题"""
   deleteSubject(id: String!): Delete!

@@ -29,11 +29,9 @@ import { VotesService } from '../votes/votes.service'
 import {
   AdminAndUserWithPrivatePropsUnion,
   DeadlinesPagingArgs,
-  LoginResult,
   NotificationArgs,
   PagingConfigArgs,
   Person,
-  PersonLoginArgs,
   RegisterUserArgs,
   UpdateUserArgs,
   User,
@@ -55,19 +53,6 @@ export class UserResolver {
     private readonly commentsService: CommentService,
     private readonly notificationsService: NotificationsService
   ) {}
-
-  @Mutation(of => LoginResult, { description: '登录' })
-  @NoAuth()
-  async login (@Args() args: PersonLoginArgs): Promise<LoginResult> {
-    const v = sign_calculus(args.sign)
-    return await this.authService.login(args.userId, v)
-  }
-
-  @Mutation(of => LoginResult, { description: '通过小程序的code进行登录' })
-  @NoAuth()
-  async loginByCode (@Args('code') code: string) {
-    return await this.authService.loginByCode(code)
-  }
 
   @Mutation(of => User, { description: '注册' })
   @NoAuth()

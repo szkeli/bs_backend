@@ -1,19 +1,34 @@
 import { ForbiddenException } from '@nestjs/common'
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
+import { sign as sign_calculus } from 'src/tool'
+
 import { Admin } from '../admin/models/admin.model'
-import { AuthenAdminPolicyHandler, AuthenUserPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
+import { AuthenAdminPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { ICredential } from '../credentials/models/credentials.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { AuthenticateUserArgs, PersonWithRoles, User } from '../user/models/user.model'
+import { AuthenticateUserArgs, LoginResult, PersonLoginArgs, PersonWithRoles, User } from '../user/models/user.model'
 import { AuthService } from './auth.service'
-import { CheckPolicies, CurrentUser, Roles } from './decorator'
+import { CheckPolicies, CurrentUser, NoAuth, Roles } from './decorator'
 import { Authenable, Role, UserAuthenInfosConnection } from './model/auth.model'
 
 @Resolver(of => Authenable)
 export class AuthResolver {
   constructor (private readonly authService: AuthService) {}
+
+  @Mutation(of => LoginResult, { description: '登录' })
+  @NoAuth()
+  async login (@Args() args: PersonLoginArgs): Promise<LoginResult> {
+    const v = sign_calculus(args.sign)
+    return await this.authService.login(args.userId, v)
+  }
+
+  @Mutation(of => LoginResult, { description: '通过小程序的code进行登录' })
+  @NoAuth()
+  async loginByCode (@Args('code') code: string) {
+    return await this.authService.loginByCode(code)
+  }
 
   @ResolveField(of => User, { description: '提交信息的用户' })
   async to (@Parent() authenable: Authenable) {
