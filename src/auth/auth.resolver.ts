@@ -33,7 +33,7 @@ export class AuthResolver {
 
   @Mutation(of => User, { description: '认证用户' })
   @Roles(Role.Admin, Role.User)
-  async authenticateUser (@CurrentUser() person: PersonWithRoles, @Args() { id, token, info }: AuthenticateUserArgs) {
+  async authenUser (@CurrentUser() person: PersonWithRoles, @Args() { id, token, info }: AuthenticateUserArgs) {
     if (person.id === id && token) {
       return await this.authService.autoAuthenUserSelf(id, token)
     }
@@ -54,12 +54,5 @@ export class AuthResolver {
   @CheckPolicies(new MustWithCredentialPolicyHandler(), new AuthenAdminPolicyHandler())
   async authenAdmin (@CurrentUser() admin: Admin, @Args('to') to: string) {
     return await this.authService.authenAdmin(admin.id, to)
-  }
-
-  @Mutation(of => ICredential, { description: '管理员认证一个新注册的用户' })
-  @Roles(Role.Admin)
-  @CheckPolicies(new MustWithCredentialPolicyHandler(), new AuthenUserPolicyHandler())
-  async authenUser (@CurrentUser() admin: Admin, @Args('to')to: string) {
-    return await this.authService.authenUser(admin.id, to)
   }
 }
