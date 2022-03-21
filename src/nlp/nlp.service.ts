@@ -49,6 +49,9 @@ export class NlpService {
   }
 
   async sentimentAnalysis (content: string) {
+    if (content.length >= 200) {
+      content = content.slice(0, 200)
+    }
     return await this.nlpClient.SentimentAnalysis({
       Text: content,
       Mode: '3class'

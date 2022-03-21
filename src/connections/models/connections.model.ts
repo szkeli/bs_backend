@@ -22,6 +22,24 @@ export class ValueRef {
   name: string
 }
 
+interface IEdgeType<T> {
+  cursor: string
+  node: T
+}
+
+interface IPageInfoType {
+  startCursor: string
+  endCursor: string
+  hasPreviousPage: boolean
+  hasNextPage: boolean
+}
+
+export interface IPainatedType<T> {
+  edges: Array<IEdgeType<T>>
+  totalCount: number
+  pageInfo: IPageInfoType
+}
+
 export function Connection<GraphQLObject> (Ref: Type<GraphQLObject> | ValueRef) {
   @ObjectType(`${Ref.name}PageInfo`, { isAbstract: true })
   abstract class PageInfo implements RelayPageInfo {
@@ -59,14 +77,5 @@ export function Connection<GraphQLObject> (Ref: Type<GraphQLObject> | ValueRef) 
       totalCount: number
   }
 
-  return IConnection as unknown as new () => {
-    edges: Array<{node: GraphQLObject, cursor: string}>
-    pageInfo: {
-      startCursor: string
-      endCursor: string
-      hasNextPage: boolean
-      hasPreviousPage: boolean
-    }
-    totalCount: number
-  }
+  return IConnection as Type<IPainatedType<GraphQLObject>>
 }

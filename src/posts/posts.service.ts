@@ -237,12 +237,12 @@ export class PostsService {
           createdAt as createdAt
         
           hour as math(
-           2*exp(-(since(createdAt)/7200))
+           2*exp(-(since(createdAt)/72000))
           )
           dayScore as math(since(createdAt)/86400)
           score as math(votesCount + commentsCount + hour)
         }
-        posts as var(func: uid(v)) @filter(gt(val(score), 0) and lt(val(dayScore), 3))
+        posts as var(func: uid(v)) @filter(gt(val(score), 0) and lt(val(dayScore), 2))
 
         ${after ? q1 : ''}
         
