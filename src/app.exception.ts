@@ -8,7 +8,7 @@ export class UserNotFoundException extends HttpException {
 
 export class UserHadAuthenedException extends HttpException {
   constructor (id: string) {
-    super('用户 {id} 已认证', HttpStatus.FORBIDDEN)
+    super(`用户 ${id} 已认证`, HttpStatus.FORBIDDEN)
   }
 }
 
