@@ -4,7 +4,7 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
-import { UserNotFoundException } from '../app.exception'
+import { SystemAdminNotFoundException, UserNotFoundException } from '../app.exception'
 import { UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
@@ -437,7 +437,6 @@ export class UserService {
     if (Object.entries(args).length === 0) {
       throw new ForbiddenException('参数不能为空')
     }
-    const _args = UpdateUserArgs2User<UpdateUserArgs>(args)
     const _now = now()
     const query = `
       query v($id: string) {
@@ -459,39 +458,21 @@ export class UserService {
       uid: id,
       updatedAt: _now
     }
-    const updateWithCredentialCondition = '@if( eq(len(u), 1) and eq(len(c), 0) and eq(len(system), 1) )'
-    const updateWithCredentialMutation = {
-      uid: id,
-      updatedAt: _now,
-      credential: {
-        uid: '_:credential',
-        'dgraph.type': 'Credential',
-        createdAt: _now,
-        to: {
-          uid: id,
-          credential: {
-            uid: '_:credential'
-          }
-        },
-        creator: {
-          uid: 'uid(system)',
-          credentials: {
-            uid: '_:credential'
-          }
-        }
-      }
-    }
 
-    Object.assign(updateMutation, _args)
-    Object.assign(updateWithCredentialMutation, _args)
+    args.name && Object.defineProperty(updateMutation, 'name', args.name)
+    args.sign && Object.defineProperty(updateMutation, 'sign', args.sign)
+    'isCollegePrivate' in args && Object.defineProperty(updateMutation, 'college|private', args.isCollegePrivate)
+    'isGenderPrivate' in args && Object.defineProperty(updateMutation, '', args.isGenderPrivate)
+    'isGradePrivate' in args && Object.defineProperty(updateMutation, 'grade|private', args.isGradePrivate)
+    'isSchoolPrivate' in args && Object.defineProperty(updateMutation, 'school|private', args.isSchoolPrivate)
+
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       u: Array<{uid: string}>
       user: User[]
       system: Array<{uid: string}>
     }>({
       mutations: [
-        { mutation: updateMutation, condition: updateCondition },
-        { mutation: updateWithCredentialMutation, condition: updateWithCredentialCondition }
+        { mutation: updateMutation, condition: updateCondition }
       ],
       query,
       vars: {
@@ -499,12 +480,12 @@ export class UserService {
       }
     })
 
-    Object.assign(res.json.user[0], _args)
+    Object.assign(res.json.user[0], args)
     if (res.json.u.length !== 1) {
-      throw new ForbiddenException(`用户 ${id} 不存在`)
+      throw new UserNotFoundException(id)
     }
     if (res.json.system.length !== 1) {
-      throw new ForbiddenException('请先创建 userId 为 system 的管理员作为系统默认管理员')
+      throw new SystemAdminNotFoundException()
     }
     return res.json.user[0]
   }

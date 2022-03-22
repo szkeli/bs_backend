@@ -2025,31 +2025,7 @@ type Mutation {
   pureDeleteUser(userId: String!): Boolean!
 
   """更新用户画像"""
-  updateUser(
-    """学院"""
-    college: UserStringPropMap
-
-    """校区"""
-    subCampus: UserStringPropMap
-
-    """用户密码"""
-    sign: String
-
-    """用户昵称"""
-    name: String
-
-    """用户性别"""
-    gender: UserGenderPropMap
-
-    """用户头像链接"""
-    avatarImageUrl: String
-
-    """用户的学校"""
-    school: UserStringPropMap
-
-    """用户的年级"""
-    grade: UserStringPropMap
-  ): User!
+  updateUser(name: String, sign: String, isCollegePrivate: Boolean, isSchoolPrivate: Boolean, isGradePrivate: Boolean, isGenderPrivate: Boolean): User!
 
   """点赞一个帖子"""
   addUpvoteOnPost(postId: String!): Post!
@@ -2288,22 +2264,6 @@ type Mutation {
 
   """设置创建时间小于当前系统时间的所有通知为已读"""
   setReadAllNotifications: Boolean!
-}
-
-input UserStringPropMap {
-  """属性的值"""
-  value: String!
-
-  """是否私有属性"""
-  isPrivate: Boolean = false
-}
-
-input UserGenderPropMap {
-  """属性的值"""
-  value: GENDER!
-
-  """是否私有属性"""
-  isPrivate: Boolean = false
 }
 
 input AuthenticationInfo {

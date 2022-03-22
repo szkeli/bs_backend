@@ -111,29 +111,23 @@ export class AuthenticateUserArgs {
 
 @ArgsType()
 export class UpdateUserArgs {
-  @Field(of => UserStringPropMap, { description: '学院', nullable: true })
-    college?: UserStringPropMap
+  @Field({ nullable: true })
+    name?: string | null
 
-  @Field(of => UserStringPropMap, { description: '校区', nullable: true })
-    subCampus?: UserStringPropMap
+  @Field({ nullable: true })
+    sign?: string | null
 
-  @Field({ description: '用户密码', nullable: true })
-    sign?: RawSign
+  @Field(of => Boolean, { nullable: true })
+    isCollegePrivate?: boolean | null
 
-  @Field({ description: '用户昵称', nullable: true })
-    name?: string
+  @Field(of => Boolean, { nullable: true })
+    isSchoolPrivate?: boolean | null
 
-  @Field(of => UserGenderPropMap, { description: '用户性别', nullable: true })
-    gender?: UserGenderPropMap
+  @Field(of => Boolean, { nullable: true })
+    isGradePrivate?: boolean | null
 
-  @Field({ description: '用户头像链接', nullable: true })
-    avatarImageUrl?: string
-
-  @Field(of => UserStringPropMap, { description: '用户的学校', nullable: true })
-    school?: UserStringPropMap
-
-  @Field(of => UserStringPropMap, { description: '用户的年级', nullable: true })
-    grade?: UserStringPropMap
+  @Field(of => Boolean, { nullable: true })
+    isGenderPrivate?: boolean | null
 }
 
 @ArgsType()
