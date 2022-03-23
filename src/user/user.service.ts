@@ -11,7 +11,7 @@ import { ICredential } from '../credentials/models/credentials.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
-import { atob, btoa, code2Session, edgifyByCreatedAt, now, UpdateUserArgs2User } from '../tool'
+import { atob, btoa, code2Session, edgifyByCreatedAt, now } from '../tool'
 import {
   RegisterUserArgs,
   UpdateUserArgs,
@@ -459,12 +459,12 @@ export class UserService {
       updatedAt: _now
     }
 
-    args.name && Object.defineProperty(updateMutation, 'name', args.name)
-    args.sign && Object.defineProperty(updateMutation, 'sign', args.sign)
-    'isCollegePrivate' in args && Object.defineProperty(updateMutation, 'college|private', args.isCollegePrivate)
-    'isGenderPrivate' in args && Object.defineProperty(updateMutation, '', args.isGenderPrivate)
-    'isGradePrivate' in args && Object.defineProperty(updateMutation, 'grade|private', args.isGradePrivate)
-    'isSchoolPrivate' in args && Object.defineProperty(updateMutation, 'school|private', args.isSchoolPrivate)
+    args.name && Object.defineProperty(updateMutation, 'name', { value: args.name })
+    args.sign && Object.defineProperty(updateMutation, 'sign', { value: args.sign })
+    'isCollegePrivate' in args && Object.defineProperty(updateMutation, 'college|private', { value: args.isCollegePrivate })
+    'isGenderPrivate' in args && Object.defineProperty(updateMutation, '', { value: args.isGenderPrivate })
+    'isGradePrivate' in args && Object.defineProperty(updateMutation, 'grade|private', { value: args.isGradePrivate })
+    'isSchoolPrivate' in args && Object.defineProperty(updateMutation, 'school|private', { value: args.isSchoolPrivate })
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       u: Array<{uid: string}>
