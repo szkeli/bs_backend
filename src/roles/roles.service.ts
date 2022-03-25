@@ -177,10 +177,8 @@ export class RolesService {
       mutations: [
         { mutation, condition }
       ],
-      vars: { $actor: actor, $to: to }
+      vars: { $actor: actor, $to: to, $roleId: roleId }
     })
-
-    console.error(res)
 
     if (res.json.a.length !== 1) {
       throw new AdminNotFoundException(actor)
