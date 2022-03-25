@@ -211,5 +211,5 @@ export const getAvatarImageUrlByGender = function (gender: GENDER) {
     [GENDER.FEMALE]: `${baseUrl}/defaultAvatars/female.jpg`,
     [GENDER.NONE]: `${baseUrl}/defaultAvatars/anonymous.jpg`
   }
-  return defaultAvatars[gender]
+  return defaultAvatars[gender] ?? defaultAvatars[GENDER.NONE]
 }
