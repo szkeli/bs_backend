@@ -462,7 +462,7 @@ export class UserService {
     args.name && Object.defineProperty(updateMutation, 'name', { value: args.name })
     args.sign && Object.defineProperty(updateMutation, 'sign', { value: args.sign })
     'isCollegePrivate' in args && Object.defineProperty(updateMutation, 'college|private', { value: args.isCollegePrivate })
-    'isGenderPrivate' in args && Object.defineProperty(updateMutation, '', { value: args.isGenderPrivate })
+    'isGenderPrivate' in args && Object.defineProperty(updateMutation, 'gender|private', { value: args.isGenderPrivate })
     'isGradePrivate' in args && Object.defineProperty(updateMutation, 'grade|private', { value: args.isGradePrivate })
     'isSchoolPrivate' in args && Object.defineProperty(updateMutation, 'school|private', { value: args.isSchoolPrivate })
 
