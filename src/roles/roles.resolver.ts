@@ -7,7 +7,6 @@ import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { User, UsersConnectionWithRelay } from '../user/models/user.model'
 import { CreateRoleArgs, Role, RolesConnection } from './models/roles.model'
 import { RolesService } from './roles.service'
-
 @Resolver(of => Role)
 export class RolesResolver {
   constructor (private readonly rolesService: RolesService) {}
@@ -23,6 +22,7 @@ export class RolesResolver {
   }
 
   @Query(of => RolesConnection, { description: '所有的角色' })
+  @Roles(RoleGuard.Admin)
   async roles (@Args() args: RelayPagingConfigArgs) {
     return await this.rolesService.roles(args)
   }

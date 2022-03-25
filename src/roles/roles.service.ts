@@ -73,7 +73,7 @@ export class RolesService {
           createdAt
         }
         # 结束游标
-        endPost(func: uid(users), first: 1) {
+        endUser(func: uid(users), first: 1) {
           createdAt
         }
       }
