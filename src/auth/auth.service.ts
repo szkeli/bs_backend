@@ -4,14 +4,14 @@ import { JwtService } from '@nestjs/jwt'
 import { AuthenticationInfo, CheckUserResult, LoginResult, User } from 'src/user/models/user.model'
 
 import { AdminService } from '../admin/admin.service'
-import { SystemAdminNotFoundException, UserHadAuthenedException, UserNotFoundException } from '../app.exception'
+import { RolesNotAllExistException, SystemAdminNotFoundException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { Delete } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Role } from '../roles/models/roles.model'
-import { atob, btoa, code2Session, getAuthenticationInfo, getAvatarImageUrlByGender, now, relayfyArrayForward } from '../tool'
+import { atob, btoa, code2Session, getAuthenticationInfo, getAvatarImageUrlByGender, ids2String, now, relayfyArrayForward } from '../tool'
 import { UserService } from '../user/user.service'
 import { Payload, UserAuthenInfo, UserWithRoles } from './model/auth.model'
 
@@ -310,6 +310,7 @@ export class AuthService {
     const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) )'
 
     delete info.images
+    delete info.roles
     const mutation = {
       uid: id,
       'dgraph.type': 'User',
@@ -391,8 +392,12 @@ export class AuthService {
   }
 
   async addInfoForAuthenUser (id: string, info: AuthenticationInfo) {
+    const roleIds = info.roles
+    const roleIdsStr = ids2String(info.roles)
+
     const query = `
       query v($id: string) {
+        x(func: uid(${roleIdsStr})) @filter(type(Role)) { x as uid }
         v(func: uid($id)) @filter(type(User)) { v as uid }
         u(func: type(UserAuthenInfo)) @filter(uid_in(to, $id) and not has(delete)) {
           u as uid
@@ -404,6 +409,7 @@ export class AuthService {
       }
     `
     const avatarImageUrl = getAvatarImageUrlByGender(info.gender)
+    delete info.roles
     const condition = '@if( eq(len(v), 1) and eq(len(u), 0) )'
     const mutation = {
       uid: '_:user-authen-info',
@@ -416,21 +422,37 @@ export class AuthService {
       }
     }
 
+    const withRolesCondition = `@if( eq(len(v), 1) and eq(len(u), 0) and eq(len(x), ${roleIds.length}) )`
+    const withRolesMutation = {
+      uid: '_:user-authen-info',
+      roles: {
+        uid: 'uid(x)'
+      }
+    }
+
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
+      x: Array<{uid: string}>
       user: User[]
     }>({
       query,
-      mutations: [{ mutation, condition }],
+      mutations: [
+        { mutation, condition },
+        { mutation: withRolesMutation, condition: withRolesCondition }
+      ],
       vars: { $id: id }
     })
 
     if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`用户 ${id} 不存在`)
+      throw new UserNotFoundException(id)
     }
     if (res.json.u.length !== 0) {
-      throw new ForbiddenException(`用户 ${id} 已提交认证信息`)
+      throw new UserHadSubmitAuthenInfoException(id)
+    }
+
+    if (res.json.x.length !== roleIds.length) {
+      throw new RolesNotAllExistException(roleIds)
     }
 
     return res.json.user[0]

@@ -11,6 +11,18 @@ export class UserNotFoundException extends HttpException {
   }
 }
 
+export class UserHadSubmitAuthenInfoException extends HttpException {
+  constructor (id: string) {
+    super(`用户 ${id} 已提交认证信息`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class RolesNotAllExistException extends HttpException {
+  constructor (ids: string[]) {
+    super(`请求数据 ${ids.toString()} 存在未定义的角色的 id`, HttpStatus.FORBIDDEN)
+  }
+}
+
 export class RoleNotFoundException extends HttpException {
   constructor (id: string) {
     super(`角色 ${id} 不存在`, HttpStatus.FORBIDDEN)

@@ -93,6 +93,9 @@ export class AuthenticationInfo {
 
   @Field(of => [String], { description: '有效信息图片(e.g. 校园卡照片)的链接' })
     images?: string[]
+
+  @Field(of => [String], { description: '用户申请的角色的id的数组', nullable: true })
+    roles?: string[]
 }
 
 @ArgsType()
