@@ -10,7 +10,8 @@ import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { Delete } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, code2Session, getAuthenticationInfo, getAvatarImageUrlByGender, now, relayfyArrayForward } from '../tool'
+import { Role } from '../roles/models/roles.model'
+import { atob, btoa, code2Session, getAuthenticationInfo, getAvatarImageUrlByGender, now, relayfyArrayForward } from '../tool'
 import { UserService } from '../user/user.service'
 import { Payload, UserAuthenInfo, UserWithRoles } from './model/auth.model'
 
@@ -22,6 +23,54 @@ export class AuthService {
     private readonly adminService: AdminService,
     private readonly dbService: DbService
   ) {}
+
+  async roles (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
+    after = btoa(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.rolesWithRelayForword(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async rolesWithRelayForword (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(roles), orderdesc: createdAt) @filter(lt(creaedtAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: after) {
+        var(func: uid($id)) @filter(type(UserAuthenInfo)) {
+          roles as roles (orderdesc: createdAt) @filter(type(Role))
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(roles)) { count(uid) }
+        roles(func: uid(${after ? 'q' : 'roles'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startRole(func: uid(roles), first: -1) {
+          createdAt
+        }
+        # 结束游标
+        endRole(func: uid(roles), first: 1) {
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      roles: Role[]
+      startRole: Array<{createdAt}>
+      endRole: Array<{createdAt}>
+    }>({ query, vars: { $id: id, $after: after } })
+
+    return relayfyArrayForward({
+      totalCount: res.totalCount,
+      startO: res.startRole,
+      endO: res.endRole,
+      objs: res.roles,
+      first,
+      after
+    })
+  }
 
   async delete (id: string) {
     const query = `

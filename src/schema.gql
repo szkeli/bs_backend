@@ -830,6 +830,24 @@ type UserAuthenInfo implements Authenable {
   """审核信息的删除者"""
   delete: Delete
 
+  """用户申请的角色"""
+  roles(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): RolesConnection!
+
   """头像"""
   avatarImageUrl: String!
 
@@ -864,6 +882,24 @@ interface Authenable {
 
   """审核信息的删除者"""
   delete: Delete
+
+  """用户申请的角色"""
+  roles(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): RolesConnection!
 }
 
 type UserAuthenInfosConnection {
@@ -1087,6 +1123,51 @@ type Anonymous {
 
   """被匿名发布的对象"""
   to: PostAndCommentUnion!
+}
+
+type Role {
+  title: String!
+  createdAt: String!
+  id: String!
+
+  """具有该角色的所有用户"""
+  users(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UsersConnectionWithRelay!
+
+  """角色的创建者"""
+  creator: Admin!
+}
+
+type RolesConnection {
+  edges: [RoleEdge!]!
+  pageInfo: RolePageInfo!
+  totalCount: Int!
+}
+
+type RoleEdge {
+  node: Role
+  cursor: String
+}
+
+type RolePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
 }
 
 type CensorDetail {
@@ -1458,51 +1539,6 @@ type AvatarImageUploadCredentialInfo {
   bucket: String!
   region: String!
   key: String!
-}
-
-type Role {
-  title: String!
-  createdAt: String!
-  id: String!
-
-  """具有该角色的所有用户"""
-  users(
-    """最新的n个对象"""
-    first: Int
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): UsersConnectionWithRelay!
-
-  """角色的创建者"""
-  creator: Admin!
-}
-
-type RolesConnection {
-  edges: [RoleEdge!]!
-  pageInfo: RolePageInfo!
-  totalCount: Int!
-}
-
-type RoleEdge {
-  node: Role
-  cursor: String
-}
-
-type RolePageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
 }
 
 type View {

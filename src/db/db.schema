@@ -402,6 +402,8 @@ type UserAuthenInfo {
   images
   # 头像
   avatarImageUrl
+  # 申请的角色
+  roles
 }
 
 # 权限

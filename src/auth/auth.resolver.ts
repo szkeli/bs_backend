@@ -8,6 +8,7 @@ import { AuthenAdminPolicyHandler, MustWithCredentialPolicyHandler } from '../ca
 import { ICredential } from '../credentials/models/credentials.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
+import { RolesConnection } from '../roles/models/roles.model'
 import { AuthenticateUserArgs, LoginResult, PersonLoginArgs, PersonWithRoles, User } from '../user/models/user.model'
 import { AuthService } from './auth.service'
 import { CheckPolicies, CurrentUser, NoAuth, Roles } from './decorator'
@@ -69,5 +70,12 @@ export class AuthResolver {
   @CheckPolicies(new MustWithCredentialPolicyHandler(), new AuthenAdminPolicyHandler())
   async authenAdmin (@CurrentUser() admin: Admin, @Args('to') to: string) {
     return await this.authService.authenAdmin(admin.id, to)
+  }
+
+  @ResolveField(of => RolesConnection, { description: '用户申请的角色' })
+  @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
+  async roles (@Parent() authenable: Authenable, @Args() args: RelayPagingConfigArgs) {
+    return await this.authService.roles(authenable.id, args)
   }
 }
