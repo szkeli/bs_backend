@@ -4,7 +4,7 @@ import * as crypto from 'crypto'
 import { verify } from 'jsonwebtoken'
 
 import { Nullable } from './posts/models/post.model'
-import { AuthenticationInfo, UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
+import { AuthenticationInfo, GENDER, UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
 
 export async function exec<T, U> (l: string, bindings: object, aliases?: object) {
   return await axios.post<T>('http://w3.onism.cc:8084/gremlin', {
@@ -195,7 +195,6 @@ export const getAuthenticationInfo = function (token: string): AuthenticationInf
   const tokenRes = verify(token, process.env.USER_AUTHEN_JWT_SECRET) as AuthenticationInfo
 
   return {
-    avatarImageUrl: tokenRes.avatarImageUrl,
     studentId: tokenRes.studentId,
     school: tokenRes.school,
     subCampus: tokenRes.subCampus,
@@ -203,4 +202,14 @@ export const getAuthenticationInfo = function (token: string): AuthenticationInf
     gender: tokenRes.gender,
     grade: tokenRes.grade
   }
+}
+
+export const getAvatarImageUrlByGender = function (gender: GENDER) {
+  const baseUrl = 'https://dev-1306842204.cos.ap-guangzhou.myqcloud.com'
+  const defaultAvatars = {
+    [GENDER.MALE]: `${baseUrl}/defaultAvatars/male.jpg`,
+    [GENDER.FEMALE]: `${baseUrl}/defaultAvatars/female.jpg`,
+    [GENDER.NONE]: `${baseUrl}/defaultAvatars/anonymous.jpg`
+  }
+  return defaultAvatars[gender]
 }

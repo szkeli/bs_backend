@@ -72,9 +72,6 @@ export class PersonLoginArgs {
 
 @InputType()
 export class AuthenticationInfo {
-  @Field({ description: '头像' })
-    avatarImageUrl: string
-
   @Field({ description: '学号' })
     studentId: number | null
 

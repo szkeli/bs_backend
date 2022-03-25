@@ -10,7 +10,7 @@ import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { Delete } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, code2Session, getAuthenticationInfo, now, relayfyArrayForward } from '../tool'
+import { atob, code2Session, getAuthenticationInfo, getAvatarImageUrlByGender, now, relayfyArrayForward } from '../tool'
 import { UserService } from '../user/user.service'
 import { Payload, UserAuthenInfo, UserWithRoles } from './model/auth.model'
 
@@ -352,12 +352,14 @@ export class AuthService {
         }
       }
     `
+    const avatarImageUrl = getAvatarImageUrlByGender(info.gender)
     const condition = '@if( eq(len(v), 1) and eq(len(u), 0) )'
     const mutation = {
       uid: '_:user-authen-info',
       'dgraph.type': 'UserAuthenInfo',
       createdAt: now(),
       ...info,
+      avatarImageUrl,
       to: {
         uid: id
       }
@@ -408,10 +410,12 @@ export class AuthService {
         }
       }
     `
+    const avatarImageUrl = getAvatarImageUrlByGender(tokenRes.gender)
     const condition = '@if( eq(len(u), 1) and eq(len(v), 0) and eq(len(system), 1) )'
     const mutation = {
       uid: id,
       ...tokenRes,
+      avatarImageUrl,
       updatedAt: now(),
       'school|private': false,
       'grade|private': false,
