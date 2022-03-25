@@ -257,6 +257,7 @@ export class AuthService {
         c(func: type(UserAuthenInfo)) @filter(uid_in(to, $id) and not has(delete)) { c as uid }
       }
     `
+    const avatarImageUrl = getAvatarImageUrlByGender(info.gender)
     const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) )'
 
     delete info.images
@@ -265,6 +266,7 @@ export class AuthService {
       'dgraph.type': 'User',
       updatedAt: now(),
       ...info,
+      avatarImageUrl,
       'school|private': false,
       'grade|private': false,
       'gender|private': false,
