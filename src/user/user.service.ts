@@ -451,6 +451,13 @@ export class UserService {
           subCampus as subCampus
           college as college
         }
+        var(func: uid(u)) {
+          val(school)
+          val(grade)
+          val(gender)
+          val(subCampus)
+          val(college)
+        }
         user(func: uid(u)) @filter(type(User)) {
           id: uid
           credential @filter(type(Credential)) {
@@ -464,21 +471,31 @@ export class UserService {
     const updateCondition = '@if  ( eq(len(u), 1) and eq(len(c), 1) and eq(len(system), 1) )'
     const updateMutation = {
       uid: id,
-      updatedAt: _now,
-      school: 'val(school)',
-      grade: 'val(grade)',
-      gender: 'val(gender)',
-      subCampus: 'val(subCampus)',
-      college: 'val(college)'
+      updatedAt: _now
     }
 
     args.name && ((updateMutation as any).name = args.name)
     args.sign && ((updateMutation as any).sign = args.sign)
-    'isCollegePrivate' in args && (updateMutation['college|private'] = args.isCollegePrivate)
-    'isGenderPrivate' in args && (updateMutation['gender|private'] = args.isGenderPrivate)
-    'isGradePrivate' in args && (updateMutation['grade|private'] = args.isGradePrivate)
-    'isSchoolPrivate' in args && (updateMutation['school|private'] = args.isSchoolPrivate)
-    'isSubCampusPrivate' in args && (updateMutation['subCampus|private'] = args.isSubCampusPrivate)
+    'isCollegePrivate' in args && Object.assign(updateMutation, {
+      'college|private': args.isCollegePrivate,
+      college: 'val(college)'
+    })
+    'isGenderPrivate' in args && Object.assign(updateMutation, {
+      'gender|private': args.isGenderPrivate,
+      gender: 'val(gender)'
+    })
+    'isGradePrivate' in args && Object.assign(updateMutation, {
+      'grade|private': args.isGradePrivate,
+      grade: 'val(grade)'
+    })
+    'isSchoolPrivate' in args && Object.assign(updateMutation, {
+      'school|private': args.isSchoolPrivate,
+      school: 'val(school)'
+    })
+    'isSubCampusPrivate' in args && Object.assign(updateMutation, {
+      'subCampus|private': args.isSubCampusPrivate,
+      subCampus: 'val(subCampus)'
+    })
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       u: Array<{uid: string}>
