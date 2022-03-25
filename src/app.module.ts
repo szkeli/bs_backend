@@ -45,6 +45,7 @@ import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
 import { WxModule } from './wx/wx.module'
+import { RolesModule } from './roles/roles.module';
 
 @Module({
   imports: [
@@ -104,7 +105,8 @@ import { WxModule } from './wx/wx.module'
     NotificationsModule,
     WxModule,
     CosModule,
-    NlpModule
+    NlpModule,
+    RolesModule
   ],
   controllers: [AppController],
   providers: [

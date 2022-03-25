@@ -1393,6 +1393,36 @@ type View {
   createdAt: String!
 }
 
+type Role {
+  title: String!
+  createdAt: String!
+  id: String!
+
+  """角色授予的对象"""
+  to: User!
+
+  """角色的创建者"""
+  creator: Admin!
+}
+
+type RolesConnection {
+  edges: [RoleEdge!]!
+  pageInfo: RolePageInfo!
+  totalCount: Int!
+}
+
+type RoleEdge {
+  node: Role
+  cursor: String
+}
+
+type RolePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type Query {
   """以postId获取一个帖子"""
   post(id: String!): Post!
@@ -1811,6 +1841,24 @@ type Query {
   keywordsExtraction(keywordNum: Int = 5, content: String!): [KeywordsExtractionResult!]!
   textClassification(content: String!): TextClassificationResult!
   autoSummarization(length: Int = 200, content: String!): String!
+
+  """所有的角色"""
+  roles(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): RolesConnection!
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
@@ -2264,6 +2312,9 @@ type Mutation {
 
   """设置创建时间小于当前系统时间的所有通知为已读"""
   setReadAllNotifications: Boolean!
+
+  """添加一个角色到某用户"""
+  addRoleOnUser(title: String!, to: String!): Role!
 }
 
 input AuthenticationInfo {

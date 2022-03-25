@@ -25,3 +25,9 @@ export const NoAuth = () => SetMetadata(NO_AUTH_KEY, true)
 export const MaybeAuth = () => SetMetadata(MAYBE_AUTH_KEY, true)
 export const Roles = (...roles: string[]) => SetMetadata(ROLES_KEY, roles)
 export const CheckPolicies = (...handlers: PolicyHandler[]) => SetMetadata(CHECK_POLICIES_KEY, handlers)
+
+export enum Role {
+  User = 'User',
+  Admin = 'Admin',
+  None = 'None'
+}
