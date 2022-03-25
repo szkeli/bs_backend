@@ -584,6 +584,24 @@ type UsersConnection {
   totalCount: Int!
 }
 
+type UsersConnectionWithRelay {
+  edges: [UserEdge!]!
+  pageInfo: UserPageInfo!
+  totalCount: Int!
+}
+
+type UserEdge {
+  node: User
+  cursor: String
+}
+
+type UserPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type Comment {
   id: String!
   content: String!
@@ -1398,8 +1416,23 @@ type Role {
   createdAt: String!
   id: String!
 
-  """角色授予的对象"""
-  to: User!
+  """具有该角色的所有用户"""
+  users(
+    """最新的n个对象"""
+    first: Int
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UsersConnectionWithRelay!
 
   """角色的创建者"""
   creator: Admin!
@@ -2314,7 +2347,10 @@ type Mutation {
   setReadAllNotifications: Boolean!
 
   """添加一个角色到某用户"""
-  addRoleOnUser(title: String!, to: String!): Role!
+  addRoleOnUser(roleId: String!, to: String!): User!
+
+  """创建角色"""
+  createRole(title: String!): Role!
 }
 
 input AuthenticationInfo {

@@ -18,7 +18,7 @@ export class Role {
 export class RolesConnection extends Connection<Role>(Role) {}
 
 @ArgsType()
-export class AddRoleOnUserArgs {
+export class CreateRoleArgs {
   @Field()
     title: string
 }

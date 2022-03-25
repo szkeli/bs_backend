@@ -14,6 +14,7 @@ import { UserId } from 'src/db/model/db.model'
 
 import { Admin } from '../../admin/models/admin.model'
 import { Role } from '../../auth/model/auth.model'
+import { Connection } from '../../connections/models/connections.model'
 import { Node } from '../../node/models/node.model'
 import { NOTIFICATION_ACTION, NOTIFICATION_TYPE } from '../../notifications/models/notifications.model'
 
@@ -296,6 +297,9 @@ export class UsersConnection {
   @Field(type => Int)
     totalCount: number
 }
+
+@ObjectType()
+export class UsersConnectionWithRelay extends Connection<User>(User) {}
 
 @ArgsType()
 export class PagingConfigArgs {

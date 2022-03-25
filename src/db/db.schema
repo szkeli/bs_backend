@@ -17,6 +17,7 @@ curriculums: [uid] @reverse .
 pins: [uid] @reverse .
 notifications: [uid] @reverse .
 roles: [uid] @reverse .
+users: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -369,8 +370,8 @@ type Credential {
 type Role {
   # 创建时间
   createdAt
-  # 授予对象
-  to
+  # 具有该role的用户们
+  users
   # 创建者
   creator
   # 角色标题
