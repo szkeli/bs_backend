@@ -6,6 +6,12 @@ export class UserNotFoundException extends HttpException {
   }
 }
 
+export class UserNotAuthenException extends HttpException {
+  constructor (id: string) {
+    super(`用户 ${id} 未认证`, HttpStatus.FORBIDDEN)
+  }
+}
+
 export class UserHadAuthenedException extends HttpException {
   constructor (id: string) {
     super(`用户 ${id} 已认证`, HttpStatus.FORBIDDEN)

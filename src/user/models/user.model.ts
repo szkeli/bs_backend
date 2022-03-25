@@ -125,6 +125,9 @@ export class UpdateUserArgs {
 
   @Field(of => Boolean, { nullable: true })
     isGenderPrivate?: boolean | null
+
+  @Field(of => Boolean, { nullable: true })
+    isSubCampusPrivate?: boolean | null
 }
 
 @ArgsType()

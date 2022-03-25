@@ -4,7 +4,7 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
-import { SystemAdminNotFoundException, UserNotFoundException } from '../app.exception'
+import { SystemAdminNotFoundException, UserNotAuthenException, UserNotFoundException } from '../app.exception'
 import { UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
@@ -443,33 +443,48 @@ export class UserService {
         system(func: eq(userId, "system")) {
           system as uid
         }
-        u(func: uid($id)) @filter(type(User)) { u as uid }
-        user(func: uid($id)) @filter(type(User)) {
+        u(func: uid($id)) @filter(type(User)) { 
+          u as uid
+          school as school
+          grade as grade
+          gender as gender
+          subCampus as subCampus
+          college as college
+        }
+        user(func: uid(u)) @filter(type(User)) {
           id: uid
           credential @filter(type(Credential)) {
             c as uid
           }
           expand(_all_)
         }
+        c(func: uid(c)) { uid }
       }
     `
     const updateCondition = '@if  ( eq(len(u), 1) and eq(len(c), 1) and eq(len(system), 1) )'
     const updateMutation = {
       uid: id,
-      updatedAt: _now
+      updatedAt: _now,
+      school: 'val(school)',
+      grade: 'val(grade)',
+      gender: 'val(gender)',
+      subCampus: 'val(subCampus)',
+      college: 'val(college)'
     }
 
-    args.name && Object.defineProperty(updateMutation, 'name', { value: args.name })
-    args.sign && Object.defineProperty(updateMutation, 'sign', { value: args.sign })
-    'isCollegePrivate' in args && Object.defineProperty(updateMutation, 'college|private', { value: args.isCollegePrivate })
-    'isGenderPrivate' in args && Object.defineProperty(updateMutation, 'gender|private', { value: args.isGenderPrivate })
-    'isGradePrivate' in args && Object.defineProperty(updateMutation, 'grade|private', { value: args.isGradePrivate })
-    'isSchoolPrivate' in args && Object.defineProperty(updateMutation, 'school|private', { value: args.isSchoolPrivate })
+    args.name && ((updateMutation as any).name = args.name)
+    args.sign && ((updateMutation as any).sign = args.sign)
+    'isCollegePrivate' in args && (updateMutation['college|private'] = args.isCollegePrivate)
+    'isGenderPrivate' in args && (updateMutation['gender|private'] = args.isGenderPrivate)
+    'isGradePrivate' in args && (updateMutation['grade|private'] = args.isGradePrivate)
+    'isSchoolPrivate' in args && (updateMutation['school|private'] = args.isSchoolPrivate)
+    'isSubCampusPrivate' in args && (updateMutation['subCampus|private'] = args.isSubCampusPrivate)
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       u: Array<{uid: string}>
       user: User[]
       system: Array<{uid: string}>
+      c: Array<{uid: string}>
     }>({
       mutations: [
         { mutation: updateMutation, condition: updateCondition }
@@ -486,6 +501,9 @@ export class UserService {
     }
     if (res.json.system.length !== 1) {
       throw new SystemAdminNotFoundException()
+    }
+    if (res.json.c.length !== 1) {
+      throw new UserNotAuthenException(id)
     }
     return res.json.user[0]
   }

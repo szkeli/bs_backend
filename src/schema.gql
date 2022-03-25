@@ -2025,7 +2025,7 @@ type Mutation {
   pureDeleteUser(userId: String!): Boolean!
 
   """更新用户画像"""
-  updateUser(name: String, sign: String, isCollegePrivate: Boolean, isSchoolPrivate: Boolean, isGradePrivate: Boolean, isGenderPrivate: Boolean): User!
+  updateUser(name: String, sign: String, isCollegePrivate: Boolean, isSchoolPrivate: Boolean, isGradePrivate: Boolean, isGenderPrivate: Boolean, isSubCampusPrivate: Boolean): User!
 
   """点赞一个帖子"""
   addUpvoteOnPost(postId: String!): Post!
