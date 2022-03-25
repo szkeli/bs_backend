@@ -24,6 +24,7 @@ import { NotificationsService } from '../notifications/notifications.service'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
+import { RolesConnection } from '../roles/models/roles.model'
 import { VotesConnection, VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
 import { VotesService } from '../votes/votes.service'
 import {
@@ -124,6 +125,11 @@ export class UserResolver {
   @ResolveField(of => VotesConnection, { description: '当前用户的所有点赞' })
   async votes (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.votesService.findVotesByUid(user.id, first, offset)
+  }
+
+  @ResolveField(of => RolesConnection, { description: '当前用户的所有角色' })
+  async roles (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.roles(user.id, args)
   }
 
   @ResolveField(of => CommentsConnection, { description: '当前用户发布的评论' })
