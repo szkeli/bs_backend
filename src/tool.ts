@@ -1,9 +1,10 @@
 import { ForbiddenException } from '@nestjs/common'
 import axios from 'axios'
 import * as crypto from 'crypto'
+import { verify } from 'jsonwebtoken'
 
 import { Nullable } from './posts/models/post.model'
-import { UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
+import { AuthenticationInfo, UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
 
 export async function exec<T, U> (l: string, bindings: object, aliases?: object) {
   return await axios.post<T>('http://w3.onism.cc:8084/gremlin', {
@@ -188,4 +189,18 @@ export const ids2String = function (ids: string[]) {
   ids = Array.from(new Set(ids))
   ids?.map(id => `"${id}"`)
   return ids?.toString()
+}
+
+export const getAuthenticationInfo = function (token: string): AuthenticationInfo {
+  const tokenRes = verify(token, process.env.USER_AUTHEN_JWT_SECRET) as AuthenticationInfo
+
+  return {
+    avatarImageUrl: tokenRes.avatarImageUrl,
+    studentId: tokenRes.studentId,
+    school: tokenRes.school,
+    subCampus: tokenRes.subCampus,
+    college: tokenRes.college,
+    gender: tokenRes.gender,
+    grade: tokenRes.grade
+  }
 }

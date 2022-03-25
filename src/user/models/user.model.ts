@@ -94,7 +94,7 @@ export class AuthenticationInfo {
     gender: GENDER
 
   @Field(of => [String], { description: '有效信息图片(e.g. 校园卡照片)的链接' })
-    images: string[]
+    images?: string[]
 }
 
 @ArgsType()

@@ -1,6 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
-import { verify } from 'jsonwebtoken'
 
 import { AuthenticationInfo, CheckUserResult, LoginResult, User } from 'src/user/models/user.model'
 
@@ -11,7 +10,7 @@ import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { Delete } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, code2Session, now, relayfyArrayForward } from '../tool'
+import { atob, code2Session, getAuthenticationInfo, now, relayfyArrayForward } from '../tool'
 import { UserService } from '../user/user.service'
 import { Payload, UserAuthenInfo, UserWithRoles } from './model/auth.model'
 
@@ -391,7 +390,7 @@ export class AuthService {
    */
   async autoAuthenUserSelf (id: string, token: string) {
     // 测试并解析token
-    const tokenRes = verify(token, process.env.USER_AUTHEN_JWT_SECRET) as AuthenticationInfo
+    const tokenRes = getAuthenticationInfo(token)
     const query = `
       query v($id: string) {
         # 系统管理员
@@ -412,7 +411,6 @@ export class AuthService {
     const condition = '@if( eq(len(u), 1) and eq(len(v), 0) and eq(len(system), 1) )'
     const mutation = {
       uid: id,
-      // TODO 清除res.payload中不必要的信息
       ...tokenRes,
       updatedAt: now(),
       'school|private': false,
