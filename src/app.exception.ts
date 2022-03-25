@@ -1,5 +1,10 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 
+export class UserIdExistException extends HttpException {
+  constructor (id: string) {
+    super(`userId ${id} 已被使用`, HttpStatus.FORBIDDEN)
+  }
+}
 export class UserNotFoundException extends HttpException {
   constructor (id: string) {
     super(`用户 ${id} 不存在`, HttpStatus.FORBIDDEN)

@@ -110,6 +110,9 @@ export class AuthenticateUserArgs {
 @ArgsType()
 export class UpdateUserArgs {
   @Field({ nullable: true })
+    userId?: string | null
+
+  @Field({ nullable: true })
     name?: string | null
 
   @Field({ nullable: true })
