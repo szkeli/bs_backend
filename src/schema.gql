@@ -29,7 +29,7 @@ type Admin {
   """当前管理员创建的置顶"""
   pins(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -160,7 +160,7 @@ type User implements Person & Node {
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
   postsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -181,7 +181,7 @@ type User implements Person & Node {
   """当前用户的所有角色"""
   roles(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -200,7 +200,7 @@ type User implements Person & Node {
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
   commentsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -239,7 +239,7 @@ type User implements Person & Node {
   """回复的通知"""
   replyNotifications(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -263,7 +263,7 @@ type User implements Person & Node {
   """点赞的通知"""
   upvoteNotifications(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -325,7 +325,7 @@ interface Person implements Node {
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
   postsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -346,7 +346,7 @@ interface Person implements Node {
   """当前用户的所有角色"""
   roles(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -365,7 +365,7 @@ interface Person implements Node {
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
   commentsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -404,7 +404,7 @@ interface Person implements Node {
   """回复的通知"""
   replyNotifications(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -428,7 +428,7 @@ interface Person implements Node {
   """点赞的通知"""
   upvoteNotifications(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -474,7 +474,7 @@ type LoginResult implements Node & Person {
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
   postsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -495,7 +495,7 @@ type LoginResult implements Node & Person {
   """当前用户的所有角色"""
   roles(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -514,7 +514,7 @@ type LoginResult implements Node & Person {
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
   commentsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -553,7 +553,7 @@ type LoginResult implements Node & Person {
   """回复的通知"""
   replyNotifications(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -577,7 +577,7 @@ type LoginResult implements Node & Person {
   """点赞的通知"""
   upvoteNotifications(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -667,7 +667,7 @@ type Comment {
   """Relay版comments"""
   commentsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -724,7 +724,7 @@ type Post {
   """获取所有评论 relay分页版"""
   commentsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -745,6 +745,24 @@ type Post {
   """帖子的点赞"""
   votes(first: Int = 10, offset: Int = 0): VotesConnection!
 
+  """帖子的点赞"""
+  votesWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
+
   """帖子收到的举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 
@@ -754,7 +772,7 @@ type Post {
   """帖子的所有折叠评论"""
   foldedCommentsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -833,7 +851,7 @@ type UserAuthenInfo implements Authenable {
   """用户申请的角色"""
   roles(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -886,7 +904,7 @@ interface Authenable {
   """用户申请的角色"""
   roles(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1027,7 +1045,7 @@ type Subject {
   posts(first: Int = 10, offset: Int = 0): PostsConnection! @deprecated(reason: "请使用 postsWithRelay")
   postsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1133,7 +1151,7 @@ type Role {
   """具有该角色的所有用户"""
   users(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1281,13 +1299,6 @@ type Message implements Node {
 
 union MessageCreatorUnion = User | Admin
 
-type VotesConnection {
-  totalCount: Int!
-  viewerCanUpvote: Boolean!
-  viewerHasUpvoted: Boolean!
-  nodes: [Vote!]!
-}
-
 type Vote implements VoteInterface {
   id: String!
 
@@ -1337,6 +1348,33 @@ type VoteWithUnreadCountPageInfo {
   endCursor: String
   hasPreviousPage: Boolean!
   hasNextPage: Boolean!
+}
+
+type VotesConnectionWithRelay {
+  edges: [VoteEdge!]
+  pageInfo: VotePageInfo
+  totalCount: Int
+  viewerCanUpvote: Boolean!
+  viewerHasUpvoted: Boolean!
+}
+
+type VoteEdge {
+  node: Vote
+  cursor: String
+}
+
+type VotePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type VotesConnection {
+  totalCount: Int!
+  viewerCanUpvote: Boolean!
+  viewerHasUpvoted: Boolean!
+  nodes: [Vote!]!
 }
 
 type Curriculum {
@@ -1559,7 +1597,7 @@ type Query {
   """Relay分页版的posts接口"""
   postsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1577,7 +1615,7 @@ type Query {
   """按热度获取所有帖子"""
   trendingPostsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1599,7 +1637,7 @@ type Query {
   """relay分页版 以id获取某帖子下所有评论"""
   postCommentsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1630,7 +1668,7 @@ type Query {
   """测试接口"""
   userPostsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1647,7 +1685,7 @@ type Query {
   ): PostsConnectionWithRelay!
   userCommentsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1666,7 +1704,7 @@ type Query {
   """测试接口，某用户的所有回复通知，非当前用户获取到null"""
   userReplyNotifications(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1691,7 +1729,7 @@ type Query {
   """测试接口，获取某用户所有的点赞通知，非当前用户获取到null"""
   userUpvoteNotifications(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1720,7 +1758,7 @@ type Query {
   """Relay版 以id获取某评论下所有评论"""
   commentCommentsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1751,7 +1789,7 @@ type Query {
   """待通过审核的用户信息"""
   userAuthenInfos(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1775,7 +1813,7 @@ type Query {
   """获取所有主题"""
   subjectsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1793,7 +1831,7 @@ type Query {
   """Relay版 以id获取某主题下所有帖子"""
   subjectPostsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1812,7 +1850,7 @@ type Query {
   """简单的搜索"""
   search(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1896,7 +1934,7 @@ type Query {
   """获取全部置顶信息"""
   pins(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -1968,7 +2006,7 @@ type Query {
   """所有的角色"""
   roles(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -2046,7 +2084,7 @@ type UserWithPrivateProps implements Person & Node {
   posts(first: Int = 10, offset: Int = 0): PostsConnection!
   postsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -2067,7 +2105,7 @@ type UserWithPrivateProps implements Person & Node {
   """当前用户的所有角色"""
   roles(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -2086,7 +2124,7 @@ type UserWithPrivateProps implements Person & Node {
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
   commentsWithRelay(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -2125,7 +2163,7 @@ type UserWithPrivateProps implements Person & Node {
   """回复的通知"""
   replyNotifications(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String
@@ -2149,7 +2187,7 @@ type UserWithPrivateProps implements Person & Node {
   """点赞的通知"""
   upvoteNotifications(
     """最新的n个对象"""
-    first: Int
+    first: Int = 10
 
     """向前分页游标"""
     after: String

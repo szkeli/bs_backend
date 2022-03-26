@@ -25,7 +25,7 @@ import { Delete } from '../deletes/models/deletes.model'
 import { WithinArgs } from '../node/models/node.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
-import { VotesConnection } from '../votes/model/votes.model'
+import { VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   CommentsConnectionWithRelay,
   CreatePostArgs,
@@ -125,7 +125,12 @@ export class PostsResolver {
 
   @ResolveField(of => VotesConnection, { description: '帖子的点赞' })
   async votes (@CurrentUser() user: User, @Parent() post: Post, @Args() args: PagingConfigArgs) {
-    return await this.postsService.getVotesByPostId(user?.id, post.id.toString(), args.first, args.offset)
+    return await this.postsService.getVotesByPostId(user?.id, post.id, args)
+  }
+
+  @ResolveField(of => VotesConnectionWithRelay, { description: '帖子的点赞' })
+  async votesWithRelay (@CurrentUser() user: User, @Parent() post: Post, @Args() args: RelayPagingConfigArgs) {
+    return await this.postsService.votes(user?.id, post.id, args)
   }
 
   @ResolveField(of => ReportsConnection, { description: '帖子收到的举报' })

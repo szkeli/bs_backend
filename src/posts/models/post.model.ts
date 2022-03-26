@@ -53,7 +53,7 @@ export class PostsConnection {
 
 @ArgsType()
 export class RelayPagingConfigArgs {
-  @Field(of => Int, { description: '最新的n个对象', nullable: true })
+  @Field(of => Int, { description: '最新的n个对象', nullable: true, defaultValue: 10 })
     first?: number
 
   @Field(of => String, { description: '向前分页游标', nullable: true })

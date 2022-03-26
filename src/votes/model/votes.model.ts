@@ -1,4 +1,4 @@
-import { Field, Int, InterfaceType, ObjectType } from '@nestjs/graphql'
+import { Field, Int, InterfaceType, ObjectType, PartialType } from '@nestjs/graphql'
 
 import { Connection } from '../../connections/models/connections.model'
 
@@ -15,21 +15,6 @@ export class Votable {
 
   @Field({ description: '被点赞或取消点赞的对象的id' })
     to: string
-}
-
-@ObjectType()
-export class VotesConnection {
-  @Field(type => Int)
-    totalCount: number
-
-  @Field(type => Boolean)
-    viewerCanUpvote: boolean
-
-  @Field(type => Boolean)
-    viewerHasUpvoted: boolean
-
-  @Field(type => [Vote])
-    nodes: Vote[]
 }
 
 @InterfaceType()
@@ -57,3 +42,30 @@ export class VoteWithUnreadCount extends Vote {
 
 @ObjectType()
 export class VoteWithUnreadCountsConnection extends Connection<VoteWithUnreadCount>(VoteWithUnreadCount) {}
+
+@ObjectType()
+class _VotesConnection extends Connection<Vote>(Vote) {}
+
+@ObjectType()
+export class VotesConnectionWithRelay extends PartialType(_VotesConnection) {
+  @Field(of => Boolean)
+    viewerCanUpvote: boolean
+
+  @Field(of => Boolean)
+    viewerHasUpvoted: boolean
+}
+
+@ObjectType()
+export class VotesConnection {
+  @Field(type => Int)
+    totalCount: number
+
+  @Field(type => Boolean)
+    viewerCanUpvote: boolean
+
+  @Field(type => Boolean)
+    viewerHasUpvoted: boolean
+
+  @Field(type => [Vote])
+    nodes: Vote[]
+}

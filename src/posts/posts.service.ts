@@ -12,8 +12,8 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
 import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, relayfyArrayForward, sha1 } from '../tool'
-import { User, UserWithFacets } from '../user/models/user.model'
-import { Vote, VotesConnection } from '../votes/model/votes.model'
+import { PagingConfigArgs, User, UserWithFacets } from '../user/models/user.model'
+import { Vote, VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
   Nullable,
@@ -727,13 +727,120 @@ export class PostsService {
     return DeletePrivateValue<User>(creator)
   }
 
+  async votes (viewerId: string, id: string, { first, after, orderBy }: RelayPagingConfigArgs): Promise<VotesConnectionWithRelay> {
+    after = btoa(after)
+    if (viewerId && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.votesWithViewerIdWithRelayForward(viewerId, id, first, after)
+    }
+
+    if (!viewerId && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.votesWithRelayForward(id, first, after)
+    }
+
+    throw new Error('Method not implemented.')
+  }
+
+  async votesWithRelayForward (id: string, first: number, after: string): Promise<VotesConnectionWithRelay> {
+    const q1 = 'var(func: uid(votes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(Post)) {
+          votes as votes (orderdesc: createdAt) @filter(type(Vote))
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(votes)) { count(uid) }
+        votes(func: uid(${after ? 'q' : 'votes'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startVote(func: uid(votes), first: -1) {
+          createdAt
+        }
+        # 结束游标
+        endVote(func: uid(votes), first: 1) {
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      startVote: Array<{createdAt: string}>
+      endVote: Array<{createdAt: string}>
+      votes: Vote[]
+    }>({ query, vars: { $id: id, $after: after } })
+
+    return {
+      ...relayfyArrayForward({
+        totalCount: res.totalCount,
+        startO: res.startVote,
+        endO: res.endVote,
+        objs: res.votes,
+        first,
+        after
+      }),
+      viewerCanUpvote: true,
+      viewerHasUpvoted: false
+    }
+  }
+
+  async votesWithViewerIdWithRelayForward (viewerId: string, id: string, first: number, after: string): Promise<VotesConnectionWithRelay> {
+    const q1 = 'var(func: uid(votes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $viewerId: string, $after: string) {
+        var(func: udi($id)) @filter(type(Post)) {
+          votes as votes (orderdesc: createdAt) @filter(type(Vote))
+        }
+        # viewer是否已经点赞
+        v(func: uid(votes)) @filter(uid_in(creator, $viewerId)) { uid }
+        ${after ? q1 : ''}
+        totalCount(func: uid(votes)) { count(uid) }
+        votes(func: uid(${after ? 'q' : 'votes'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startVote(func: uid(votes), first: -1) {
+          createdAt
+        }
+        # 结束游标
+        endVote(func: uid(votes), first: 1) {
+          createdAt
+        }
+      }
+    `
+
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      startVote: Array<{createdAt: string}>
+      endVote: Array<{createdAt: string}>
+      votes: Vote[]
+      v: Array<{uid: string}>
+    }>({ query, vars: { $id: id, $after: after } })
+
+    const can = res.v.length === 0
+
+    return {
+      ...relayfyArrayForward({
+        totalCount: res.totalCount,
+        startO: res.startVote,
+        endO: res.endVote,
+        objs: res.votes,
+        first,
+        after
+      }),
+      viewerCanUpvote: can,
+      viewerHasUpvoted: !can
+    }
+  }
+
   /**
    * 返回帖子的点赞 并计算当前浏览者是否点赞
    * @param viewerId 浏览者id
    * @param postId 帖子id
    * @returns { Promise<VotesConnection> }
    */
-  async getVotesByPostId (viewerId: string, postId: string, first: number, offset: number): Promise<VotesConnection> {
+  async getVotesByPostId (viewerId: string, postId: string, { offset, first }: PagingConfigArgs): Promise<VotesConnection> {
     if (!viewerId) {
       const query = `
         query v($postId: string) {
