@@ -2,6 +2,7 @@ import { Ability, InferSubjects } from '@casl/ability'
 
 import { Admin } from '../../admin/models/admin.model'
 import { Block } from '../../blocks/models/blocks.model'
+import { Fold } from '../../folds/models/folds.model'
 import { Pin } from '../../pins/models/pins.model'
 import { Post } from '../../posts/models/post.model'
 import { Subject } from '../../subject/model/subject.model'
@@ -25,6 +26,7 @@ export class MustWithCredential {
 }
 
 export type Subjects = InferSubjects<
+  typeof Fold |
   typeof Block |
   typeof Admin |
   typeof Post |

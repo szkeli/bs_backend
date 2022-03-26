@@ -3,7 +3,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
-import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
+import { AddFoldOnCommentPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { Comment } from '../comment/models/comment.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { FoldsService } from './folds.service'
@@ -15,7 +15,7 @@ export class FoldsResolver {
 
   @Mutation(of => Fold, { description: '折叠一条评论' })
   @Roles(Role.Admin)
-  @CheckPolicies(new MustWithCredentialPolicyHandler())
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new AddFoldOnCommentPolicyHandler())
   async addFoldOnComment (@CurrentUser() admin: Admin, @Args('commentId') commentId: string) {
     return await this.foldsService.addFoldOnComment(admin.id, commentId)
   }

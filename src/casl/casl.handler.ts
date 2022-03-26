@@ -2,6 +2,7 @@ import { Admin } from '../admin/models/admin.model'
 import { LackSomeOfPrivilegeException, MustWithCredentialException } from '../app.exception'
 import { IPolicyHandler } from '../auth/model/auth.model'
 import { Block } from '../blocks/models/blocks.model'
+import { Fold } from '../folds/models/folds.model'
 import { Pin } from '../pins/models/pins.model'
 import { IPRIVILEGE } from '../privileges/models/privileges.model'
 import { Subject } from '../subject/model/subject.model'
@@ -103,6 +104,16 @@ export class RemoveBlockOnUserPolicyHandler implements IPolicyHandler {
     const can = ability.can(Action.Delete, Block)
     if (!can) {
       throw new LackSomeOfPrivilegeException(IPRIVILEGE.ADMIN_CAN_REMOVE_BLOCK_ON_USER)
+    }
+    return true
+  }
+}
+
+export class AddFoldOnCommentPolicyHandler implements IPolicyHandler {
+  handle (ability: AppAbility) {
+    const can = ability.can(Action.Create, Fold)
+    if (!can) {
+      throw new LackSomeOfPrivilegeException(IPRIVILEGE.ADMIN_CAN_ADD_FOLD_ON_COMMENT)
     }
     return true
   }
