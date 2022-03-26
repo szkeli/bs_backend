@@ -6,7 +6,7 @@ import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { CredentialsService } from './credentials.service'
-import { ICredential, ICredentialsConnection } from './models/credentials.model'
+import { CredentialToUnion, ICredential, ICredentialsConnection } from './models/credentials.model'
 
 @Resolver(of => ICredential)
 export class CredentialsResolver {
@@ -31,7 +31,7 @@ export class CredentialsResolver {
     return await this.credentialsService.creator(credential.id)
   }
 
-  @ResolveField(of => Admin)
+  @ResolveField(of => CredentialToUnion)
   async to (@Parent() credential: ICredential) {
     return await this.credentialsService.to(credential.id)
   }

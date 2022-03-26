@@ -5,7 +5,7 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { btoa, relayfyArrayForward } from '../tool'
-import { ICredential, ICredentialsConnection } from './models/credentials.model'
+import { CredentialToUnion, ICredential, ICredentialsConnection } from './models/credentials.model'
 
 @Injectable()
 export class CredentialsService {
@@ -26,18 +26,19 @@ export class CredentialsService {
     return res.credential[0]?.creator
   }
 
-  async to (id: string) {
+  async to (id: string): Promise<typeof CredentialToUnion> {
     const query = `
-    query v($credentialId: string) {
-        credential(func: uid($credentialId)) @filter(type(Credential)) {
-            to @filter(type(Admin)) {
-                id: uid
-                expand(_all_)
-            }
-        }
-    }
-  `
-    const res = await this.dbService.commitQuery<{credential: Array<{to: Admin}>}>({ query, vars: { $credentialId: id } })
+      query v($credentialId: string) {
+          credential(func: uid($credentialId)) @filter(type(Credential)) {
+              to @filter(type(Admin) or type(User)) {
+                  id: uid
+                  expand(_all_)
+                  dgraph.type
+              }
+          }
+      }
+    `
+    const res = await this.dbService.commitQuery<{credential: Array<{to: typeof CredentialToUnion}>}>({ query, vars: { $credentialId: id } })
     return res.credential[0]?.to
   }
 

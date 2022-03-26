@@ -1306,8 +1306,10 @@ type ICredential {
   id: String!
   createdAt: String!
   creator: Admin!
-  to: Admin!
+  to: CredentialToUnion!
 }
+
+union CredentialToUnion = Admin | User
 
 type ICredentialsConnection {
   edges: [ICredentialEdge!]!
