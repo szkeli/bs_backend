@@ -4,7 +4,7 @@ import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
-import { PagingConfigArgs } from '../user/models/user.model'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { CredentialsService } from './credentials.service'
 import { ICredential, ICredentialsConnection } from './models/credentials.model'
 
@@ -22,8 +22,8 @@ export class CredentialsResolver {
   @Query(of => ICredentialsConnection, { description: '获取所有凭证' })
   @Roles(Role.Admin)
   @CheckPolicies(new MustWithCredentialPolicyHandler())
-  async credentials (@Args() { first, offset }: PagingConfigArgs) {
-    return await this.credentialsService.credentials(first, offset)
+  async credentials (@Args() args: RelayPagingConfigArgs) {
+    return await this.credentialsService.credentials(args)
   }
 
   @ResolveField(of => Admin)

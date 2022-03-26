@@ -1,7 +1,10 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
+import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
+import { btoa, relayfyArrayForward } from '../tool'
 import { ICredential, ICredentialsConnection } from './models/credentials.model'
 
 @Injectable()
@@ -38,24 +41,46 @@ export class CredentialsService {
     return res.credential[0]?.to
   }
 
-  async credentials (first: number, offset: number): Promise<ICredentialsConnection> {
-    const query = `
-        query {
-            totalCount(func: type(Credential)) { count(uid) }
-            credentials(func: type(Credential), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
-                id: uid
-                expand(_all_)
-            }
-        }
-      `
-    const res = await this.dbService.commitQuery<{
-      credentials: ICredential[]
-      totalCount: Array<{count: number}>
-    }>({ query })
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.credentials ?? []
+  async credentials ({ first, after, orderBy }: RelayPagingConfigArgs): Promise<ICredentialsConnection> {
+    after = btoa(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.credentialsWithRelayForward(first, after)
     }
+    throw new Error('Method not implemented.')
+  }
+
+  async credentialsWithRelayForward (first: number, after: string): Promise<ICredentialsConnection> {
+    const q1 = 'var(func: uid(credentials), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($after: string) {
+        var(func: type(Credential), orderdesc: createdAt) { credentials as uid }
+
+        ${after ? q1 : ''}
+        totalCount (func: uid(credentials)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'credentials'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(credentials), first: -1) {
+          createdAt
+        }
+        endO(func: uid(credentials), first: 1) {
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      startO: Array<{createdAt: string}>
+      endO: Array<{createdAt: string}>
+      objs: ICredential[]
+    }>({ query, vars: { $after: after } })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async credential (credentialId: string) {

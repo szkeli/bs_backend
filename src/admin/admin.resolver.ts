@@ -66,8 +66,8 @@ export class AdminResolver {
   }
 
   @ResolveField(of => ICredentialsConnection, { description: '当前管理员认证过的其他管理员' })
-  async credentials (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.adminService.findCredentialsByAdminId(admin.id, first, offset)
+  async credentials (@Parent() admin: Admin, @Args() args: RelayPagingConfigArgs) {
+    return await this.adminService.credentials(admin.id, args)
   }
 
   @ResolveField(of => PrivilegesConnection, { description: '当前管理员拥有的权限' })

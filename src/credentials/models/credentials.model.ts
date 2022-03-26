@@ -1,4 +1,6 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql'
+import { Field, ObjectType } from '@nestjs/graphql'
+
+import { Connection } from '../../connections/models/connections.model'
 
 @ObjectType({ description: '凭证是成为管理员的前提' })
 export class ICredential {
@@ -10,10 +12,4 @@ export class ICredential {
 }
 
 @ObjectType()
-export class ICredentialsConnection {
-  @Field(type => [ICredential])
-    nodes: ICredential[]
-
-  @Field(type => Int)
-    totalCount: number
-}
+export class ICredentialsConnection extends Connection<ICredential>(ICredential) {}

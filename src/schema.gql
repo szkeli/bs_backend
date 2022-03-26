@@ -15,7 +15,22 @@ type Admin {
   credential: ICredential
 
   """当前管理员认证过的其他管理员"""
-  credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
+  credentials(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): ICredentialsConnection!
 
   """当前管理员拥有的权限"""
   privileges(
@@ -1295,8 +1310,21 @@ type ICredential {
 }
 
 type ICredentialsConnection {
-  nodes: [ICredential!]!
+  edges: [ICredentialEdge!]!
+  pageInfo: ICredentialPageInfo!
   totalCount: Int!
+}
+
+type ICredentialEdge {
+  node: ICredential
+  cursor: String
+}
+
+type ICredentialPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
 }
 
 type Delete {
@@ -2185,7 +2213,22 @@ type Query {
   credential(credentialId: String!): ICredential!
 
   """获取所有凭证"""
-  credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
+  credentials(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): ICredentialsConnection!
 
   """获取一个置顶信息"""
   pin(id: String!): Pin!

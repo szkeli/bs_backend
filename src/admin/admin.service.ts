@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
 import { ORDER_BY } from '../connections/models/connections.model'
-import { ICredential, ICredentialsConnection } from '../credentials/models/credentials.model'
+import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { Delete, DeletesConnection } from '../deletes/models/deletes.model'
 import { Fold } from '../folds/models/folds.model'
@@ -20,6 +20,50 @@ export class AdminService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async credentials (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+    after = btoa(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.credentialsWithRelayForward(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async credentialsWithRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(credentials), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(Admin)) {
+          credentials as credentials @filter(type(Credential))
+        }
+
+        ${after ? q1 : ''}
+        totalCount (func: uid(credentials)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'credentials'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(credentials), first: -1) {
+          createdAt
+        }
+        endO(func: uid(credentials), first: 1) {
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      startO: Array<{createdAt: string}>
+      endO: Array<{createdAt: string}>
+      objs: ICredential[]
+    }>({ query, vars: { $id: id, $after: after } })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async folds (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
@@ -152,30 +196,6 @@ export class AdminService {
       first,
       after
     })
-  }
-
-  async findCredentialsByAdminId (id: string, first: number, offset: number): Promise<ICredentialsConnection> {
-    const query = `
-      query v($uid: string) {
-        admin(func: uid($uid)) @filter(type(Admin)) {
-          count: count(credentials)
-          credentials (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Credential)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $uid: id }))
-      .getJson() as unknown as {
-      admin: Array<{credentials: ICredential[], count: number}>
-    }
-    return {
-      nodes: res.admin[0]?.credentials || [],
-      totalCount: res.admin[0].count
-    }
   }
 
   async findCredentialByAdminId (id: string) {
