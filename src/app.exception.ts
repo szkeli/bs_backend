@@ -1,5 +1,7 @@
 import { HttpException, HttpStatus } from '@nestjs/common'
 
+import { IPRIVILEGE } from './privileges/models/privileges.model'
+
 export class UserIdExistException extends HttpException {
   constructor (id: string) {
     super(`userId ${id} 已被使用`, HttpStatus.FORBIDDEN)
@@ -56,5 +58,17 @@ export class AdminNotFoundException extends HttpException {
 export class SystemAdminNotFoundException extends HttpException {
   constructor () {
     super('请先创建userId为system的管理员作为系统', HttpStatus.FORBIDDEN)
+  }
+}
+
+export class LackSomeOfPrivilegeException extends HttpException {
+  constructor (i: IPRIVILEGE) {
+    super(`缺少 ${i} 权限`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class MustWithCredentialException extends HttpException {
+  constructor () {
+    super('必须先认证', HttpStatus.FORBIDDEN)
   }
 }
