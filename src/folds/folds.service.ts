@@ -1,36 +1,15 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
+import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
-import { Fold, FoldsConnection } from './models/folds.model'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
+import { btoa, relayfyArrayForward } from '../tool'
+import { Fold } from './models/folds.model'
 
 @Injectable()
 export class FoldsService {
   constructor (private readonly dbService: DbService) {}
-
-  async findFoldsByAdminId (id: string, first: number, offset: number): Promise<FoldsConnection> {
-    const query = `
-        query v($adminId: string) {
-            totalCount(func: uid($adminId)) @filter(type(Admin)) {
-                count: count(folds)
-            }
-            admin(func: uid($adminId)) @filter(type(Admin)) {
-                folds (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Fold)) {
-                    id: uid
-                    expand(_all_)
-                }
-            }
-        }
-      `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      admin: Array<{folds: Fold[]}>
-    }>({ query, vars: { $adminId: id } })
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.admin[0]?.folds ?? []
-    }
-  }
 
   async to (id: string) {
     const query = `
@@ -62,24 +41,46 @@ export class FoldsService {
     return res.fold[0]?.creator
   }
 
-  async folds (first: number, offset: number) {
+  async folds ({ first, after, orderBy }: RelayPagingConfigArgs) {
+    after = btoa(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.foldsWithRelayForward(first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async foldsWithRelayForward (first: number, after: string) {
+    const q1 = 'var(func: uid(folds), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-        query v {
-            totalCount(func: type(Fold)) { count: count(uid) }
-            folds(func: type(Fold), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
-                id: uid
-                expand(_all_)
-            }
+      query v($after: string) {
+        var(func: type(Fold)) { folds as uid }
+
+        ${after ? q1 : ''}
+        totalCount (func: uid(folds)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'folds'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
         }
-      `
+        startO(func: uid(folds), first: -1) {
+          createdAt
+        }
+        endO(func: uid(folds), first: 1) {
+          createdAt
+        }
+      }
+    `
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
-      folds: Fold[]
-    }>({ query })
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.folds ?? []
-    }
+      startO: Array<{createdAt: string}>
+      endO: Array<{createdAt: string}>
+      objs: Fold[]
+    }>({ query, vars: { $after: after } })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async addFoldOnComment (adminId: string, commentId: string) {

@@ -5,6 +5,7 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential, ICredentialsConnection } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { Delete, DeletesConnection } from '../deletes/models/deletes.model'
+import { Fold } from '../folds/models/folds.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { btoa, relayfyArrayForward } from '../tool'
@@ -16,6 +17,50 @@ import {
 
 @Injectable()
 export class AdminService {
+  async folds (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+    after = btoa(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.foldsWithRelayForward(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async foldsWithRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(folds), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(Admin)) {
+          folds as folds @filter(type(Fold))
+        }
+
+        ${after ? q1 : ''}
+        totalCount (func: uid(folds)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'folds'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(folds), first: -1) {
+          createdAt
+        }
+        endO(func: uid(folds), first: 1) {
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      startO: Array<{createdAt: string}>
+      endO: Array<{createdAt: string}>
+      objs: Fold[]
+    }>({ query, vars: { $after: after, $id: id } })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
+  }
+
   async deletes (id: string, { first, after, orderBy }: RelayPagingConfigArgs): Promise<DeletesConnection> {
     after = btoa(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {

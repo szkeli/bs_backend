@@ -5,7 +5,7 @@ import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { Comment } from '../comment/models/comment.model'
-import { PagingConfigArgs } from '../user/models/user.model'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { FoldsService } from './folds.service'
 import { Fold, FoldsConnection } from './models/folds.model'
 
@@ -23,8 +23,8 @@ export class FoldsResolver {
   @Query(of => FoldsConnection, { description: '获取所有的折叠' })
   @Roles(Role.Admin)
   @CheckPolicies(new MustWithCredentialPolicyHandler())
-  async folds (@Args() { first, offset }: PagingConfigArgs) {
-    return await this.foldsService.folds(first, offset)
+  async folds (@Args() args: RelayPagingConfigArgs) {
+    return await this.foldsService.folds(args)
   }
 
   @ResolveField(of => Admin, { description: '折叠的创建者' })

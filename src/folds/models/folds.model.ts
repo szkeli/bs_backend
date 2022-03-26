@@ -1,4 +1,6 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql'
+import { Field, ObjectType } from '@nestjs/graphql'
+
+import { Connection } from '../../connections/models/connections.model'
 
 @ObjectType()
 export class Fold {
@@ -10,10 +12,4 @@ export class Fold {
 }
 
 @ObjectType()
-export class FoldsConnection {
-  @Field(type => [Fold])
-    nodes: Fold[]
-
-  @Field(type => Int)
-    totalCount: number
-}
+export class FoldsConnection extends Connection<Fold>(Fold) {}

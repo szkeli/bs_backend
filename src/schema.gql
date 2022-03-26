@@ -21,7 +21,22 @@ type Admin {
   privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
 
   """当前管理员折叠的评论"""
-  folds(first: Int = 10, offset: Int = 0): FoldsConnection!
+  folds(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): FoldsConnection!
 
   """当前管理员拉黑的用户"""
   blocks(first: Int = 10, offset: Int = 0): BlocksConnection!
@@ -1224,8 +1239,21 @@ type Fold {
 }
 
 type FoldsConnection {
-  nodes: [Fold!]!
+  edges: [FoldEdge!]!
+  pageInfo: FoldPageInfo!
   totalCount: Int!
+}
+
+type FoldEdge {
+  node: Fold
+  cursor: String
+}
+
+type FoldPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
 }
 
 type Anonymous {
@@ -2029,7 +2057,22 @@ type Query {
   curriculum(id: String!): Curriculum!
 
   """获取所有的折叠"""
-  folds(first: Int = 10, offset: Int = 0): FoldsConnection!
+  folds(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): FoldsConnection!
 
   """所有的拉黑"""
   blocks(

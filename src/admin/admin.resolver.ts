@@ -76,8 +76,8 @@ export class AdminResolver {
   }
 
   @ResolveField(of => FoldsConnection, { description: '当前管理员折叠的评论' })
-  async folds (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.foldsService.findFoldsByAdminId(admin.id, first, offset)
+  async folds (@Parent() admin: Admin, @Args() args: RelayPagingConfigArgs) {
+    return await this.adminService.folds(admin.id, args)
   }
 
   @ResolveField(of => BlocksConnection, { description: '当前管理员拉黑的用户' })
