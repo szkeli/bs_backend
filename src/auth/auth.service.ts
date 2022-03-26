@@ -282,6 +282,7 @@ export class AuthService {
    * @param info 认证信息
    */
   async authenticateUser (actorId: string, id: string, info: AuthenticationInfo) {
+    const roles = info.roles
     // 将info附加到用户画像并添加credential信息
     const query = `
       query v($actorId: string, $id: string) {
@@ -339,6 +340,17 @@ export class AuthService {
           }
         }
       }
+    }
+
+    if (roles.length !== 0) {
+      Object.assign(mutation, {
+        roles: roles.map(r => ({
+          uid: r,
+          users: {
+            uid: id
+          }
+        }))
+      })
     }
 
     // 如果该用户存在提交的认证信息，标记删除它！
