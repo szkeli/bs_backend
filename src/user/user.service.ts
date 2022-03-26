@@ -539,7 +539,7 @@ export class UserService {
     const uid = res.uids.get('user')
 
     if (!uid || res.json.q.length !== 0) {
-      throw new UserNotFoundException(input.userId)
+      throw new UserIdExistException(input.userId)
     }
 
     return {

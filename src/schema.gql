@@ -1306,7 +1306,7 @@ type ICredential {
   id: String!
   createdAt: String!
   creator: Admin!
-  to: CredentialToUnion!
+  to: CredentialToUnion
 }
 
 union CredentialToUnion = Admin | User
