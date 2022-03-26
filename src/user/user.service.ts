@@ -13,6 +13,7 @@ import { Privilege, PrivilegesConnection } from '../privileges/models/privileges
 import { Role } from '../roles/models/roles.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import { atob, btoa, code2Session, edgifyByCreatedAt, now, relayfyArrayForward } from '../tool'
+import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   RegisterUserArgs,
   UpdateUserArgs,
@@ -25,6 +26,53 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async votesWithRelay (id: string, { first, after, orderBy }: RelayPagingConfigArgs): Promise<VotesConnectionWithRelay> {
+    after = btoa(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.votesWithRelayForward(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async votesWithRelayForward (id, first: number, after: string): Promise<VotesConnectionWithRelay> {
+    const q1 = 'var(func: uid(votes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(User)) {
+          votes as votes (orderdesc: createdAt) @filter(type(Vote))
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(votes)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'votes'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(votes), first: -1) {
+          createdAt
+        }
+        endO(func: uid(votes), first: 1) {
+          createdAt
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      startO: Array<{createdAt: string}>
+      endO: Array<{createdAt: string}>
+      objs: Vote[]
+    }>({ query, vars: { $id: id, $after: after } })
+
+    return {
+      ...relayfyArrayForward({
+        ...res,
+        first,
+        after
+      }),
+      viewerCanUpvote: false,
+      viewerHasUpvoted: true
+    }
   }
 
   async roles (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {

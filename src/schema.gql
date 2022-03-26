@@ -178,6 +178,24 @@ type User implements Person & Node {
   """当前用户的所有点赞"""
   votes(first: Int = 10, offset: Int = 0): VotesConnection!
 
+  """当前用户的所有点赞"""
+  votesWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
+
   """当前用户的所有角色"""
   roles(
     """最新的n个对象"""
@@ -343,6 +361,24 @@ interface Person implements Node {
   """当前用户的所有点赞"""
   votes(first: Int = 10, offset: Int = 0): VotesConnection!
 
+  """当前用户的所有点赞"""
+  votesWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
+
   """当前用户的所有角色"""
   roles(
     """最新的n个对象"""
@@ -491,6 +527,24 @@ type LoginResult implements Node & Person {
 
   """当前用户的所有点赞"""
   votes(first: Int = 10, offset: Int = 0): VotesConnection!
+
+  """当前用户的所有点赞"""
+  votesWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
 
   """当前用户的所有角色"""
   roles(
@@ -2101,6 +2155,24 @@ type UserWithPrivateProps implements Person & Node {
 
   """当前用户的所有点赞"""
   votes(first: Int = 10, offset: Int = 0): VotesConnection!
+
+  """当前用户的所有点赞"""
+  votesWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
 
   """当前用户的所有角色"""
   roles(
