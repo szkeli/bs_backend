@@ -1,6 +1,7 @@
-import { createUnionType, Field, Int, ObjectType } from '@nestjs/graphql'
+import { createUnionType, Field, ObjectType } from '@nestjs/graphql'
 
 import { Comment } from '../../comment/models/comment.model'
+import { Connection } from '../../connections/models/connections.model'
 import { Post } from '../../posts/models/post.model'
 import { Subject } from '../../subject/model/subject.model'
 
@@ -14,17 +15,22 @@ export class Delete {
 }
 
 @ObjectType()
-export class DeletesConnection {
-  @Field(type => [Delete])
-    nodes: Delete[]
-
-  @Field(type => Int)
-    totalCount: number
-}
+export class DeletesConnection extends Connection<Delete>(Delete) {}
 
 export const PostAndCommentAndSubjectUnion = createUnionType({
   name: 'PostAndCommentAndSubjectUnion',
-  types: () => [Post, Comment, Subject]
+  types: () => [Post, Comment, Subject],
+  resolveType (v: {'dgraph.type': string[]}) {
+    if (v['dgraph.type']?.includes('Post')) {
+      return Post
+    }
+    if (v['dgraph.type']?.includes('Comment')) {
+      return Comment
+    }
+    if (v['dgraph.type']?.includes('Subject')) {
+      return Subject
+    }
+  }
 })
 
 export const PostAndCommentUnion = createUnionType({

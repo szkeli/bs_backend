@@ -2,10 +2,11 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
 import { Comment } from '../comment/models/comment.model'
+import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
-import { Post } from '../posts/models/post.model'
+import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Subject } from '../subject/model/subject.model'
-import { now } from '../tool'
+import { btoa, now, relayfyArrayForward } from '../tool'
 import { AdminAndUserUnion, User } from '../user/models/user.model'
 import { Delete, DeletesConnection, PostAndCommentAndSubjectUnion } from './models/deletes.model'
 
@@ -106,25 +107,46 @@ export class DeletesService {
     return res.delete
   }
 
-  async deletes (first: number, offset: number): Promise<DeletesConnection> {
+  async deletes ({ first, after, orderBy }: RelayPagingConfigArgs): Promise<DeletesConnection> {
+    after = btoa(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.deletesWithRelayForward(first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async deletesWithRelayForward (first: number, after: string): Promise<DeletesConnection> {
+    const q1 = 'var(func: uid(deletes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-      query {
-        totalCount (func: type(Delete)) { count(uid) }
-        deletes (func: type(Delete), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+      query v($after: string) {
+        var(func: type(Delete), orderdesc: createdAt) { deletes as uid }
+
+        ${after ? q1 : ''}
+        totalCount (func: uid(deletes)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'deletes'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
+        }
+        startO(func: uid(deletes), first: -1) {
+          createdAt
+        }
+        endO(func: uid(deletes), first: 1) {
+          createdAt
         }
       }
     `
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
-      deletes: Delete[]
-    }>({ query })
+      startO: Array<{createdAt: string}>
+      endO: Array<{createdAt: string}>
+      objs: Delete[]
+    }>({ query, vars: { $after: after } })
 
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.deletes ?? []
-    }
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async deleteComment (xid: string, commentId: string): Promise<Delete> {

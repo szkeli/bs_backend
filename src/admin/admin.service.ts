@@ -1,10 +1,13 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
+import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential, ICredentialsConnection } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { Delete, DeletesConnection } from '../deletes/models/deletes.model'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
+import { btoa, relayfyArrayForward } from '../tool'
 import {
   Admin,
   AdminsConnection,
@@ -13,28 +16,48 @@ import {
 
 @Injectable()
 export class AdminService {
-  async deletes (id: string, first: number, offset: number): Promise<DeletesConnection> {
+  async deletes (id: string, { first, after, orderBy }: RelayPagingConfigArgs): Promise<DeletesConnection> {
+    after = btoa(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.deletesWithRelayForward(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async deletesWithRelayForward (id: string, first: number, after: string): Promise<DeletesConnection> {
+    const q1 = 'var(func: uid(deletes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-      query v($adminId: string) {
-        var(func: uid($adminId)) @filter(type(Admin)) {
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(Admin)) {
           deletes as deletes @filter(type(Delete))
         }
-        totalCount(func: uid(deletes)) { count(uid) }
-        deletes(func: uid(deletes), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+
+        ${after ? q1 : ''}
+        totalCount (func: uid(deletes)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'deletes'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
+        }
+        startO(func: uid(deletes), first: -1) {
+          createdAt
+        }
+        endO(func: uid(deletes), first: 1) {
+          createdAt
         }
       }
     `
     const res = await this.dbService.commitQuery<{
       totalCount: Array<{count: number}>
-      deletes: Delete[]
-    }>({ query, vars: { $adminId: id } })
+      startO: Array<{createdAt: string}>
+      endO: Array<{createdAt: string}>
+      objs: Delete[]
+    }>({ query, vars: { $after: after, $id: id } })
 
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.deletes ?? []
-    }
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async privileges (adminId: string, first: number, offset: number): Promise<PrivilegesConnection> {

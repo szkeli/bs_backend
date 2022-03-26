@@ -4,7 +4,8 @@ import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
-import { PagingConfigArgs, User } from '../user/models/user.model'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
+import { User } from '../user/models/user.model'
 import { DeletesService } from './deletes.service'
 import { Delete, DeletesConnection, PostAndCommentAndSubjectUnion } from './models/deletes.model'
 
@@ -36,8 +37,8 @@ export class DeletesResolver {
   @Query(of => DeletesConnection, { description: '获取所有的删除' })
   @Roles(Role.Admin)
   @CheckPolicies(new MustWithCredentialPolicyHandler())
-  async deletes (@Args() { first, offset }: PagingConfigArgs) {
-    return await this.deletesService.deletes(first, offset)
+  async deletes (@Args() args: RelayPagingConfigArgs) {
+    return await this.deletesService.deletes(args)
   }
 
   @ResolveField(of => Admin, { description: '删除的创建者' })

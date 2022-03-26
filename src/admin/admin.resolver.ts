@@ -91,7 +91,7 @@ export class AdminResolver {
   }
 
   @ResolveField(of => DeletesConnection, { description: '当前管理员的所有删除操作' })
-  async deletes (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.adminService.deletes(admin.id, first, offset)
+  async deletes (@Parent() admin: Admin, @Args() args: RelayPagingConfigArgs) {
+    return await this.adminService.deletes(admin.id, args)
   }
 }

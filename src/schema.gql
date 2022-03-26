@@ -45,7 +45,22 @@ type Admin {
   ): PinsConnection!
 
   """当前管理员的所有删除操作"""
-  deletes(first: Int = 10, offset: Int = 0): DeletesConnection!
+  deletes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): DeletesConnection!
 }
 
 enum ORDER_BY {
@@ -1180,8 +1195,21 @@ type Delete {
 union PostAndCommentAndSubjectUnion = Post | Comment | Subject
 
 type DeletesConnection {
-  nodes: [Delete!]!
+  edges: [DeleteEdge!]!
+  pageInfo: DeletePageInfo!
   totalCount: Int!
+}
+
+type DeleteEdge {
+  node: Delete
+  cursor: String
+}
+
+type DeletePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
 }
 
 type Fold {
@@ -1959,7 +1987,22 @@ type Query {
   delete(deleteId: String!): Delete!
 
   """获取所有的删除"""
-  deletes(first: Int = 10, offset: Int = 0): DeletesConnection!
+  deletes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): DeletesConnection!
 
   """用户上传头像时，先根据文件名获取临时上传凭证信息"""
   getAvatarImageUploadCredentialInfo(fileName: String!): AvatarImageUploadCredentialInfo!
