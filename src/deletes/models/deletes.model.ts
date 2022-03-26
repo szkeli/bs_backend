@@ -1,5 +1,6 @@
 import { createUnionType, Field, ObjectType } from '@nestjs/graphql'
 
+import { UserAuthenInfo } from '../../auth/model/auth.model'
 import { Comment } from '../../comment/models/comment.model'
 import { Connection } from '../../connections/models/connections.model'
 import { Post } from '../../posts/models/post.model'
@@ -17,9 +18,9 @@ export class Delete {
 @ObjectType()
 export class DeletesConnection extends Connection<Delete>(Delete) {}
 
-export const PostAndCommentAndSubjectUnion = createUnionType({
-  name: 'PostAndCommentAndSubjectUnion',
-  types: () => [Post, Comment, Subject],
+export const DeletedUnion = createUnionType({
+  name: 'DeletedUnion',
+  types: () => [Post, Comment, Subject, UserAuthenInfo],
   resolveType (v: {'dgraph.type': string[]}) {
     if (v['dgraph.type']?.includes('Post')) {
       return Post
@@ -29,6 +30,9 @@ export const PostAndCommentAndSubjectUnion = createUnionType({
     }
     if (v['dgraph.type']?.includes('Subject')) {
       return Subject
+    }
+    if (v['dgraph.type']?.includes('UserAuthenInfo')) {
+      return UserAuthenInfo
     }
   }
 })

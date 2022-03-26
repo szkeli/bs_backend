@@ -1234,10 +1234,10 @@ type Delete {
   creator: Admin!
 
   """被删除的对象"""
-  to: PostAndCommentAndSubjectUnion!
+  to: DeletedUnion!
 }
 
-union PostAndCommentAndSubjectUnion = Post | Comment | Subject
+union DeletedUnion = Post | Comment | Subject | UserAuthenInfo
 
 type DeletesConnection {
   edges: [DeleteEdge!]!
