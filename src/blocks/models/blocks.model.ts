@@ -1,4 +1,6 @@
-import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, ObjectType } from '@nestjs/graphql'
+
+import { Connection } from '../../connections/models/connections.model'
 
 @ObjectType()
 export class Block {
@@ -13,13 +15,7 @@ export class Block {
 }
 
 @ObjectType()
-export class BlocksConnection {
-  @Field(type => [Block])
-    nodes: Block[]
-
-  @Field(type => Int)
-    totalCount: number
-}
+export class BlocksConnection extends Connection<Block>(Block) {}
 
 @ArgsType()
 export class AddBlockOnUserArgs {

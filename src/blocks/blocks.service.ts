@@ -1,8 +1,10 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
+import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
-import { now } from '../tool'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
+import { btoa, now, relayfyArrayForward } from '../tool'
 import { User } from '../user/models/user.model'
 import { Block, BlocksConnection } from './models/blocks.model'
 
@@ -176,23 +178,44 @@ export class BlocksService {
     return res.block[0]?.to
   }
 
-  async blocks (first: number, offset: number): Promise<BlocksConnection> {
+  async blocks ({ first, after, orderBy }: RelayPagingConfigArgs): Promise<BlocksConnection> {
+    after = btoa(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.blocksWithRelayForward(first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async blocksWithRelayForward (first: number, after: string): Promise<BlocksConnection> {
+    const q1 = 'var(func: uid(blocks), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-        query v {
-            totalCount(func: type(Block)) { count(uid) }
-            blocks(func: type(Block), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
-                id: uid
-                expand(_all_)
-            }
-        }
-      `
+      query {
+          var(func: type(Block)) { blocks as uid }
+          totalCount(func: uid(blocks)) { count(uid) }
+          ${after ? q1 : ''}
+          objs(func: uid(${after ? 'q' : 'blocks'}), orderdesc: createdAt, first: ${first}) {
+            id: uid
+            expand(_all_)
+          }
+          startO(func: uid(blocks), first: -1) {
+            createdAt
+          }
+          endO(func: uid(blocks), first: 1) {
+            createdAt
+          }
+      }
+    `
     const res = await this.dbService.commitQuery<{
-      blocks: Block[]
+      objs: Block[]
+      startO: Array<{createdAt: string}>
+      endO: Array<{createdAt: string}>
       totalCount: Array<{ count: number }>
     }>({ query })
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.blocks ?? []
-    }
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 }
