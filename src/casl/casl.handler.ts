@@ -2,6 +2,7 @@ import { ForbiddenException } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
 import { IPolicyHandler } from '../auth/model/auth.model'
+import { Block } from '../blocks/models/blocks.model'
 import { Pin } from '../pins/models/pins.model'
 import { PostWithCreatorId } from '../posts/models/post.model'
 import { IPRIVILEGE } from '../privileges/models/privileges.model'
@@ -90,6 +91,26 @@ export class DeletePinPolicyHandler implements IPolicyHandler {
     const can = ability.can(Action.Delete, Pin)
     if (!can) {
       throw new ForbiddenException(`缺少 ${IPRIVILEGE.ADMIN_CAN_REMOVE_PIN_ON_POST} 权限`)
+    }
+    return true
+  }
+}
+
+export class AddBlockOnUserPolicyHandler implements IPolicyHandler {
+  handle (ability: AppAbility) {
+    const can = ability.can(Action.Create, Block)
+    if (!can) {
+      throw new ForbiddenException(`缺少 ${IPRIVILEGE.ADMIN_CAN_ADD_BLOCK_ON_USER} 权限`)
+    }
+    return true
+  }
+}
+
+export class RemoveBlockOnUserPolicyHandler implements IPolicyHandler {
+  handle (ability: AppAbility) {
+    const can = ability.can(Action.Delete, Block)
+    if (!can) {
+      throw new ForbiddenException(`缺少 ${IPRIVILEGE.ADMIN_CAN_REMOVE_BLOCK_ON_USER} 权限`)
     }
     return true
   }

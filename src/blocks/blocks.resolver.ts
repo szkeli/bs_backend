@@ -3,7 +3,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
-import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
+import { AddBlockOnUserPolicyHandler, MustWithCredentialPolicyHandler, RemoveBlockOnUserPolicyHandler } from '../casl/casl.handler'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { User } from '../user/models/user.model'
 import { BlocksService } from './blocks.service'
@@ -22,14 +22,14 @@ export class BlocksResolver {
 
   @Mutation(of => Boolean, { description: '解除拉黑一个用户' })
   @Roles(Role.Admin)
-  @CheckPolicies(new MustWithCredentialPolicyHandler())
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new AddBlockOnUserPolicyHandler())
   async removeBlockOnUser (@Args('from', { description: '被拉黑的用户的id' }) from: string) {
     return await this.blocksService.removeBlockOnUser(from)
   }
 
   @Mutation(of => Block, { description: '拉黑一个用户' })
   @Roles(Role.Admin)
-  @CheckPolicies(new MustWithCredentialPolicyHandler())
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new RemoveBlockOnUserPolicyHandler())
   async addBlockOnUser (@CurrentUser() admin: Admin, @Args() { id, description }: AddBlockOnUserArgs) {
     return await this.blocksService.addBlockOnUser(admin.id, id, description)
   }

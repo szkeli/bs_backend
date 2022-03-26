@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
 import { Role, UserWithRolesAndPrivileges, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
+import { Block } from '../blocks/models/blocks.model'
 import { Pin } from '../pins/models/pins.model'
 import { IPRIVILEGE } from '../privileges/models/privileges.model'
 import { Subject } from '../subject/model/subject.model'
@@ -20,7 +21,7 @@ export class CaslAbilityFactory {
       can(Action.Manage, MustWithCredential)
     }
 
-    if (this.personIdAdmin(user)) {
+    if (this.personIsAdmin(user)) {
       if (['system'].includes(user?.userId)) {
         can(Action.Manage, 'all')
       }
@@ -42,6 +43,12 @@ export class CaslAbilityFactory {
       }
       if (this.personHasPrivilege(user, IPRIVILEGE.ADMIN_CAN_REMOVE_PIN_ON_POST)) {
         can(Action.Delete, Pin, 'all')
+      }
+      if (this.personHasPrivilege(user, IPRIVILEGE.ADMIN_CAN_ADD_BLOCK_ON_USER)) {
+        can(Action.Create, Block, 'all')
+      }
+      if (this.personHasPrivilege(user, IPRIVILEGE.ADMIN_CAN_REMOVE_BLOCK_ON_USER)) {
+        can(Action.Delete, Block, 'all')
       }
     } else if (this.personIsUser(user)) {
       can(Action.Delete, Subject, 'all')
@@ -70,7 +77,7 @@ export class CaslAbilityFactory {
     return user?.roles?.includes(Role.User)
   }
 
-  personIdAdmin (user: UserWithRolesAndPrivileges) {
+  personIsAdmin (user: UserWithRolesAndPrivileges) {
     return user?.roles?.includes(Role.Admin)
   }
 }
