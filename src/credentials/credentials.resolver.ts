@@ -31,7 +31,7 @@ export class CredentialsResolver {
     return await this.credentialsService.creator(credential.id)
   }
 
-  @ResolveField(of => CredentialToUnion)
+  @ResolveField(of => CredentialToUnion, { nullable: true })
   async to (@Parent() credential: ICredential) {
     return await this.credentialsService.to(credential.id)
   }

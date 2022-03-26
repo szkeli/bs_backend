@@ -39,6 +39,7 @@ export class CredentialsService {
       }
     `
     const res = await this.dbService.commitQuery<{credential: Array<{to: typeof CredentialToUnion}>}>({ query, vars: { $credentialId: id } })
+
     return res.credential[0]?.to
   }
 
