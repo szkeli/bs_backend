@@ -1763,7 +1763,7 @@ type SearchResultItemPageInfo {
   hasNextPage: Boolean!
 }
 
-type PostImagesUploadCredentialInfo {
+type ImagesUploadCredentialInfo {
   """签证生效时间"""
   startTime: Int!
 
@@ -1781,18 +1781,6 @@ type PostImagesUploadCredentialInfo {
   region: String!
 
   """key"""
-  keys: [String!]!
-}
-
-type SubjectImagesUploadCredentialInfo {
-  startTime: Int!
-  expiredTime: Int!
-  expiration: String!
-  sessionToken: String!
-  tmpSecretId: String!
-  tmpSecretKey: String!
-  bucket: String!
-  region: String!
   keys: [String!]!
 }
 
@@ -2140,10 +2128,13 @@ type Query {
   getAvatarImageUploadCredentialInfo(fileName: String!): AvatarImageUploadCredentialInfo!
 
   """用户上传帖子图片时，先根据文件名获取临时上传凭证信息"""
-  getPostImagesUploadCredentialInfo(fileNames: [String!]!): PostImagesUploadCredentialInfo!
+  getPostImagesUploadCredentialInfo(fileNames: [String!]!): ImagesUploadCredentialInfo!
 
   """用户创建主题时，先根据文件名获取临时上传凭证"""
-  getSubjectImagesUploadCredentialInfo(fileNames: [String!]!): SubjectImagesUploadCredentialInfo!
+  getSubjectImagesUploadCredentialInfo(fileNames: [String!]!): ImagesUploadCredentialInfo!
+
+  """用户上传验证图片时，先过根据文件名获取临时上传凭证信息"""
+  getAuthenUserImagesUploadCredentialInfo(fileNames: [String!]!): ImagesUploadCredentialInfo!
 
   """以id获取权限"""
   privilege(id: String!): Privilege!

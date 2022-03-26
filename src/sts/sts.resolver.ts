@@ -2,7 +2,7 @@ import { Args, Query, Resolver } from '@nestjs/graphql'
 
 import { CurrentUser } from '../auth/decorator'
 import { User } from '../user/models/user.model'
-import { AvatarImageUploadCredentialInfo, PostImagesUploadCredentialInfo, SubjectImagesUploadCredentialInfo } from './models/sts.model'
+import { AvatarImageUploadCredentialInfo, ImagesUploadCredentialInfo } from './models/sts.model'
 import { StsService } from './sts.service'
 
 @Resolver()
@@ -14,13 +14,18 @@ export class StsResolver {
     return await this.stsService.getAvatarImageUploadCredentialInfo(user.id, fileName)
   }
 
-  @Query(of => PostImagesUploadCredentialInfo, { description: '用户上传帖子图片时，先根据文件名获取临时上传凭证信息' })
+  @Query(of => ImagesUploadCredentialInfo, { description: '用户上传帖子图片时，先根据文件名获取临时上传凭证信息' })
   async getPostImagesUploadCredentialInfo (@CurrentUser() user: User, @Args('fileNames', { type: () => [String] }) fileNames: string[]) {
     return await this.stsService.getPostImagesUploadCredentialInfo(user.id, fileNames)
   }
 
-  @Query(of => SubjectImagesUploadCredentialInfo, { description: '用户创建主题时，先根据文件名获取临时上传凭证' })
+  @Query(of => ImagesUploadCredentialInfo, { description: '用户创建主题时，先根据文件名获取临时上传凭证' })
   async getSubjectImagesUploadCredentialInfo (@CurrentUser() user: User, @Args('fileNames', { type: () => [String] }) fileNames: string[]) {
     return await this.stsService.getSubjectImagesUploadCredentialInfo(user.id, fileNames)
+  }
+
+  @Query(of => ImagesUploadCredentialInfo, { description: '用户上传验证图片时，先过根据文件名获取临时上传凭证信息' })
+  async getAuthenUserImagesUploadCredentialInfo (@CurrentUser() user: User, @Args('fileNames', { type: () => [String] }) fileNames: string[]) {
+    return await this.stsService.getAuthenUserImagesUploadCredentialInfo(user.id, fileNames)
   }
 }
