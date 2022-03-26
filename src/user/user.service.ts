@@ -140,25 +140,49 @@ export class UserService {
     return res.credential[0]
   }
 
-  async privileges (id: string, first: number, offset: number): Promise<PrivilegesConnection> {
+  async privileges (id: string, { first, after, orderBy }: RelayPagingConfigArgs): Promise<PrivilegesConnection> {
+    after = btoa(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.privilegesWithRelayForward(id, first, after)
+    }
+
+    throw new Error('Method not implemented.')
+  }
+
+  async privilegesWithRelayForward (id: string, first: number, after: string): Promise<PrivilegesConnection> {
+    const q1 = 'var(func: uid(privileges), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-      query v($xid: string) {
-        var(func: uid($xid)) @filter(type(User)) {
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(User)) {
           privileges as privileges @filter(type(Privilege))
         }
-        privileges(func: uid(privileges), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+
+        ${after ? q1 : ''}
+        totalCount (func: uid(privileges)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'privileges'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
-        } 
-        totalCount(func: uid(privileges)) { count(uid) }
+        }
+        startO(func: uid(privileges), first: -1) {
+          createdAt
+        }
+        endO(func: uid(privileges), first: 1) {
+          createdAt
+        }
       }
     `
-    const res = await this.dbService.commitQuery<{totalCount: Array<{count: number}>, privileges: Privilege[]}>({ query, vars: { $xid: id } })
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      startO: Array<{createdAt: string}>
+      endO: Array<{createdAt: string}>
+      objs: Privilege[]
+    }>({ query, vars: { $id: id, $after: after } })
 
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.privileges ?? []
-    }
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async pureDeleteUser (adminId: string, userId: string) {

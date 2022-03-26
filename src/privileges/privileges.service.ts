@@ -3,7 +3,8 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 import { Admin } from '../admin/models/admin.model'
 import { Role } from '../auth/model/auth.model'
 import { DbService } from '../db/db.service'
-import { now } from '../tool'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
+import { btoa, now, relayfyArrayForward } from '../tool'
 import { AdminAndUserUnion, User } from '../user/models/user.model'
 import { IPRIVILEGE, Privilege, PrivilegesConnection } from './models/privileges.model'
 
@@ -75,26 +76,46 @@ export class PrivilegesService {
     return true
   }
 
-  async privileges (first: number, offset: number): Promise<PrivilegesConnection> {
+  async privileges ({ first, after, orderBy }: RelayPagingConfigArgs): Promise<PrivilegesConnection> {
+    after = btoa(after)
+    if (first && orderBy) {
+      return await this.privilegesWithRelayForward(first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async privilegesWithRelayForward (first: number, after: string): Promise<PrivilegesConnection> {
+    const q1 = 'var(func: uid(privileges), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-      query {
-        totalCount (func: type(Privilege)) {
-          count(uid)
-        }
-        privileges (func: type(Privilege), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+      query v($after: string) {
+        var(func: type(Privilege), orderdesc: createdAt) { privileges as uid }
+
+        ${after ? q1 : ''}
+        totalCount (func: uid(privileges)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'privileges'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
+        }
+        startO(func: uid(privileges), first: -1) {
+          createdAt
+        }
+        endO(func: uid(privileges), first: 1) {
+          createdAt
         }
       }
     `
     const res = await this.dbService.commitQuery<{
-      privileges: Privilege[]
       totalCount: Array<{count: number}>
-    }>({ query })
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.privileges ?? []
-    }
+      startO: Array<{createdAt: string}>
+      endO: Array<{createdAt: string}>
+      objs: Privilege[]
+    }>({ query, vars: { $after: after } })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async addPrivilegeOnUser (adminId: string, privilege: IPRIVILEGE, to: string): Promise<Privilege> {

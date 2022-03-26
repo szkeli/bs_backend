@@ -17,6 +17,11 @@ import {
 
 @Injectable()
 export class AdminService {
+  private readonly dgraph: DgraphClient
+  constructor (private readonly dbService: DbService) {
+    this.dgraph = dbService.getDgraphIns()
+  }
+
   async folds (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
     after = btoa(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
@@ -105,32 +110,48 @@ export class AdminService {
     })
   }
 
-  async privileges (adminId: string, first: number, offset: number): Promise<PrivilegesConnection> {
+  async privileges (id: string, { first, after, orderBy }: RelayPagingConfigArgs): Promise<PrivilegesConnection> {
+    after = btoa(after)
+    if (first && orderBy) {
+      return await this.privilegesWithRelayForward(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async privilegesWithRelayForward (id: string, first: number, after: string): Promise<PrivilegesConnection> {
+    const q1 = 'var(func: uid(privileges), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-      query v($adminId: string) {
-        to(func: uid($adminId)) @filter(type(Admin)) {
-          privileges @filter(type(Privilege)) {
-            count(uid)
-          }
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(Admin)) {
+          privileges as privileges @filter(type(Privilege))
         }
-        admin(func: uid($adminId)) @filter(type(Admin)) {
-          privileges (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Privilege)) {
-            id: uid
-            expand(_all_)
-          }
+
+        ${after ? q1 : ''}
+        totalCount (func: uid(privileges)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'privileges'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(privileges), first: -1) {
+          createdAt
+        }
+        endO(func: uid(privileges), first: 1) {
+          createdAt
         }
       }
     `
-    const res = await this.dbService.commitQuery<{to: Array<{privileges: Array<{count: number}>}>, admin: Array<{privileges: Privilege[]}>}>({ query, vars: { $adminId: adminId } })
-    return {
-      nodes: res.admin[0]?.privileges ?? [],
-      totalCount: res?.to[0]?.privileges[0]?.count ?? 0
-    }
-  }
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      startO: Array<{createdAt: string}>
+      endO: Array<{createdAt: string}>
+      objs: Privilege[]
+    }>({ query, vars: { $id: id, $after: after } })
 
-  private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
-    this.dgraph = dbService.getDgraphIns()
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async findCredentialsByAdminId (id: string, first: number, offset: number): Promise<ICredentialsConnection> {

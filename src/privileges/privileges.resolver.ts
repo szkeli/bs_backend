@@ -4,7 +4,8 @@ import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
-import { AdminAndUserUnion, PagingConfigArgs } from '../user/models/user.model'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
+import { AdminAndUserUnion } from '../user/models/user.model'
 import { AddPrivilegeOnAdmin, AddPrivilegeOnUserArgs, Privilege, PrivilegesConnection, RemovePrivilegeArgs } from './models/privileges.model'
 import { PrivilegesService } from './privileges.service'
 
@@ -20,8 +21,8 @@ export class PrivilegesResolver {
   @Query(of => PrivilegesConnection, { description: '获取所有权限' })
   @Roles(Role.Admin)
   @CheckPolicies(new MustWithCredentialPolicyHandler())
-  async privileges (@Args() { first, offset }: PagingConfigArgs) {
-    return await this.privilegesService.privileges(first, offset)
+  async privileges (@Args() args: RelayPagingConfigArgs) {
+    return await this.privilegesService.privileges(args)
   }
 
   @Mutation(of => Privilege, { description: '添加一个权限到某管理员' })

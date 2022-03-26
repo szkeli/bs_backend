@@ -18,7 +18,22 @@ type Admin {
   credentials(first: Int = 10, offset: Int = 0): ICredentialsConnection!
 
   """当前管理员拥有的权限"""
-  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
+  privileges(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PrivilegesConnection!
 
   """当前管理员折叠的评论"""
   folds(
@@ -279,7 +294,22 @@ type User implements Person & Node {
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
 
   """当前用户具有的权限"""
-  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
+  privileges(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PrivilegesConnection!
 
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
@@ -462,7 +492,22 @@ interface Person implements Node {
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
 
   """当前用户具有的权限"""
-  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
+  privileges(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PrivilegesConnection!
 
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
@@ -629,7 +674,22 @@ type LoginResult implements Node & Person {
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
 
   """当前用户具有的权限"""
-  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
+  privileges(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PrivilegesConnection!
 
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
@@ -1155,8 +1215,21 @@ enum IPRIVILEGE {
 union AdminAndUserUnion = User | Admin
 
 type PrivilegesConnection {
-  nodes: [Privilege!]!
+  edges: [PrivilegeEdge!]!
+  pageInfo: PrivilegePageInfo!
   totalCount: Int!
+}
+
+type PrivilegeEdge {
+  node: Privilege
+  cursor: String
+}
+
+type PrivilegePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
 }
 
 type Subject {
@@ -2046,7 +2119,22 @@ type Query {
   privilege(id: String!): Privilege!
 
   """获取所有权限"""
-  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
+  privileges(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PrivilegesConnection!
 
   """以id获取ddl"""
   deadline(deadlineId: String!): Deadline!
@@ -2344,7 +2432,22 @@ type UserWithPrivateProps implements Person & Node {
   curriculums(first: Int = 10, offset: Int = 0): CurriculumsConnection!
 
   """当前用户具有的权限"""
-  privileges(first: Int = 10, offset: Int = 0): PrivilegesConnection!
+  privileges(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PrivilegesConnection!
 
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential

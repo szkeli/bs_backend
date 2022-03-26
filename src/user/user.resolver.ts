@@ -184,8 +184,8 @@ export class UserResolver {
   }
 
   @ResolveField(of => PrivilegesConnection, { description: '当前用户具有的权限' })
-  async privileges (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.userService.privileges(user.id, first, offset)
+  async privileges (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.privileges(user.id, args)
   }
 
   @ResolveField(of => ICredential, { description: '当前用户的认证凭证，未认证用户为null', nullable: true })

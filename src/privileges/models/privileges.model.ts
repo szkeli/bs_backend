@@ -1,4 +1,6 @@
-import { ArgsType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { ArgsType, Field, ObjectType, registerEnumType } from '@nestjs/graphql'
+
+import { Connection } from '../../connections/models/connections.model'
 
 export enum IPRIVILEGE {
   ROOT = 'ROOT',
@@ -96,10 +98,4 @@ export class RemovePrivilegeArgs {
 }
 
 @ObjectType()
-export class PrivilegesConnection {
-  @Field(type => [Privilege])
-    nodes: Privilege[]
-
-  @Field(type => Int)
-    totalCount: number
-}
+export class PrivilegesConnection extends Connection<Privilege>(Privilege) {}

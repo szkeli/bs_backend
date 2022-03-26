@@ -71,8 +71,8 @@ export class AdminResolver {
   }
 
   @ResolveField(of => PrivilegesConnection, { description: '当前管理员拥有的权限' })
-  async privileges (@Parent() admin: Admin, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.adminService.privileges(admin.id, first, offset)
+  async privileges (@Parent() admin: Admin, @Args() args: RelayPagingConfigArgs) {
+    return await this.adminService.privileges(admin.id, args)
   }
 
   @ResolveField(of => FoldsConnection, { description: '当前管理员折叠的评论' })
