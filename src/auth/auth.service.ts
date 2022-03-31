@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt'
 import { AuthenticationInfo, CheckUserResult, LoginResult, User } from 'src/user/models/user.model'
 
 import { AdminService } from '../admin/admin.service'
-import { RolesNotAllExistException, SystemAdminNotFoundException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
+import { AdminNotFoundException, RolesNotAllExistException, SystemAdminNotFoundException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
@@ -282,10 +282,15 @@ export class AuthService {
    * @param info 认证信息
    */
   async authenticateUser (actorId: string, id: string, info: AuthenticationInfo) {
-    const roles = info.roles
+    const roleIds = info.roles
+    const roleIdsLen = info.roles?.length ?? 0
+    const roleIdsStr = ids2String(info.roles)
+
     // 将info附加到用户画像并添加credential信息
     const query = `
       query v($actorId: string, $id: string) {
+        # 根据roleIds查询role信息
+        x(func: uid(${roleIdsStr})) @filter(type(Role)) { x as uid }
         # 系统
         s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
         # 管理员是否存在
@@ -308,7 +313,7 @@ export class AuthService {
       }
     `
     const avatarImageUrl = getAvatarImageUrlByGender(info.gender)
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) )'
+    const condition = `@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) and eq(len(x), ${roleIdsLen}) )`
 
     delete info.images
     delete info.roles
@@ -342,9 +347,9 @@ export class AuthService {
       }
     }
 
-    if (roles.length !== 0) {
+    if (roleIdsLen !== 0) {
       Object.assign(mutation, {
-        roles: roles.map(r => ({
+        roles: roleIds.map(r => ({
           uid: r,
           users: {
             uid: id
@@ -354,7 +359,7 @@ export class AuthService {
     }
 
     // 如果该用户存在提交的认证信息，标记删除它！
-    const deleteTheUserAuthenInfoCondi = '@if( eq(len(system), 1) and eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) and eq(len(c), 1) )'
+    const deleteTheUserAuthenInfoCondi = `@if( eq(len(system), 1) and eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) and eq(len(c), 1) and eq(len(x), ${roleIdsLen}) )`
     const addDeleteOnTheUserAuthenInfoMutation = {
       uid: 'uid(c)',
       delete: {
@@ -377,6 +382,7 @@ export class AuthService {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
       n: Array<{uid: string}>
+      x: Array<{uid: string}>
       user: User[]
     }>({
       query,
@@ -388,13 +394,17 @@ export class AuthService {
     })
 
     if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`管理员 ${actorId} 不存在`)
+      throw new AdminNotFoundException(actorId)
     }
     if (res.json.u.length !== 1) {
-      throw new ForbiddenException(`用户 ${id} 不存在`)
+      throw new UserNotFoundException(id)
     }
     if (res.json.n.length !== 0) {
-      throw new ForbiddenException(`用户 ${id} 已认证`)
+      throw new UserNotFoundException(id)
+    }
+
+    if (res.json.x.length !== roleIdsLen) {
+      throw new RolesNotAllExistException(roleIds)
     }
 
     const user = res.json.user[0]
