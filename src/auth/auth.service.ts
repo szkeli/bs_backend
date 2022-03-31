@@ -405,6 +405,7 @@ export class AuthService {
 
   async addInfoForAuthenUser (id: string, info: AuthenticationInfo) {
     const roleIds = info.roles
+    const roleIdsLen = info.roles?.length ?? 0
     const roleIdsStr = ids2String(info.roles)
 
     const query = `
@@ -434,7 +435,7 @@ export class AuthService {
       }
     }
 
-    const withRolesCondition = `@if( eq(len(v), 1) and eq(len(u), 0) and eq(len(x), ${roleIds.length}) )`
+    const withRolesCondition = `@if( eq(len(v), 1) and eq(len(u), 0) and eq(len(x), ${roleIdsLen}) )`
     const withRolesMutation = {
       uid: '_:user-authen-info',
       roles: {
@@ -463,7 +464,7 @@ export class AuthService {
       throw new UserHadSubmitAuthenInfoException(id)
     }
 
-    if (res.json.x.length !== roleIds.length) {
+    if (res.json.x.length !== roleIdsLen) {
       throw new RolesNotAllExistException(roleIds)
     }
 
