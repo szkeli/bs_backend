@@ -500,8 +500,15 @@ export class AuthService {
   async autoAuthenUserSelf (id: string, token: string) {
     // 测试并解析token
     const tokenRes = getAuthenticationInfo(token)
+    const roleIds = tokenRes.roles
+    const roleIdsLen = roleIds?.length ?? 0
+    const roleIdsStr = ids2String(roleIds)
+    delete tokenRes.roles
+
     const query = `
       query v($id: string) {
+        # 根据 roleIds 查询 role 信息
+        x(func: uid(${roleIdsStr})) @filter(type(Role)) { x as uid }
         # 系统管理员
         s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
         u(func: uid($id)) @filter(type(User)) { u as uid }
@@ -518,7 +525,7 @@ export class AuthService {
       }
     `
     const avatarImageUrl = getAvatarImageUrlByGender(tokenRes.gender)
-    const condition = '@if( eq(len(u), 1) and eq(len(v), 0) and eq(len(system), 1) )'
+    const condition = `@if( eq(len(u), 1) and eq(len(v), 0) and eq(len(system), 1) and eq(len(x), ${roleIdsLen}) )`
     const mutation = {
       uid: id,
       ...tokenRes,
@@ -547,10 +554,23 @@ export class AuthService {
         }
       }
     }
+
+    if (roleIdsLen !== 0) {
+      Object.assign(mutation, {
+        roles: roleIds.map(r => ({
+          uid: r,
+          users: {
+            uid: id
+          }
+        }))
+      })
+    }
+
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       s: Array<{uid: string}>
       u: Array<{uid: string}>
       v: Array<{uid: string}>
+      x: Array<{uid: string}>
       user: User[]
     }>({
       query,
@@ -558,6 +578,9 @@ export class AuthService {
       vars: { $id: id }
     })
 
+    if (res.json.x.length !== roleIdsLen) {
+      throw new RolesNotAllExistException(roleIds)
+    }
     if (res.json.s.length !== 1) {
       throw new SystemAdminNotFoundException()
     }

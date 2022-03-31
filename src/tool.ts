@@ -200,7 +200,8 @@ export const getAuthenticationInfo = function (token: string): AuthenticationInf
     subCampus: tokenRes.subCampus,
     college: tokenRes.college,
     gender: tokenRes.gender,
-    grade: tokenRes.grade
+    grade: tokenRes.grade,
+    roles: tokenRes.roles
   }
 }
 
