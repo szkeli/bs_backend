@@ -415,6 +415,12 @@ export class AuthService {
         u(func: type(UserAuthenInfo)) @filter(uid_in(to, $id) and not has(delete)) {
           u as uid
         }
+        # User是否已认证
+        i(func: uid(v)) {
+          credential @filter(type(Credential)) {
+            i as uid
+          }
+        }
         user(func: uid(v)) {
           id: uid
           expand(_all_)
@@ -423,7 +429,7 @@ export class AuthService {
     `
     const avatarImageUrl = getAvatarImageUrlByGender(info.gender)
     delete info.roles
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 0) )'
+    const condition = `@if( eq(len(v), 1) and eq(len(u), 0) and eq(len(i), 0) and eq(len(x), ${roleIdsLen}) )`
     const mutation = {
       uid: '_:user-authen-info',
       'dgraph.type': 'UserAuthenInfo',
@@ -435,7 +441,7 @@ export class AuthService {
       }
     }
 
-    const withRolesCondition = `@if( eq(len(v), 1) and eq(len(u), 0) and eq(len(x), ${roleIdsLen}) )`
+    const withRolesCondition = `@if( eq(len(v), 1) and eq(len(u), 0) and eq(len(i), 0) and eq(len(x), ${roleIdsLen}) )`
     const withRolesMutation = {
       uid: '_:user-authen-info',
       roles: {
@@ -447,6 +453,7 @@ export class AuthService {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
       x: Array<{uid: string}>
+      i: Array<{uid: string}>
       user: User[]
     }>({
       query,
@@ -466,6 +473,10 @@ export class AuthService {
 
     if (res.json.x.length !== roleIdsLen) {
       throw new RolesNotAllExistException(roleIds)
+    }
+
+    if (res.json.i.length !== 0) {
+      throw new UserHadAuthenedException(id)
     }
 
     return res.json.user[0]
