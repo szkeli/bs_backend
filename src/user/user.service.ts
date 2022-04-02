@@ -601,6 +601,9 @@ export class UserService {
     args.userId && Object.assign(updateMutation, {
       userId: args.userId
     })
+    args.avatarImageUrl && Object.assign(updateMutation, {
+      avatarImageUrl: args.avatarImageUrl
+    })
     'isCollegePrivate' in args && Object.assign(updateMutation, {
       'college|private': args.isCollegePrivate,
       college: 'val(college)'

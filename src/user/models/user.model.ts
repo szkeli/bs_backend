@@ -116,6 +116,9 @@ export class AuthenticateUserArgs {
 @ArgsType()
 export class UpdateUserArgs {
   @Field({ nullable: true })
+    avatarImageUrl?: string | null
+
+  @Field({ nullable: true })
     userId?: string | null
 
   @Field({ nullable: true })
