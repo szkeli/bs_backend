@@ -11,7 +11,7 @@ import { DbService } from '../db/db.service'
 import { Delete } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Role } from '../roles/models/roles.model'
-import { atob, btoa, code2Session, getAuthenticationInfo, getAvatarImageUrlByGender, ids2String, now, relayfyArrayForward } from '../tool'
+import { atob, btoa, code2Session, getAuthenticationInfo, ids2String, now, relayfyArrayForward } from '../tool'
 import { UserService } from '../user/user.service'
 import { Payload, UserAuthenInfo, UserWithRoles } from './model/auth.model'
 
@@ -312,7 +312,6 @@ export class AuthService {
         c(func: type(UserAuthenInfo)) @filter(uid_in(to, $id) and not has(delete)) { c as uid }
       }
     `
-    const avatarImageUrl = getAvatarImageUrlByGender(info.gender)
     const condition = `@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) and eq(len(x), ${roleIdsLen}) )`
 
     delete info.images
@@ -322,7 +321,6 @@ export class AuthService {
       'dgraph.type': 'User',
       updatedAt: now(),
       ...info,
-      avatarImageUrl,
       'school|private': false,
       'grade|private': false,
       'gender|private': false,
@@ -437,7 +435,6 @@ export class AuthService {
         }
       }
     `
-    const avatarImageUrl = getAvatarImageUrlByGender(info.gender)
     delete info.roles
     const condition = `@if( eq(len(v), 1) and eq(len(u), 0) and eq(len(i), 0) and eq(len(x), ${roleIdsLen}) )`
     const mutation = {
@@ -445,7 +442,6 @@ export class AuthService {
       'dgraph.type': 'UserAuthenInfo',
       createdAt: now(),
       ...info,
-      avatarImageUrl,
       to: {
         uid: id
       }
@@ -524,12 +520,10 @@ export class AuthService {
         }
       }
     `
-    const avatarImageUrl = getAvatarImageUrlByGender(tokenRes.gender)
     const condition = `@if( eq(len(u), 1) and eq(len(v), 0) and eq(len(system), 1) and eq(len(x), ${roleIdsLen}) )`
     const mutation = {
       uid: id,
       ...tokenRes,
-      avatarImageUrl,
       updatedAt: now(),
       'school|private': false,
       'grade|private': false,
