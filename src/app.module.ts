@@ -36,6 +36,7 @@ import { PostsService } from './posts/posts.service'
 import { PrivilegesModule } from './privileges/privileges.module'
 import { PubsubsModule } from './pubsubs/pubsubs.module'
 import { ReportsModule } from './reports/reports.module'
+import { RolesModule } from './roles/roles.module'
 import { SearchModule } from './search/search.module'
 import { SharedModule } from './shared/shared.module'
 import { StsModule } from './sts/sts.module'
@@ -45,7 +46,6 @@ import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
 import { WxModule } from './wx/wx.module'
-import { RolesModule } from './roles/roles.module';
 
 @Module({
   imports: [
