@@ -4,7 +4,7 @@ import { UserAlreadyHasTheCurriculume, UserNotFoundException } from '../app.exce
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { handleRelayForwardAfter, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { AddCurriculumArgs, Curriculum, UpdateCurriculumArgs } from './models/curriculums.model'
 
 @Injectable()
@@ -36,6 +36,7 @@ export class CurriculumsService {
   }
 
   async curriculums ({ first, after, orderBy }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.curriculumsRelayForward(first, after)
     }

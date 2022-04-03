@@ -69,6 +69,7 @@ export class UserService {
   }
 
   async curriculums (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.curriculumsRelayForward(id, first, after)
     }
