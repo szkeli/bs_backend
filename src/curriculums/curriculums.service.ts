@@ -42,7 +42,7 @@ export class CurriculumsService {
     const q1 = 'var(func: uid(curriculums), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($after: string) {
-          curriculums as var(func: type(Curriculums), orderdesc: createdAt)
+          curriculums as var(func: type(Curriculum), orderdesc: createdAt)
           ${after ? q1 : ''}
           totalCount(func: uid(curriculums)) { count(uid) }
           objs(func: uid(${after ? 'q' : 'curriculums'}), orderdesc: createdAt, first: ${first}) {
