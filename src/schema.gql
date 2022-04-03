@@ -484,8 +484,23 @@ type User implements Person & Node {
   """当前用户收到的所有举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 
-  """当前用户的ddl信息"""
-  deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
+  """当前用户的deadlines"""
+  deadlines(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): DeadlinesConnection!
 
   """当前用户的课程信息"""
   curriculums(
@@ -697,8 +712,23 @@ interface Person implements Node {
   """当前用户收到的所有举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 
-  """当前用户的ddl信息"""
-  deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
+  """当前用户的deadlines"""
+  deadlines(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): DeadlinesConnection!
 
   """当前用户的课程信息"""
   curriculums(
@@ -894,8 +924,23 @@ type LoginResult implements Node & Person {
   """当前用户收到的所有举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 
-  """当前用户的ddl信息"""
-  deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
+  """当前用户的deadlines"""
+  deadlines(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): DeadlinesConnection!
 
   """当前用户的课程信息"""
   curriculums(
@@ -1651,65 +1696,12 @@ type VotesConnection {
   nodes: [Vote!]!
 }
 
-"""课程对象"""
-type Curriculum {
-  """课程内部唯一id"""
-  id: String!
-
-  """上课地点"""
-  destination: String!
-
-  """第几节课开始"""
-  start: Int!
-
-  """第几节课结束"""
-  end: Int!
-
-  """课程名称"""
-  name: String!
-
-  """课程的周数的数组"""
-  circle: [Int!]!
-
-  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
-  description: String!
-
-  """该节课位于一星期中的第几天"""
-  dayOfWeek: [Int!]!
-
-  """课程的创建时间"""
-  createdAt: String!
-}
-
-type CurriculumsConnection {
-  edges: [CurriculumEdge!]!
-  pageInfo: CurriculumPageInfo!
-  totalCount: Int!
-}
-
-type CurriculumEdge {
-  node: Curriculum
-  cursor: String
-}
-
-type CurriculumPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type SetDbSchema {
-  arrayIndexOffset: Int!
-  array: [String!]!
-  pivot_: Float!
-  wrappers_: String
-  messageId_: String
-  convertedPrimitiveFields_: String!
-}
-
+"""Deadline对象"""
 type Deadline {
   id: String!
+
+  """创建时间"""
+  createdAt: String!
   courseContentId: Int!
   courseId: Int!
   ownerUserId: Int!
@@ -1764,8 +1756,96 @@ enum DEADLINE_TYPE {
 }
 
 type DeadlinesConnection {
-  nodes: [Deadline!]!
+  edges: [DeadlineEdge!]!
+  pageInfo: DeadlinePageInfo!
   totalCount: Int!
+}
+
+type DeadlineEdge {
+  node: Deadline
+  cursor: String
+}
+
+type DeadlinePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+"""课程对象"""
+type Curriculum {
+  """课程内部唯一id"""
+  id: String!
+
+  """上课地点"""
+  destination: String!
+
+  """第几节课开始"""
+  start: Int!
+
+  """第几节课结束"""
+  end: Int!
+
+  """课程名称"""
+  name: String!
+
+  """课程的周数的数组"""
+  circle: [Int!]!
+
+  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
+  description: String!
+
+  """该节课位于一星期中的第几天"""
+  dayOfWeek: [Int!]!
+
+  """课程的创建时间"""
+  createdAt: String!
+
+  """课程对应的deadlines"""
+  deadlines(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): DeadlinesConnection!
+}
+
+type CurriculumsConnection {
+  edges: [CurriculumEdge!]!
+  pageInfo: CurriculumPageInfo!
+  totalCount: Int!
+}
+
+type CurriculumEdge {
+  node: Curriculum
+  cursor: String
+}
+
+type CurriculumPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type SetDbSchema {
+  arrayIndexOffset: Int!
+  array: [String!]!
+  pivot_: Float!
+  wrappers_: String
+  messageId_: String
+  convertedPrimitiveFields_: String!
 }
 
 type SentimentAnalysisResult {
@@ -2539,8 +2619,23 @@ type UserWithPrivateProps implements Person & Node {
   """当前用户收到的所有举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
 
-  """当前用户的ddl信息"""
-  deadlines(startTime: String!, endTime: String!, first: Int!): DeadlinesConnection!
+  """当前用户的deadlines"""
+  deadlines(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): DeadlinesConnection!
 
   """当前用户的课程信息"""
   curriculums(

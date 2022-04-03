@@ -231,6 +231,8 @@ type Post {
 type Deadline {
   # ddl的创建者
   creator
+  # 创建时间
+  createdAt
   courseContentId
   courseId
   ownerUserId

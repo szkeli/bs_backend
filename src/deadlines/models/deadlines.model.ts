@@ -1,5 +1,7 @@
 import { ArgsType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
+import { Connection } from '../../connections/models/connections.model'
+
 export enum DEADLINE_EVENT_TYPE {
   OVERDUE= 'OVERDUE',
   DUE='DUE'
@@ -34,10 +36,13 @@ registerEnumType(DEADLINE_TYPE, {
   name: 'DEADLINE_TYPE'
 })
 
-@ObjectType()
+@ObjectType({ description: 'Deadline对象' })
 export class Deadline {
   @Field()
     id: string
+
+  @Field({ description: '创建时间' })
+    createdAt: string
 
   @Field(type => Int)
     courseContentId: number
@@ -206,10 +211,4 @@ export class AddDealineArgs {
 }
 
 @ObjectType()
-export class DeadlinesConnection {
-  @Field(type => [Deadline])
-    nodes: Deadline[]
-
-  @Field(type => Int)
-    totalCount: number
-}
+export class DeadlinesConnection extends Connection<Deadline>(Deadline) {}

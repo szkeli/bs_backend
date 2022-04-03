@@ -29,7 +29,6 @@ import { VotesConnection, VotesConnectionWithRelay, VoteWithUnreadCountsConnecti
 import { VotesService } from '../votes/votes.service'
 import {
   AdminAndUserWithPrivatePropsUnion,
-  DeadlinesPagingArgs,
   NotificationArgs,
   PagingConfigArgs,
   Person,
@@ -168,14 +167,9 @@ export class UserResolver {
     return await this.reportsService.findReportsByUid(user.id, first, offset)
   }
 
-  @ResolveField(of => DeadlinesConnection, { description: '当前用户的ddl信息' })
-  async deadlines (@Parent() user: User, @Args() { startTime, endTime, first }: DeadlinesPagingArgs) {
-    return await this.deadlinesService.findDeadlinesByUId(
-      user.id,
-      startTime,
-      endTime,
-      first
-    )
+  @ResolveField(of => DeadlinesConnection, { description: '当前用户的deadlines' })
+  async deadlines (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.deadlines(user.id, args)
   }
 
   @ResolveField(of => CurriculumsConnection, { description: '当前用户的课程信息' })

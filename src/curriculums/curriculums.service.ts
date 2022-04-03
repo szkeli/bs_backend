@@ -11,6 +11,10 @@ import { AddCurriculumArgs, Curriculum, UpdateCurriculumArgs } from './models/cu
 export class CurriculumsService {
   constructor (private readonly dbService: DbService) {}
 
+  async deadlines (args: RelayPagingConfigArgs) {
+    throw new Error('Method not implemented.')
+  }
+
   async updateCurriculum (id: any, args: UpdateCurriculumArgs) {
     throw new Error('Method not implemented.')
   }

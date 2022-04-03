@@ -149,6 +149,13 @@ export const getCurosrByScoreAndId = function (id: string, score: number): strin
   return atob(JSON.stringify({ id, score: score.toString() }))
 }
 
+export const handleRelayForwardAfter = function (after: string) {
+  return btoa(after)
+}
+export const handleRelayBackwardBefore = function (before: string) {
+  return btoa(before)
+}
+
 export interface RelayfyArrayParam <T extends {createdAt: string}> {
   totalCount: Array<{count: number}>
   objs: T[]

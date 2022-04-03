@@ -9,11 +9,12 @@ import { UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.mode
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { Curriculum } from '../curriculums/models/curriculums.model'
+import { Deadline } from '../deadlines/models/deadlines.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Role } from '../roles/models/roles.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
-import { atob, btoa, code2Session, edgifyByCreatedAt, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { atob, btoa, code2Session, edgifyByCreatedAt, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   RegisterUserArgs,
@@ -27,6 +28,44 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async deadlines (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.deadlinesRelayForward(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async deadlinesRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(deadlines), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(User)) {
+          deadlines (orderdesc: createdAt) @filter(type(Deadline)) {
+            deadlines as uid
+          }
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(deadlines)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'deadlines'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startO(func: uid(deadlines), first: -1) { createdAt }
+        # 结束游标
+        endO(func: uid(deadlines), first: 1) { createdAt }
+      }
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Deadline>>({ query, vars: { $id: id, $after: after } })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async curriculums (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
