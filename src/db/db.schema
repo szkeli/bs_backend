@@ -28,7 +28,6 @@ creator: uid @reverse .
 delete: uid @reverse .
 fold: uid @reverse .
 block: uid @reverse .
-educator: uid @reverse .
 anonymous: uid @reverse .
 pin: uid @reverse .
 about: uid @reverse .
@@ -66,9 +65,11 @@ sourceDataType: string @index(term) .
 sourceType: string @index(term) .
 curriculumId: string @index(hash) .
 action: string @index(term) .
+educatorName: string @index(hash) .
 
 circle: [int] .
 notificationIds: [int] .
+dayOfWeek: [int] .
 
 courseContentId: int .
 courseId: int .
@@ -538,15 +539,10 @@ type Curriculum {
   description
   # 上课地点
   destination
-  # 授课老师
-  educator
-  # 上课天数
-}
-
-# 授课教师
-type Educator {
-  # 姓名
-  name
-  # 该教师所有的课程
-  curriculums
+  # 授课老师的名字
+  educatorName
+  # 该课程位于一星期中的第几天
+  dayOfWeek 
+  # 要上课的周数
+  circle
 }

@@ -1675,7 +1675,7 @@ type Curriculum {
   description: String!
 
   """该节课位于一星期中的第几天"""
-  dayOfWeek: Int!
+  dayOfWeek: [Int!]!
 
   """课程的创建时间"""
   createdAt: String!
@@ -2868,7 +2868,7 @@ type Mutation {
     description: String!
 
     """该节课位于一星期中的第几天"""
-    dayOfWeek: Int!
+    dayOfWeek: [Int!]!
 
     """授课教师的名字"""
     educatorName: String!

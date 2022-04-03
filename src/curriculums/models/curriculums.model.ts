@@ -25,8 +25,8 @@ export class Curriculum {
   @Field({ description: '课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
     description: string
 
-  @Field(type => Int, { description: '该节课位于一星期中的第几天' })
-    dayOfWeek: number
+  @Field(of => [Int], { description: '该节课位于一星期中的第几天' })
+    dayOfWeek: number[]
 
   @Field(of => String, { description: '课程的创建时间' })
     createdAt: string
@@ -61,8 +61,8 @@ export class AddCurriculumArgs {
   @Field({ description: '课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
     description: string
 
-  @Field(type => Int, { description: '该节课位于一星期中的第几天' })
-    dayOfWeek: number
+  @Field(type => [Int], { description: '该节课位于一星期中的第几天' })
+    dayOfWeek: number[]
 
   @Field({ description: '授课教师的名字' })
     educatorName: string

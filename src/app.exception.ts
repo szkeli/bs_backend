@@ -72,3 +72,9 @@ export class MustWithCredentialException extends HttpException {
     super('必须先认证', HttpStatus.FORBIDDEN)
   }
 }
+
+export class UserAlreadyHasTheCurriculume extends HttpException {
+  constructor (id: string) {
+    super('用户 id 早已添加该课程', HttpStatus.FORBIDDEN)
+  }
+}

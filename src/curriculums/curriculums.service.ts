@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
+import { UserAlreadyHasTheCurriculume, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
@@ -64,9 +65,8 @@ export class CurriculumsService {
   }
 
   /**
-   * 将当前用户添加到对应的课程中，课程不存在时，
-   * 根据课程号创建课程，教师不存在时，
-   * 根据教师名字创建教师对象
+   * 将当前用户添加到对应的课程中；
+   * 课程不存在时，根据课程号创建课程对象，
    * @param id 用户id
    * @param args props
    * @returns {Promise<Curriculum}
@@ -74,13 +74,11 @@ export class CurriculumsService {
   async addCurriculum (id: string, args: AddCurriculumArgs): Promise<Curriculum> {
     const now = new Date().toISOString()
     const query = `
-      query v($creatorId: string, $educatorName: string, $curriculumId: string) {
+      query v($creatorId: string, $curriculumId: string) {
         # 当前用户是否存在
         v(func: uid($creatorId)) @filter(type(User)) { v as uid }
         # 课程是否存在
         x(func: eq(curriculumId, $curriculumId)) @filter(type(Curriculum)) { x as uid }
-        # 授课教师是否存在
-        u(func: eq(name, $educatorName)) @filter(type(Educator)) { u as uid }
         # 当前用户是否已经添加了该课程
         q(func: uid($creatorId)) @filter(type(User)) {
           curriculums @filter(type(Curriculum) AND eq(curriculumId, $curriculumId)) {
@@ -94,7 +92,9 @@ export class CurriculumsService {
         }
       }
     `
-    const conditionAlready = '@if( eq(len(v), 1) AND eq(len(x), 1) AND eq(len(u), 1) AND eq(len(q), 0) )'
+
+    // 课程和授课教师都已经存在
+    const conditionAlready = '@if( eq(len(v), 1) and eq(len(x), 1) and eq(len(q), 0) )'
     const mutationAlready = {
       uid: 'uid(v)',
       curriculums: {
@@ -102,89 +102,70 @@ export class CurriculumsService {
       }
     }
 
-    const conditionWithEducatorExist = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) AND eq(len(q), 0) )'
+    // 课程不存在
+    const conditionWithEducatorExist = '@if( eq(len(v), 1) and eq(len(x), 0) and eq(len(q), 0) )'
     const mutationWithEducatorExist = {
       uid: 'uid(v)',
       curriculums: {
+        // 课程内部id
         uid: '_:curriculum',
+        // 添加的对象类型
         'dgraph.type': 'Curriculum',
+        // 课程的创建时间
         createdAt: now,
+        // 课程的名字
         name: args.name,
+        // 课程开始的时间
         start: args.start,
+        // 课程结束时间
         end: args.end,
+        // 课程描述
         description: args.description,
+        // 课程地点
         destination: args.destination,
+        // 要上课的周
         circle: args.circle,
+        // 课程id
         curriculumId: args.curriculumId,
-        educator: {
-          uid: 'uid(u)',
-          name: args.educatorName,
-          curriculums: {
-            uid: '_:curriculum'
-          }
-        }
-      }
-    }
-
-    const conditionWithEducatorNotExist = '@if( eq(len(v), 1) AND eq(len(u), 0) AND eq(len(x), 0) AND eq(len(q), 0) )'
-    const mutationWithEducatorNoExist = {
-      uid: 'uid(v)',
-      curriculums: {
-        uid: '_:curriculum',
-        'dgraph.type': 'Curriculum',
-        createdAt: now,
-        name: args.name,
-        start: args.start,
-        end: args.end,
-        description: args.description,
-        destination: args.destination,
-        circle: args.circle,
-        curriculumId: args.curriculumId,
-        educator: {
-          uid: '_:educator',
-          'dgraph.type': 'Educator',
-          name: args.educatorName,
-          curriculums: {
-            uid: '_:curriculum'
-          }
-        }
+        // 教师名字
+        educatorName: args.educatorName,
+        // 该课程位于一星期的第几天
+        dayOfWeek: args.dayOfWeek
       }
     }
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
       x: Array<{uid: string}>
-      u: Array<{uid: string}>
       q: Array<{uid: string}>
       g: Curriculum[]
     }>({
       mutations: [
         { mutation: mutationAlready, condition: conditionAlready },
-        { mutation: mutationWithEducatorExist, condition: conditionWithEducatorExist },
-        { mutation: mutationWithEducatorNoExist, condition: conditionWithEducatorNotExist }
+        { mutation: mutationWithEducatorExist, condition: conditionWithEducatorExist }
       ],
       query,
       vars: {
         $creatorId: id,
-        $curriculumId: args.curriculumId,
-        $educatorName: args.educatorName
+        $curriculumId: args.curriculumId
       }
     })
+
     if (res.json.q.length !== 0) {
-      throw new ForbiddenException(`用户 ${id} 已经添加该课程`)
+      throw new UserAlreadyHasTheCurriculume(id)
     }
     if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`用户 ${id} 不存在`)
+      throw new UserNotFoundException(id)
     }
 
-    if (res.json.v.length === 1 && res.json.x.length === 1 && res.json.u.length === 1) {
+    if (res.json.v.length === 1 && res.json.x.length === 1) {
       return res.json.g[0]
-    } else {
-      return {
-        id: res.uids.get('curriculum'),
-        ...args,
-        createdAt: now
-      }
+    }
+
+    return {
+      id: res.uids.get('curriculum'),
+      ...args,
+      createdAt: now
     }
   }
 }
