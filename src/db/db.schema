@@ -65,9 +65,9 @@ sourceData: string @index(fulltext) .
 sourceDataType: string @index(term) .
 sourceType: string @index(term) .
 curriculumId: string @index(hash) .
-circle: string @index(term) .
 action: string @index(term) .
 
+circle: [int] .
 notificationIds: [int] .
 
 courseContentId: int .
@@ -540,6 +540,7 @@ type Curriculum {
   destination
   # 授课老师
   educator
+  # 上课天数
 }
 
 # 授课教师

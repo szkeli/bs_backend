@@ -179,8 +179,8 @@ export class UserResolver {
   }
 
   @ResolveField(of => CurriculumsConnection, { description: '当前用户的课程信息' })
-  async curriculums (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.curriculumsService.findCurriculumsByUid(user.id, first, offset)
+  async curriculums (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.curriculums(user.id, args)
   }
 
   @ResolveField(of => PrivilegesConnection, { description: '当前用户具有的权限' })

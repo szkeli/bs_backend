@@ -1,11 +1,18 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
+import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
-import { AddCurriculumArgs, Curriculum, CurriculumsConnection } from './models/curriculums.model'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
+import { relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { AddCurriculumArgs, Curriculum, UpdateCurriculumArgs } from './models/curriculums.model'
 
 @Injectable()
 export class CurriculumsService {
   constructor (private readonly dbService: DbService) {}
+
+  async updateCurriculum (id: any, args: UpdateCurriculumArgs) {
+    throw new Error('Method not implemented.')
+  }
 
   async curriculum (id: string) {
     const query = `
@@ -23,53 +30,37 @@ export class CurriculumsService {
     return res.curriculum[0]
   }
 
-  async curriculums (first: number, offset: number) {
-    const query = `
-      query {
-        totalCount (func: type(Curriculum)) {
-          count(uid)
-        }
-        curriculums (func: type(Curriculum), first: ${first}, offset: ${offset}) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      curriculums: Curriculum[]
-      totalCount: Array<{count: number}>
-    }>({ query })
-    return {
-      nodes: res.curriculums ?? [],
-      totalCount: res.totalCount[0]?.count ?? 0
+  async curriculums ({ first, after, orderBy }: RelayPagingConfigArgs) {
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.curriculumsRelayForward(first, after)
     }
+    throw new Error('Method not implemented.')
   }
 
-  async findCurriculumsByUid (id: string, first: number, offset: number): Promise<CurriculumsConnection> {
+  async curriculumsRelayForward (first: number, after: string) {
+    const q1 = 'var(func: uid(curriculums), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-      query v($uid: string) {
-        totalCount (func: uid($uid)) @filter(type(User)) {
-          curriculums @filter(type(Curriculum)) {
-            count(uid)
-          }
-        }
-        user (func: uid($uid)) @filter(type(User)) {
-          curriculums (first: ${first}, offset: ${offset}) @filter(type(Curriculum)) {
+        query v($after: string) {
+          curriculums as var(func: type(Curriculums), orderdesc: createdAt)
+          ${after ? q1 : ''}
+          totalCount(func: uid(curriculums)) { count(uid) }
+          objs(func: uid(${after ? 'q' : 'curriculums'}), orderdesc: createdAt, first: ${first}) {
             id: uid
             expand(_all_)
           }
+          # 开始游标
+          startO(func: uid(curriculums), first: -1) { createdAt }
+          # 结束游标
+          endO(func: uid(curriculums), first: 1) { createdAt } 
         }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{curriculums: Array<{count: number}>}>
-      user: Array<{curriculums: Curriculum[]}>
-    }>({ query, vars: { $uid: id } })
+      `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Curriculum>>({ query, vars: { $after: after } })
 
-    return {
-      nodes: res.user[0]?.curriculums ?? [],
-      totalCount: res.totalCount[0]?.curriculums[0]?.count ?? 0
-    }
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   /**
@@ -191,7 +182,8 @@ export class CurriculumsService {
     } else {
       return {
         id: res.uids.get('curriculum'),
-        ...args
+        ...args,
+        createdAt: now
       }
     }
   }

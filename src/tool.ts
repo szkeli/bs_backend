@@ -149,6 +149,15 @@ export const getCurosrByScoreAndId = function (id: string, score: number): strin
   return atob(JSON.stringify({ id, score: score.toString() }))
 }
 
+export interface RelayfyArrayParam <T extends {createdAt: string}> {
+  totalCount: Array<{count: number}>
+  objs: T[]
+  startO: Array<{createdAt: string}>
+  endO: Array<{createdAt: string}>
+  first: number
+  after: string | null
+}
+
 export const relayfyArrayForward = function<T extends {createdAt: string}> ({
   totalCount,
   objs,
@@ -156,14 +165,7 @@ export const relayfyArrayForward = function<T extends {createdAt: string}> ({
   endO,
   first,
   after
-}: {
-  totalCount: Array<{count: number}>
-  objs: T[]
-  startO: Array<{createdAt: string}>
-  endO: Array<{createdAt: string}>
-  first: number
-  after: string | null
-}) {
+}: RelayfyArrayParam<T>) {
   const _lastO = objs?.slice(-1)[0]
   const _totalCount = totalCount[0]?.count ?? 0
   const _startO = startO[0]
