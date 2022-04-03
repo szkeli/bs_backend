@@ -1,6 +1,7 @@
-import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, ObjectType } from '@nestjs/graphql'
 
 import { Role } from '../../auth/model/auth.model'
+import { Connection } from '../../connections/models/connections.model'
 
 @ArgsType()
 export class RegisterAdminArgs {
@@ -46,12 +47,6 @@ export class Admin {
 }
 
 @ObjectType()
-export class AdminsConnection {
-  @Field(type => [Admin])
-    nodes: Admin[]
-
-  @Field(type => Int)
-    totalCount: number
-}
+export class AdminsConnection extends Connection<Admin>(Admin) {}
 
 export type CheckAdminResult = Admin & {success: boolean, roles: Role[]}

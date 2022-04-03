@@ -8,7 +8,7 @@ import { Delete, DeletesConnection } from '../deletes/models/deletes.model'
 import { Fold } from '../folds/models/folds.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
-import { btoa, relayfyArrayForward } from '../tool'
+import { btoa, handleRelayForwardAfter, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import {
   Admin,
   AdminsConnection,
@@ -240,27 +240,40 @@ export class AdminService {
     return res.admin[0]
   }
 
-  async admins (first: number, offset: number): Promise<AdminsConnection> {
+  async admins ({ first, after, orderBy }: RelayPagingConfigArgs): Promise<AdminsConnection> {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.adminsRelayForward(first, after)
+    }
+
+    throw new Error('Method not implemented.')
+  }
+
+  async adminsRelayForward (first: number, after: string): Promise<AdminsConnection> {
+    const q1 = 'var(func: uid(admins)) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
-      {
-        totalCount (func: type(Admin)) {
-          count(uid)
-        }
-        admin (func: type(Admin), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+      query v($after: string) {
+        admins as var(func: type(Admin), orderdesc: createdAt)
+        ${after ? q1 : ''}
+        totalCount(func: uid(admins)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'admins'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
+        # 开始游标
+        startO(func: uid(admins), first: -1) { createdAt }
+        # 结束游标
+        endO(func: uid(admins), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<{
-      admin: Admin[]
-      totalCount: Array<{count: number}>
-    }>({ query })
 
-    return {
-      nodes: res.admin || [],
-      totalCount: res.totalCount[0].count
-    }
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Admin>>({ query, vars: { $after: after } })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async registerAdmin (args: RegisterAdminArgs): Promise<Admin> {

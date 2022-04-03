@@ -56,8 +56,8 @@ export class AdminResolver {
   @Query(of => AdminsConnection, { description: '获取所有管理员' })
   @Roles(Role.Admin)
   @CheckPolicies(new MustWithCredentialPolicyHandler())
-  async admins (@Args() { first, offset }: PagingConfigArgs) {
-    return await this.adminService.admins(first, offset)
+  async admins (@Args() args: RelayPagingConfigArgs) {
+    return await this.adminService.admins(args)
   }
 
   @ResolveField(of => ICredential, { nullable: true, description: '管理员的凭证' })
