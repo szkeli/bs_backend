@@ -41,7 +41,7 @@ export class UserService {
     const query = `
         query v($id: string, $after: string) {
           var(func: uid($id)) @filter(type(User)) {
-            curriculums (orderdesc: createdAt) @filter(type(Curriculums)) {
+            curriculums (orderdesc: createdAt) @filter(type(Curriculum)) {
               curriculums as uid
             }
           }
