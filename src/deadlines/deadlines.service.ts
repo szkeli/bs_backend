@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { UserAlreadyHasTheDeadline, UserNotFoundException, UserNotHasTheCurriculum } from '../app.exception'
+import { Curriculum } from '../curriculums/models/curriculums.model'
 import { DbService } from '../db/db.service'
 import { now } from '../tool'
 import { AddDealineArgs, Deadline, DEADLINE_TYPE } from './models/deadlines.model'
@@ -10,7 +11,20 @@ export class DeadlinesService {
   constructor (private readonly dbService: DbService) {}
 
   async curriculum (id: string) {
-    throw new Error('Method not implemented.')
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Deadline)) {
+          curriculum as ~deadlines @filter(type(Curriculum))
+        }
+        curriculum(func: uid(curriculum)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{curriculum: Curriculum[]}>({ query, vars: { $id: id } })
+
+    return res.curriculum[0]
   }
 
   async deadline (id: string) {
