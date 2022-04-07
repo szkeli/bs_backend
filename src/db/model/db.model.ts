@@ -48,6 +48,32 @@ export interface MutationsWithCondition {
   condition: string
 }
 
+export type MutationObject = object & {
+  'dgraph.type': 'User'
+  | 'Admin'
+  | 'Post'
+  | 'Comment'
+  | 'Deadline'
+  | 'Subject'
+  | 'Sentiment'
+  | 'Notification'
+  | 'Pin'
+  | 'Anonymous'
+  | 'Credential'
+  | 'Role'
+  | 'UserAuthenInfo'
+  | 'Privilege'
+  | 'View'
+  | 'Block'
+  | 'Fold'
+  | 'Delete'
+  | 'Vote'
+  | 'Report'
+  | 'Conversation'
+  | 'Message'
+  | 'Curriculum'
+}
+
 export interface CommitConditionalUpsertWithVarsProps {
   conditions: string
   mutation: object
