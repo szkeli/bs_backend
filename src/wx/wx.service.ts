@@ -3,7 +3,7 @@ import axios from 'axios'
 
 import { CosService } from '../cos/cos.service'
 import { sha1 } from '../tool'
-import { GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs } from './models/wx.model'
+import { GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs, SendUniformMessageArgs } from './models/wx.model'
 
 @Injectable()
 export class WxService {
@@ -33,6 +33,21 @@ export class WxService {
       throw new ForbiddenException(res.errmsg)
     }
     return res.access_token
+  }
+
+  async sendUniformMessage (config: SendUniformMessageArgs) {
+    const accessToken = await this.getAccessToken()
+    return await axios({
+      method: 'POST',
+      url: 'https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send',
+      params: {
+        access_token: accessToken
+      },
+      data: config
+    }).then(r => r.data as unknown as {
+      errcode: 40037 | 41028 | 41029 | 41030 | 45009 | 40003 | 40013 | 0
+      errmsg: string
+    })
   }
 
   async getWXMiniProgrameShortLink (config: GetWXMiniProgrameShortLinkArgs) {

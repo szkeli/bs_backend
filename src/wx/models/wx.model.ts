@@ -50,3 +50,51 @@ export class GetWXMiniProgrameShortLinkArgs {
   @Field(of => Boolean, { defaultValue: false, nullable: true, description: '生成的 Short Link 类型，短期有效：false，永久有效：true' })
     is_permanent: boolean
 }
+
+@InputType()
+export class WeappTemplateMsg {
+  @Field(of => String, { description: '小程序模板ID' })
+    template_id: string
+
+  @Field(of => String, { description: '小程序页面路径' })
+    page: string
+
+  @Field(of => String, { description: '小程序模板消息formid' })
+    form_id: string
+
+  @Field(of => String, { description: '小程序模板数据' })
+    data: string
+
+  @Field(of => String, { description: '小程序模板放大关键词' })
+    emphasis_keyword: string
+}
+
+@InputType()
+export class MpTemplateMsg {
+  @Field(of => String, { description: '公众号appid，要求与小程序有绑定且同主体' })
+    appid: string
+
+  @Field(of => String, { description: '公众号模板id' })
+    template_id: string
+
+  @Field(of => String, { description: '公众号模板消息所要跳转的url' })
+    url: string
+
+  @Field(of => String, { description: '公众号模板消息所要跳转的小程序，小程序的必须与公众号具有绑定关系' })
+    miniprograme: string
+
+  @Field(of => String, { description: '公众号模板消息的数据' })
+    data: string
+}
+
+@ArgsType()
+export class SendUniformMessageArgs {
+  @Field(of => String, { description: '用户openid，可以是小程序的openid，也可以是mp_template_msg.appid对应的公众号的openid' })
+    touser: string
+
+  @Field(of => WeappTemplateMsg, { description: '小程序模板消息相关的信息，可以参考小程序模板消息接口; 有此节点则优先发送小程序模板消息；（小程序模板消息已下线，不用传此节点）' })
+    weapp_template_msg: WeappTemplateMsg
+
+  @Field(of => MpTemplateMsg, { description: '公众号模板消息相关的信息，可以参考公众号模板消息接口；有此节点并且没有weapp_template_msg节点时，发送公众号模板消息' })
+    mp_template_msg: MpTemplateMsg
+}

@@ -2457,6 +2457,16 @@ type Query {
     """生成的 Short Link 类型，短期有效：false，永久有效：true"""
     is_permanent: Boolean = false
   ): String!
+  sendUniformMessage(
+    """用户openid，可以是小程序的openid，也可以是mp_template_msg.appid对应的公众号的openid"""
+    touser: String!
+
+    """小程序模板消息相关的信息，可以参考小程序模板消息接口; 有此节点则优先发送小程序模板消息；（小程序模板消息已下线，不用传此节点）"""
+    weapp_template_msg: WeappTemplateMsg!
+
+    """公众号模板消息相关的信息，可以参考公众号模板消息接口；有此节点并且没有weapp_template_msg节点时，发送公众号模板消息"""
+    mp_template_msg: MpTemplateMsg!
+  ): String!
 
   """分析一段文本的情感"""
   sentimentAnalysis(content: String!): SentimentAnalysisResult!
@@ -2739,6 +2749,40 @@ input GetUnlimitedWXacodeArgsLineColor {
   r: Int = 0
   g: Int = 0
   b: Int = 0
+}
+
+input WeappTemplateMsg {
+  """小程序模板ID"""
+  template_id: String!
+
+  """小程序页面路径"""
+  page: String!
+
+  """小程序模板消息formid"""
+  form_id: String!
+
+  """小程序模板数据"""
+  data: String!
+
+  """小程序模板放大关键词"""
+  emphasis_keyword: String!
+}
+
+input MpTemplateMsg {
+  """公众号appid，要求与小程序有绑定且同主体"""
+  appid: String!
+
+  """公众号模板id"""
+  template_id: String!
+
+  """公众号模板消息所要跳转的url"""
+  url: String!
+
+  """公众号模板消息所要跳转的小程序，小程序的必须与公众号具有绑定关系"""
+  miniprograme: String!
+
+  """公众号模板消息的数据"""
+  data: String!
 }
 
 type Mutation {
