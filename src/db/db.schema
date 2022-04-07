@@ -18,6 +18,7 @@ pins: [uid] @reverse .
 notifications: [uid] @reverse .
 roles: [uid] @reverse .
 users: [uid] @reverse .
+curriculum: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -229,37 +230,20 @@ type Post {
 
 # 用户在blackboard上的ddl
 type Deadline {
-  # ddl的创建者
-  creator
   # 创建时间
   createdAt
-  courseContentId
-  courseId
-  ownerUserId
-  notificationIds
-  parentId
-  sourceId
+  # deadline 对应的课程的名称
   courseName
-  dataPending
-  dateAdded
+  # deadline 的开始时间
   startDate
+  # deadline 的结束时间
   endDate
-  dueDate
-  eventType
-  eventUrl
-  groupCount
-  ownerName
-  receiverCount
-  recipientCount
-  recipientId
-  recipientType
-  seen
-  sourceData
-  sourceDataType
-  sourceType
+  # deadline 的标题
   title
+  # deadline 所在的课程
+  curriculum
+  # deadline 的类型 [用户创建、从内部网自动导入]
   type
-  viewId
 }
 
 # 帖子和评论的评论

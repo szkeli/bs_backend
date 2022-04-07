@@ -1711,61 +1711,38 @@ type VotesConnection {
 
 """Deadline对象"""
 type Deadline {
+  """deadline 的唯一id"""
   id: String!
 
   """创建时间"""
   createdAt: String!
-  courseContentId: Int!
-  courseId: Int!
-  ownerUserId: Int!
-  notificationIds: [Int!]!
-  parentId: String!
-  sourceId: String!
-  courseName: String!
-  dataPending: Boolean!
-  dateAdded: String!
+
+  """deadline 的开始时间"""
   startDate: String!
-  endDate: String
-  dueDate: String!
-  eventType: DEADLINE_EVENT_TYPE!
-  eventUrl: String
-  groupCount: Int!
-  ownerName: String!
-  receiverCount: Int!
-  recipientCount: Int!
-  recipientId: Int!
-  recipientType: DEADLINE_RECIPIENT_TYPE!
-  seen: Boolean!
-  sourceData: String
-  sourceDataType: DEADLINE_SOURCE_DATA_TYPE!
-  sourceType: DEADLINE_SOURCE_TYPE!
+
+  """deadline 的结束时间"""
+  endDate: String!
+
+  """deadline 对应的课程的名字"""
+  courseName: String!
+
+  """deadline 的标题"""
   title: String!
+
+  """deadline 的类型"""
   type: DEADLINE_TYPE!
-  viewId: Int!
 
-  """ddl的创建者"""
-  creator: User!
+  """deadline 所在的课程，仅当 deadline 是用户手动添加时为 null"""
+  curriculum: Curriculum
 }
 
-enum DEADLINE_EVENT_TYPE {
-  OVERDUE
-  DUE
-}
-
-enum DEADLINE_RECIPIENT_TYPE {
-  RECEIVER
-}
-
-enum DEADLINE_SOURCE_DATA_TYPE {
-  BLACKBOARD_PLATFORM_GRADEBOOK2_GRADABLEITEM
-}
-
-enum DEADLINE_SOURCE_TYPE {
-  AS
-}
-
+"""deadline 的类型"""
 enum DEADLINE_TYPE {
-  SCHEDULED
+  """从内部网导入"""
+  AUTO_IMPORT
+
+  """用户创建"""
+  USER_CREATE
 }
 
 type DeadlinesConnection {
@@ -2964,8 +2941,23 @@ type Mutation {
   """从某管理员移除一个权限"""
   removePrivilegeOnAdmin(privilege: IPRIVILEGE!, from: String!): Boolean!
 
-  """在当前用户上添加一个ddl"""
-  addDeadline(courseContentId: Int!, courseId: Int!, ownerUserId: Int!, notificationIds: [Int!]!, parentId: String!, sourceId: String!, courseName: String!, dataPending: Boolean!, dateAdded: String!, startDate: String!, endDate: String, dueDate: String!, eventType: DEADLINE_EVENT_TYPE!, eventUrl: String, groupCount: Int!, ownerName: String!, receiverCount: Int!, recipientCount: Int!, recipientId: Int!, recipientType: DEADLINE_RECIPIENT_TYPE!, seen: Boolean!, sourceData: String, sourceDataType: DEADLINE_SOURCE_DATA_TYPE!, sourceType: DEADLINE_SOURCE_TYPE!, title: String!, type: DEADLINE_TYPE!, viewId: Int!): Deadline!
+  """在当前用户上添加一个 deadline，如果指定的 curriculumId 存在，该 deadline 会关联到相应的课程"""
+  addDeadline(
+    """deadline 对应的课程"""
+    courseName: String!
+
+    """deadline 的开始时间"""
+    startDate: String!
+
+    """deadline 的结束时间"""
+    endDate: String!
+
+    """deadline 的标题"""
+    title: String!
+
+    """deadline 的类型"""
+    type: DEADLINE_TYPE!
+  ): Deadline!
 
   """增加帖子的浏览量"""
   addViewOnPost(postId: String!): View!
