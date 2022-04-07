@@ -10,9 +10,9 @@ import { AddDealineArgs, Deadline } from './models/deadlines.model'
 export class DeadlinesResolver {
   constructor (private readonly deadlinesService: DeadlinesService) {}
 
-  @Query(of => Deadline, { description: '以id获取ddl' })
-  async deadline (@Args('deadlineId') deadlineId: string) {
-    return await this.deadlinesService.deadline(deadlineId)
+  @Query(of => Deadline, { description: '以 id 获取指定 deadline' })
+  async deadline (@Args('id') id: string) {
+    return await this.deadlinesService.deadline(id)
   }
 
   @Mutation(of => Deadline, { description: '在当前用户上添加一个 deadline，如果指定的 curriculumId 存在，该 deadline 会关联到相应的课程' })

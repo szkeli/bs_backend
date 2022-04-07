@@ -1,6 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
-import { UserAlreadyHasTheCurriculume, UserNotFoundException } from '../app.exception'
+import { UserAlreadyHasTheCurriculum, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
@@ -157,7 +157,7 @@ export class CurriculumsService {
     })
 
     if (res.json.q.length !== 0) {
-      throw new UserAlreadyHasTheCurriculume(id)
+      throw new UserAlreadyHasTheCurriculum(id)
     }
     if (res.json.v.length !== 1) {
       throw new UserNotFoundException(id)

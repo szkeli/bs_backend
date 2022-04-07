@@ -2308,8 +2308,8 @@ type Query {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): PrivilegesConnection!
 
-  """以id获取ddl"""
-  deadline(deadlineId: String!): Deadline!
+  """以 id 获取指定 deadline"""
+  deadline(id: String!): Deadline!
 
   """获取所有的课程"""
   curriculums(
@@ -2943,7 +2943,13 @@ type Mutation {
 
   """在当前用户上添加一个 deadline，如果指定的 curriculumId 存在，该 deadline 会关联到相应的课程"""
   addDeadline(
-    """deadline 对应的课程"""
+    """deadline 对应的课程的 id"""
+    curriculumId: String
+
+    """唯一的 deadline id"""
+    deadlineId: String!
+
+    """deadline 对应的课程的名字"""
     courseName: String!
 
     """deadline 的开始时间"""

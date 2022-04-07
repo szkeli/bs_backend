@@ -67,6 +67,7 @@ sourceType: string @index(term) .
 curriculumId: string @index(hash) .
 action: string @index(term) .
 educatorName: string @index(hash) .
+deadlineId: string @index(hash) .
 
 circle: [int] .
 notificationIds: [int] .
@@ -230,6 +231,8 @@ type Post {
 
 # 用户在blackboard上的ddl
 type Deadline {
+  # deadline 唯一 id
+  deadlineId
   # 创建时间
   createdAt
   # deadline 对应的课程的名称
