@@ -157,7 +157,54 @@ export class DeadlinesService {
     }
   }
 
-  async addDeadlineByUserCreate (id: string, args: AddDealineArgs): Promise<Deadline> {
-    throw new Error('Method not implemented.')
+  async addDeadlineByUserCreate (id: string, { deadlineId, courseName, startDate, endDate, title, type }: AddDealineArgs): Promise<Deadline> {
+    const query = `
+      query v($actor: string, $deadlineId: string) {
+        # deadlineId 对应的 deadline 是否已经存在
+        d(func: eq(deadlineId, $deadlineId)) @filter(type(Deadline)) { d as uid }
+        # 用户是否存在
+        u(func: uid($actor)) @filter(type(User)) { u as uid }
+      }
+    `
+    const condition = '@if( eq(len(d), 0) and eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      deadlines: {
+        uid: '_:deadline',
+        'dgraph.type': 'Deadline',
+        createdAt: now(),
+        deadlineId,
+        courseName,
+        startDate,
+        endDate,
+        title,
+        type
+      }
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+      d: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [{ condition, mutation }],
+      vars: { $actor: id, $deadlineId: deadlineId }
+    })
+
+    if (res.json.d.length !== 0) {
+      throw new UserAlreadyHasTheDeadline(id, deadlineId)
+    }
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+
+    return {
+      id: res.uids.get('deadline'),
+      createdAt: now(),
+      courseName,
+      startDate,
+      endDate,
+      title,
+      type
+    }
   }
 }
