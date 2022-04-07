@@ -30,6 +30,9 @@ export class Curriculum {
 
   @Field(of => String, { description: '课程的创建时间' })
     createdAt: string
+
+  @Field(of => String, { description: '课程对应的唯一课程号' })
+    curriculumId: string
 }
 
 @ArgsType()

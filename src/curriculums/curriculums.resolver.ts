@@ -36,7 +36,7 @@ export class CurriculumsResolver {
     return await this.curriculumsService.curriculum(id)
   }
 
-  @ResolveField(of => DeadlinesConnection, { description: '课程对应的deadlines' })
+  @ResolveField(of => DeadlinesConnection, { description: '该课程下的所有deadlines' })
   async deadlines (@Args() args: RelayPagingConfigArgs) {
     return await this.curriculumsService.deadlines(args)
   }
