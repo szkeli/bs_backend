@@ -1,4 +1,4 @@
-import { Args, Mutation, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { Admin } from '../admin/models/admin.model'
 import { CurrentUser, Role, Roles } from '../auth/decorator'
@@ -37,7 +37,7 @@ export class CurriculumsResolver {
   }
 
   @ResolveField(of => DeadlinesConnection, { description: '该课程下的所有deadlines' })
-  async deadlines (@Args() args: RelayPagingConfigArgs) {
-    return await this.curriculumsService.deadlines(args)
+  async deadlines (@Parent() curriculum: Curriculum, @Args() args: RelayPagingConfigArgs) {
+    return await this.curriculumsService.deadlines(curriculum.id, args)
   }
 }

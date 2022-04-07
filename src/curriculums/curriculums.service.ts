@@ -3,6 +3,7 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 import { UserAlreadyHasTheCurriculum, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
+import { Deadline } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { handleRelayForwardAfter, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { AddCurriculumArgs, Curriculum, UpdateCurriculumArgs } from './models/curriculums.model'
@@ -11,8 +12,40 @@ import { AddCurriculumArgs, Curriculum, UpdateCurriculumArgs } from './models/cu
 export class CurriculumsService {
   constructor (private readonly dbService: DbService) {}
 
-  async deadlines (args: RelayPagingConfigArgs) {
+  async deadlines (id: string, { first, orderBy, after }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.deadlinesRelayForward(id, first, after)
+    }
     throw new Error('Method not implemented.')
+  }
+
+  async deadlinesRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(deadlines), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(Curriculum)) {
+          deadlines as deadlines (orderdesc: createdAt) @filter(type(Deadline))
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(deadlines)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'deadlines'}), orderdesc: createdAt, first: ${first}) { 
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startO(func: uid(deadlines), first: -1) { createdAt }
+        # 结束游标
+        endO(func: uid(deadlines), first: 1) { createdAt } 
+      }
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Deadline>>({ query, vars: { $id: id, $after: after } })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async updateCurriculum (id: any, args: UpdateCurriculumArgs) {
