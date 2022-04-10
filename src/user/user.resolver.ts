@@ -7,7 +7,7 @@ import { SubjectsConnection } from 'src/subject/model/subject.model'
 import { RawUser2UserWithPrivateProps, sign as sign_calculus } from 'src/tool'
 
 import { Admin } from '../admin/models/admin.model'
-import { Role, UserWithRoles } from '../auth/model/auth.model'
+import { Role, UserAuthenInfo, UserWithRoles } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { CommentService } from '../comment/comment.service'
 import { CommentsConnection } from '../comment/models/comment.model'
@@ -224,5 +224,10 @@ export class UserResolver {
   ) {
     if (currentUser?.id !== user.id) return null
     return await this.notificationsService.findUpvoteNotificationsByXid(user.id, paging, type)
+  }
+
+  @ResolveField(of => UserAuthenInfo, { description: '当前用户提交的认证信息', nullable: true })
+  async authenInfo (@Parent() user: User) {
+    return await this.userService.authenInfo(user.id)
   }
 }

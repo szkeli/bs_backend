@@ -5,7 +5,7 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 
 import { SystemAdminNotFoundException, UserIdExistException, UserNotAuthenException, UserNotFoundException } from '../app.exception'
-import { UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
+import { UserAuthenInfo, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { Curriculum } from '../curriculums/models/curriculums.model'
@@ -28,6 +28,19 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async authenInfo (id: string) {
+    const query = `
+      query v($id: string) {
+        v(func: type(UserAuthenInfo)) @filter(uid_in(to, $id) and not has(delete)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{v: UserAuthenInfo[]}>({ query, vars: { $id: id } })
+    return res.v[0]
   }
 
   async deadlines (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {

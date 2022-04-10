@@ -597,6 +597,9 @@ type User implements Person & Node {
     type: NOTIFICATION_TYPE = ALL
   ): VoteWithUnreadCountsConnection
 
+  """当前用户提交的认证信息"""
+  authenInfo: UserAuthenInfo
+
   """学号"""
   studentId: Int
 
@@ -824,6 +827,9 @@ interface Person implements Node {
     orderBy: ORDER_BY = CREATED_AT_DESC
     type: NOTIFICATION_TYPE = ALL
   ): VoteWithUnreadCountsConnection
+
+  """当前用户提交的认证信息"""
+  authenInfo: UserAuthenInfo
 }
 
 interface Node {
@@ -1036,6 +1042,9 @@ type LoginResult implements Node & Person {
     orderBy: ORDER_BY = CREATED_AT_DESC
     type: NOTIFICATION_TYPE = ALL
   ): VoteWithUnreadCountsConnection
+
+  """当前用户提交的认证信息"""
+  authenInfo: UserAuthenInfo
 
   """学号"""
   studentId: Int
@@ -2736,6 +2745,9 @@ type UserWithPrivateProps implements Person & Node {
     orderBy: ORDER_BY = CREATED_AT_DESC
     type: NOTIFICATION_TYPE = ALL
   ): VoteWithUnreadCountsConnection
+
+  """当前用户提交的认证信息"""
+  authenInfo: UserAuthenInfo
 }
 
 enum SEARCHTYPE {
