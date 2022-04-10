@@ -2997,8 +2997,11 @@ type Mutation {
   """从某管理员移除一个权限"""
   removePrivilegeOnAdmin(privilege: IPRIVILEGE!, from: String!): Boolean!
 
-  """在当前用户上添加一个 deadline，如果指定的 curriculumId 存在，该 deadline 会关联到相应的课程"""
+  """在指定用户上添加一个 deadline，如果指定的 curriculumId 存在，该 deadline 会关联到相应的课程"""
   addDeadline(
+    """该课程将被添加到的用户的 id"""
+    id: String!
+
     """deadline 对应的课程的 id"""
     curriculumId: String
 
