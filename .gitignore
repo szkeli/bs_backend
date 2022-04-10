@@ -2,15 +2,18 @@
 /dist
 /node_modules
 
-schema.gql
+src/schema.gql
 
 .env
 frpc.ini
 
+# yarn 
+yarn.lock
+
 # Logs
 logs
 *.log
-HuaweiCloud-SDK-Access.log.gz
+*.log.gz
 npm-debug.log*
 pnpm-debug.log*
 yarn-debug.log*
