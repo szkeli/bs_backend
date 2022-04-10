@@ -35,6 +35,7 @@ export class CurriculumsResolver {
   }
 
   @Query(of => CurriculumsConnection, { description: '获取所有的课程' })
+  @Roles(Role.Admin, Role.User)
   async curriculums (@Args() args: RelayPagingConfigArgs) {
     return await this.curriculumsService.curriculums(args)
   }
