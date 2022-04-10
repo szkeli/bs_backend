@@ -398,7 +398,7 @@ export class AuthService {
       throw new UserNotFoundException(id)
     }
     if (res.json.n.length !== 0) {
-      throw new UserNotFoundException(id)
+      throw new UserHadAuthenedException(id)
     }
 
     if (res.json.x.length !== roleIdsLen) {
