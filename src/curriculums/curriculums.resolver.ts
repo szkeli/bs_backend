@@ -4,7 +4,7 @@ import { Admin } from '../admin/models/admin.model'
 import { CurrentUser, Role, Roles } from '../auth/decorator'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { User } from '../user/models/user.model'
+import { PersonWithRoles } from '../user/models/user.model'
 import { CurriculumsService } from './curriculums.service'
 import { AddCurriculumArgs, Curriculum, CurriculumsConnection, UpdateCurriculumArgs } from './models/curriculums.model'
 
@@ -16,8 +16,16 @@ export class CurriculumsResolver {
   constructor (private readonly curriculumsService: CurriculumsService) {}
 
   @Mutation(of => Curriculum, { description: '添加一个课程到当前用户' })
-  async addCurriculum (@CurrentUser() user: User, @Args() args: AddCurriculumArgs) {
-    return await this.curriculumsService.addCurriculum(user.id, args)
+  @Roles(Role.Admin, Role.User)
+  async addCurriculum (@CurrentUser() person: PersonWithRoles, @Args() args: AddCurriculumArgs) {
+    if (person.roles?.includes(Role.Admin) && person.id !== args.id) {
+      // 管理员添加课程到指定用户
+      return await this.curriculumsService.addCurriculum(person.id, args)
+    }
+    if (person.roles?.includes(Role.User)) {
+      // 用户给自己添加课程
+      return await this.curriculumsService.addCurriculumSelf(person.id, args)
+    }
   }
 
   @Mutation(of => Curriculum, { description: '管理员更新一个课程' })

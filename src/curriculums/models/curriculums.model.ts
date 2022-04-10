@@ -46,6 +46,9 @@ export class UpdateCurriculumArgs {
 
 @ArgsType()
 export class AddCurriculumArgs {
+  @Field({ description: '该课程添加到对应的用户的id' })
+    id: string
+
   @Field({ description: '上课地点' })
     destination: string
 

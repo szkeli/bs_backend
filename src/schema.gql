@@ -3029,6 +3029,9 @@ type Mutation {
 
   """添加一个课程到当前用户"""
   addCurriculum(
+    """该课程添加到对应的用户的id"""
+    id: String!
+
     """上课地点"""
     destination: String!
 
