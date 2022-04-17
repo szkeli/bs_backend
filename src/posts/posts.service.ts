@@ -95,6 +95,7 @@ export class PostsService {
           id: uid
           creator @filter(type(User)) {
             id: uid
+            subCampus
           }
           anonymous @filter(type(Anonymous)) {
             id: uid
@@ -104,15 +105,17 @@ export class PostsService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      post: Array<{id: string, anonymous: Anonymous, creator: {id: string}}>
+      post: Array<{id: string, anonymous: Anonymous, creator: {id: string, subCampus?: string | null}}>
     }>({ query, vars: { $postId: id } })
 
     const anonymous = res.post[0]?.anonymous
     const postId = res.post[0]?.id
     const creatorId = res.post[0]?.creator?.id
+    const subCampus = res.post[0]?.creator?.subCampus
 
     if (anonymous) {
       anonymous.watermark = sha1(`${postId}${creatorId}`)
+      anonymous.subCampus = subCampus
     }
 
     return anonymous
