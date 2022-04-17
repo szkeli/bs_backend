@@ -13,12 +13,12 @@ blocks: [uid] @reverse .
 privileges: [uid] @reverse .
 deadlines: [uid] @reverse .
 views: [uid] @reverse .
-curriculums: [uid] @reverse .
 pins: [uid] @reverse .
 notifications: [uid] @reverse .
 roles: [uid] @reverse .
 users: [uid] @reverse .
-curriculum: [uid] @reverse .
+lesson: [uid] @reverse .
+lessons: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -64,7 +64,7 @@ recipientType: string @index(term) .
 sourceData: string @index(fulltext) .
 sourceDataType: string @index(term) .
 sourceType: string @index(term) .
-curriculumId: string @index(hash) .
+lessonId: string @index(hash) .
 action: string @index(term) .
 educatorName: string @index(hash) .
 deadlineId: string @index(hash) .
@@ -244,7 +244,7 @@ type Deadline {
   # deadline 的标题
   title
   # deadline 所在的课程
-  curriculum
+  lesson
   # deadline 的类型 [用户创建、从内部网自动导入]
   type
 }
@@ -513,9 +513,9 @@ type Message {
 }
 
 # 课程
-type Curriculum {
+type Lesson {
   # 课程号
-  curriculumId
+  lessonId
   # 创建时间
   createdAt
   # 课程名称

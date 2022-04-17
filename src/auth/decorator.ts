@@ -1,12 +1,28 @@
 import { createParamDecorator, ExecutionContext, SetMetadata } from '@nestjs/common'
 import { GqlExecutionContext } from '@nestjs/graphql'
 
+import { Admin } from '../admin/models/admin.model'
+import { Person, User } from '../user/models/user.model'
 import { PolicyHandler } from './model/auth.model'
 
 export const CurrentUser = createParamDecorator(
-  (data: unknown, context: ExecutionContext) => {
+  (_data: unknown, context: ExecutionContext) => {
     const ctx = GqlExecutionContext.create(context)
-    return ctx.getContext()?.req?.user
+    return ctx.getContext()?.req?.user as User
+  }
+)
+
+export const CurrentPerson = createParamDecorator(
+  (_data: unknown, context: ExecutionContext) => {
+    const ctx = GqlExecutionContext.create(context)
+    return ctx.getContext()?.req?.user as Person
+  }
+)
+
+export const CurrentAdmin = createParamDecorator(
+  (_data: unknown, context: ExecutionContext) => {
+    const ctx = GqlExecutionContext.create(context)
+    return ctx.getContext()?.req?.user as Admin
   }
 )
 

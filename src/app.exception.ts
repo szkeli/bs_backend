@@ -73,15 +73,39 @@ export class MustWithCredentialException extends HttpException {
   }
 }
 
+/**
+ * @deprecated use `UserAlreadyHasTheLesson` instead
+ */
 export class UserAlreadyHasTheCurriculum extends HttpException {
   constructor (id: string) {
     super('用户 id 早已添加该课程', HttpStatus.FORBIDDEN)
   }
 }
 
+export class UserAlreadyHasTheLesson extends HttpException {
+  constructor (id: string) {
+    super('用户 id 早已添加该课程', HttpStatus.FORBIDDEN)
+  }
+}
+
+/**
+ * @deprecated use `UserNotHasTheLesson` instead
+ */
 export class UserNotHasTheCurriculum extends HttpException {
   constructor (id: string, curriculumId: string) {
     super(`用户 ${id} 未添加课程 ${curriculumId}`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class UserNotHasTheLesson extends HttpException {
+  constructor (id: string, lessonId: string) {
+    super(`用户 ${id} 未添加课程 ${lessonId}`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class LessonNotFoundException extends HttpException {
+  constructor (id: string) {
+    super(`课程 ${id} 不存在`, HttpStatus.FORBIDDEN)
   }
 }
 

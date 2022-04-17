@@ -8,8 +8,8 @@ import { SystemAdminNotFoundException, UserIdExistException, UserNotAuthenExcept
 import { UserAuthenInfo, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
-import { Curriculum } from '../curriculums/models/curriculums.model'
 import { Deadline } from '../deadlines/models/deadlines.model'
+import { Lesson } from '../lessons/models/lessons.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Role } from '../roles/models/roles.model'
@@ -28,6 +28,44 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async lessons (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.lessonsRelayForward(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async lessonsRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(lessons), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+        query v($id: string, $after: string) {
+          var(func: uid($id)) @filter(type(User)) {
+            lessons (orderdesc: createdAt) @filter(type(Lesson)) {
+              lessons as uid
+            }
+          }
+          ${after ? q1 : ''}
+          totalCount(func: uid(lessons)) { count(uid) }
+          objs(func: uid(${after ? 'q' : 'lessons'}), orderdesc: createdAt, first: ${first}) {
+            id: uid
+            expand(_all_)
+          }
+          # 开始游标
+          startO(func: uid(lessons), first: -1) { createdAt }
+          # 结束游标
+          endO(func: uid(lessons), first: 1) { createdAt } 
+        }
+      `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Lesson>>({ query, vars: { $id: id, $after: after } })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async authenInfo (id: string) {
@@ -73,44 +111,6 @@ export class UserService {
       }
     `
     const res = await this.dbService.commitQuery<RelayfyArrayParam<Deadline>>({ query, vars: { $id: id, $after: after } })
-
-    return relayfyArrayForward({
-      ...res,
-      first,
-      after
-    })
-  }
-
-  async curriculums (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
-    after = handleRelayForwardAfter(after)
-    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.curriculumsRelayForward(id, first, after)
-    }
-    throw new Error('Method not implemented.')
-  }
-
-  async curriculumsRelayForward (id: string, first: number, after: string) {
-    const q1 = 'var(func: uid(curriculums), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    const query = `
-        query v($id: string, $after: string) {
-          var(func: uid($id)) @filter(type(User)) {
-            curriculums (orderdesc: createdAt) @filter(type(Curriculum)) {
-              curriculums as uid
-            }
-          }
-          ${after ? q1 : ''}
-          totalCount(func: uid(curriculums)) { count(uid) }
-          objs(func: uid(${after ? 'q' : 'curriculums'}), orderdesc: createdAt, first: ${first}) {
-            id: uid
-            expand(_all_)
-          }
-          # 开始游标
-          startO(func: uid(curriculums), first: -1) { createdAt }
-          # 结束游标
-          endO(func: uid(curriculums), first: 1) { createdAt } 
-        }
-      `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<Curriculum>>({ query, vars: { $id: id, $after: after } })
 
     return relayfyArrayForward({
       ...res,

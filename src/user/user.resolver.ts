@@ -1,6 +1,5 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
-import { AuthService } from 'src/auth/auth.service'
 import { CheckPolicies, CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
 import { CommentsConnectionWithRelay, PostsConnection, PostsConnectionWithRelay, RelayPagingConfigArgs } from 'src/posts/models/post.model'
 import { SubjectsConnection } from 'src/subject/model/subject.model'
@@ -14,10 +13,8 @@ import { CommentsConnection } from '../comment/models/comment.model'
 import { ConversationsService } from '../conversations/conversations.service'
 import { ConversationsConnection } from '../conversations/models/conversations.model'
 import { ICredential } from '../credentials/models/credentials.model'
-import { CurriculumsService } from '../curriculums/curriculums.service'
-import { CurriculumsConnection } from '../curriculums/models/curriculums.model'
-import { DeadlinesService } from '../deadlines/deadlines.service'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
+import { LessonsConnection } from '../lessons/models/lessons.model'
 import { WithinArgs } from '../node/models/node.model'
 import { NOTIFICATION_TYPE, NotificationsConnection } from '../notifications/models/notifications.model'
 import { NotificationsService } from '../notifications/notifications.service'
@@ -44,11 +41,8 @@ import { UserService } from './user.service'
 export class UserResolver {
   constructor (
     private readonly userService: UserService,
-    private readonly authService: AuthService,
     private readonly conversationsService: ConversationsService,
     private readonly reportsService: ReportsService,
-    private readonly deadlinesService: DeadlinesService,
-    private readonly curriculumsService: CurriculumsService,
     private readonly votesService: VotesService,
     private readonly commentsService: CommentService,
     private readonly notificationsService: NotificationsService
@@ -172,9 +166,9 @@ export class UserResolver {
     return await this.userService.deadlines(user.id, args)
   }
 
-  @ResolveField(of => CurriculumsConnection, { description: '当前用户的课程信息' })
-  async curriculums (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.curriculums(user.id, args)
+  @ResolveField(of => LessonsConnection, { description: '当前用户的所有课程' })
+  async lessons (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.lessons(user.id, args)
   }
 
   @ResolveField(of => PrivilegesConnection, { description: '当前用户具有的权限' })

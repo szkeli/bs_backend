@@ -2,7 +2,7 @@ import { ForbiddenException } from '@nestjs/common'
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { CurrentUser, Role, Roles } from '../auth/decorator'
-import { Curriculum } from '../curriculums/models/curriculums.model'
+import { Lesson } from '../lessons/models/lessons.model'
 import { PersonWithRoles } from '../user/models/user.model'
 import { DeadlinesService } from './deadlines.service'
 import { AddDealineArgs, Deadline, DEADLINE_TYPE } from './models/deadlines.model'
@@ -40,8 +40,8 @@ export class DeadlinesResolver {
     throw new ForbiddenException()
   }
 
-  @ResolveField(of => Curriculum, { description: 'deadline 所在的课程，仅当 deadline 是用户手动添加时为 null', nullable: true })
-  async curriculum (@Parent() deadline: Deadline) {
-    return await this.deadlinesService.curriculum(deadline.id)
+  @ResolveField(of => Lesson, { description: 'deadline 对应的课程' })
+  async lesson (@Parent() deadline: Deadline) {
+    return await this.deadlinesService.lesson(deadline.id)
   }
 }

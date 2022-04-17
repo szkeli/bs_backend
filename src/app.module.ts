@@ -20,12 +20,12 @@ import { ConnectionsModule } from './connections/connections.module'
 import { ConversationsModule } from './conversations/conversations.module'
 import { CosModule } from './cos/cos.module'
 import { CredentialsModule } from './credentials/credentials.module'
-import { CurriculumsModule } from './curriculums/curriculums.module'
 import { DbModule } from './db/db.module'
 import { DbService } from './db/db.service'
 import { DeadlinesModule } from './deadlines/deadlines.module'
 import { DeletesModule } from './deletes/deletes.module'
 import { FoldsModule } from './folds/folds.module'
+import { LessonsModule } from './lessons/lessons.module'
 import { MessagesModule } from './messages/messages.module'
 import { NlpModule } from './nlp/nlp.module'
 import { NodeModule } from './node/node.module'
@@ -93,7 +93,6 @@ import { WxModule } from './wx/wx.module'
     PrivilegesModule,
     DeadlinesModule,
     ViewsModule,
-    CurriculumsModule,
     FoldsModule,
     BlocksModule,
     CredentialsModule,
@@ -106,7 +105,8 @@ import { WxModule } from './wx/wx.module'
     WxModule,
     CosModule,
     NlpModule,
-    RolesModule
+    RolesModule,
+    LessonsModule
   ],
   controllers: [AppController],
   providers: [

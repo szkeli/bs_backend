@@ -9,7 +9,6 @@ import { AdminService } from '../admin/admin.service'
 import { CensorsService } from '../censors/censors.service'
 import { CommentService } from '../comment/comment.service'
 import { ConversationsService } from '../conversations/conversations.service'
-import { CurriculumsService } from '../curriculums/curriculums.service'
 import { DeadlinesService } from '../deadlines/deadlines.service'
 import { NotificationsService } from '../notifications/notifications.service'
 import { PubsubsModule } from '../pubsubs/pubsubs.module'
@@ -34,7 +33,6 @@ import { UserService } from './user.service'
     ReportsService,
     AdminService,
     DeadlinesService,
-    CurriculumsService,
     CommentService,
     CensorsService,
     NotificationsService
