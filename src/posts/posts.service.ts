@@ -511,7 +511,7 @@ export class PostsService {
   async post (id: PostId): Promise<Post> {
     const query = `
         query v($uid: string) {
-          post(func: uid($uid)) @filter(type(Post) and not has delete) {
+          post(func: uid($uid)) @filter(type(Post) and not has(delete)) {
             id: uid
             expand(_all_) 
           }
