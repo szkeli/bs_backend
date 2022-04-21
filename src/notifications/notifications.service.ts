@@ -32,7 +32,8 @@ export class NotificationsService {
       uid: 'uid(notifications)',
       isRead: true
     }
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+
+    await this.dbService.commitConditionalUperts<Map<string, string>, {
       totalCount: Array<{count: number}>
     }>({
       mutations: [{ mutation, condition }],
@@ -40,9 +41,6 @@ export class NotificationsService {
       vars: { $xid: xid, $now: _now }
     })
 
-    if (res.json.totalCount[0]?.count === 0) {
-      throw new ForbiddenException('当前用户所有通知都已读')
-    }
     return true
   }
 
