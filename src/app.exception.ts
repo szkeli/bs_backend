@@ -114,3 +114,9 @@ export class UserAlreadyHasTheDeadline extends HttpException {
     super(`用户 ${id} 早已添加 deadline ${deadlineId}`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class PostNotFoundException extends HttpException {
+  constructor (id: string) {
+    super(`帖子 ${id} 不存在`, HttpStatus.FORBIDDEN)
+  }
+}

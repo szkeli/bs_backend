@@ -5,6 +5,7 @@ import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
+import { PostNotFoundException } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
@@ -20,7 +21,6 @@ import {
   Post,
   PostsConnection,
   PostsConnectionWithRelay,
-  PostWithCreatorId,
   RelayPagingConfigArgs
 } from './models/post.model'
 
@@ -508,15 +508,10 @@ export class PostsService {
     }
   }
 
-  async post (id: PostId): Promise<PostWithCreatorId> {
+  async post (id: PostId): Promise<Post> {
     const query = `
         query v($uid: string) {
-          postCreatorId(func: uid($uid)) @filter(type(Post)) {
-            creator @filter(type(User)) {
-              id: uid
-            }
-          }
-          post(func: uid($uid)) @filter(type(Post)) {
+          post(func: uid($uid)) @filter(type(Post) and not has delete) {
             id: uid
             expand(_all_) 
           }
@@ -524,7 +519,6 @@ export class PostsService {
       `
     const res = await this.dbService.commitQuery<{
       post: Post[]
-      postCreatorId: Array<{creator: {uid: string}}>
     }>({
       query,
       vars: {
@@ -533,12 +527,9 @@ export class PostsService {
     })
 
     if (!res || !res.post || res.post.length !== 1) {
-      throw new ForbiddenException(`帖子 ${id} 不存在`)
+      throw new PostNotFoundException(id)
     }
-    return {
-      ...res.post[0],
-      creatorId: res.postCreatorId[0]?.creator.uid || ''
-    }
+    return res.post[0]
   }
 
   async postsWithRelayForward (first: number, after: string | null): Promise<PostsConnectionWithRelay> {
