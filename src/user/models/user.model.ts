@@ -76,6 +76,9 @@ export class AuthenticationInfo {
   @Field({ description: '用户头像' })
     avatarImageUrl: string
 
+  @Field({ description: '用户昵称' })
+    name: string
+
   @Field({ description: '学号' })
     studentId: number | null
 
@@ -106,7 +109,7 @@ export class AuthenticateUserArgs {
   @Field({ description: '待认证的用户id' })
     id: string
 
-  @Field({ nullable: true, description: '自助认证时 szu 后端提供的token (以保证不被篡改，用 jwt 实现)' })
+  @Field({ nullable: true, description: '自助认证时 szu 后端提供的token (保证不被篡改，用 jwt 实现)' })
     token?: string
 
   @Field({ nullable: true, description: '手动认证时的认证信息' })

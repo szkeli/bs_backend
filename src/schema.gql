@@ -2908,7 +2908,7 @@ type Mutation {
     """待认证的用户id"""
     id: String!
 
-    """自助认证时 szu 后端提供的token (以保证不被篡改，用 jwt 实现)"""
+    """自助认证时 szu 后端提供的token (保证不被篡改，用 jwt 实现)"""
     token: String
 
     """手动认证时的认证信息"""
@@ -3126,6 +3126,9 @@ type Mutation {
 input AuthenticationInfo {
   """用户头像"""
   avatarImageUrl: String!
+
+  """用户昵称"""
+  name: String!
 
   """学号"""
   studentId: Float!

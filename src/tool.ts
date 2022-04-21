@@ -203,6 +203,33 @@ export const ids2String = function (ids: string[]) {
 export const getAuthenticationInfo = function (token: string): AuthenticationInfo {
   const tokenRes = verify(token, process.env.USER_AUTHEN_JWT_SECRET) as AuthenticationInfo
 
+  const require = [
+    'avatarImageUrl',
+    'studentId',
+    'school',
+    'subCampus',
+    'gender',
+    'college',
+    'grade',
+    'name'
+  ]
+  // const require = Object.keys(AuthenticationInfo)
+  const has = Object.keys(tokenRes) || []
+  const c = has.concat(require)
+
+  // 缺少的元素
+  const lack = c.filter(v => require.includes(v) && !has.includes(v))
+  // 未知的多余元素
+  const unknown = c.filter(v => !require.includes(v) && has.includes(v))
+
+  if (lack.length !== 0) {
+    throw new ForbiddenException(`autoAuthenUserSelf 时，AuthenticationInfo 缺少 ${lack.toString()} 元素`)
+  }
+
+  if (unknown.length !== 0) {
+    throw new ForbiddenException(`autoAuthenUserSelf 时，AuthenticationInfo 中 ${unknown.toString()} 属性作用未定义`)
+  }
+
   return {
     avatarImageUrl: tokenRes.avatarImageUrl,
     studentId: tokenRes.studentId,
@@ -211,6 +238,7 @@ export const getAuthenticationInfo = function (token: string): AuthenticationInf
     college: tokenRes.college,
     gender: tokenRes.gender,
     grade: tokenRes.grade,
-    roles: tokenRes.roles
+    roles: tokenRes.roles,
+    name: tokenRes.name
   }
 }
