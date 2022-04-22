@@ -98,3 +98,24 @@ export class SendUniformMessageArgs {
   @Field(of => MpTemplateMsg, { description: '公众号模板消息相关的信息，可以参考公众号模板消息接口；有此节点并且没有weapp_template_msg节点时，发送公众号模板消息' })
     mp_template_msg: MpTemplateMsg
 }
+
+@ArgsType()
+export class SendSubscribeMessageArgs {
+  @Field(of => String, { description: '接收者（用户）的 openid' })
+    touser: string
+
+  @Field(of => String, { description: '所需下发的订阅模板id' })
+    template_id: string
+
+  @Field(of => String, { nullable: true, description: '点击模板卡片后的跳转页面，仅限本小程序内的页面。支持带参数,（示例index?foo=bar）。该字段不填则模板无跳转。' })
+    page: string
+
+  @Field(of => String, { description: '模板内容，格式形如 { "key1": { "value": any }, "key2": { "value": any } }' })
+    data: string
+
+  @Field(of => String, { description: '跳转小程序类型：developer为开发版；trial为体验版；formal为正式版；默认为正式版', nullable: true })
+    miniprograme_state: string
+
+  @Field(of => String, { description: '进入小程序查看”的语言类型，支持zh_CN(简体中文)、en_US(英文)、zh_HK(繁体中文)、zh_TW(繁体中文)，默认为zh_CN', nullable: true })
+    lang: string
+}

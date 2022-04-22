@@ -1,6 +1,7 @@
 import { Args, Query, Resolver } from '@nestjs/graphql'
 
-import { GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs, SendUniformMessageArgs } from './models/wx.model'
+import { Role, Roles } from '../auth/decorator'
+import { GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs, SendSubscribeMessageArgs, SendUniformMessageArgs } from './models/wx.model'
 import { WxService } from './wx.service'
 
 @Resolver()
@@ -18,7 +19,14 @@ export class WxResolver {
   }
 
   @Query(of => String)
+  @Roles(Role.Admin)
   async sendUniformMessage (@Args() config: SendUniformMessageArgs) {
     return (await this.wxService.sendUniformMessage(config)).errmsg
+  }
+
+  @Query(of => String, { description: '向小程序下发订阅消息' })
+  @Roles(Role.Admin)
+  async sendSubscibeMessage (@Args() config: SendSubscribeMessageArgs) {
+    return (await this.wxService.sendSubscribeMessage(config)).errmsg
   }
 }

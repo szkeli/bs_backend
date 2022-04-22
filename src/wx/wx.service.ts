@@ -3,11 +3,27 @@ import axios from 'axios'
 
 import { CosService } from '../cos/cos.service'
 import { sha1 } from '../tool'
-import { GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs, SendUniformMessageArgs } from './models/wx.model'
+import { GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs, SendSubscribeMessageArgs, SendUniformMessageArgs } from './models/wx.model'
 
 @Injectable()
 export class WxService {
   constructor (private readonly cosService: CosService) {}
+
+  async sendSubscribeMessage (config: SendSubscribeMessageArgs) {
+    const accessToken = await this.getAccessToken()
+    // config.data = JSON.parse(config.data)
+    return await axios({
+      method: 'POST',
+      url: 'https://api.weixin.qq.com/cgi-bin/message/subscribe/send',
+      params: {
+        access_token: accessToken
+      },
+      data: config
+    }).then(r => r.data as unknown as {
+      errcode: 40003 | 40037 | 43101 | 47003 | 41030
+      errmsg: string
+    })
+  }
 
   async getAccessToken () {
     const appId = process.env.APP_ID
@@ -28,6 +44,7 @@ export class WxService {
       errcode: -1 | 0 | 40001 | 40002 | 40003 | null
       errmsg: string | null
     })
+    console.error(res)
 
     if (!res.access_token) {
       throw new ForbiddenException(res.errmsg)
