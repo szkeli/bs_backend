@@ -12,6 +12,12 @@ export class WxService {
   async sendSubscribeMessage (config: SendSubscribeMessageArgs) {
     const accessToken = await this.getAccessToken()
     // config.data = JSON.parse(config.data)
+    const data = {
+      thing4: '人工审核',
+      phrase1: '审核通过',
+      time2: '2019年10月1日 15:01',
+      thing3: '备注'
+    }
     return await axios({
       method: 'POST',
       url: 'https://api.weixin.qq.com/cgi-bin/message/subscribe/send',
@@ -44,7 +50,6 @@ export class WxService {
       errcode: -1 | 0 | 40001 | 40002 | 40003 | null
       errmsg: string | null
     })
-    console.error(res)
 
     if (!res.access_token) {
       throw new ForbiddenException(res.errmsg)
