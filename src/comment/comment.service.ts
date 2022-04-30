@@ -190,11 +190,12 @@ export class CommentService {
           p as ~comments
         }
         originPost(func: uid(p)) @filter(type(Post)) {
-          id
+          id: uid
         }
         comment(func: uid($commentId)) @filter(type(Comment)) {
           creator @filter(type(User)) {
             id: uid
+            subCampus
           }
           # 被评论的对象的id
           to @filter(type(Post) or type(Comment)) {
@@ -209,15 +210,17 @@ export class CommentService {
     `
     const res = await this.dbService.commitQuery<{
       originPost: Array<{id: string}>
-      comment: Array<{to: {id: string}, creator: {id: string}, anonymous: Anonymous}>
+      comment: Array<{to: {id: string}, creator: {id: string, subCampus: string}, anonymous: Anonymous}>
     }>({ query, vars: { $commentId: id } })
 
     const anonymous = res.comment[0]?.anonymous
     const creatorId = res.comment[0]?.creator?.id
     const originPostId = res.originPost[0]?.id
+    const subCampus = res.comment[0]?.creator?.subCampus
 
     if (anonymous) {
       anonymous.watermark = sha1(`${originPostId}${creatorId}`)
+      anonymous.subCampus = subCampus
     }
 
     return anonymous
