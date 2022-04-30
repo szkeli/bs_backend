@@ -16,6 +16,9 @@ export class Comment {
 
   @Field()
     createdAt: string
+
+  @Field(of => [String], { description: '评论包含的图片', nullable: true })
+    images: string[]
 }
 
 @ObjectType()
@@ -43,4 +46,7 @@ export class AddCommentArgs {
 
   @Field(type => Boolean, { description: '是否匿名发布这条评论', nullable: true, defaultValue: false })
     isAnonymous: boolean
+
+  @Field(of => [String], { nullable: true, description: '评论包含的图片' })
+    images: string[]
 }

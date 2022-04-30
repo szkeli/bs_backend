@@ -451,7 +451,7 @@ export class CommentService {
     }
   }
 
-  async addCommentOnComment (creator: string, { content, to: commentId, isAnonymous }: AddCommentArgs): Promise<CommentWithTo> {
+  async addCommentOnComment (creator: string, { content, to: commentId, isAnonymous, images }: AddCommentArgs): Promise<CommentWithTo> {
     const _now = now()
 
     const query = `
@@ -523,6 +523,7 @@ export class CommentService {
         uid: '_:comment',
         'dgraph.type': 'Comment',
         content,
+        images,
         createdAt: _now,
         // 被评论的对象
         to: {
@@ -610,12 +611,13 @@ export class CommentService {
     return {
       content,
       createdAt: _now,
+      images,
       id: res.uids.get('comment'),
       to: commentId
     }
   }
 
-  async addCommentOnPost (creator: string, { content, to: postId, isAnonymous }: AddCommentArgs): Promise<CommentWithTo> {
+  async addCommentOnPost (creator: string, { content, to: postId, isAnonymous, images }: AddCommentArgs): Promise<CommentWithTo> {
     const _now = now()
     const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
     const query = `
@@ -689,6 +691,7 @@ export class CommentService {
         uid: '_:comment',
         'dgraph.type': 'Comment',
         content,
+        images,
         createdAt: _now,
         // 被评论的对象
         to: {
@@ -785,7 +788,8 @@ export class CommentService {
       content,
       createdAt: _now,
       id: res.uids.get('comment'),
-      to: postId
+      to: postId,
+      images
     }
   }
 

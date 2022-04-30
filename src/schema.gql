@@ -7,6 +7,9 @@ type Comment {
   content: String!
   createdAt: String!
 
+  """评论包含的图片"""
+  images: [String!]
+
   """获取该评论下的所有评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
@@ -3031,6 +3034,9 @@ type Mutation {
 
     """是否匿名发布这条评论"""
     isAnonymous: Boolean = false
+
+    """评论包含的图片"""
+    images: [String!]
   ): Comment!
 
   """添加一条评论到帖子"""
@@ -3043,6 +3049,9 @@ type Mutation {
 
     """是否匿名发布这条评论"""
     isAnonymous: Boolean = false
+
+    """评论包含的图片"""
+    images: [String!]
   ): Comment!
 
   """将 Comment 以 Mention 形式回复某个 User"""
@@ -3057,6 +3066,9 @@ type Mutation {
 
     """是否匿名发布这条评论"""
     isAnonymous: Boolean = false
+
+    """评论包含的图片"""
+    images: [String!]
   ): Mention!
 
   """注册一个管理员，需要使用authen认证新注册的管理员"""

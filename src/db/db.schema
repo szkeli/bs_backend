@@ -281,8 +281,10 @@ type Comment {
   pin
   # 评论的情感信息
   sentiment
-  # 帖子中 User 对 User 的回复
+  # 评论中 User 对 User 的回复
   mentions
+  # 评论包含的图片
+  images
 }
 
 # 帖子的主题
