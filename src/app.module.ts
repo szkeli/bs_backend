@@ -25,6 +25,7 @@ import { DbService } from './db/db.service'
 import { DeadlinesModule } from './deadlines/deadlines.module'
 import { DeletesModule } from './deletes/deletes.module'
 import { FoldsModule } from './folds/folds.module'
+import { HashtagsModule } from './hashtags/hashtags.module'
 import { LessonsModule } from './lessons/lessons.module'
 import { MentionsModule } from './mentions/mentions.module'
 import { MessagesModule } from './messages/messages.module'
@@ -108,7 +109,8 @@ import { WxModule } from './wx/wx.module'
     NlpModule,
     RolesModule,
     LessonsModule,
-    MentionsModule
+    MentionsModule,
+    HashtagsModule
   ],
   controllers: [AppController],
   providers: [

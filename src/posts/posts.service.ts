@@ -35,6 +35,10 @@ export class PostsService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async hashtags (id: string, args: RelayPagingConfigArgs) {
+    throw new Error('Method not implemented.')
+  }
+
   async foldedCommentsWithRelay (id: string, { first, after, last, before, orderBy }: RelayPagingConfigArgs) {
     after = btoa(after)
     before = btoa(before)

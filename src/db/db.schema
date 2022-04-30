@@ -20,6 +20,7 @@ users: [uid] @reverse .
 lesson: [uid] @reverse .
 lessons: [uid] @reverse .
 mentions: [uid] @reverse .
+hashtags: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -228,6 +229,8 @@ type Post {
   pin
   # 帖子的情感信息
   sentiment
+  # 帖子上的 Hashtag
+  hashtags
 }
 
 # 用户在blackboard上的ddl
@@ -312,6 +315,14 @@ type Mention {
   to
   # 提及的主体
   about
+}
+
+# Hashtag
+type Hashtag {
+  # 创建时间
+  createdAt
+  # 标题
+  title
 }
 
 type Sentiment {

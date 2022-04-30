@@ -166,6 +166,24 @@ type Post {
 
   """帖子的匿名信息，非匿名帖子此项为空"""
   anonymous: Anonymous
+
+  """该帖子的所有 Hashtag"""
+  hashtags(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): HashtagsConnection!
 }
 
 type PostsConnection {
@@ -1910,6 +1928,48 @@ type DeadlinePageInfo {
   hasNextPage: Boolean!
 }
 
+type Hashtag {
+  id: String!
+  createdAt: String!
+  title: String!
+
+  """具有该 Hashtag 的所有 Post"""
+  posts(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PostsConnection!
+}
+
+type HashtagsConnection {
+  edges: [HashtagEdge!]!
+  pageInfo: HashtagPageInfo!
+  totalCount: Int!
+}
+
+type HashtagEdge {
+  node: Hashtag
+  cursor: String
+}
+
+type HashtagPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type SentimentAnalysisResult {
   """正面分数"""
   positive: Float!
@@ -2598,6 +2658,23 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): MentionsConnection!
+  hashtag(id: String!): Hashtag!
+  hashtags(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): HashtagsConnection!
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin

@@ -22,6 +22,7 @@ import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../c
 import { CommentService } from '../comment/comment.service'
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete } from '../deletes/models/deletes.model'
+import { HashtagsConnection } from '../hashtags/models/hashtags.model'
 import { WithinArgs } from '../node/models/node.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
@@ -161,5 +162,10 @@ export class PostsResolver {
   @ResolveField(of => Anonymous, { description: '帖子的匿名信息，非匿名帖子此项为空', nullable: true })
   async anonymous (@Parent() post: Post) {
     return await this.postsService.anonymous(post.id)
+  }
+
+  @ResolveField(of => HashtagsConnection, { description: '该帖子的所有 Hashtag' })
+  async hashtags (@Args() args: RelayPagingConfigArgs, @Parent() post: Post) {
+    return await this.postsService.hashtags(post.id, args)
   }
 }
