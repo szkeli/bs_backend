@@ -185,6 +185,13 @@ export class CommentService {
   async anonymous (id: string) {
     const query = `
       query v($commentId: string) {
+        # 原帖子 id
+        var(func: uid($commentId)) @recurse(depth: 100, loop: false) {
+          p as ~comments
+        }
+        originPost(func: uid(p)) @filter(type(Post)) {
+          id
+        }
         comment(func: uid($commentId)) @filter(type(Comment)) {
           creator @filter(type(User)) {
             id: uid
@@ -201,15 +208,16 @@ export class CommentService {
       }
     `
     const res = await this.dbService.commitQuery<{
+      originPost: Array<{id: string}>
       comment: Array<{to: {id: string}, creator: {id: string}, anonymous: Anonymous}>
     }>({ query, vars: { $commentId: id } })
 
     const anonymous = res.comment[0]?.anonymous
-    const beenCommentedObjectId = res.comment[0]?.to?.id
     const creatorId = res.comment[0]?.creator?.id
+    const originPostId = res.originPost[0]?.id
 
     if (anonymous) {
-      anonymous.watermark = sha1(`${beenCommentedObjectId}${creatorId}`)
+      anonymous.watermark = sha1(`${originPostId}${creatorId}`)
     }
 
     return anonymous
