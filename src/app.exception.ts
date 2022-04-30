@@ -126,3 +126,9 @@ export class FileNameCannotBeNullException extends HttpException {
     super('图片文件名不能为空', HttpStatus.FORBIDDEN)
   }
 }
+
+export class CommentNotFoundException extends HttpException {
+  constructor (id: string) {
+    super(`评论 ${id} 不存在`, HttpStatus.FORBIDDEN)
+  }
+}

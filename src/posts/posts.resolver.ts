@@ -9,7 +9,7 @@ import {
 
 import { CheckPolicies, CurrentUser, MaybeAuth, Roles } from 'src/auth/decorator'
 import {
-  CommentsConnection
+  CommentsConnection, CommentsConnectionWithRelay
 } from 'src/comment/models/comment.model'
 import { PostId } from 'src/db/model/db.model'
 import { Subject } from 'src/subject/model/subject.model'
@@ -28,7 +28,6 @@ import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
-  CommentsConnectionWithRelay,
   CreatePostArgs,
   Nullable,
   Post,

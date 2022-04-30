@@ -1,4 +1,8 @@
-import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, createUnionType, Field, Int, ObjectType } from '@nestjs/graphql'
+
+import { Connection } from '../../connections/models/connections.model'
+import { Post } from '../../posts/models/post.model'
+import { User } from '../../user/models/user.model'
 
 export type CommentId = string
 
@@ -50,3 +54,22 @@ export class AddCommentArgs {
   @Field(of => [String], { nullable: true, description: '评论包含的图片' })
     images: string[]
 }
+
+export const CommentToUnion = createUnionType({
+  name: 'CommentToUnion',
+  types: () => [Post, Comment, User],
+  resolveType (v: {'dgraph.type': string[]}) {
+    if (v['dgraph.type']?.includes('Post')) {
+      return Post
+    }
+    if (v['dgraph.type']?.includes('Comment')) {
+      return Comment
+    }
+    if (v['dgraph.type']?.includes('User')) {
+      return User
+    }
+  }
+})
+
+@ObjectType()
+export class CommentsConnectionWithRelay extends Connection<Comment>(Comment) {}

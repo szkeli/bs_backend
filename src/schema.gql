@@ -2,87 +2,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Comment {
-  id: String!
-  content: String!
-  createdAt: String!
-
-  """评论包含的图片"""
-  images: [String!]
-
-  """获取该评论下的所有评论"""
-  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """Relay版comments"""
-  commentsWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): CommentsConnectionWithRelay!
-
-  """按热度获取该评论下的所有评论"""
-  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """获取该评论下的点赞信息"""
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
-
-  """获取该评论的举报信息"""
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-
-  """获取被评论的对象"""
-  to: PostAndCommentUnion!
-
-  """评论的创建者，评论是匿名评论时，creator为null"""
-  creator: User
-
-  """评论未被删除时，此项为null"""
-  delete: Delete
-
-  """评论的匿名信息，非匿名评论，此项为null"""
-  anonymous: Anonymous
-
-  """User 回复 User"""
-  mentions(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): MentionsConnection!
-}
-
-enum ORDER_BY {
-  TRENDING
-  CREATED_AT_DESC
-}
-
-union PostAndCommentUnion = Post | Comment
-
-type CommentsConnection {
-  nodes: [Comment!]!
-  totalCount: Int!
-}
-
 type Post {
   id: String!
   content: String!
@@ -189,6 +108,11 @@ type Post {
   ): HashtagsConnection!
 }
 
+enum ORDER_BY {
+  TRENDING
+  CREATED_AT_DESC
+}
+
 type PostsConnection {
   nodes: [Post!]!
   totalCount: Int!
@@ -206,24 +130,6 @@ type PostEdge {
 }
 
 type PostPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type CommentsConnectionWithRelay {
-  edges: [CommentEdge!]!
-  pageInfo: CommentPageInfo!
-  totalCount: Int!
-}
-
-type CommentEdge {
-  node: Comment
-  cursor: String
-}
-
-type CommentPageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!
@@ -394,7 +300,10 @@ interface Notifiable {
   creator: User
 }
 
+union PostAndCommentUnion = Post | Comment
+
 enum NOTIFICATION_ACTION {
+  ADD_COMMENT_ON_USER
   ADD_COMMENT_ON_POST
   ADD_COMMENT_ON_COMMENT
   ADD_UPVOTE_ON_POST
@@ -614,7 +523,7 @@ type User implements Person & Node {
     type: NOTIFICATION_TYPE = ALL
 
     """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT]
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
   ): NotificationsConnection
 
   """点赞的通知"""
@@ -845,7 +754,7 @@ interface Person implements Node {
     type: NOTIFICATION_TYPE = ALL
 
     """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT]
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
   ): NotificationsConnection
 
   """点赞的通知"""
@@ -1060,7 +969,7 @@ type LoginResult implements Node & Person {
     type: NOTIFICATION_TYPE = ALL
 
     """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT]
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
   ): NotificationsConnection
 
   """点赞的通知"""
@@ -1142,6 +1051,100 @@ type UserEdge {
 }
 
 type UserPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type Comment {
+  id: String!
+  content: String!
+  createdAt: String!
+
+  """评论包含的图片"""
+  images: [String!]
+
+  """获取该评论下的所有评论"""
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """Relay版comments"""
+  commentsWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): CommentsConnectionWithRelay!
+
+  """按热度获取该评论下的所有评论"""
+  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """获取该评论下的点赞信息"""
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
+
+  """获取该评论的举报信息"""
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """获取被评论的对象"""
+  to: CommentToUnion!
+
+  """评论的创建者，评论是匿名评论时，creator为null"""
+  creator: User
+
+  """评论未被删除时，此项为null"""
+  delete: Delete
+
+  """评论的匿名信息，非匿名评论，此项为null"""
+  anonymous: Anonymous
+
+  """User 回复 User"""
+  mentions(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): MentionsConnection!
+}
+
+union CommentToUnion = Post | Comment | User
+
+type CommentsConnection {
+  nodes: [Comment!]!
+  totalCount: Int!
+}
+
+type CommentsConnectionWithRelay {
+  edges: [CommentEdge!]!
+  pageInfo: CommentPageInfo!
+  totalCount: Int!
+}
+
+type CommentEdge {
+  node: Comment
+  cursor: String
+}
+
+type CommentPageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!
@@ -2207,7 +2210,7 @@ type Query {
     type: NOTIFICATION_TYPE = ALL
 
     """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT]
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
     id: String!
   ): NotificationsConnection
 
@@ -2905,7 +2908,7 @@ type UserWithPrivateProps implements Person & Node {
     type: NOTIFICATION_TYPE = ALL
 
     """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT]
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
   ): NotificationsConnection
 
   """点赞的通知"""
@@ -3029,6 +3032,21 @@ type Mutation {
 
   """添加一条评论到评论"""
   addCommentOnComment(
+    """评论的内容"""
+    content: String!
+
+    """被评论的对象的id"""
+    to: String!
+
+    """是否匿名发布这条评论"""
+    isAnonymous: Boolean = false
+
+    """评论包含的图片"""
+    images: [String!]
+  ): Comment!
+
+  """添加一条评论到评论的创建者"""
+  addCommentOnUser(
     """评论的内容"""
     content: String!
 

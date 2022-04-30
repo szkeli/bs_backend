@@ -1,6 +1,5 @@
 import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
-import { Comment } from '../../comment/models/comment.model'
 import { Connection, ORDER_BY } from '../../connections/models/connections.model'
 
 export type Nullable<T> = T | null
@@ -71,6 +70,3 @@ export class RelayPagingConfigArgs {
 
 @ObjectType()
 export class PostsConnectionWithRelay extends Connection<Post>(Post) {}
-
-@ObjectType()
-export class CommentsConnectionWithRelay extends Connection<Comment>(Comment) {}

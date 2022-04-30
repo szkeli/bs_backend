@@ -1,7 +1,7 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { CheckPolicies, CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
-import { CommentsConnectionWithRelay, PostsConnection, PostsConnectionWithRelay, RelayPagingConfigArgs } from 'src/posts/models/post.model'
+import { PostsConnection, PostsConnectionWithRelay, RelayPagingConfigArgs } from 'src/posts/models/post.model'
 import { SubjectsConnection } from 'src/subject/model/subject.model'
 import { RawUser2UserWithPrivateProps, sign as sign_calculus } from 'src/tool'
 
@@ -9,7 +9,7 @@ import { Admin } from '../admin/models/admin.model'
 import { Role, UserAuthenInfo, UserWithRoles } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { CommentService } from '../comment/comment.service'
-import { CommentsConnection } from '../comment/models/comment.model'
+import { CommentsConnection, CommentsConnectionWithRelay } from '../comment/models/comment.model'
 import { ConversationsService } from '../conversations/conversations.service'
 import { ConversationsConnection } from '../conversations/models/conversations.model'
 import { ICredential } from '../credentials/models/credentials.model'

@@ -18,10 +18,10 @@ import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { PUB_SUB_KEY } from '../constants'
 import { DeletesService } from '../deletes/deletes.service'
-import { Delete, PostAndCommentUnion } from '../deletes/models/deletes.model'
+import { Delete } from '../deletes/models/deletes.model'
 import { Mention, MentionsConnection } from '../mentions/models/mentions.model'
 import { WithinArgs } from '../node/models/node.model'
-import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -31,6 +31,8 @@ import {
   Comment,
   CommentId,
   CommentsConnection,
+  CommentsConnectionWithRelay,
+  CommentToUnion,
   CommentWithTo
 } from './models/comment.model'
 
@@ -94,6 +96,11 @@ export class CommentResolver {
     return commentWithTo
   }
 
+  @Mutation(of => Comment, { description: '添加一条评论到评论的创建者' })
+  async addCommentOnUser (@CurrentUser() user: User, @Args() args: AddCommentArgs) {
+    return await this.commentService.addCommentOnUser(user.id, args)
+  }
+
   @Mutation(of => Comment, { description: '添加一条评论到帖子' })
   async addCommentOnPost (@CurrentUser() user: User, @Args() args: AddCommentArgs): Promise<Comment> {
     const commentWithTo = await this.commentService.addCommentOnPost(user.id, args)
@@ -131,7 +138,7 @@ export class CommentResolver {
     return await this.reportsService.findReportsByCommentId(comment.id, first, offset)
   }
 
-  @ResolveField(of => PostAndCommentUnion, { description: '获取被评论的对象' })
+  @ResolveField(of => CommentToUnion, { description: '获取被评论的对象' })
   async to (@Parent() comment: Comment) {
     return await this.commentService.to(comment.id)
   }

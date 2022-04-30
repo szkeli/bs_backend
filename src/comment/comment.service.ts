@@ -4,14 +4,14 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
+import { CommentNotFoundException, SystemAdminNotFoundException, UserNotFoundException } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { PUB_SUB_KEY } from '../constants'
-import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
-import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, now, relayfyArrayForward, sha1 } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
@@ -20,6 +20,8 @@ import {
   Comment,
   CommentId,
   CommentsConnection,
+  CommentsConnectionWithRelay,
+  CommentToUnion,
   CommentWithTo
 } from './models/comment.model'
 
@@ -33,6 +35,179 @@ export class CommentService {
     @Inject(PUB_SUB_KEY) private readonly pubSub
   ) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async addCommentOnUser (id: string, { content, to, isAnonymous, images }: AddCommentArgs) {
+    const query = `
+      query v($id: string, $to: string) {
+        # 系统 
+        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
+        # 评论创建者是否
+        v(func: uid($id)) @filter(type(User)) { v as uid }
+        # 被评论的评论（不包含被标记删除的评论）
+        u(func: uid($to)) @filter(type(Comment) and not has(delete)) {
+          # 评论存在
+          u as uid
+          # 被评论的评论的创建者
+          creator @filter(type(User)) {
+            uid: commentCreator as uid
+          }
+          # 被评论的评论的评论对象（限制为 Comment 以致不能在首级评论使用评论用户功能）
+          to @filter(type(Comment)) {
+            uid: commentTo as uid
+          }
+        }
+        # 评论者是否评论的创建者
+        y(func: uid(u)) @filter(uid_in(creator, $id)) {
+          y as uid
+        }
+      }
+    `
+    const textCensor = await this.censorsService.textCensor(content)
+    const _sentiment = await this.nlpService.sentimentAnalysis(content)
+
+    // 评论的删除信息
+    const iDelete = {
+      uid: '_:delete',
+      'dgraph.type': 'Delete',
+      creator: {
+        uid: 'uid(system)'
+      },
+      to: {
+        uid: '_:comment',
+        delete: {
+          uid: '_:delete'
+        }
+      }
+    }
+    // 评论的情感信息
+    const sentiment = {
+      uid: '_:sentiment',
+      'dgraph.type': 'Sentiment',
+      negative: _sentiment.negative,
+      positive: _sentiment.positive,
+      neutral: _sentiment.neutral,
+      value: _sentiment.sentiment
+    }
+    // 评论的匿名信息
+    const anonymous = {
+      uid: '_:anonymous',
+      'dgraph.type': 'Anonymous',
+      creator: {
+        uid: id
+      },
+      createdAt: now(),
+      to: {
+        uid: '_:comment'
+      }
+    }
+
+    // 创建一条新评论（评论创建者存在、被评论的评论存在、系统管理员存在、被评论的评论的父对象是评论）
+    const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(commentTo), 1))'
+    const mutation1 = {
+      // 被评论的评论
+      uid: 'uid(commentTo)',
+      comments: {
+        uid: '_:comment',
+        'dgraph.type': 'Comment',
+        content,
+        images,
+        createdAt: now(),
+        // 被评论的对象为被评论的评论的创建者
+        to: {
+          uid: 'uid(commentCreator)'
+        },
+        // 评论的创建者
+        creator: {
+          uid: id
+        },
+        sentiment
+      }
+    }
+
+    // 创建新通知（评论创建者存在、被评论的评论存在、系统管理员存在、被评论的评论的创建者不是当前评论的创建者）
+    const condition2 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(y), 0) )'
+    const mutation2 = {
+      uid: '_:notification',
+      'dgraph.type': 'Notification',
+      createdAt: now(),
+      to: {
+        uid: 'uid(commentCreator)',
+        notifications: {
+          uid: '_:notification'
+        }
+      },
+      about: {
+        uid: '_:comment'
+      },
+      action: NOTIFICATION_ACTION.ADD_COMMENT_ON_USER,
+      isRead: false
+    }
+
+    if (isAnonymous) {
+      Object.assign(mutation1.comments, { anonymous })
+    } else {
+      Object.assign(mutation2, { creator: { uid: id } })
+    }
+
+    if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
+      Object.assign(mutation1.comments, { delete: iDelete })
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      // 系统管理员
+      s: Array<{uid: string}>
+      // 当前评论创建者
+      v: Array<{uid: string}>
+      // 被评论的评论
+      u: Array<{uid: string, creator: {uid: string}}>
+      // 评论者是否评论的创建者
+      y: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [
+        { mutation: mutation1, condition: condition1 },
+        { mutation: mutation2, condition: condition2 }
+      ],
+      vars: {
+        $id: id,
+        $to: to
+      }
+    })
+
+    if (res.uids.get('notification')) {
+      // 向websocket发送通知
+      await this.pubSub.publish(
+        'notificationsAdded',
+        {
+          notificationsAdded: {
+            id: res.uids.get('notification'),
+            createdAt: now(),
+            action: NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT,
+            isRead: false,
+            to: res.json.u[0]?.creator?.uid
+          }
+        }
+      )
+    }
+
+    if (res.json.s.length !== 1) {
+      throw new SystemAdminNotFoundException()
+    }
+    if (res.json.v.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+    if (res.json.u.length !== 1) {
+      throw new CommentNotFoundException(to)
+    }
+
+    return {
+      content,
+      createdAt: now(),
+      images,
+      id: res.uids.get('comment'),
+      to
+    }
   }
 
   async addMentionOnUser (id: string, args: AddCommentArgs, toUser: string) {
@@ -302,7 +477,7 @@ export class CommentService {
     const query = `
       query v($commentId: string) {
         comment(func: uid($commentId)) @filter(type(Comment)) {
-          to @filter(type(Post) or type(Comment)) {
+          to @filter(type(Post) or type(Comment) or type(User)) {
             id: uid
             expand(_all_)
             dgraph.type
@@ -310,15 +485,8 @@ export class CommentService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{comment: Array<{to: (typeof PostAndCommentUnion) & {'dgraph.type': string[]}}>}>({ query, vars: { $commentId: id } })
-    const v = res.comment[0]?.to
-
-    if (v['dgraph.type'].includes('Post')) {
-      return new Post(v as unknown as Post)
-    }
-    if (v['dgraph.type'].includes('Comment')) {
-      return new Comment(v as unknown as Comment)
-    }
+    const res = await this.dbService.commitQuery<{comment: Array<{to: (typeof CommentToUnion) & {'dgraph.type': string[]}}>}>({ query, vars: { $commentId: id } })
+    return res.comment[0]?.to
   }
 
   async deletedComments (first: number, offset: number): Promise<CommentsConnection> {
