@@ -56,6 +56,10 @@ export class CommentService {
           to @filter(type(Comment)) {
             uid: commentTo as uid
           }
+          # 匿名信息
+          anonymous @filter(type(Anonymous)) {
+            id: anonymous as uid
+          }
         }
         # 评论者是否评论的创建者
         y(func: uid(u)) @filter(uid_in(creator, $id)) {
@@ -102,8 +106,8 @@ export class CommentService {
       }
     }
 
-    // 创建一条新评论（评论创建者存在、被评论的评论存在、系统管理员存在、被评论的评论的父对象是评论）
-    const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(commentTo), 1))'
+    // 创建一条新评论（评论创建者存在、被评论的评论存在、系统管理员存在、被评论的评论的父对象是评论、非匿名评论）
+    const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(commentTo), 1) and eq(len(anonymous), 0))'
     const mutation1 = {
       // 被评论的评论
       uid: 'uid(commentTo)',
@@ -125,9 +129,32 @@ export class CommentService {
       }
     }
 
-    // 创建新通知（评论创建者存在、被评论的评论存在、系统管理员存在、被评论的评论的创建者不是当前评论的创建者）
-    const condition2 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(y), 0) )'
+    // 创建一条新评论（评论创建者存在、被评论的评论存在、系统管理员存在、被评论的评论的父对象是评论、匿名评论）
+    const condition2 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(commentTo), 1) and eq(len(anonymous), 1))'
     const mutation2 = {
+      // 被评论的评论
+      uid: 'uid(commentTo)',
+      comments: {
+        uid: '_:comment',
+        'dgraph.type': 'Comment',
+        content,
+        images,
+        createdAt: now(),
+        // 被评论的对象为被评论的评论的匿名信息
+        to: {
+          uid: 'uid(anonymous)'
+        },
+        // 评论的创建者
+        creator: {
+          uid: id
+        },
+        sentiment
+      }
+    }
+
+    // 创建新通知（评论创建者存在、被评论的评论存在、系统管理员存在、被评论的评论的创建者不是当前评论的创建者）
+    const condition3 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(y), 0) )'
+    const mutation3 = {
       uid: '_:notification',
       'dgraph.type': 'Notification',
       createdAt: now(),
@@ -160,14 +187,19 @@ export class CommentService {
       // 当前评论创建者
       v: Array<{uid: string}>
       // 被评论的评论
-      u: Array<{uid: string, creator: {uid: string}}>
+      u: Array<{
+        uid: string
+        creator: {uid: string}
+        anonymous: {id: string}
+      }>
       // 评论者是否评论的创建者
       y: Array<{uid: string}>
     }>({
       query,
       mutations: [
         { mutation: mutation1, condition: condition1 },
-        { mutation: mutation2, condition: condition2 }
+        { mutation: mutation2, condition: condition2 },
+        { mutation: mutation3, condition: condition3 }
       ],
       vars: {
         $id: id,
@@ -479,16 +511,46 @@ export class CommentService {
   async to (id: string) {
     const query = `
       query v($commentId: string) {
+        var(func: uid($commentId)) @recurse(depth: 100, loop: false) {
+          p as ~comments
+        }
+        originalPost(func: uid(p)) @filter(type(Post)) {
+          id: uid
+        }
         comment(func: uid($commentId)) @filter(type(Comment)) {
-          to @filter(type(Post) or type(Comment) or type(User)) {
+          to @filter(type(Post) or type(Comment) or type(User) or type(Anonymous)) {
             id: uid
             expand(_all_)
             dgraph.type
+            creator @filter(type(User)) {
+              id: uid
+              subCampus
+            }
           }
         }
       }
     `
-    const res = await this.dbService.commitQuery<{comment: Array<{to: (typeof CommentToUnion) & {'dgraph.type': string[]}}>}>({ query, vars: { $commentId: id } })
+    const res = await this.dbService.commitQuery<{
+      originalPost: Array<{id: string}>
+      comment: Array<{to: (typeof CommentToUnion) & {
+        'dgraph.type': string[]
+        creator: {
+          id: string
+          subCampus: string
+        }
+      }}>
+    }>({ query, vars: { $commentId: id } })
+
+    const originalPostId = res.originalPost[0]?.id
+    const creatorId = res.comment[0]?.to?.creator?.id
+    const subCampus = res.comment[0]?.to?.creator?.subCampus
+
+    // TODO 直接将 watermark、subCampus 信息存 Anonymous 而不是运行时计算
+    const to = res.comment[0]?.to
+    if (to?.['dgraph.type']?.includes('Anonymous')) {
+      ;(to as unknown as Anonymous).watermark = sha1(`${originalPostId}${creatorId}`)
+      ;(to as unknown as Anonymous).subCampus = subCampus
+    }
     return res.comment[0]?.to
   }
 

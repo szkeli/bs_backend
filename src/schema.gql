@@ -2,6 +2,25 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
+type Anonymous {
+  id: String!
+  createdAt: String!
+
+  """同一个用户的匿名信息在同一条帖子下面的 watermark 相同"""
+  watermark: String!
+
+  """匿名时的校区"""
+  subCampus: String
+
+  """匿名的创建者，只有创建者自己可见"""
+  creator: User
+
+  """被匿名发布的对象"""
+  to: PostAndCommentUnion!
+}
+
+union PostAndCommentUnion = Post | Comment
+
 type Post {
   id: String!
   content: String!
@@ -299,8 +318,6 @@ interface Notifiable {
   """通知的创建者，匿名评论时为空"""
   creator: User
 }
-
-union PostAndCommentUnion = Post | Comment
 
 enum NOTIFICATION_ACTION {
   ADD_COMMENT_ON_USER
@@ -1126,7 +1143,7 @@ type Comment {
   ): MentionsConnection!
 }
 
-union CommentToUnion = Post | Comment | User
+union CommentToUnion = Post | Comment | User | Anonymous
 
 type CommentsConnection {
   nodes: [Comment!]!
@@ -1512,23 +1529,6 @@ type DeletePageInfo {
   endCursor: String
   hasPreviousPage: Boolean!
   hasNextPage: Boolean!
-}
-
-type Anonymous {
-  id: String!
-  createdAt: String!
-
-  """同一个用户的匿名信息在同一条帖子下面的 watermark 相同"""
-  watermark: String!
-
-  """匿名时的校区"""
-  subCampus: String
-
-  """匿名的创建者，只有创建者自己可见"""
-  creator: User
-
-  """被匿名发布的对象"""
-  to: PostAndCommentUnion!
 }
 
 type Role {
