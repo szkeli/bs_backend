@@ -239,11 +239,8 @@ export class PostsService {
           commentsCount as math(c * 0.5)
           createdAt as createdAt
         
-          hour as math(
-           2*exp(-(since(createdAt)/72000))
-          )
           dayScore as math(since(createdAt)/86400)
-          score as math(votesCount + commentsCount + hour)
+          score as math(votesCount + commentsCount)
         }
         posts as var(func: uid(v)) @filter(gt(val(score), 0) and lt(val(dayScore), 2))
 
@@ -252,7 +249,6 @@ export class PostsService {
         totalCount(func: uid(posts)) { count(uid) }
         posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: val(score), first: ${first}) {
           score: val(score)
-          timeScore: val(hour)
           voteScore: val(votesCount)
           commentScore: val(commentsCount)
           dayScore: val(dayScore)
