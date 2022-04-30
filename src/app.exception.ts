@@ -120,3 +120,9 @@ export class PostNotFoundException extends HttpException {
     super(`帖子 ${id} 不存在`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class FileNameCannotBeNullException extends HttpException {
+  constructor () {
+    super('图片文件名不能为空', HttpStatus.FORBIDDEN)
+  }
+}

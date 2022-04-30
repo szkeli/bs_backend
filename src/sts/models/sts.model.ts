@@ -1,4 +1,4 @@
-import { Field, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
 @ObjectType()
 export class ImagesUploadCredentialInfo {
@@ -72,4 +72,10 @@ export interface STSDto {
     tmpSecretId: string
     tmpSecretKey: string
   }
+}
+
+@ArgsType()
+export class FileNamesArgs {
+  @Field(of => [String])
+    fileNames: string[]
 }

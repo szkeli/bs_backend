@@ -2413,6 +2413,9 @@ type Query {
   """用户上传帖子图片时，先根据文件名获取临时上传凭证信息"""
   getPostImagesUploadCredentialInfo(fileNames: [String!]!): ImagesUploadCredentialInfo!
 
+  """用户上传评论图片时，先根据文件名获取临时上传凭证信息"""
+  getCommentImagesUploadCredentialInfo(fileNames: [String!]!): ImagesUploadCredentialInfo!
+
   """用户创建主题时，先根据文件名获取临时上传凭证"""
   getSubjectImagesUploadCredentialInfo(fileNames: [String!]!): ImagesUploadCredentialInfo!
 
