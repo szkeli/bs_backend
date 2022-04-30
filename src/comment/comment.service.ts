@@ -35,6 +35,14 @@ export class CommentService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async addMentionOnUser (id: string, args: AddCommentArgs, toUser: string) {
+    throw new Error('Method not implemented.')
+  }
+
+  async mentions (id: string, args: RelayPagingConfigArgs) {
+    throw new Error('Method not implemented.')
+  }
+
   async findOriginPostByCommentId (id: string) {
     const query = `
       query v($id: string) {

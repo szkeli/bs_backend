@@ -19,6 +19,7 @@ import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../c
 import { PUB_SUB_KEY } from '../constants'
 import { DeletesService } from '../deletes/deletes.service'
 import { Delete, PostAndCommentUnion } from '../deletes/models/deletes.model'
+import { Mention, MentionsConnection } from '../mentions/models/mentions.model'
 import { WithinArgs } from '../node/models/node.model'
 import { CommentsConnectionWithRelay, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { ReportsConnection } from '../reports/models/reports.model'
@@ -100,6 +101,11 @@ export class CommentResolver {
     return commentWithTo
   }
 
+  @Mutation(of => Mention, { description: '将 Comment 以 Mention 形式回复某个 User' })
+  async addMentionOnUser (@CurrentUser() user: User, @Args() args: AddCommentArgs, @Args('toUser') toUser: string) {
+    return await this.commentService.addMentionOnUser(user.id, args, toUser)
+  }
+
   @ResolveField(of => CommentsConnection, { description: '获取该评论下的所有评论' })
   async comments (@Parent() comment: Comment, @Args() { first, offset }: PagingConfigArgs) {
     return await this.commentService.getCommentsByCommentId(comment.id, first, offset)
@@ -143,5 +149,10 @@ export class CommentResolver {
   @ResolveField(of => Anonymous, { description: '评论的匿名信息，非匿名评论，此项为null', nullable: true })
   async anonymous (@Parent() comment: Comment) {
     return await this.commentService.anonymous(comment.id)
+  }
+
+  @ResolveField(of => MentionsConnection, { description: 'User 回复 User' })
+  async mentions (@Parent() comment: Comment, @Args() args: RelayPagingConfigArgs) {
+    return await this.commentService.mentions(comment.id, args)
   }
 }

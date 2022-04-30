@@ -48,6 +48,24 @@ type Comment {
 
   """评论的匿名信息，非匿名评论，此项为null"""
   anonymous: Anonymous
+
+  """User 回复 User"""
+  mentions(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): MentionsConnection!
 }
 
 enum ORDER_BY {
@@ -1645,6 +1663,40 @@ type Message implements Node {
 
 union MessageCreatorUnion = User | Admin
 
+type Mention {
+  id: String!
+
+  """创建时间"""
+  createdAt: String!
+
+  """创建者"""
+  creator: User!
+
+  """被@的对象"""
+  to: User!
+
+  """被@的主体"""
+  about: PostAndCommentUnion!
+}
+
+type MentionsConnection {
+  edges: [MentionEdge!]!
+  pageInfo: MentionPageInfo!
+  totalCount: Int!
+}
+
+type MentionEdge {
+  node: Mention
+  cursor: String
+}
+
+type MentionPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type Vote implements VoteInterface {
   id: String!
 
@@ -2529,6 +2581,23 @@ type Query {
 
   """以 id 获取指定课程"""
   lesson(id: String!): Lesson!
+  mention(id: String!): Mention!
+  mentions(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): MentionsConnection!
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
@@ -2898,6 +2967,20 @@ type Mutation {
     """是否匿名发布这条评论"""
     isAnonymous: Boolean = false
   ): Comment!
+
+  """将 Comment 以 Mention 形式回复某个 User"""
+  addMentionOnUser(
+    toUser: String!
+
+    """评论的内容"""
+    content: String!
+
+    """被评论的对象的id"""
+    to: String!
+
+    """是否匿名发布这条评论"""
+    isAnonymous: Boolean = false
+  ): Mention!
 
   """注册一个管理员，需要使用authen认证新注册的管理员"""
   registerAdmin(

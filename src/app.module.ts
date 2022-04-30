@@ -26,6 +26,7 @@ import { DeadlinesModule } from './deadlines/deadlines.module'
 import { DeletesModule } from './deletes/deletes.module'
 import { FoldsModule } from './folds/folds.module'
 import { LessonsModule } from './lessons/lessons.module'
+import { MentionsModule } from './mentions/mentions.module'
 import { MessagesModule } from './messages/messages.module'
 import { NlpModule } from './nlp/nlp.module'
 import { NodeModule } from './node/node.module'
@@ -106,7 +107,8 @@ import { WxModule } from './wx/wx.module'
     CosModule,
     NlpModule,
     RolesModule,
-    LessonsModule
+    LessonsModule,
+    MentionsModule
   ],
   controllers: [AppController],
   providers: [

@@ -19,6 +19,7 @@ roles: [uid] @reverse .
 users: [uid] @reverse .
 lesson: [uid] @reverse .
 lessons: [uid] @reverse .
+mentions: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -277,6 +278,8 @@ type Comment {
   pin
   # 评论的情感信息
   sentiment
+  # 帖子中 User 对 User 的回复
+  mentions
 }
 
 # 帖子的主题
@@ -297,6 +300,18 @@ type Subject {
   posts
   # 主题的删除信息
   delete
+}
+
+# 提及
+type Mention {
+  # 创建时间
+  createdAt
+  # 创建者
+  creator
+  # 被提及的对象
+  to
+  # 提及的主体
+  about
 }
 
 type Sentiment {
