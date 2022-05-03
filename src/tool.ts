@@ -4,9 +4,8 @@ import * as crypto from 'crypto'
 import { verify } from 'jsonwebtoken'
 
 import { Code2SessionErrorException } from './app.exception'
-import { CODE2SESSION_GRANT_TYPE } from './auth/model/auth.model'
 import { Nullable } from './posts/models/post.model'
-import { AuthenticationInfo, UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
+import { AuthenticationInfo, CODE2SESSION_GRANT_TYPE, UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
 
 export async function exec<T, U> (l: string, bindings: object, aliases?: object) {
   return await axios.post<T>('http://w3.onism.cc:8084/gremlin', {

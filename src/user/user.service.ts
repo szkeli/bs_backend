@@ -591,7 +591,7 @@ export class UserService {
     let unionId: string = ''
     let openId: string = ''
     if (input.code) {
-      const res = await code2Session(input.code)
+      const res = await code2Session(input.code, input.grantType)
       unionId = res.unionId
       openId = res.openId
     }

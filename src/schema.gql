@@ -2,159 +2,6 @@
 # THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
 # ------------------------------------------------------
 
-type Anonymous {
-  id: String!
-  createdAt: String!
-
-  """同一个用户的匿名信息在同一条帖子下面的 watermark 相同"""
-  watermark: String!
-
-  """匿名时的校区"""
-  subCampus: String
-
-  """匿名的创建者，只有创建者自己可见"""
-  creator: User
-
-  """被匿名发布的对象"""
-  to: PostAndCommentUnion!
-}
-
-union PostAndCommentUnion = Post | Comment
-
-type Post {
-  id: String!
-  content: String!
-  createdAt: String!
-  images: [String!]
-
-  """帖子的创建者，当帖子是匿名帖子时，返回null"""
-  creator: User
-
-  """帖子的所有评论"""
-  comments(first: Int = 10, offset: Int = 0): CommentsConnection! @deprecated(reason: "请使用commentsWithRelay")
-
-  """获取所有评论 relay分页版"""
-  commentsWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): CommentsConnectionWithRelay!
-
-  """帖子所属的主题"""
-  subject: Subject
-
-  """帖子的点赞"""
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
-
-  """帖子的点赞"""
-  votesWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): VotesConnectionWithRelay!
-
-  """帖子收到的举报"""
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-
-  """帖子的折叠评论"""
-  foldedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """帖子的所有折叠评论"""
-  foldedCommentsWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): CommentsConnectionWithRelay!
-
-  """按热度返回评论"""
-  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """帖子未被删除时，此项为空"""
-  delete: Delete
-
-  """帖子的匿名信息，非匿名帖子此项为空"""
-  anonymous: Anonymous
-
-  """该帖子的所有 Hashtag"""
-  hashtags(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): HashtagsConnection!
-}
-
-enum ORDER_BY {
-  TRENDING
-  CREATED_AT_DESC
-}
-
-type PostsConnection {
-  nodes: [Post!]!
-  totalCount: Int!
-}
-
-type PostsConnectionWithRelay {
-  edges: [PostEdge!]!
-  pageInfo: PostPageInfo!
-  totalCount: Int!
-}
-
-type PostEdge {
-  node: Post
-  cursor: String
-}
-
-type PostPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
 type Admin {
   id: String!
   userId: String!
@@ -261,6 +108,11 @@ type Admin {
   ): DeletesConnection!
 }
 
+enum ORDER_BY {
+  TRENDING
+  CREATED_AT_DESC
+}
+
 type AdminsConnection {
   edges: [AdminEdge!]!
   pageInfo: AdminPageInfo!
@@ -318,6 +170,8 @@ interface Notifiable {
   """通知的创建者，匿名评论时为空"""
   creator: User
 }
+
+union PostAndCommentUnion = Post | Comment
 
 enum NOTIFICATION_ACTION {
   ADD_COMMENT_ON_USER
@@ -1068,6 +922,152 @@ type UserEdge {
 }
 
 type UserPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type Anonymous {
+  id: String!
+  createdAt: String!
+
+  """同一个用户的匿名信息在同一条帖子下面的 watermark 相同"""
+  watermark: String!
+
+  """匿名时的校区"""
+  subCampus: String
+
+  """匿名的创建者，只有创建者自己可见"""
+  creator: User
+
+  """被匿名发布的对象"""
+  to: PostAndCommentUnion!
+}
+
+type Post {
+  id: String!
+  content: String!
+  createdAt: String!
+  images: [String!]
+
+  """帖子的创建者，当帖子是匿名帖子时，返回null"""
+  creator: User
+
+  """帖子的所有评论"""
+  comments(first: Int = 10, offset: Int = 0): CommentsConnection! @deprecated(reason: "请使用commentsWithRelay")
+
+  """获取所有评论 relay分页版"""
+  commentsWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): CommentsConnectionWithRelay!
+
+  """帖子所属的主题"""
+  subject: Subject
+
+  """帖子的点赞"""
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
+
+  """帖子的点赞"""
+  votesWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
+
+  """帖子收到的举报"""
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """帖子的折叠评论"""
+  foldedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """帖子的所有折叠评论"""
+  foldedCommentsWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): CommentsConnectionWithRelay!
+
+  """按热度返回评论"""
+  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """帖子未被删除时，此项为空"""
+  delete: Delete
+
+  """帖子的匿名信息，非匿名帖子此项为空"""
+  anonymous: Anonymous
+
+  """该帖子的所有 Hashtag"""
+  hashtags(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): HashtagsConnection!
+}
+
+type PostsConnection {
+  nodes: [Post!]!
+  totalCount: Int!
+}
+
+type PostsConnectionWithRelay {
+  edges: [PostEdge!]!
+  pageInfo: PostPageInfo!
+  totalCount: Int!
+}
+
+type PostEdge {
+  node: Post
+  cursor: String
+}
+
+type PostPageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!
@@ -3010,6 +3010,9 @@ type Mutation {
 
     """code"""
     code: String
+
+    """登录类型"""
+    grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
   ): User!
 
   """用于调试的接口: 根据userId 删除一个刚创建的用户，该用户不能有点赞评论发帖等操作"""
@@ -3115,7 +3118,13 @@ type Mutation {
   ): LoginResult!
 
   """通过小程序的code进行登录"""
-  loginByCode(code: String!): LoginResult!
+  loginByCode(
+    """从小程序获取的登录 code"""
+    code: String!
+
+    """登录类型"""
+    grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
+  ): LoginResult!
 
   """认证用户"""
   authenUser(
@@ -3335,6 +3344,15 @@ type Mutation {
     """课程内部id"""
     id: String
   ): Lesson!
+}
+
+"""登录类型"""
+enum CODE2SESSION_GRANT_TYPE {
+  """通过白板小程序"""
+  BLANK_SPACE
+
+  """通过课表小程序"""
+  CURRICULUM
 }
 
 input AuthenticationInfo {

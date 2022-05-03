@@ -18,6 +18,24 @@ import { Connection } from '../../connections/models/connections.model'
 import { Node } from '../../node/models/node.model'
 import { NOTIFICATION_ACTION, NOTIFICATION_TYPE } from '../../notifications/models/notifications.model'
 
+export enum CODE2SESSION_GRANT_TYPE {
+  BLANK_SPACE = 'BLANK_SPACE',
+  CURRICULUM = 'CURRICULUM',
+}
+
+registerEnumType(CODE2SESSION_GRANT_TYPE, {
+  name: 'CODE2SESSION_GRANT_TYPE',
+  description: '登录类型',
+  valuesMap: {
+    BLANK_SPACE: {
+      description: '通过白板小程序'
+    },
+    CURRICULUM: {
+      description: '通过课表小程序'
+    }
+  }
+})
+
 export enum ORDERBY {
   // 时间戳从大到小
   DESC = 'DESC',
@@ -159,6 +177,9 @@ export class RegisterUserArgs {
 
   @Field({ description: 'code', nullable: true })
     code?: string | null
+
+  @Field(of => CODE2SESSION_GRANT_TYPE, { defaultValue: CODE2SESSION_GRANT_TYPE.BLANK_SPACE, description: '登录类型' })
+    grantType?: CODE2SESSION_GRANT_TYPE | null
 }
 
 export type RawSign = string
