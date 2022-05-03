@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt'
 import { AuthenticationInfo, CheckUserResult, LoginResult, User } from 'src/user/models/user.model'
 
 import { AdminService } from '../admin/admin.service'
-import { AdminNotFoundException, RolesNotAllExistException, SystemAdminNotFoundException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
+import { AdminNotFoundException, RolesNotAllExistException, SystemAdminNotFoundException, UnionIdBeNullException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
@@ -716,6 +716,9 @@ export class AuthService {
 
   async checkUserByCode ({ code, grantType }: LoginByCodeArgs) {
     const { unionId } = await code2Session(code, grantType)
+    if (!unionId || unionId === '') {
+      throw new UnionIdBeNullException()
+    }
     const _now = now()
     const query = `
       query v($unionId: string) {

@@ -138,3 +138,9 @@ export class Code2SessionErrorException extends HttpException {
     super(`code2Session error: ${err}`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class UnionIdBeNullException extends HttpException {
+  constructor () {
+    super('unionId 不能为空', HttpStatus.FORBIDDEN)
+  }
+}
