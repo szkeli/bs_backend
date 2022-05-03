@@ -715,11 +715,11 @@ export class AuthService {
   }
 
   async checkUserByCode ({ code, grantType }: LoginByCodeArgs) {
-    const { openId, unionId } = await code2Session(code, grantType)
+    const { unionId } = await code2Session(code, grantType)
     const _now = now()
     const query = `
-      query v($openId: string, $unionId: string) {
-        user(func: type(User)) @filter(eq(openId, $openId) and eq(unionId, $unionId)) {
+      query v($unionId: string) {
+        user(func: type(User)) @filter(eq(unionId, $unionId)) {
           id: v as uid
           expand(_all_)
           roles: dgraph.type
@@ -736,7 +736,6 @@ export class AuthService {
     }>({
       mutations: [{ mutation, condition }],
       vars: {
-        $openId: openId,
         $unionId: unionId
       },
       query
