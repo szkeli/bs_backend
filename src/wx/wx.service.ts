@@ -3,15 +3,32 @@ import axios from 'axios'
 
 import { CosService } from '../cos/cos.service'
 import { sha1 } from '../tool'
-import { GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs, SendSubscribeMessageArgs, SendUniformMessageArgs } from './models/wx.model'
+import { GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs, GetWXSubscriptionInfoArgs, SendSubscribeMessageArgs, SendUniformMessageArgs } from './models/wx.model'
 
 @Injectable()
 export class WxService {
   constructor (private readonly cosService: CosService) {}
 
+  async getWXSubscriptionInfo (id: string, { lang, openid }: GetWXSubscriptionInfoArgs) {
+    const accessToken = await this.getAccessToken()
+
+    const res = await axios({
+      method: 'GET',
+      url: 'https://api.weixin.qq.com/cgi-bin/user/info',
+      params: {
+        access_token: accessToken,
+        openid,
+        lang
+      }
+    })
+    console.error(res)
+    throw new Error('Method not implemented.')
+  }
+
   async sendSubscribeMessage (config: SendSubscribeMessageArgs) {
     const accessToken = await this.getAccessToken()
     // config.data = JSON.parse(config.data)
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const data = {
       thing4: '人工审核',
       phrase1: '审核通过',

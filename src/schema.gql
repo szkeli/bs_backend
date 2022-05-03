@@ -2072,6 +2072,73 @@ type View {
   createdAt: String!
 }
 
+type WxSubscriptionInfo {
+  """用户是否订阅该公众号标识，值为0时，代表此用户没有关注该公众号，拉取不到其余信息。"""
+  subscribe: Int!
+
+  """用户的标识，对当前公众号唯一"""
+  openid: String!
+
+  """用户的语言，简体中文为zh_CN"""
+  language: String!
+
+  """用户关注时间，为时间戳。如果用户曾多次关注，则取最后关注时间"""
+  subscribe_time: Int!
+
+  """只有在用户将公众号绑定到微信开放平台帐号后，才会出现该字段。"""
+  unionid: String!
+
+  """公众号运营者对粉丝的备注，公众号运营者可在微信公众平台用户管理界面对粉丝添加备注"""
+  remark: String!
+
+  """用户所在的分组ID（兼容旧的用户分组接口）"""
+  groupid: String!
+
+  """用户被打上的标签ID列表"""
+  tagid_list: [Int!]!
+
+  """返回用户关注的渠道来源"""
+  subscribe_scene: WX_SUBSCRIBE_SCENE!
+}
+
+enum WX_SUBSCRIBE_SCENE {
+  """公众号搜索"""
+  ADD_SCENE_SEARCH
+
+  """公众号迁移"""
+  ADD_SCENE_ACCOUNT_MIGRATION
+
+  """名片分享"""
+  ADD_SCENE_PROFILE_CARD
+
+  """扫描二维码"""
+  ADD_SCENE_QR_CODE
+
+  """图文页内名称点击"""
+  ADD_SCENE_PROFILE_LINK
+
+  """图文页右上角菜单"""
+  ADD_SCENE_PROFILE_ITEM
+
+  """支付后关注"""
+  ADD_SCENE_PAID
+
+  """微信广告"""
+  ADD_SCENE_WECHAT_ADVERTISEMENT
+
+  """他人转载"""
+  ADD_SCENE_REPRINT
+
+  """视频号直播"""
+  ADD_SCENE_LIVESTREAM
+
+  """视频号"""
+  ADD_SCENE_CHANNELS
+
+  """其他"""
+  ADD_SCENE_OTHERS
+}
+
 type Query {
   """以postId获取一个帖子"""
   post(id: String!): Post!
@@ -2606,6 +2673,15 @@ type Query {
     lang: String
   ): String!
 
+  """
+  通过 token 获取指定用户的微信公众号关注信息 https://developers.weixin.qq.com/doc/offiaccount/User_Management/Get_users_basic_information_UnionID.html#UinonId
+  """
+  getWXSubscriptionInfo(
+    """返回国家地区语言版本，zh_CN 简体，zh_TW 繁体，en 英语"""
+    lang: WX_SUBSCRIBE_INFO_LANG
+    openid: String!
+  ): WxSubscriptionInfo!
+
   """分析一段文本的情感"""
   sentimentAnalysis(content: String!): SentimentAnalysisResult!
   keywordsExtraction(keywordNum: Int = 5, content: String!): [KeywordsExtractionResult!]!
@@ -2979,6 +3055,12 @@ input MpTemplateMsg {
 
   """公众号模板消息的数据"""
   data: String!
+}
+
+enum WX_SUBSCRIBE_INFO_LANG {
+  ZH_CN
+  ZH_TW
+  EN
 }
 
 type Mutation {

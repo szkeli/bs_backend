@@ -1,4 +1,4 @@
-import { ArgsType, Field, InputType, Int } from '@nestjs/graphql'
+import { ArgsType, Field, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 @InputType()
 export class GetUnlimitedWXacodeArgsLineColor {
@@ -118,4 +118,110 @@ export class SendSubscribeMessageArgs {
 
   @Field(of => String, { description: '进入小程序查看”的语言类型，支持zh_CN(简体中文)、en_US(英文)、zh_HK(繁体中文)、zh_TW(繁体中文)，默认为zh_CN', nullable: true })
     lang: string
+}
+
+export enum WX_SUBSCRIBE_SCENE {
+  ADD_SCENE_SEARCH = 'ADD_SCENE_SEARCH',
+  ADD_SCENE_ACCOUNT_MIGRATION = 'ADD_SCENE_ACCOUNT_MIGRATION',
+  ADD_SCENE_PROFILE_CARD = 'ADD_SCENE_PROFILE_CARD',
+  ADD_SCENE_QR_CODE = 'ADD_SCENE_QR_CODE',
+  ADD_SCENE_PROFILE_LINK = 'ADD_SCENE_PROFILE_LINK',
+  ADD_SCENE_PROFILE_ITEM = 'ADD_SCENE_PROFILE_ITEM',
+  ADD_SCENE_PAID = 'ADD_SCENE_PAID',
+  ADD_SCENE_WECHAT_ADVERTISEMENT = 'ADD_SCENE_WECHAT_ADVERTISEMENT',
+  ADD_SCENE_REPRINT = 'ADD_SCENE_REPRINT',
+  ADD_SCENE_LIVESTREAM = 'ADD_SCENE_LIVESTREAM',
+  ADD_SCENE_CHANNELS = 'ADD_SCENE_CHANNELS',
+  ADD_SCENE_OTHERS = 'ADD_SCENE_OTHERS',
+}
+
+registerEnumType(WX_SUBSCRIBE_SCENE, {
+  name: 'WX_SUBSCRIBE_SCENE',
+  valuesMap: {
+    ADD_SCENE_SEARCH: {
+      description: '公众号搜索'
+    },
+    ADD_SCENE_ACCOUNT_MIGRATION: {
+      description: '公众号迁移'
+    },
+    ADD_SCENE_PROFILE_CARD: {
+      description: '名片分享'
+    },
+    ADD_SCENE_QR_CODE: {
+      description: '扫描二维码'
+    },
+    ADD_SCENE_PROFILE_LINK: {
+      description: '图文页内名称点击'
+    },
+    ADD_SCENE_PROFILE_ITEM: {
+      description: '图文页右上角菜单'
+    },
+    ADD_SCENE_PAID: {
+      description: '支付后关注'
+    },
+    ADD_SCENE_WECHAT_ADVERTISEMENT: {
+      description: '微信广告'
+    },
+    ADD_SCENE_REPRINT: {
+      description: '他人转载'
+    },
+    ADD_SCENE_LIVESTREAM: {
+      description: '视频号直播'
+    },
+    ADD_SCENE_CHANNELS: {
+      description: '视频号'
+    },
+    ADD_SCENE_OTHERS: {
+      description: '其他'
+    }
+  }
+})
+
+export enum WX_SUBSCRIBE_INFO_LANG {
+  ZH_CN = 'zh_CN',
+  ZH_TW = 'zh_TW',
+  EN = 'en'
+}
+
+registerEnumType(WX_SUBSCRIBE_INFO_LANG, {
+  name: 'WX_SUBSCRIBE_INFO_LANG'
+})
+
+@ArgsType()
+export class GetWXSubscriptionInfoArgs {
+  @Field(of => WX_SUBSCRIBE_INFO_LANG, { description: '返回国家地区语言版本，zh_CN 简体，zh_TW 繁体，en 英语', nullable: true })
+    lang: WX_SUBSCRIBE_INFO_LANG
+
+  @Field(of => String)
+    openid: string
+}
+
+@ObjectType()
+export class WxSubscriptionInfo {
+  @Field(of => Int, { description: '用户是否订阅该公众号标识，值为0时，代表此用户没有关注该公众号，拉取不到其余信息。' })
+    subscribe: 0 | 1
+
+  @Field(of => String, { description: '用户的标识，对当前公众号唯一' })
+    openid: string
+
+  @Field(of => String, { description: '用户的语言，简体中文为zh_CN' })
+    language: string
+
+  @Field(of => Int, { description: '用户关注时间，为时间戳。如果用户曾多次关注，则取最后关注时间' })
+    subscribe_time: number
+
+  @Field(of => String, { description: '只有在用户将公众号绑定到微信开放平台帐号后，才会出现该字段。' })
+    unionid: string
+
+  @Field(of => String, { description: '公众号运营者对粉丝的备注，公众号运营者可在微信公众平台用户管理界面对粉丝添加备注' })
+    remark: string
+
+  @Field(of => String, { description: '用户所在的分组ID（兼容旧的用户分组接口）' })
+    groupid: string
+
+  @Field(of => [Int], { description: '用户被打上的标签ID列表' })
+    tagid_list: number[]
+
+  @Field(of => WX_SUBSCRIBE_SCENE, { description: '返回用户关注的渠道来源' })
+    subscribe_scene: WX_SUBSCRIBE_SCENE
 }
