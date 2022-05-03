@@ -47,15 +47,22 @@ export function uuid () {
   return (S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4())
 }
 
-export async function code2Session (code: string, _grantType: CODE2SESSION_GRANT_TYPE) {
-  const appId = _grantType === CODE2SESSION_GRANT_TYPE.BLANK_SPACE ? process.env.APP_ID : process.env.APP_ID_2
-  const secret = _grantType === CODE2SESSION_GRANT_TYPE.BLANK_SPACE ? process.env.APP_SECRET : process.env.APP_SECRET_2
+export async function code2Session (code: string, grantType: CODE2SESSION_GRANT_TYPE) {
+  const appId = grantType === CODE2SESSION_GRANT_TYPE.BLANK_SPACE ? process.env.APP_ID : process.env.APP_ID_2
+  const secret = grantType === CODE2SESSION_GRANT_TYPE.BLANK_SPACE ? process.env.APP_SECRET : process.env.APP_SECRET_2
 
-  const grantType = 'authorization_code'
-  const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${appId}&secret=${secret}&js_code=${code}&grant_type=${grantType}`
-
-  const res = await axios
-    .get(url)
+  const url = 'https://api.weixin.qq.com/sns/jscode2session'
+  // ?appid=${appId}&secret=${secret}&js_code=${code}&grant_type=${grantType}
+  const res = await axios({
+    method: 'GET',
+    url,
+    params: {
+      appid: appId,
+      secret,
+      js_code: code,
+      grant_type: 'authorization_code'
+    }
+  })
     .then(r => r.data as unknown as {
       openid: string
       session_key: string
