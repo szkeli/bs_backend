@@ -3,6 +3,8 @@ import axios from 'axios'
 import * as crypto from 'crypto'
 import { verify } from 'jsonwebtoken'
 
+import { Code2SessionErrorException } from './app.exception'
+import { CODE2SESSION_GRANT_TYPE } from './auth/model/auth.model'
 import { Nullable } from './posts/models/post.model'
 import { AuthenticationInfo, UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
 
@@ -46,9 +48,10 @@ export function uuid () {
   return (S4() + S4() + '-' + S4() + '-' + S4() + '-' + S4() + '-' + S4() + S4() + S4())
 }
 
-export async function code2Session (code: string) {
-  const appId = process.env.APP_ID
-  const secret = process.env.APP_SECRET
+export async function code2Session (code: string, _grantType: CODE2SESSION_GRANT_TYPE) {
+  const appId = _grantType === CODE2SESSION_GRANT_TYPE.BLANK_SPACE ? process.env.APP_ID : process.env.APP_ID_2
+  const secret = _grantType === CODE2SESSION_GRANT_TYPE.BLANK_SPACE ? process.env.APP_SECRET : process.env.APP_SECRET_2
+
   const grantType = 'authorization_code'
   const url = `https://api.weixin.qq.com/sns/jscode2session?appid=${appId}&secret=${secret}&js_code=${code}&grant_type=${grantType}`
 
@@ -63,7 +66,7 @@ export async function code2Session (code: string) {
     })
 
   if (res.errcode && res.errcode !== 0) {
-    throw new ForbiddenException(`code2Session error: ${res.errmsg}`)
+    throw new Code2SessionErrorException(res.errmsg)
   }
 
   return {

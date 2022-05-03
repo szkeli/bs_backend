@@ -13,7 +13,7 @@ import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Role } from '../roles/models/roles.model'
 import { atob, btoa, code2Session, getAuthenticationInfo, ids2String, now, relayfyArrayForward } from '../tool'
 import { UserService } from '../user/user.service'
-import { Payload, UserAuthenInfo, UserWithRoles } from './model/auth.model'
+import { LoginByCodeArgs, Payload, UserAuthenInfo, UserWithRoles } from './model/auth.model'
 
 @Injectable()
 export class AuthService {
@@ -705,8 +705,8 @@ export class AuthService {
     return res.json.user[0]
   }
 
-  async loginByCode (code: string) {
-    const user = await this.checkUserByCode(code)
+  async loginByCode (args: LoginByCodeArgs) {
+    const user = await this.checkUserByCode(args)
     const payload: Payload = { id: user.id, roles: user.roles }
     return {
       token: this.jwtService.sign(payload),
@@ -714,8 +714,8 @@ export class AuthService {
     }
   }
 
-  async checkUserByCode (code: string) {
-    const { openId, unionId } = await code2Session(code)
+  async checkUserByCode ({ code, grantType }: LoginByCodeArgs) {
+    const { openId, unionId } = await code2Session(code, grantType)
     const _now = now()
     const query = `
       query v($openId: string, $unionId: string) {

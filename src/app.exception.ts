@@ -132,3 +132,9 @@ export class CommentNotFoundException extends HttpException {
     super(`评论 ${id} 不存在`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class Code2SessionErrorException extends HttpException {
+  constructor (err: string) {
+    super(`code2Session error: ${err}`, HttpStatus.FORBIDDEN)
+  }
+}

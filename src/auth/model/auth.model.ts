@@ -1,4 +1,4 @@
-import { Field, InterfaceType, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 import { AppAbility } from '../../casl/models/casl.model'
 import { Connection } from '../../connections/models/connections.model'
@@ -82,3 +82,30 @@ export interface IPolicyHandler {
 type PolicyHandlerCallback = (ability: AppAbility) => boolean
 
 export type PolicyHandler = IPolicyHandler | PolicyHandlerCallback
+
+export enum CODE2SESSION_GRANT_TYPE {
+  BLANK_SPACE = 'BLANK_SPACE',
+  CURRICULUM = 'CURRICULUM',
+}
+
+registerEnumType(CODE2SESSION_GRANT_TYPE, {
+  name: 'CODE2SESSION_GRANT_TYPE',
+  description: '登录类型',
+  valuesMap: {
+    BLANK_SPACE: {
+      description: '通过白板小程序'
+    },
+    CURRICULUM: {
+      description: '通过课表小程序'
+    }
+  }
+})
+
+@ArgsType()
+export class LoginByCodeArgs {
+  @Field({ description: '从小程序获取的登录 code' })
+    code: string
+
+  @Field(of => CODE2SESSION_GRANT_TYPE, { description: '登录类型' })
+    grantType: CODE2SESSION_GRANT_TYPE
+}

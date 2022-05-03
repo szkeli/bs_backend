@@ -12,7 +12,7 @@ import { RolesConnection } from '../roles/models/roles.model'
 import { AuthenticateUserArgs, LoginResult, PersonLoginArgs, PersonWithRoles, User } from '../user/models/user.model'
 import { AuthService } from './auth.service'
 import { CheckPolicies, CurrentUser, NoAuth, Roles } from './decorator'
-import { Authenable, Role, UserAuthenInfosConnection } from './model/auth.model'
+import { Authenable, LoginByCodeArgs, Role, UserAuthenInfosConnection } from './model/auth.model'
 
 @Resolver(of => Authenable)
 export class AuthResolver {
@@ -27,8 +27,8 @@ export class AuthResolver {
 
   @Mutation(of => LoginResult, { description: '通过小程序的code进行登录' })
   @NoAuth()
-  async loginByCode (@Args('code') code: string) {
-    return await this.authService.loginByCode(code)
+  async loginByCode (@Args() args: LoginByCodeArgs) {
+    return await this.authService.loginByCode(args)
   }
 
   @ResolveField(of => User, { description: '提交信息的用户' })
