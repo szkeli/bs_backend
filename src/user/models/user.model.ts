@@ -178,7 +178,7 @@ export class RegisterUserArgs {
   @Field({ description: 'code', nullable: true })
     code?: string | null
 
-  @Field(of => CODE2SESSION_GRANT_TYPE, { defaultValue: CODE2SESSION_GRANT_TYPE.BLANK_SPACE, description: '登录类型' })
+  @Field(of => CODE2SESSION_GRANT_TYPE, { defaultValue: CODE2SESSION_GRANT_TYPE.BLANK_SPACE, nullable: true, description: '登录类型' })
     grantType?: CODE2SESSION_GRANT_TYPE | null
 }
 

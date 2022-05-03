@@ -88,6 +88,6 @@ export class LoginByCodeArgs {
   @Field({ description: '从小程序获取的登录 code' })
     code: string
 
-  @Field(of => CODE2SESSION_GRANT_TYPE, { defaultValue: CODE2SESSION_GRANT_TYPE.BLANK_SPACE, description: '登录类型' })
+  @Field(of => CODE2SESSION_GRANT_TYPE, { defaultValue: CODE2SESSION_GRANT_TYPE.BLANK_SPACE, nullable: true, description: '登录类型' })
     grantType?: CODE2SESSION_GRANT_TYPE
 }
