@@ -1,11 +1,10 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import axios from 'axios'
 
-import { BadOpenIdException, UserNotFoundException, UserNotHasTheLesson } from '../app.exception'
+import { BadOpenIdException, UserNotFoundException, UserNotHasLessonsTodayExcepton } from '../app.exception'
 import { CosService } from '../cos/cos.service'
-import { DbService } from '../db/db.service'
-import { Lesson } from '../lessons/models/lessons.model'
-import { fmtLessonItems, sha1 } from '../tool'
+import { LessonsService } from '../lessons/lessons.service'
+import { fmtLessonTimeByDayInWeekThroughSchoolTimeTable, sha1 } from '../tool'
 import {
   GetUnlimitedWXacodeArgs,
   GetWXMiniProgrameShortLinkArgs,
@@ -19,39 +18,25 @@ import {
 export class WxService {
   constructor (
     private readonly cosService: CosService,
-    private readonly dbService: DbService
+    private readonly lessonsService: LessonsService
   ) {}
 
-  async triggerLessonNotification ({ to, lessonId }: TriggerLessonNotificationArgs) {
+  async triggerLessonNotification ({ to }: TriggerLessonNotificationArgs) {
     // 通过 to 查询相应用户的 openId
-    // 通过 lessonId 查询相应的课程信息
-    const query = `
-      query v($to: string, $lessonId: string) {
-        user(func: uid($to)) @filter(type(User)) {
-          lessons as lessons @filter(eq(lessonId, $lessonId) and type(Lesson))
-          openId
-        }
-        lesson(func: uid(lessons)) {
-          id: uid
-          expand(_all_) {
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      lesson: Lesson[]
-      user: Array<{ openId: string }>
-    }>({
-      query, vars: { $lessonId: lessonId, $to: to }
+    const res = await this.lessonsService.filterLessons(to, {
+      week: 7,
+      dayInWeek: 3,
+      startYear: 2019,
+      endYear: 2020,
+      semester: 1
     })
 
     if (res.user.length === 0) {
       throw new UserNotFoundException(to)
     }
 
-    if (res.lesson.length === 0) {
-      throw new UserNotHasTheLesson(to, lessonId)
+    if (res.items.length === 0) {
+      throw new UserNotHasLessonsTodayExcepton(to)
     }
 
     if (!res.user[0]?.openId || res.user[0]?.openId === '') {
@@ -73,16 +58,31 @@ export class WxService {
         }),
         data: JSON.stringify({
           first: {
-            value: '有课程即将开始'
+            value: '上课提醒'
           },
           keyword1: {
-            value: res.lesson[0]?.name ?? 'N/A'
+            value: `明天你有${res.items.length ?? 'N/A'}门课程`
           },
+          // 所有课程
+          // 线性代数；音乐；体育；（列举全部课程用分号连接）
           keyword2: {
-            value: fmtLessonItems(res.lesson[0]?.lessonItems) ?? 'N/A'
+            value: res.items.map(i => i.lesson?.name ?? 'N/A').join('；') ?? 'N/A'
           },
+          // 课程名称和时间
+          // 【1，2节】8:30-9：55 线性代数
+          // 【1，2节】8:30-9：55 线性代数
           keyword3: {
-            value: res.lesson[0]?.destination ?? 'N/A'
+            value: res.items
+              .map(i => `${fmtLessonTimeByDayInWeekThroughSchoolTimeTable(i.start, i.end)} ${i.lesson?.name ?? 'N/A'}`)
+              .join('\n')
+          },
+          // 上课地点
+          // 【1，2节】师院B204
+          // 【1，2节】师院B204
+          remark: {
+            value: res.items
+              .map(i => `[${i.start},${i.end}] ${i.lesson?.destination ?? 'N/A'}`)
+              .join('\n')
           }
         })
       }

@@ -228,9 +228,6 @@ export class WxSubscriptionInfo {
 
 @ArgsType()
 export class TriggerLessonNotificationArgs {
-  @Field()
-    lessonId: string
-
   @Field({ description: '被通知的 User 的 id' })
     to: string
 }

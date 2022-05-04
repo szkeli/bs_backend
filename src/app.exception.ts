@@ -103,6 +103,12 @@ export class UserNotHasTheLesson extends HttpException {
   }
 }
 
+export class UserNotHasLessonsTodayExcepton extends HttpException {
+  constructor (id: string) {
+    super(`用户 ${id} 今天没有课程`, HttpStatus.FORBIDDEN)
+  }
+}
+
 export class LessonNotFoundException extends HttpException {
   constructor (id: string) {
     super(`课程 ${id} 不存在`, HttpStatus.FORBIDDEN)

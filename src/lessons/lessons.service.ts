@@ -6,11 +6,37 @@ import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
-import { AddLessonArgs, Lesson, UpdateLessonArgs } from './models/lessons.model'
+import { AddLessonArgs, FilterLessonsArgs, Lesson, LessonItem, UpdateLessonArgs } from './models/lessons.model'
 
 @Injectable()
 export class LessonsService {
   constructor (private readonly dbService: DbService) {}
+
+  async filterLessons (id: string, { week, dayInWeek, startYear, endYear, semester }: FilterLessonsArgs) {
+    const query = `
+      query v($id: string) {
+        user(func: uid($to)) @filter(type(User)) {
+          lessons @filter(type(Lesson) and eq(circle, ${week})) {
+            items as lessonItems @filter(type(LessonItem) and eq(dayInWeek, ${dayInWeek}))
+          }
+          openId
+        }
+        items(func: uid(items)) {
+          expand(_all_)
+          lesson: ~lessonItems {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    return await this.dbService.commitQuery<{
+      items: Array<LessonItem & { lesson: Lesson }>
+      user: Array<{ openId: string }>
+    }>({
+      query, vars: { $id: id }
+    })
+  }
 
   async deadlines (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
     after = handleRelayForwardAfter(after)

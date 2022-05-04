@@ -3386,8 +3386,6 @@ type Mutation {
 
   """测试接口，手动触发一个上课课程通知"""
   triggerLessonNotification(
-    lessonId: String!
-
     """被通知的 User 的 id"""
     to: String!
   ): String!

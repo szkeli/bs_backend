@@ -94,3 +94,11 @@ export class AddLessonArgs {
 
 @ObjectType()
 export class LessonsConnection extends Connection<Lesson>(Lesson) {}
+
+export interface FilterLessonsArgs {
+  week: number
+  dayInWeek: number
+  startYear: number
+  endYear: number
+  semester: number
+}
