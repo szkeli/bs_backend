@@ -198,6 +198,8 @@ type User {
   credential
   # 当前用户的角色
   roles
+  # 当前用户的课程
+  lessons
 }
 
 # 帖子
