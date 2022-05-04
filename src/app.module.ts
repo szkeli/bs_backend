@@ -43,6 +43,7 @@ import { SearchModule } from './search/search.module'
 import { SharedModule } from './shared/shared.module'
 import { StsModule } from './sts/sts.module'
 import { SubjectModule } from './subject/subject.module'
+import { TasksService } from './tasks/tasks.service'
 import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
@@ -123,7 +124,8 @@ import { WxModule } from './wx/wx.module'
     {
       provide: APP_GUARD,
       useClass: RoleAuthGuard
-    }
+    },
+    TasksService
   ]
 })
 export class AppModule {}
