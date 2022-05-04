@@ -51,7 +51,9 @@ export class UserService {
           totalCount(func: uid(lessons)) { count(uid) }
           objs(func: uid(${after ? 'q' : 'lessons'}), orderdesc: createdAt, first: ${first}) {
             id: uid
-            expand(_all_)
+            expand(_all_) {
+              expand(_all_)
+            }
           }
           # 开始游标
           startO(func: uid(lessons), first: -1) { createdAt }
