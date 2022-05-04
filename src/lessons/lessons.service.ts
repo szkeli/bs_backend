@@ -81,7 +81,9 @@ export class LessonsService {
           totalCount(func: uid(lessons)) { count(uid) }
           objs(func: uid(${after ? 'q' : 'lessons'}), orderdesc: createdAt, first: ${first}) {
             id: uid
-            expand(_all_)
+            expand(_all_) {
+              expand(_all_)
+            }
           }
           # 开始游标
           startO(func: uid(lessons), first: -1) { createdAt }
@@ -140,6 +142,13 @@ export class LessonsService {
       }
     }
 
+    const lessonItems = args.lessonItems.map((item, index) => ({
+      uid: `_:lessonItem_${index}`,
+      'dgraph.type': 'LessonItem',
+      start: item.start,
+      end: item.end,
+      dayInWeek: item.dayInWeek
+    }))
     // 课程不存在
     const create = '@if( eq(len(v), 1) and eq(len(x), 0) and eq(len(q), 0) and eq(len(u), 1) )'
     const createMutation = {
@@ -152,10 +161,6 @@ export class LessonsService {
         createdAt: now(),
         // 课程的名字
         name: args.name,
-        // 课程的开始时间
-        start: args.start,
-        // 课程的结束时间
-        end: args.end,
         // 上课地点
         destination: args.destination,
         // 课程描述
@@ -164,8 +169,9 @@ export class LessonsService {
         circle: args.circle,
         // 课程的id
         lessonId: args.lessonId,
-        // 该课程位于一星期中的第几天的数组
-        dayOfWeek: args.dayOfWeek
+        // 授课教师名字
+        educatorName: args.educatorName,
+        lessonItems
       }
     }
 

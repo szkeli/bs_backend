@@ -19,6 +19,7 @@ roles: [uid] @reverse .
 users: [uid] @reverse .
 lesson: [uid] @reverse .
 lessons: [uid] @reverse .
+lessonItems: [uid] @reverse .
 mentions: [uid] @reverse .
 hashtags: [uid] @reverse .
 
@@ -73,7 +74,6 @@ deadlineId: string @index(hash) .
 
 circle: [int] .
 notificationIds: [int] .
-dayOfWeek: [int] .
 
 courseContentId: int .
 courseId: int .
@@ -86,6 +86,7 @@ viewId: int .
 start: int .
 end: int .
 studentId: int .
+dayInWeek: int .
 
 positive: float .
 negative: float .
@@ -548,18 +549,22 @@ type Lesson {
   createdAt
   # 课程名称
   name
-  # 开始
-  start
-  # 结束
-  end
   # 课程描述
   description
   # 上课地点
   destination
   # 授课老师的名字
   educatorName
-  # 该课程位于一星期中的第几天
-  dayOfWeek 
   # 要上课的周数
   circle
+  lessonItems
+}
+
+type LessonItem {
+  # 开始
+  start
+  # 结束
+  end
+  # 该课程位于一星期中的第几天
+  dayInWeek 
 }
