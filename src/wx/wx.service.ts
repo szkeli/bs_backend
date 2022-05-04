@@ -1,13 +1,94 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import axios from 'axios'
 
+import { BadOpenIdException, UserNotFoundException, UserNotHasTheLesson } from '../app.exception'
 import { CosService } from '../cos/cos.service'
-import { sha1 } from '../tool'
-import { GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs, GetWXSubscriptionInfoArgs, SendSubscribeMessageArgs, SendUniformMessageArgs } from './models/wx.model'
+import { DbService } from '../db/db.service'
+import { Lesson } from '../lessons/models/lessons.model'
+import { fmtLessonItems, sha1 } from '../tool'
+import {
+  GetUnlimitedWXacodeArgs,
+  GetWXMiniProgrameShortLinkArgs,
+  GetWXSubscriptionInfoArgs,
+  SendSubscribeMessageArgs,
+  SendUniformMessageArgs,
+  TriggerLessonNotificationArgs
+} from './models/wx.model'
 
 @Injectable()
 export class WxService {
-  constructor (private readonly cosService: CosService) {}
+  constructor (
+    private readonly cosService: CosService,
+    private readonly dbService: DbService
+  ) {}
+
+  async triggerLessonNotification ({ to, lessonId }: TriggerLessonNotificationArgs) {
+    // 通过 to 查询相应用户的 openId
+    // 通过 lessonId 查询相应的课程信息
+    const query = `
+      query v($to: string, $lessonId: string) {
+        user(func: uid($to)) @filter(type(User)) {
+          lessons as lessons @filter(eq(lessonId, $lessonId) and type(Lesson))
+          openId
+        }
+        lesson(func: uid(lessons)) {
+          id: uid
+          expand(_all_) {
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      lesson: Lesson[]
+      user: Array<{ openId: string }>
+    }>({
+      query, vars: { $lessonId: lessonId, $to: to }
+    })
+
+    if (res.user.length === 0) {
+      throw new UserNotFoundException(to)
+    }
+
+    if (res.lesson.length === 0) {
+      throw new UserNotHasTheLesson(to, lessonId)
+    }
+
+    if (!res.user[0]?.openId || res.user[0]?.openId === '') {
+      throw new BadOpenIdException(to)
+    }
+
+    console.error(res)
+
+    const data = {
+      // touser: 'opjHf5a56LcZvBI8cY9gi6M3y-ZE',
+      touser: res.user[0]?.openId,
+      mp_template_msg: {
+        appid: 'wxfcf7b19fdd5d9770',
+        template_id: '49nv12UdpuLNktBfXNrH61-ci3x71_FX8hhAew8fQoQ',
+        url: 'http://weixin.qq.com/download',
+        miniprogram: JSON.stringify({
+          appid: 'wx10ac1dfea0e2b8c6',
+          pagepath: '/pages/index/index'
+        }),
+        data: JSON.stringify({
+          first: {
+            value: '有课程即将开始'
+          },
+          keyword1: {
+            value: res.lesson[0]?.name ?? 'N/A'
+          },
+          keyword2: {
+            value: fmtLessonItems(res.lesson[0]?.lessonItems) ?? 'N/A'
+          },
+          keyword3: {
+            value: res.lesson[0]?.destination ?? 'N/A'
+          }
+        })
+      }
+    }
+    return await this.sendUniformMessage(data)
+  }
 
   async getWXSubscriptionInfo (id: string, { lang, openid }: GetWXSubscriptionInfoArgs) {
     const accessToken = await this.getAccessToken()
@@ -55,7 +136,7 @@ export class WxService {
 
     const res = await axios({
       method: 'GET',
-      url: 'https://api.weixin.qq.com/cgi-bin/token',
+      url: 'http://api.weixin.qq.com/cgi-bin/token',
       params: {
         grant_type: grantType,
         appid: appId,

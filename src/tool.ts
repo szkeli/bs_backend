@@ -4,6 +4,7 @@ import * as crypto from 'crypto'
 import { verify } from 'jsonwebtoken'
 
 import { Code2SessionErrorException } from './app.exception'
+import { LessonItem } from './lessons/models/lessons.model'
 import { Nullable } from './posts/models/post.model'
 import { AuthenticationInfo, CODE2SESSION_GRANT_TYPE, UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
 
@@ -251,3 +252,38 @@ export const getAuthenticationInfo = function (token: string): AuthenticationInf
     name: tokenRes.name
   }
 }
+
+/**
+ * 通过上课时间表格式化
+ * TODO test
+ * @returns [1,2节] 08:30-09:55
+ */
+export const fmtLessonTimeByDayInWeekThroughSchoolTimeTable = (start: number, end: number) => {
+  const startTable = [
+    '08:30', '09:15', '10:15',
+    '11:00', '11:45', '13:30',
+    '14:15', '15:00', '16:00',
+    '16:45', '19:00', '19:00',
+    '20:30', '20:30'
+  ]
+  const endTable = [
+    '09:10', '9:55', '10:55',
+    '11:40', '12:25', '14:10',
+    '14:55', '15:40', '16:40',
+    '17:25', '20:20', '20:20',
+    '21:45', '21:45'
+  ]
+  if (start > startTable.length) {
+    throw new ForbiddenException('start can not exceed startTable.length')
+  }
+  if (end > endTable.length) {
+    throw new ForbiddenException('end can not exceed endTable.lenght')
+  }
+
+  return `[${start},${end}节] ${startTable[start]}-${endTable[end]}`
+}
+
+export const fmtLessonItems = (items: LessonItem[]) =>
+  items
+    .map(item => fmtLessonTimeByDayInWeekThroughSchoolTimeTable(item.start, item.end))
+    .join('\n')

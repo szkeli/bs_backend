@@ -144,3 +144,9 @@ export class UnionIdBeNullException extends HttpException {
     super('unionId 不能为空', HttpStatus.FORBIDDEN)
   }
 }
+
+export class BadOpenIdException extends HttpException {
+  constructor (to: string) {
+    super(`用户 ${to} 的 openId 在此处不适用`, HttpStatus.FORBIDDEN)
+  }
+}

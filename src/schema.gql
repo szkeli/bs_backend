@@ -1808,6 +1808,17 @@ type SetDbSchema {
   convertedPrimitiveFields_: String!
 }
 
+type LessonItem {
+  """第几节课开始"""
+  start: Int!
+
+  """第几节课结束"""
+  end: Int!
+
+  """该节课位于一星期中的第几天"""
+  dayInWeek: Int
+}
+
 """课程对象"""
 type Lesson {
   """课程内部唯一 id"""
@@ -1815,12 +1826,6 @@ type Lesson {
 
   """上课地点"""
   destination: String!
-
-  """第几节课开始"""
-  start: Int!
-
-  """第几节课程结束"""
-  end: Int!
 
   """课程名称"""
   name: String!
@@ -1831,9 +1836,6 @@ type Lesson {
   """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
   description: String!
 
-  """该节课位于一星期中的第几天"""
-  dayOfWeek: [Int!]!
-
   """课程的创建时间"""
   createdAt: String!
 
@@ -1841,7 +1843,10 @@ type Lesson {
   lessonId: String!
 
   """授课教师的名字"""
-  educatorName: String!
+  educatorName: String
+
+  """lessonItem"""
+  lessonItems: [LessonItem!]
 
   """获取该课程的所有 deadline"""
   deadlines(
@@ -2646,7 +2651,7 @@ type Query {
     touser: String!
 
     """小程序模板消息相关的信息，可以参考小程序模板消息接口; 有此节点则优先发送小程序模板消息；（小程序模板消息已下线，不用传此节点）"""
-    weapp_template_msg: WeappTemplateMsg!
+    weapp_template_msg: WeappTemplateMsg
 
     """公众号模板消息相关的信息，可以参考公众号模板消息接口；有此节点并且没有weapp_template_msg节点时，发送公众号模板消息"""
     mp_template_msg: MpTemplateMsg!
@@ -3051,7 +3056,7 @@ input MpTemplateMsg {
   url: String!
 
   """公众号模板消息所要跳转的小程序，小程序的必须与公众号具有绑定关系"""
-  miniprograme: String!
+  miniprogram: String!
 
   """公众号模板消息的数据"""
   data: String!
@@ -3379,6 +3384,14 @@ type Mutation {
   """设置创建时间小于当前系统时间的所有通知为已读"""
   setReadAllNotifications: Boolean!
 
+  """测试接口，手动触发一个上课课程通知"""
+  triggerLessonNotification(
+    lessonId: String!
+
+    """被通知的 User 的 id"""
+    to: String!
+  ): String!
+
   """添加一个角色到某用户"""
   addRoleOnUser(roleId: String!, to: String!): User!
 
@@ -3393,12 +3406,6 @@ type Mutation {
     """上课地点"""
     destination: String!
 
-    """第几节课开始"""
-    start: Int!
-
-    """第几节课结束"""
-    end: Int!
-
     """课程名称"""
     name: String!
 
@@ -3408,14 +3415,14 @@ type Mutation {
     """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
     description: String!
 
-    """该节课位于一星期中的第几天"""
-    dayOfWeek: [Int!]!
-
     """授课教师的名字"""
     educatorName: String!
 
     """课程号"""
     lessonId: String!
+
+    """lessonItem"""
+    lessonItems: [LessonItemInput!]!
   ): Lesson!
 
   """管理员更新一个课程"""
@@ -3467,6 +3474,17 @@ input AuthenticationInfo {
 
   """用户申请的角色的id的数组"""
   roles: [String!]
+}
+
+input LessonItemInput {
+  """第几节课开始"""
+  start: Int!
+
+  """第几节课结束"""
+  end: Int!
+
+  """该节课位于一星期中的第几天"""
+  dayInWeek: Int!
 }
 
 type Subscription {

@@ -1,8 +1,13 @@
-import { Args, Query, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 
 import { CurrentUser, Role, Roles } from '../auth/decorator'
 import { User } from '../user/models/user.model'
-import { GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs, GetWXSubscriptionInfoArgs, SendSubscribeMessageArgs, SendUniformMessageArgs, WxSubscriptionInfo } from './models/wx.model'
+import {
+  GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs,
+  GetWXSubscriptionInfoArgs, SendSubscribeMessageArgs,
+  SendUniformMessageArgs, TriggerLessonNotificationArgs,
+  WxSubscriptionInfo
+} from './models/wx.model'
 import { WxService } from './wx.service'
 
 @Resolver()
@@ -19,8 +24,15 @@ export class WxResolver {
     return await this.wxService.getWXMiniProgrameShortLink(config)
   }
 
+  @Mutation(of => String, { description: '测试接口，手动触发一个上课课程通知' })
+  @Roles(Role.Admin, Role.User)
+  // TODO 统一测试方法
+  async triggerLessonNotification (@Args() args: TriggerLessonNotificationArgs) {
+    return (await this.wxService.triggerLessonNotification(args)).errmsg
+  }
+
   @Query(of => String)
-  @Roles(Role.Admin)
+  @Roles(Role.Admin, Role.User)
   async sendUniformMessage (@Args() config: SendUniformMessageArgs) {
     return (await this.wxService.sendUniformMessage(config)).errmsg
   }

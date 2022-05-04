@@ -81,7 +81,7 @@ export class MpTemplateMsg {
     url: string
 
   @Field(of => String, { description: '公众号模板消息所要跳转的小程序，小程序的必须与公众号具有绑定关系' })
-    miniprograme: string
+    miniprogram: string
 
   @Field(of => String, { description: '公众号模板消息的数据' })
     data: string
@@ -92,8 +92,8 @@ export class SendUniformMessageArgs {
   @Field(of => String, { description: '用户openid，可以是小程序的openid，也可以是mp_template_msg.appid对应的公众号的openid' })
     touser: string
 
-  @Field(of => WeappTemplateMsg, { description: '小程序模板消息相关的信息，可以参考小程序模板消息接口; 有此节点则优先发送小程序模板消息；（小程序模板消息已下线，不用传此节点）' })
-    weapp_template_msg: WeappTemplateMsg
+  @Field(of => WeappTemplateMsg, { nullable: true, description: '小程序模板消息相关的信息，可以参考小程序模板消息接口; 有此节点则优先发送小程序模板消息；（小程序模板消息已下线，不用传此节点）' })
+    weapp_template_msg?: WeappTemplateMsg | null
 
   @Field(of => MpTemplateMsg, { description: '公众号模板消息相关的信息，可以参考公众号模板消息接口；有此节点并且没有weapp_template_msg节点时，发送公众号模板消息' })
     mp_template_msg: MpTemplateMsg
@@ -224,4 +224,13 @@ export class WxSubscriptionInfo {
 
   @Field(of => WX_SUBSCRIBE_SCENE, { description: '返回用户关注的渠道来源' })
     subscribe_scene: WX_SUBSCRIBE_SCENE
+}
+
+@ArgsType()
+export class TriggerLessonNotificationArgs {
+  @Field()
+    lessonId: string
+
+  @Field({ description: '被通知的 User 的 id' })
+    to: string
 }
