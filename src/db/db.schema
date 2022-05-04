@@ -87,6 +87,9 @@ start: int .
 end: int .
 studentId: int .
 dayInWeek: int .
+semester: int .
+startYear: int .
+endYear: int .
 
 positive: float .
 negative: float .
@@ -560,6 +563,12 @@ type Lesson {
   # 要上课的周数
   circle
   lessonItems
+  # 开始学年
+  startYear
+  # 结束学年
+  endYear
+  # 学期
+  semester
 }
 
 type LessonItem {

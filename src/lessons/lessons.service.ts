@@ -197,6 +197,10 @@ export class LessonsService {
         lessonId: args.lessonId,
         // 授课教师名字
         educatorName: args.educatorName,
+        // 开始学年
+        startYear: args.startYear,
+        endYear: args.endYear,
+        semester: args.semester,
         lessonItems
       }
     }

@@ -1848,6 +1848,15 @@ type Lesson {
   """lessonItem"""
   lessonItems: [LessonItem!]
 
+  """开始学年"""
+  startYear: Int!
+
+  """结束学年"""
+  endYear: Int!
+
+  """学期"""
+  semester: Int!
+
   """获取该课程的所有 deadline"""
   deadlines(
     """最新的n个对象"""
@@ -3421,6 +3430,15 @@ type Mutation {
 
     """lessonItem"""
     lessonItems: [LessonItemInput!]!
+
+    """开始学年"""
+    startYear: Int!
+
+    """结束学年"""
+    endYear: Int!
+
+    """学期"""
+    semester: Int!
   ): Lesson!
 
   """管理员更新一个课程"""

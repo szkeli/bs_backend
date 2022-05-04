@@ -54,6 +54,15 @@ export class Lesson {
 
   @Field(of => [LessonItem], { nullable: true, description: 'lessonItem' })
     lessonItems: LessonItem[]
+
+  @Field(of => Int, { description: '开始学年' })
+    startYear: number
+
+  @Field(of => Int, { description: '结束学年' })
+    endYear: number
+
+  @Field(of => Int, { description: '学期' })
+    semester: number
 }
 
 @ArgsType()
@@ -90,6 +99,15 @@ export class AddLessonArgs {
 
   @Field(of => [LessonItemInput], { description: 'lessonItem' })
     lessonItems: LessonItemInput[]
+
+  @Field(of => Int, { description: '开始学年' })
+    startYear: number
+
+  @Field(of => Int, { description: '结束学年' })
+    endYear: number
+
+  @Field(of => Int, { description: '学期' })
+    semester: number
 }
 
 @ObjectType()
