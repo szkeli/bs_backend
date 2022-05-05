@@ -151,7 +151,7 @@ export class LessonsService {
     const query = `
       query v($id: string) {
         user(func: uid($id)) @filter(type(User)) {
-          lessons @filter(type(Lesson) and eq(circle, ${week})) {
+          lessons @filter(type(Lesson) and eq(circle, ${week}) and eq(startYear, ${startYear}) and eq(endYear, ${endYear}) and eq(semester, ${semester})) {
             items as lessonItems @filter(type(LessonItem) and eq(dayInWeek, ${dayInWeek}) and eq(circle, ${week}))
           }
           openId
@@ -369,8 +369,6 @@ export class LessonsService {
       throw new BadOpenIdException(to)
     }
 
-    console.error(res)
-
     const data = {
       touser: res.user[0]?.openId,
       mp_template_msg: {
@@ -396,6 +394,7 @@ export class LessonsService {
           keyword2: {
             value: res.items
               .map(i => `${fmtLessonTimeByDayInWeekThroughSchoolTimeTable(i.start, i.end)} ${i.lesson[0]?.name ?? 'N/A'}`)
+              .sort()
               .join('\n')
           },
           // 上课地点
@@ -404,6 +403,7 @@ export class LessonsService {
           keyword3: {
             value: res.items
               .map(i => `[${i.start},${i.end}节] ${i.lesson[0]?.destination ?? 'N/A'}`)
+              .sort()
               .join('\n')
           },
           remark: {
