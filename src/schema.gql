@@ -1848,7 +1848,7 @@ type Lesson {
   id: String!
 
   """上课地点"""
-  destination: String!
+  destination: String
 
   """课程名称"""
   name: String!
@@ -1865,7 +1865,7 @@ type Lesson {
   """课程对应的唯一课程号"""
   lessonId: String!
 
-  """授课教师的名字"""
+  """TODO, 授课教师的名字"""
   educatorName: String
 
   """lessonItem"""

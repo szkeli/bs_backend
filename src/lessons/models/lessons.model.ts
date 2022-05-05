@@ -79,7 +79,7 @@ export class Lesson {
   @Field({ description: '课程内部唯一 id' })
     id: string
 
-  @Field({ description: '上课地点' })
+  @Field({ description: '上课地点', nullable: true })
     destination: string
 
   @Field({ description: '课程名称' })
@@ -97,7 +97,7 @@ export class Lesson {
   @Field(of => String, { description: '课程对应的唯一课程号' })
     lessonId: string
 
-  @Field({ nullable: true, description: '授课教师的名字' })
+  @Field({ nullable: true, description: 'TODO, 授课教师的名字' })
     educatorName: string
 
   @Field(of => [LessonItem], { nullable: true, description: 'lessonItem' })
