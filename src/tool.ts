@@ -4,7 +4,7 @@ import * as crypto from 'crypto'
 import { verify } from 'jsonwebtoken'
 
 import { Code2SessionErrorException } from './app.exception'
-import { LessonItem } from './lessons/models/lessons.model'
+import { Lesson, LessonItem } from './lessons/models/lessons.model'
 import { Nullable } from './posts/models/post.model'
 import { AuthenticationInfo, CODE2SESSION_GRANT_TYPE, UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
 
@@ -287,3 +287,51 @@ export const fmtLessonItems = (items: LessonItem[]) =>
   items
     .map(item => fmtLessonTimeByDayInWeekThroughSchoolTimeTable(item.start, item.end))
     .join('\n')
+
+export type LessonNotificationTemplateItem = Array<LessonItem & { lesson: Lesson[] }>
+
+export const getLessonNotificationTemplate = (openId: string, items: LessonNotificationTemplateItem) => (
+  {
+    touser: openId,
+    mp_template_msg: {
+      appid: 'wxfcf7b19fdd5d9770',
+      template_id: '49nv12UdpuLNktBfXNrH61-ci3x71_FX8hhAew8fQoQ',
+      url: 'http://weixin.qq.com/download',
+      miniprogram: {
+        appid: 'wx10ac1dfea0e2b8c6',
+        pagepath: '/pages/index/index'
+      },
+      data: {
+        first: {
+          value: `明天你有${items.length ?? 'N/A'}门课程`
+        },
+        // 所有课程
+        // 线性代数；音乐；体育；（列举全部课程用分号连接）
+        keyword1: {
+          value: items.map(i => i.lesson[0]?.name ?? 'N/A').join('；') ?? 'N/A'
+        },
+        // 课程名称和时间
+        // 【1，2节】8:30-9：55 线性代数
+        // 【1，2节】8:30-9：55 线性代数
+        keyword2: {
+          value: items
+            .map(i => `${fmtLessonTimeByDayInWeekThroughSchoolTimeTable(i.start, i.end)} ${i.lesson[0]?.name ?? 'N/A'}`)
+            .sort()
+            .join('\n')
+        },
+        // 上课地点
+        // 【1，2节】师院B204
+        // 【1，2节】师院B204
+        keyword3: {
+          value: items
+            .map(i => `[${i.start},${i.end}节] ${i.lesson[0]?.destination ?? 'N/A'}`)
+            .sort()
+            .join('\n')
+        },
+        remark: {
+          value: '详情请点击进入小程序查看'
+        }
+      }
+    }
+  }
+)

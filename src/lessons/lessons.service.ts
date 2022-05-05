@@ -5,7 +5,7 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { fmtLessonTimeByDayInWeekThroughSchoolTimeTable, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { getLessonNotificationTemplate, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { WxService } from '../wx/wx.service'
 import { AddLessonArgs, FilterLessonsArgs, Lesson, LessonItem, LessonMetaData, LessonNotificationSettings, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs, UpdateLessonNotificationSettingsArgs } from './models/lessons.model'
 
@@ -369,50 +369,7 @@ export class LessonsService {
       throw new BadOpenIdException(to)
     }
 
-    const data = {
-      touser: res.user[0]?.openId,
-      mp_template_msg: {
-        appid: 'wxfcf7b19fdd5d9770',
-        template_id: '49nv12UdpuLNktBfXNrH61-ci3x71_FX8hhAew8fQoQ',
-        url: 'http://weixin.qq.com/download',
-        miniprogram: {
-          appid: 'wx10ac1dfea0e2b8c6',
-          pagepath: '/pages/index/index'
-        },
-        data: {
-          first: {
-            value: `明天你有${res.items.length ?? 'N/A'}门课程`
-          },
-          // 所有课程
-          // 线性代数；音乐；体育；（列举全部课程用分号连接）
-          keyword1: {
-            value: res.items.map(i => i.lesson[0]?.name ?? 'N/A').join('；') ?? 'N/A'
-          },
-          // 课程名称和时间
-          // 【1，2节】8:30-9：55 线性代数
-          // 【1，2节】8:30-9：55 线性代数
-          keyword2: {
-            value: res.items
-              .map(i => `${fmtLessonTimeByDayInWeekThroughSchoolTimeTable(i.start, i.end)} ${i.lesson[0]?.name ?? 'N/A'}`)
-              .sort()
-              .join('\n')
-          },
-          // 上课地点
-          // 【1，2节】师院B204
-          // 【1，2节】师院B204
-          keyword3: {
-            value: res.items
-              .map(i => `[${i.start},${i.end}节] ${i.lesson[0]?.destination ?? 'N/A'}`)
-              .sort()
-              .join('\n')
-          },
-          remark: {
-            value: '详情请点击进入小程序查看'
-          }
-        }
-      }
-    }
-
-    return await this.wxService.sendUniformMessage(data)
+    const template = getLessonNotificationTemplate(res.user[0]?.openId, res.items)
+    return await this.wxService.sendUniformMessage(template)
   }
 }
