@@ -1,7 +1,8 @@
-import { Module } from '@nestjs/common'
+import { CacheModule, Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import { GraphQLModule } from '@nestjs/graphql'
+import { ScheduleModule } from '@nestjs/schedule'
 import { join } from 'path'
 
 import { AdminModule } from './admin/admin.module'
@@ -52,6 +53,8 @@ import { WxModule } from './wx/wx.module'
 
 @Module({
   imports: [
+    CacheModule.register(),
+    ScheduleModule.forRoot(),
     GraphQLModule.forRoot({
       installSubscriptionHandlers: true,
       subscriptions: {

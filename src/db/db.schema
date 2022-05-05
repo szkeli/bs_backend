@@ -611,4 +611,6 @@ type LessonNotificationSettings {
   needNotifications
   # 上次通知的时间
   lastNotifiedAt
+  # 当前通知的发送状态
+  state
 }
