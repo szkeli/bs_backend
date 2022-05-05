@@ -43,13 +43,13 @@ export class LessonItem {
   @Field(of => Int, { nullable: true, description: '该节课位于一星期中的第几天' })
     dayInWeek: number
 
-  @Field(of => [Int], { description: '该课程要上课的周数的数组' })
+  @Field(of => [Int], { nullable: true, description: 'TODO, 该课程要上课的周数的数组' })
     circle: number[]
 
-  @Field({ description: '课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
+  @Field({ nullable: true, description: 'TODO, 课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
     description: string
 
-  @Field({ description: '上课地点' })
+  @Field({ nullable: true, description: 'TODO, 上课地点' })
     destination: string
 }
 
@@ -103,13 +103,13 @@ export class Lesson {
   @Field(of => [LessonItem], { nullable: true, description: 'lessonItem' })
     lessonItems: LessonItem[]
 
-  @Field(of => Int, { description: '开始学年' })
+  @Field(of => Int, { nullable: true, description: 'TODO, 开始学年' })
     startYear: number
 
-  @Field(of => Int, { description: '结束学年' })
+  @Field(of => Int, { nullable: true, description: 'TODO, 结束学年' })
     endYear: number
 
-  @Field(of => Int, { description: '学期' })
+  @Field(of => Int, { nullable: true, description: 'TODO, 学期' })
     semester: number
 
   @Field(of => String, { nullable: true, description: '自定义课程时的颜色' })
