@@ -1,94 +1,21 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import axios from 'axios'
 
-import { BadOpenIdException, UserNotFoundException, UserNotHasLessonsTodayExcepton } from '../app.exception'
 import { CosService } from '../cos/cos.service'
-import { LessonsService } from '../lessons/lessons.service'
-import { fmtLessonTimeByDayInWeekThroughSchoolTimeTable, sha1 } from '../tool'
+import { sha1 } from '../tool'
 import {
   GetUnlimitedWXacodeArgs,
   GetWXMiniProgrameShortLinkArgs,
   GetWXSubscriptionInfoArgs,
   SendSubscribeMessageArgs,
-  SendUniformMessageArgs,
-  TriggerLessonNotificationArgs
+  SendUniformMessageArgs
 } from './models/wx.model'
 
 @Injectable()
 export class WxService {
   constructor (
-    private readonly cosService: CosService,
-    private readonly lessonsService: LessonsService
+    private readonly cosService: CosService
   ) {}
-
-  async triggerLessonNotification ({ to }: TriggerLessonNotificationArgs) {
-    // 通过 to 查询相应用户的 openId
-    const res = await this.lessonsService.filterLessons(to, {
-      week: 7,
-      dayInWeek: 3,
-      startYear: 2019,
-      endYear: 2020,
-      semester: 1
-    })
-
-    if (res.user.length === 0) {
-      throw new UserNotFoundException(to)
-    }
-
-    if (res.items.length === 0) {
-      throw new UserNotHasLessonsTodayExcepton(to)
-    }
-
-    if (!res.user[0]?.openId || res.user[0]?.openId === '') {
-      throw new BadOpenIdException(to)
-    }
-
-    console.error(res)
-
-    const data = {
-      // touser: 'opjHf5a56LcZvBI8cY9gi6M3y-ZE',
-      touser: res.user[0]?.openId,
-      mp_template_msg: {
-        appid: 'wxfcf7b19fdd5d9770',
-        template_id: '49nv12UdpuLNktBfXNrH61-ci3x71_FX8hhAew8fQoQ',
-        url: 'http://weixin.qq.com/download',
-        miniprogram: JSON.stringify({
-          appid: 'wx10ac1dfea0e2b8c6',
-          pagepath: '/pages/index/index'
-        }),
-        data: JSON.stringify({
-          first: {
-            value: '上课提醒'
-          },
-          keyword1: {
-            value: `明天你有${res.items.length ?? 'N/A'}门课程`
-          },
-          // 所有课程
-          // 线性代数；音乐；体育；（列举全部课程用分号连接）
-          keyword2: {
-            value: res.items.map(i => i.lesson?.name ?? 'N/A').join('；') ?? 'N/A'
-          },
-          // 课程名称和时间
-          // 【1，2节】8:30-9：55 线性代数
-          // 【1，2节】8:30-9：55 线性代数
-          keyword3: {
-            value: res.items
-              .map(i => `${fmtLessonTimeByDayInWeekThroughSchoolTimeTable(i.start, i.end)} ${i.lesson?.name ?? 'N/A'}`)
-              .join('\n')
-          },
-          // 上课地点
-          // 【1，2节】师院B204
-          // 【1，2节】师院B204
-          remark: {
-            value: res.items
-              .map(i => `[${i.start},${i.end}] ${i.lesson?.destination ?? 'N/A'}`)
-              .join('\n')
-          }
-        })
-      }
-    }
-    return await this.sendUniformMessage(data)
-  }
 
   async getWXSubscriptionInfo (id: string, { lang, openid }: GetWXSubscriptionInfoArgs) {
     const accessToken = await this.getAccessToken()

@@ -174,3 +174,24 @@ export interface FilterLessonsArgs {
   endYear: number
   semester: number
 }
+
+@ArgsType()
+export class TriggerLessonNotificationArgs {
+  @Field({ description: '被通知的 User 的 id' })
+    to: string
+
+  @Field(of => Int, { nullable: true, description: '星期几' })
+    dayInWeek: number
+
+  @Field(of => Int, { description: '当前开始学年' })
+    startYear: number
+
+  @Field(of => Int, { description: '当前结束学年' })
+    endYear: number
+
+  @Field(of => Int, { description: '当前学期' })
+    semester: number
+
+  @Field(of => Int, { description: '当前周数' })
+    week: number
+}

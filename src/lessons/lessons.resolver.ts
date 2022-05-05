@@ -6,11 +6,13 @@ import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { PersonWithRoles } from '../user/models/user.model'
 import { LessonsService } from './lessons.service'
-import { AddLessonArgs, Lesson, LessonMetaData, LessonsConnection, UpdateLessonArgs, UpdateLessonMetaDataArgs } from './models/lessons.model'
+import { AddLessonArgs, Lesson, LessonMetaData, LessonsConnection, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs } from './models/lessons.model'
 
 @Resolver(of => Lesson)
 export class LessonsResolver {
-  constructor (private readonly lessonsService: LessonsService) {}
+  constructor (
+    private readonly lessonsService: LessonsService
+  ) {}
 
   @Mutation(of => Lesson, { description: '添加一个课程到当前用户' })
   @Roles(Role.Admin, Role.User)
@@ -57,5 +59,12 @@ export class LessonsResolver {
   @ResolveField(of => DeadlinesConnection, { description: '获取该课程的所有 deadline' })
   async deadlines (@Parent() lesson: Lesson, @Args() args: RelayPagingConfigArgs) {
     return await this.lessonsService.deadlines(lesson.id, args)
+  }
+
+  @Mutation(of => String, { description: '测试接口，手动触发一个上课课程通知' })
+  @Roles(Role.Admin, Role.User)
+  // TODO 统一测试方法
+  async triggerLessonNotification (@Args() args: TriggerLessonNotificationArgs) {
+    return (await this.lessonsService.triggerLessonNotification(args)).errmsg
   }
 }

@@ -70,6 +70,39 @@ export class WeappTemplateMsg {
 }
 
 @InputType()
+export class CourseNotificationTemplateMiniprogram {
+  @Field()
+    appid: string
+
+  @Field()
+    pagepath: string
+}
+
+@InputType()
+export class TemplateValue {
+  @Field()
+    value: string
+}
+
+@InputType()
+export class CourseNotificationTemplateData {
+  @Field(of => TemplateValue)
+    first: TemplateValue
+
+  @Field(of => TemplateValue)
+    keyword1: TemplateValue
+
+  @Field(of => TemplateValue)
+    keyword2: TemplateValue
+
+  @Field(of => TemplateValue)
+    keyword3: TemplateValue
+
+  @Field(of => TemplateValue)
+    remark: TemplateValue
+}
+
+@InputType()
 export class MpTemplateMsg {
   @Field(of => String, { description: '公众号appid，要求与小程序有绑定且同主体' })
     appid: string
@@ -80,11 +113,11 @@ export class MpTemplateMsg {
   @Field(of => String, { description: '公众号模板消息所要跳转的url' })
     url: string
 
-  @Field(of => String, { description: '公众号模板消息所要跳转的小程序，小程序的必须与公众号具有绑定关系' })
-    miniprogram: string
+  @Field(of => CourseNotificationTemplateMiniprogram, { description: '公众号模板消息所要跳转的小程序，小程序的必须与公众号具有绑定关系' })
+    miniprogram: CourseNotificationTemplateMiniprogram
 
-  @Field(of => String, { description: '公众号模板消息的数据' })
-    data: string
+  @Field(of => CourseNotificationTemplateData, { description: '公众号模板消息的数据' })
+    data: CourseNotificationTemplateData
 }
 
 @ArgsType()
@@ -224,10 +257,4 @@ export class WxSubscriptionInfo {
 
   @Field(of => WX_SUBSCRIBE_SCENE, { description: '返回用户关注的渠道来源' })
     subscribe_scene: WX_SUBSCRIBE_SCENE
-}
-
-@ArgsType()
-export class TriggerLessonNotificationArgs {
-  @Field({ description: '被通知的 User 的 id' })
-    to: string
 }

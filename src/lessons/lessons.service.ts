@@ -1,16 +1,20 @@
 import { Injectable } from '@nestjs/common'
 
-import { AdminNotFoundException, LessonNotFoundException, UserAlreadyHasTheLesson, UserNotFoundException } from '../app.exception'
+import { AdminNotFoundException, BadOpenIdException, LessonNotFoundException, UserAlreadyHasTheLesson, UserNotFoundException, UserNotHasLessonsTodayExcepton } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
-import { AddLessonArgs, FilterLessonsArgs, Lesson, LessonItem, LessonMetaData, UpdateLessonArgs, UpdateLessonMetaDataArgs } from './models/lessons.model'
+import { fmtLessonTimeByDayInWeekThroughSchoolTimeTable, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { WxService } from '../wx/wx.service'
+import { AddLessonArgs, FilterLessonsArgs, Lesson, LessonItem, LessonMetaData, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs } from './models/lessons.model'
 
 @Injectable()
 export class LessonsService {
-  constructor (private readonly dbService: DbService) {}
+  constructor (
+    private readonly dbService: DbService,
+    private readonly wxService: WxService
+  ) {}
 
   async lessonMetaData () {
     const query = `
@@ -69,7 +73,7 @@ export class LessonsService {
   async filterLessons (id: string, { week, dayInWeek, startYear, endYear, semester }: FilterLessonsArgs) {
     const query = `
       query v($id: string) {
-        user(func: uid($to)) @filter(type(User)) {
+        user(func: uid($id)) @filter(type(User)) {
           lessons @filter(type(Lesson) and eq(circle, ${week})) {
             items as lessonItems @filter(type(LessonItem) and eq(dayInWeek, ${dayInWeek}))
           }
@@ -85,7 +89,7 @@ export class LessonsService {
       }
     `
     return await this.dbService.commitQuery<{
-      items: Array<LessonItem & { lesson: Lesson }>
+      items: Array<LessonItem & { lesson: Lesson[] }>
       user: Array<{ openId: string }>
     }>({
       query, vars: { $id: id }
@@ -304,5 +308,73 @@ export class LessonsService {
 
   async addLessonSelf (id: string, args: AddLessonArgs) {
     throw new Error('Method not implemented.')
+  }
+
+  async triggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek }: TriggerLessonNotificationArgs) {
+    // 通过 to 查询相应用户的 openId
+    const res = await this.filterLessons(to, {
+      week,
+      dayInWeek,
+      startYear,
+      endYear,
+      semester
+    })
+
+    if (res.user.length === 0) {
+      throw new UserNotFoundException(to)
+    }
+
+    if (res.items.length === 0) {
+      throw new UserNotHasLessonsTodayExcepton(to)
+    }
+
+    if (!res.user[0]?.openId || res.user[0]?.openId === '') {
+      throw new BadOpenIdException(to)
+    }
+
+    const data = {
+      // touser: 'opjHf5a56LcZvBI8cY9gi6M3y-ZE',
+      touser: res.user[0]?.openId,
+      mp_template_msg: {
+        appid: 'wxfcf7b19fdd5d9770',
+        template_id: '49nv12UdpuLNktBfXNrH61-ci3x71_FX8hhAew8fQoQ',
+        url: 'http://weixin.qq.com/download',
+        miniprogram: {
+          appid: 'wx10ac1dfea0e2b8c6',
+          pagepath: '/pages/index/index'
+        },
+        data: {
+          first: {
+            value: `明天你有${res.items.length ?? 'N/A'}门课程`
+          },
+          // 所有课程
+          // 线性代数；音乐；体育；（列举全部课程用分号连接）
+          keyword1: {
+            value: res.items.map(i => i.lesson[0]?.name ?? 'N/A').join('；') ?? 'N/A'
+          },
+          // 课程名称和时间
+          // 【1，2节】8:30-9：55 线性代数
+          // 【1，2节】8:30-9：55 线性代数
+          keyword2: {
+            value: res.items
+              .map(i => `${fmtLessonTimeByDayInWeekThroughSchoolTimeTable(i.start, i.end)} ${i.lesson[0]?.name ?? 'N/A'}`)
+              .join('\n')
+          },
+          // 上课地点
+          // 【1，2节】师院B204
+          // 【1，2节】师院B204
+          keyword3: {
+            value: res.items
+              .map(i => `[${i.start},${i.end}] ${i.lesson[0]?.destination ?? 'N/A'}`)
+              .join('\n')
+          },
+          remark: {
+            value: '详情请点击进入小程序查看'
+          }
+        }
+      }
+    }
+
+    return await this.wxService.sendUniformMessage(data)
   }
 }

@@ -273,14 +273,14 @@ export const fmtLessonTimeByDayInWeekThroughSchoolTimeTable = (start: number, en
     '17:25', '20:20', '20:20',
     '21:45', '21:45'
   ]
-  if (start > startTable.length) {
+  if (start - 1 > startTable.length) {
     throw new ForbiddenException('start can not exceed startTable.length')
   }
-  if (end > endTable.length) {
+  if (end - 1 > endTable.length) {
     throw new ForbiddenException('end can not exceed endTable.lenght')
   }
 
-  return `[${start},${end}节] ${startTable[start]}-${endTable[end]}`
+  return `[${start},${end}节] ${startTable[start - 1]}-${endTable[end - 1]}`
 }
 
 export const fmtLessonItems = (items: LessonItem[]) =>

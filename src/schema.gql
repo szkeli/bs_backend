@@ -3094,10 +3094,27 @@ input MpTemplateMsg {
   url: String!
 
   """公众号模板消息所要跳转的小程序，小程序的必须与公众号具有绑定关系"""
-  miniprogram: String!
+  miniprogram: CourseNotificationTemplateMiniprogram!
 
   """公众号模板消息的数据"""
-  data: String!
+  data: CourseNotificationTemplateData!
+}
+
+input CourseNotificationTemplateMiniprogram {
+  appid: String!
+  pagepath: String!
+}
+
+input CourseNotificationTemplateData {
+  first: TemplateValue!
+  keyword1: TemplateValue!
+  keyword2: TemplateValue!
+  keyword3: TemplateValue!
+  remark: TemplateValue!
+}
+
+input TemplateValue {
+  value: String!
 }
 
 enum WX_SUBSCRIBE_INFO_LANG {
@@ -3422,12 +3439,6 @@ type Mutation {
   """设置创建时间小于当前系统时间的所有通知为已读"""
   setReadAllNotifications: Boolean!
 
-  """测试接口，手动触发一个上课课程通知"""
-  triggerLessonNotification(
-    """被通知的 User 的 id"""
-    to: String!
-  ): String!
-
   """添加一个角色到某用户"""
   addRoleOnUser(roleId: String!, to: String!): User!
 
@@ -3496,6 +3507,27 @@ type Mutation {
     """课程内部id"""
     id: String
   ): Lesson!
+
+  """测试接口，手动触发一个上课课程通知"""
+  triggerLessonNotification(
+    """被通知的 User 的 id"""
+    to: String!
+
+    """星期几"""
+    dayInWeek: Int
+
+    """当前开始学年"""
+    startYear: Int!
+
+    """当前结束学年"""
+    endYear: Int!
+
+    """当前学期"""
+    semester: Int!
+
+    """当前周数"""
+    week: Int!
+  ): String!
 }
 
 """登录类型"""
