@@ -37,6 +37,12 @@ export class LessonsResolver {
     return await this.lessonsService.addLesson(user.id, args)
   }
 
+  @Mutation(of => Boolean, { description: '从当前用户中删除一个课程' })
+  @Roles(Role.User)
+  async deleteLesson (@CurrentUser() user: User, @Args('lessonId')lessonId: string) {
+    return await this.lessonsService.deleteLesson(user.id, lessonId)
+  }
+
   @Mutation(of => Lesson, { description: '管理员添加课程到某用户' })
   @Roles(Role.Admin)
   async addLessonToUser (@CurrentAdmin() Admin: Admin, @Args() args: AddLessonArgs, @Args('to') to: string) {

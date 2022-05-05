@@ -3534,6 +3534,9 @@ type Mutation {
     color: String
   ): Lesson!
 
+  """从当前用户中删除一个课程"""
+  deleteLesson(lessonId: String!): Boolean!
+
   """管理员添加课程到某用户"""
   addLessonToUser(
     to: String!

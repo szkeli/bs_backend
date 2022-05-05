@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 
-import { BadOpenIdException, LessonNotFoundException, UserNotFoundException, UserNotHasLessonsTodayExcepton } from '../app.exception'
+import { BadOpenIdException, LessonNotFoundException, UserNotFoundException, UserNotHasLessonsTodayExcepton, UserNotHasTheLesson } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
@@ -15,6 +15,52 @@ export class LessonsService {
     private readonly dbService: DbService,
     private readonly wxService: WxService
   ) {}
+
+  async deleteLesson (id: string, lessonId: string) {
+    const query = `
+      query v($id: string, $lessonId: string) {
+        v(func: uid($id)) @filter(type(User)) {
+          v as uid
+        }
+        u(func: eq(lessonId, $lessonId)) @filter(type(Lesson)) {
+          u as uid
+        }
+        # 用户是否拥有该课程
+        q(func: uid(v)) {
+          lessons @filter(type(Lesson) and eq(lessonId, $lessonId)) {
+            q as uid
+          }
+        }
+      }
+    `
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) )'
+    const mutation = {
+      uid: 'uid(q)',
+      'dgraph.type': 'Lesson'
+    }
+
+    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+      q: Array<{lessons: Array<{uid: string}>}>
+    }>({
+      query,
+      mutations: [{ condition, mutation }],
+      vars: { $id: id, $lessonId: lessonId }
+    })
+
+    if (res.json.q.length !== 1) {
+      throw new UserNotHasTheLesson(id, lessonId)
+    }
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+    if (res.json.v.length !== 1) {
+      throw new LessonNotFoundException(lessonId)
+    }
+
+    return true
+  }
 
   async updateLessonNotificationSettings (id: string, { needNotifications }: UpdateLessonNotificationSettingsArgs) {
     const query = `
