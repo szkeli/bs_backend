@@ -578,4 +578,10 @@ type LessonItem {
   end
   # 该课程位于一星期中的第几天
   dayInWeek 
+  # 要上课的周数
+  circle
+  # 课程描述
+  description
+  # 上课地点
+  destination
 }

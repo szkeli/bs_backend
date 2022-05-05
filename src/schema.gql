@@ -1817,6 +1817,15 @@ type LessonItem {
 
   """该节课位于一星期中的第几天"""
   dayInWeek: Int
+
+  """该课程要上课的周数的数组"""
+  circle: [Int!]!
+
+  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
+  description: String!
+
+  """上课地点"""
+  destination: String!
 }
 
 """课程对象"""
@@ -3410,8 +3419,8 @@ type Mutation {
     """该课程添加到对应的用户的id"""
     id: String!
 
-    """上课地点"""
-    destination: String!
+    """上课地点，对于未列出的课程，此项可为 null"""
+    destination: String
 
     """课程名称"""
     name: String!
@@ -3428,8 +3437,8 @@ type Mutation {
     """课程号"""
     lessonId: String!
 
-    """lessonItem"""
-    lessonItems: [LessonItemInput!]!
+    """lessonItem，对于未列出的课程，此项可为 null"""
+    lessonItems: [LessonItemInput!]
 
     """开始学年"""
     startYear: Int!
@@ -3501,6 +3510,15 @@ input LessonItemInput {
 
   """该节课位于一星期中的第几天"""
   dayInWeek: Int!
+
+  """该课程要上课的周数的数组"""
+  circle: [Int!]!
+
+  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
+  description: String!
+
+  """上课地点"""
+  destination: String!
 }
 
 type Subscription {

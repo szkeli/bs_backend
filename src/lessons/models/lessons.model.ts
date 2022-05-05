@@ -12,6 +12,15 @@ export class LessonItem {
 
   @Field(of => Int, { nullable: true, description: '该节课位于一星期中的第几天' })
     dayInWeek: number
+
+  @Field(of => [Int], { description: '该课程要上课的周数的数组' })
+    circle: number[]
+
+  @Field({ description: '课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
+    description: string
+
+  @Field({ description: '上课地点' })
+    destination: string
 }
 
 @InputType()
@@ -24,6 +33,15 @@ export class LessonItemInput {
 
   @Field(of => Int, { description: '该节课位于一星期中的第几天' })
     dayInWeek: number
+
+  @Field(of => [Int], { description: '该课程要上课的周数的数组' })
+    circle: number[]
+
+  @Field({ description: '课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
+    description: string
+
+  @Field({ description: '上课地点' })
+    destination: string
 }
 
 @ObjectType({ description: '课程对象' })
@@ -79,7 +97,7 @@ export class AddLessonArgs {
   @Field({ description: '该课程添加到对应的用户的id' })
     id: string
 
-  @Field({ description: '上课地点' })
+  @Field({ description: '上课地点，对于未列出的课程，此项可为 null', nullable: true })
     destination: string
 
   @Field({ description: '课程名称' })
@@ -97,7 +115,7 @@ export class AddLessonArgs {
   @Field({ description: '课程号' })
     lessonId: string
 
-  @Field(of => [LessonItemInput], { description: 'lessonItem' })
+  @Field(of => [LessonItemInput], { description: 'lessonItem，对于未列出的课程，此项可为 null', nullable: true })
     lessonItems: LessonItemInput[]
 
   @Field(of => Int, { description: '开始学年' })
