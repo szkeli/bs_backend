@@ -255,6 +255,7 @@ export class LessonsService {
         startYear: args.startYear,
         endYear: args.endYear,
         semester: args.semester,
+        color: args.color,
         lessonItems
       }
     }

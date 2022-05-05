@@ -1880,6 +1880,9 @@ type Lesson {
   """学期"""
   semester: Int!
 
+  """自定义课程时的颜色"""
+  color: String
+
   """获取该课程的所有 deadline"""
   deadlines(
     """最新的n个对象"""
@@ -3465,6 +3468,9 @@ type Mutation {
 
     """学期"""
     semester: Int!
+
+    """自定义课程时的颜色"""
+    color: String
   ): Lesson!
 
   """更新课程表元信息"""

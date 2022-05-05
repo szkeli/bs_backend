@@ -570,6 +570,8 @@ type Lesson {
   endYear
   # 学期
   semester
+  # 用户自定义课程的颜色
+  color
 }
 
 type LessonItem {

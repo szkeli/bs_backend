@@ -111,6 +111,9 @@ export class Lesson {
 
   @Field(of => Int, { description: '学期' })
     semester: number
+
+  @Field(of => String, { nullable: true, description: '自定义课程时的颜色' })
+    color: string
 }
 
 @ArgsType()
@@ -156,6 +159,9 @@ export class AddLessonArgs {
 
   @Field(of => Int, { description: '学期' })
     semester: number
+
+  @Field(of => String, { nullable: true, description: '自定义课程时的颜色' })
+    color: string
 }
 
 @ObjectType()
