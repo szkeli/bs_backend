@@ -340,8 +340,9 @@ export class LessonsService {
       throw new UserNotFoundException(id)
     }
 
+    const _id = res.uids?.get('lesson') ?? res.json.q[0]?.uid
     return {
-      id: res.uids.get('lesson'),
+      id: _id,
       ...args,
       createdAt: now()
     }
