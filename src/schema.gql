@@ -3464,9 +3464,6 @@ type Mutation {
 
   """添加一个课程到当前用户"""
   addLesson(
-    """该课程添加到对应的用户的id"""
-    id: String!
-
     """上课地点，对于未列出的课程，此项可为 null"""
     destination: String
 

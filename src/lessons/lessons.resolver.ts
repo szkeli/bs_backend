@@ -1,12 +1,17 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { Admin } from '../admin/models/admin.model'
-import { CurrentAdmin, CurrentPerson, CurrentUser, Role, Roles } from '../auth/decorator'
+import { CurrentAdmin, CurrentUser, Role, Roles } from '../auth/decorator'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { PersonWithRoles, User } from '../user/models/user.model'
+import { User } from '../user/models/user.model'
 import { LessonsService } from './lessons.service'
-import { AddLessonArgs, Lesson, LessonMetaData, LessonNotificationSettings, LessonsConnection, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs, UpdateLessonNotificationSettingsArgs } from './models/lessons.model'
+import {
+  AddLessonArgs, Lesson, LessonMetaData, LessonNotificationSettings,
+  LessonsConnection, TriggerLessonNotificationArgs,
+  UpdateLessonArgs, UpdateLessonMetaDataArgs,
+  UpdateLessonNotificationSettingsArgs
+} from './models/lessons.model'
 
 @Resolver(of => Lesson)
 export class LessonsResolver {
@@ -27,16 +32,9 @@ export class LessonsResolver {
   }
 
   @Mutation(of => Lesson, { description: '添加一个课程到当前用户' })
-  @Roles(Role.Admin, Role.User)
-  async addLesson (@CurrentPerson() person: PersonWithRoles, @Args() args: AddLessonArgs) {
-    if (person.roles?.includes(Role.Admin) && person.id !== args.id) {
-      // 管理员添加课程到指定用户
-      return await this.lessonsService.addLesson(person.id, args)
-    }
-    if (person.roles?.includes(Role.User)) {
-      // 用户给自己添加课程
-      return await this.lessonsService.addLessonSelf(person.id, args)
-    }
+  @Roles(Role.User)
+  async addLesson (@CurrentUser() user: User, @Args() args: AddLessonArgs) {
+    return await this.lessonsService.addLesson(user.id, args)
   }
 
   @Mutation(of => LessonMetaData, { description: '更新课程表元信息' })

@@ -142,9 +142,6 @@ export class UpdateLessonArgs {
 
 @ArgsType()
 export class AddLessonArgs {
-  @Field({ description: '该课程添加到对应的用户的id' })
-    id: string
-
   @Field({ description: '上课地点，对于未列出的课程，此项可为 null', nullable: true })
     destination: string
 

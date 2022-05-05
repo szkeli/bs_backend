@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 
-import { AdminNotFoundException, BadOpenIdException, LessonNotFoundException, UserAlreadyHasTheLesson, UserNotFoundException, UserNotHasLessonsTodayExcepton } from '../app.exception'
+import { BadOpenIdException, LessonNotFoundException, UserNotFoundException, UserNotHasLessonsTodayExcepton } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
@@ -274,35 +274,17 @@ export class LessonsService {
    */
   async addLesson (id: string, args: AddLessonArgs): Promise<Lesson> {
     const query = `
-    query v($adminId: string, $id: string, $lessonId: string) {
-        # 管理员是否存在
-        u(func: uid($adminId)) @filter(type(Admin)) { u as uid }
-        # 当前用户是否存在
-        v(func: uid($id)) @filter(type(User)) { v as uid }
-        # 课程是否存在
-        x(func: eq(lessonId, $lessonId)) @filter(type(Lesson)) { x as uid }
-        # 当前用户是否已经添加了该课程
-        q(func: uid(v)) {
-            curriculums @filter(type(Lesson) and eq(lessonId, $lessonId)) {
-                q as uid
-            }
-        }
-        # 查询该课程
-        g(func: eq(lessonId, $lessonId)) @filter(type(Lesson)) {
-            id: uid
-            expand(_all_)
-        }
-    }
-    `
-    // 课程已经存在
-    const already = '@if( eq(len(v), 1) and eq(len(x), 1) and eq(len(q), 0) and eq(len(u), 1) )'
-    const alreadyMutation = {
-      uid: 'uid(v)',
-      lessons: {
-        uid: 'uid(x)'
+      query v($id: string, $lessonId: string) {
+          # 当前用户是否存在
+          v(func: uid($id)) @filter(type(User)) { v as uid }
+          # 当前用户是否已经添加了该课程
+          q(func: uid(v)) {
+              curriculums @filter(type(Lesson) and eq(lessonId, $lessonId)) {
+                  q as uid
+              }
+          }
       }
-    }
-
+    `
     const lessonItems = args.lessonItems.map((item, index) => ({
       uid: `_:lessonItem_${index}`,
       'dgraph.type': 'LessonItem',
@@ -310,8 +292,8 @@ export class LessonsService {
       end: item.end,
       dayInWeek: item.dayInWeek
     }))
-    // 课程不存在
-    const create = '@if( eq(len(v), 1) and eq(len(x), 0) and eq(len(q), 0) and eq(len(u), 1) )'
+
+    const create = '@if( eq(len(v), 1) and eq(len(q), 0) )'
     const createMutation = {
       uid: 'uid(v)',
       lessons: {
@@ -345,35 +327,14 @@ export class LessonsService {
       v: Array<{uid: string}>
       x: Array<{uid: string}>
       q: Array<{uid: string}>
-      u: Array<{uid: string}>
-      g: Lesson[]
     }>({
-      mutations: [
-        { mutation: alreadyMutation, condition: already },
-        { mutation: createMutation, condition: create }
-      ],
       query,
-      vars: {
-        $adminId: id,
-        $id: args.id,
-        $lessonId: args.lessonId
-      }
+      mutations: [{ mutation: createMutation, condition: create }],
+      vars: { $id: id, $lessonId: args.lessonId }
     })
 
-    if (res.json.u.length !== 1) {
-      throw new AdminNotFoundException(id)
-    }
-
-    if (res.json.q.length !== 0) {
-      throw new UserAlreadyHasTheLesson(args.id)
-    }
-
     if (res.json.v.length !== 1) {
-      throw new UserNotFoundException(args.id)
-    }
-
-    if (res.json.v.length === 1 && res.json.x.length === 1) {
-      return res.json.g[0]
+      throw new UserNotFoundException(id)
     }
 
     return {
