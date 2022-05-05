@@ -328,8 +328,7 @@ export class LessonsService {
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
-      x: Array<{uid: string}>
-      q: Array<{uid: string}>
+      q: Array<{lessons: Array<{uid: string}>}>
     }>({
       query,
       mutations: [{ mutation: createMutation, condition: create }],
@@ -340,7 +339,7 @@ export class LessonsService {
       throw new UserNotFoundException(id)
     }
 
-    const _id = res.uids?.get('lesson') ?? res.json.q[0]?.uid
+    const _id = res.uids?.get('lesson') ?? res.json.q[0]?.lessons[0]?.uid
     return {
       id: _id,
       ...args,
