@@ -18,13 +18,14 @@ export class TasksService {
   async triggerExery10Seconds (taskType: TaskType) {
     // 符合以下规则的用户
     // 今天有课 &&
-    // lessonNotificationSettings.needNotifications为true或者null &&
+    // (lessonNotificationSettings.needNotifications为true或者null) &&
     // ((lessonNotificationSettings.state为null或者failed) && (当前时间 - lessonNotificationSettings.lastNotified < 20小时)) &&
-    // ((lessonNotificationSettings.state为succeeded，))
+    // (lessonNotificationSettings.state为succeeded && (当前时间 - lessonNotificationSettings.lastNotified > 20小时))
+
     // 获取10个符合规则的用户的id 并标记lessonNotificationSettings.state为pendding
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const query = `
-      query {
+      query v($succeeded: string) {
         # 今天的日期
         metadata(func: type(LessonMetaData)) {
           week as week
@@ -36,22 +37,39 @@ export class TasksService {
         users1_(func: type(User)) @filter(not has(LessonNotificationSettings)) { users1 as uid }
         # 所有主动允许通知的用户
         users2_(func: type(User)) {
-          # (TODO 计算 state 和 lastNotified 距今时间)
           lessonNotificationSettings @filter(type(LessonNotificationSettings) and not eq(needNotifications, false)) {
+            lastNotifiedAt as lastNotifiedAt
+
+            # lastNotifiedAt 距今的小时数
+            hours as math(since(lastNotifiedAt)/(60*60))
             ~lessonNotificationSettings {
               users2 as uid
             }
           } 
         }
-        # 所有今天有课的用户
-        var(func: type(User)) {
-          users as uid
-          c as count(lessons @filter(type(Lesson) and eq(circle, val(week)) and eq(endYear, val(endYear)) and eq(startYear, val(startYear)) and eq(semester, val(semester)))) 
+        # 所有上次通知失败或者state为null的用户(当前时间 - lastNotifiedAt < 20小时)
+        # TODO：考虑更改 20 小时为更好的时间
+        users3_(func: uid(lessonSettings)) @filter((not has(state) or not eq(state, $succeeded)) and lt(val(hours), 20)) {
+          ~lessonNotificationSettings {
+            users3 as uid
+          }
         }
-        users3_(func: uid(users)) @filter(not eq(val(c), 0)) {
-          users3 as uid
+        # 所有上次通知成功的用户(当前时间 - lastNotifiedAt > 20小时)
+        users4_(func: uid(lessonSettings)) @filter(eq(state, $succeeded) and gt(val(hours), 20)) {
+          ~lessonNotificationSettings {
+            users4 as uid
+          }
         }
-
+        # 所有今天有课的用户(TODO: 对 lessonItem 中的 dayInWeek 进行筛选)
+        users5_(func: type(Lesson)) @filter(eq(circle, val(week)) and eq(endYear, val(endYear)) and eq(startYear, val(startYear)) and eq(semester, val(semester))) {
+          ~lessons {
+            users5 as uid
+          }
+        }
+        # 符合规则的用户
+        users(func: type(User)) @filter(uid(users1) and uid(users2) and uid(users3, users4) and uid(users5)) {
+          uid
+        }
       }
     `
     // 并发发送通知

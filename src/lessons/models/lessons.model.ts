@@ -30,6 +30,9 @@ export class LessonMetaData {
 
   @Field(of => Int, { description: '当前周数' })
     week: number
+
+  @Field(of => Int, { nullable: true, description: '该节课位于一星期中的第几天' })
+    dayInWeek: number
 }
 
 @ArgsType()
@@ -45,6 +48,9 @@ export class UpdateLessonMetaDataArgs {
 
   @Field(of => Int, { description: '当前周数' })
     week: number
+
+  @Field(of => Int, { nullable: true, description: '该节课位于一星期中的第几天' })
+    dayInWeek: number
 }
 
 @ObjectType()
@@ -218,4 +224,10 @@ export class FilterLessonArgs {
 
   @Field(of => Int, { description: '当前学期' })
     semester: number
+}
+
+export enum LESSON_NOTIFY_STATE {
+  SUCCEEDED = 'SUCCEEDED',
+  PENDDING = 'PENDDING',
+  FAILED = 'FAILED',
 }

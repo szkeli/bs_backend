@@ -152,7 +152,7 @@ export class LessonsService {
     return res.metadata[0]
   }
 
-  async updateLessonMetaData ({ startYear, endYear, semester, week }: UpdateLessonMetaDataArgs) {
+  async updateLessonMetaData ({ startYear, endYear, semester, week, dayInWeek }: UpdateLessonMetaDataArgs) {
     const query = `
       query {
         var(func: type(LessonMetaData)) {
@@ -166,7 +166,8 @@ export class LessonsService {
       startYear,
       endYear,
       semester,
-      week
+      week,
+      dayInWeek
     }
 
     const create = '@if( eq(len(metadata), 0) )'
@@ -176,7 +177,8 @@ export class LessonsService {
       startYear,
       endYear,
       semester,
-      week
+      week,
+      dayInWeek
     }
 
     await this.dbService.commitConditionalUperts({
@@ -189,7 +191,7 @@ export class LessonsService {
     })
 
     return {
-      startYear, endYear, semester, week
+      startYear, endYear, semester, week, dayInWeek
     }
   }
 

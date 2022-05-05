@@ -604,6 +604,8 @@ type LessonMetaData {
   semester
   # 当前第几周
   week
+  # 当前一星期中的第几天
+  dayInWeek
 }
 
 type LessonNotificationSettings {

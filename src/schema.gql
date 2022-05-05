@@ -1855,6 +1855,9 @@ type LessonMetaData {
 
   """当前周数"""
   week: Int!
+
+  """该节课位于一星期中的第几天"""
+  dayInWeek: Int
 }
 
 type LessonItem {
@@ -3588,6 +3591,9 @@ type Mutation {
 
     """当前周数"""
     week: Int!
+
+    """该节课位于一星期中的第几天"""
+    dayInWeek: Int
   ): LessonMetaData!
 
   """管理员更新一个课程"""
