@@ -14,7 +14,7 @@ import { ConversationsService } from '../conversations/conversations.service'
 import { ConversationsConnection } from '../conversations/models/conversations.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
-import { LessonsConnection } from '../lessons/models/lessons.model'
+import { FilterLessonArgs, LessonsConnection } from '../lessons/models/lessons.model'
 import { WithinArgs } from '../node/models/node.model'
 import { NOTIFICATION_TYPE, NotificationsConnection } from '../notifications/models/notifications.model'
 import { NotificationsService } from '../notifications/notifications.service'
@@ -167,8 +167,8 @@ export class UserResolver {
   }
 
   @ResolveField(of => LessonsConnection, { description: '当前用户的所有课程' })
-  async lessons (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.lessons(user.id, args)
+  async lessons (@Parent() user: User, @Args() args: RelayPagingConfigArgs, @Args() filter: FilterLessonArgs) {
+    return await this.userService.lessons(user.id, args, filter)
   }
 
   @ResolveField(of => PrivilegesConnection, { description: '当前用户具有的权限' })

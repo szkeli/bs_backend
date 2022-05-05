@@ -336,6 +336,15 @@ type User implements Person & Node {
 
   """当前用户的所有课程"""
   lessons(
+    """当前开始学年"""
+    startYear: Int!
+
+    """当前结束学年"""
+    endYear: Int!
+
+    """当前学期"""
+    semester: Int!
+
     """最新的n个对象"""
     first: Int = 10
 
@@ -567,6 +576,15 @@ interface Person implements Node {
 
   """当前用户的所有课程"""
   lessons(
+    """当前开始学年"""
+    startYear: Int!
+
+    """当前结束学年"""
+    endYear: Int!
+
+    """当前学期"""
+    semester: Int!
+
     """最新的n个对象"""
     first: Int = 10
 
@@ -782,6 +800,15 @@ type LoginResult implements Node & Person {
 
   """当前用户的所有课程"""
   lessons(
+    """当前开始学年"""
+    startYear: Int!
+
+    """当前结束学年"""
+    endYear: Int!
+
+    """当前学期"""
+    semester: Int!
+
     """最新的n个对象"""
     first: Int = 10
 
@@ -2980,6 +3007,15 @@ type UserWithPrivateProps implements Person & Node {
 
   """当前用户的所有课程"""
   lessons(
+    """当前开始学年"""
+    startYear: Int!
+
+    """当前结束学年"""
+    endYear: Int!
+
+    """当前学期"""
+    semester: Int!
+
     """最新的n个对象"""
     first: Int = 10
 

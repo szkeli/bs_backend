@@ -9,7 +9,7 @@ import { UserAuthenInfo, UserWithRolesAndPrivilegesAndCredential } from '../auth
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { Deadline } from '../deadlines/models/deadlines.model'
-import { Lesson } from '../lessons/models/lessons.model'
+import { FilterLessonArgs, Lesson } from '../lessons/models/lessons.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Role } from '../roles/models/roles.model'
@@ -30,20 +30,20 @@ export class UserService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async lessons (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
+  async lessons (id: string, { after, first, orderBy }: RelayPagingConfigArgs, filter: FilterLessonArgs) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.lessonsRelayForward(id, first, after)
+      return await this.lessonsRelayForward(id, first, after, filter)
     }
     throw new Error('Method not implemented.')
   }
 
-  async lessonsRelayForward (id: string, first: number, after: string) {
+  async lessonsRelayForward (id: string, first: number, after: string, { startYear, endYear, semester }: FilterLessonArgs) {
     const q1 = 'var(func: uid(lessons), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($id: string, $after: string) {
           var(func: uid($id)) @filter(type(User)) {
-            lessons (orderdesc: createdAt) @filter(type(Lesson)) {
+            lessons (orderdesc: createdAt) @filter(type(Lesson) and eq(startYear, ${startYear}) and eq(endYear, ${endYear}) and eq(semester, ${semester}) ) {
               lessons as uid
             }
           }
