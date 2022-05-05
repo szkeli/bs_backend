@@ -285,7 +285,7 @@ export class LessonsService {
           }
       }
     `
-    const lessonItems = args.lessonItems.map((item, index) => ({
+    const lessonItems = args.lessonItems?.map((item, index) => ({
       uid: `_:lessonItem_${index}`,
       'dgraph.type': 'LessonItem',
       start: item.start,

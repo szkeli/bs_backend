@@ -116,7 +116,7 @@ export class Lesson {
     educatorName: string
 
   @Field(of => [LessonItem], { nullable: true, description: 'lessonItem' })
-    lessonItems: LessonItem[]
+    lessonItems?: LessonItem[] | null
 
   @Field(of => Int, { nullable: true, description: 'TODO, 开始学年' })
     startYear: number
@@ -161,7 +161,7 @@ export class AddLessonArgs {
     lessonId: string
 
   @Field(of => [LessonItemInput], { description: 'lessonItem，对于未列出的课程，此项可为 null', nullable: true })
-    lessonItems: LessonItemInput[]
+    lessonItems?: LessonItemInput[] | null
 
   @Field(of => Int, { description: '开始学年' })
     startYear: number
