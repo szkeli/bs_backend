@@ -71,6 +71,7 @@ lessonId: string @index(hash) .
 action: string @index(term) .
 educatorName: string @index(hash) .
 deadlineId: string @index(hash) .
+color: string .
 
 circle: [int] .
 notificationIds: [int] .
