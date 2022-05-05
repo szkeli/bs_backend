@@ -267,7 +267,7 @@ export const fmtLessonTimeByDayInWeekThroughSchoolTimeTable = (start: number, en
     '20:30', '20:30'
   ]
   const endTable = [
-    '09:10', '9:55', '10:55',
+    '09:10', '09:55', '10:55',
     '11:40', '12:25', '14:10',
     '14:55', '15:40', '16:40',
     '17:25', '20:20', '20:20',

@@ -333,7 +333,6 @@ export class LessonsService {
     }
 
     const data = {
-      // touser: 'opjHf5a56LcZvBI8cY9gi6M3y-ZE',
       touser: res.user[0]?.openId,
       mp_template_msg: {
         appid: 'wxfcf7b19fdd5d9770',
@@ -365,7 +364,7 @@ export class LessonsService {
           // 【1，2节】师院B204
           keyword3: {
             value: res.items
-              .map(i => `[${i.start},${i.end}] ${i.lesson[0]?.destination ?? 'N/A'}`)
+              .map(i => `[${i.start},${i.end}节] ${i.lesson[0]?.destination ?? 'N/A'}`)
               .join('\n')
           },
           remark: {
