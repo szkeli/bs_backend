@@ -1808,6 +1808,20 @@ type SetDbSchema {
   convertedPrimitiveFields_: String!
 }
 
+type LessonMetaData {
+  """当前开始学年"""
+  startYear: Int!
+
+  """当前结束学年"""
+  endYear: Int!
+
+  """当前学期"""
+  semester: Int!
+
+  """当前周数"""
+  week: Int!
+}
+
 type LessonItem {
   """第几节课开始"""
   start: Int!
@@ -2729,6 +2743,9 @@ type Query {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): RolesConnection!
 
+  """获取最新的课程表元信息"""
+  lessonMetaData: LessonMetaData!
+
   """获取所有的课程"""
   lessons(
     """最新的n个对象"""
@@ -3449,6 +3466,21 @@ type Mutation {
     """学期"""
     semester: Int!
   ): Lesson!
+
+  """更新课程表元信息"""
+  updateLessonMetaData(
+    """当前开始学年"""
+    startYear: Int!
+
+    """当前结束学年"""
+    endYear: Int!
+
+    """当前学期"""
+    semester: Int!
+
+    """当前周数"""
+    week: Int!
+  ): LessonMetaData!
 
   """管理员更新一个课程"""
   updateLesson(

@@ -6,7 +6,7 @@ import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { PersonWithRoles } from '../user/models/user.model'
 import { LessonsService } from './lessons.service'
-import { AddLessonArgs, Lesson, LessonsConnection, UpdateLessonArgs } from './models/lessons.model'
+import { AddLessonArgs, Lesson, LessonMetaData, LessonsConnection, UpdateLessonArgs, UpdateLessonMetaDataArgs } from './models/lessons.model'
 
 @Resolver(of => Lesson)
 export class LessonsResolver {
@@ -23,6 +23,18 @@ export class LessonsResolver {
       // 用户给自己添加课程
       return await this.lessonsService.addLessonSelf(person.id, args)
     }
+  }
+
+  @Mutation(of => LessonMetaData, { description: '更新课程表元信息' })
+  @Roles(Role.Admin)
+  async updateLessonMetaData (@Args() args: UpdateLessonMetaDataArgs) {
+    return await this.lessonsService.updateLessonMetaData(args)
+  }
+
+  @Query(of => LessonMetaData, { description: '获取最新的课程表元信息' })
+  @Roles(Role.Admin)
+  async lessonMetaData () {
+    return await this.lessonsService.lessonMetaData()
   }
 
   @Mutation(of => Lesson, { description: '管理员更新一个课程' })

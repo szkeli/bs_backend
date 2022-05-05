@@ -6,11 +6,65 @@ import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
-import { AddLessonArgs, FilterLessonsArgs, Lesson, LessonItem, UpdateLessonArgs } from './models/lessons.model'
+import { AddLessonArgs, FilterLessonsArgs, Lesson, LessonItem, LessonMetaData, UpdateLessonArgs, UpdateLessonMetaDataArgs } from './models/lessons.model'
 
 @Injectable()
 export class LessonsService {
   constructor (private readonly dbService: DbService) {}
+
+  async lessonMetaData () {
+    const query = `
+      query {
+        metadata(func: type(LessonMetaData)) {
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{metadata: LessonMetaData[]}>({ query, vars: {} })
+
+    return res.metadata[0]
+  }
+
+  async updateLessonMetaData ({ startYear, endYear, semester, week }: UpdateLessonMetaDataArgs) {
+    const query = `
+      query {
+        var(func: type(LessonMetaData)) {
+          metadata as uid
+        }
+      }
+    `
+    const update = '@if( eq(len(metadata), 1) )'
+    const updateMutation = {
+      uid: 'uid(metadata)',
+      startYear,
+      endYear,
+      semester,
+      week
+    }
+
+    const create = '@if( eq(len(metadata), 0) )'
+    const createMutation = {
+      uid: '_:lessonMetaData',
+      'dgraph.type': 'LessonMetaData',
+      startYear,
+      endYear,
+      semester,
+      week
+    }
+
+    await this.dbService.commitConditionalUperts({
+      query,
+      mutations: [
+        { condition: update, mutation: updateMutation },
+        { condition: create, mutation: createMutation }
+      ],
+      vars: {}
+    })
+
+    return {
+      startYear, endYear, semester, week
+    }
+  }
 
   async filterLessons (id: string, { week, dayInWeek, startYear, endYear, semester }: FilterLessonsArgs) {
     const query = `

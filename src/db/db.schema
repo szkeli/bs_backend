@@ -90,6 +90,7 @@ dayInWeek: int .
 semester: int .
 startYear: int .
 endYear: int .
+week: int .
 
 positive: float .
 negative: float .
@@ -584,4 +585,15 @@ type LessonItem {
   description
   # 上课地点
   destination
+}
+
+type LessonMetaData {
+  # 当前开始学年
+  startYear
+  # 当前结束学年
+  endYear
+  # 当前学期
+  semester
+  # 当前第几周
+  week
 }

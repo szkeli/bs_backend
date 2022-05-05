@@ -3,6 +3,36 @@ import { ArgsType, Field, InputType, Int, ObjectType } from '@nestjs/graphql'
 import { Connection } from '../../connections/models/connections.model'
 
 @ObjectType()
+export class LessonMetaData {
+  @Field(of => Int, { description: '当前开始学年' })
+    startYear: number
+
+  @Field(of => Int, { description: '当前结束学年' })
+    endYear: number
+
+  @Field(of => Int, { description: '当前学期' })
+    semester: number
+
+  @Field(of => Int, { description: '当前周数' })
+    week: number
+}
+
+@ArgsType()
+export class UpdateLessonMetaDataArgs {
+  @Field(of => Int, { description: '当前开始学年' })
+    startYear: number
+
+  @Field(of => Int, { description: '当前结束学年' })
+    endYear: number
+
+  @Field(of => Int, { description: '当前学期' })
+    semester: number
+
+  @Field(of => Int, { description: '当前周数' })
+    week: number
+}
+
+@ObjectType()
 export class LessonItem {
   @Field(of => Int, { description: '第几节课开始' })
     start: number
