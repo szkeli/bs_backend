@@ -100,7 +100,7 @@ export class Lesson {
   @Field({ description: '课程名称' })
     name: string
 
-  @Field(of => [Int], { description: '该课程要上课的周数的数组' })
+  @Field(of => [Int], { nullable: true, description: 'TODO, 该课程要上课的周数的数组' })
     circle: number[]
 
   @Field({ description: '课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
