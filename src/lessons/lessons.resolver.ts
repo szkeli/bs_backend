@@ -37,6 +37,12 @@ export class LessonsResolver {
     return await this.lessonsService.addLesson(user.id, args)
   }
 
+  @Mutation(of => Lesson, { description: '管理员添加课程到某用户' })
+  @Roles(Role.Admin)
+  async addLessonToUser (@CurrentAdmin() Admin: Admin, @Args() args: AddLessonArgs, @Args('to') to: string) {
+    return await this.lessonsService.addLesson(to, args)
+  }
+
   @Mutation(of => LessonMetaData, { description: '更新课程表元信息' })
   @Roles(Role.Admin)
   async updateLessonMetaData (@Args() args: UpdateLessonMetaDataArgs) {

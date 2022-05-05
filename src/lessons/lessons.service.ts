@@ -152,7 +152,7 @@ export class LessonsService {
       query v($id: string) {
         user(func: uid($id)) @filter(type(User)) {
           lessons @filter(type(Lesson) and eq(circle, ${week})) {
-            items as lessonItems @filter(type(LessonItem) and eq(dayInWeek, ${dayInWeek}))
+            items as lessonItems @filter(type(LessonItem) and eq(dayInWeek, ${dayInWeek}) and eq(circle, ${week}))
           }
           openId
         }
@@ -279,7 +279,7 @@ export class LessonsService {
           v(func: uid($id)) @filter(type(User)) { v as uid }
           # 当前用户是否已经添加了该课程
           q(func: uid(v)) {
-              curriculums @filter(type(Lesson) and eq(lessonId, $lessonId)) {
+              lessons @filter(type(Lesson) and eq(lessonId, $lessonId)) {
                   q as uid
               }
           }
@@ -290,7 +290,10 @@ export class LessonsService {
       'dgraph.type': 'LessonItem',
       start: item.start,
       end: item.end,
-      dayInWeek: item.dayInWeek
+      dayInWeek: item.dayInWeek,
+      circle: item.circle,
+      description: item.description,
+      destination: item.destination
     }))
 
     const create = '@if( eq(len(v), 1) and eq(len(q), 0) )'
@@ -344,10 +347,6 @@ export class LessonsService {
     }
   }
 
-  async addLessonSelf (id: string, args: AddLessonArgs) {
-    throw new Error('Method not implemented.')
-  }
-
   async triggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek }: TriggerLessonNotificationArgs) {
     // 通过 to 查询相应用户的 openId
     const res = await this.filterLessons(to, {
@@ -369,6 +368,8 @@ export class LessonsService {
     if (!res.user[0]?.openId || res.user[0]?.openId === '') {
       throw new BadOpenIdException(to)
     }
+
+    console.error(res)
 
     const data = {
       touser: res.user[0]?.openId,
