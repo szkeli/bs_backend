@@ -7,7 +7,7 @@ import { Deadline } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { fmtLessonTimeByDayInWeekThroughSchoolTimeTable, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { WxService } from '../wx/wx.service'
-import { AddLessonArgs, FilterLessonsArgs, Lesson, LessonItem, LessonMetaData, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs } from './models/lessons.model'
+import { AddLessonArgs, FilterLessonsArgs, Lesson, LessonItem, LessonMetaData, LessonNotificationSettings, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs, UpdateLessonNotificationSettingsArgs } from './models/lessons.model'
 
 @Injectable()
 export class LessonsService {
@@ -15,6 +15,83 @@ export class LessonsService {
     private readonly dbService: DbService,
     private readonly wxService: WxService
   ) {}
+
+  async updateLessonNotificationSettings (id: string, { needNotifications }: UpdateLessonNotificationSettingsArgs) {
+    const query = `
+      query v($id: string) {
+        u(func: uid($id)) @filter(type(User)) {
+          u as uid
+          settings as lessonNotificationSettings @filter(type(LessonNotificationSettings))
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const create = '@if( eq(len(u), 1) and eq(len(settings), 0) )'
+    const createMutation = {
+      uid: 'uid(u)',
+      lessonNotificationSettings: {
+        'dgraph.type': 'LessonNotificationSettings',
+        uid: '_:settings',
+        needNotifications,
+        lastNotifiedAt: null
+      }
+    }
+
+    const update = '@if( eq(len(u), 1) and eq(len(settings), 1) )'
+    const updateMutation = {
+      uid: 'uid(settings)',
+      needNotifications
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+      settings: LessonNotificationSettings[]
+    }>({
+      query,
+      mutations: [
+        { condition: create, mutation: createMutation },
+        { condition: update, mutation: updateMutation }
+      ],
+      vars: { $id: id }
+    })
+
+    if (res.json.u.length === 0) {
+      throw new UserNotFoundException(id)
+    }
+
+    if (res.json.settings[0]) {
+      Object.assign(res.json.settings[0], { needNotifications })
+      return res.json.settings[0]
+    }
+
+    return {
+      needNotifications,
+      lastNotifiedAt: null
+    }
+  }
+
+  async lessonNotificationSettings (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(User)) {
+          settings as lessonNotificationSettings @filter(type(LessonNotificationSettings))
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{settings: LessonNotificationSettings[]}>({ query, vars: { $id: id } })
+
+    return res.settings[0] ?? {
+      needNotifications: true,
+      lastNotifiedAt: null
+    }
+  }
 
   async lessonMetaData () {
     const query = `

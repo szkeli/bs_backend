@@ -3,6 +3,21 @@ import { ArgsType, Field, InputType, Int, ObjectType } from '@nestjs/graphql'
 import { Connection } from '../../connections/models/connections.model'
 
 @ObjectType()
+export class LessonNotificationSettings {
+  @Field(of => Boolean, { defaultValue: true, description: '是否订阅通知' })
+    needNotifications: boolean
+
+  @Field(of => String, { nullable: true, description: '上次被通知的时间' })
+    lastNotifiedAt: string
+}
+
+@ArgsType()
+export class UpdateLessonNotificationSettingsArgs {
+  @Field(of => Boolean, { description: '是否订阅通知' })
+    needNotifications: boolean
+}
+
+@ObjectType()
 export class LessonMetaData {
   @Field(of => Int, { description: '当前开始学年' })
     startYear: number

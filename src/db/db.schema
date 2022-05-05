@@ -36,6 +36,7 @@ anonymous: uid @reverse .
 pin: uid @reverse .
 about: uid @reverse .
 sentiment: uid @reverse .
+lessonNotificationSettings: uid @reverse .
 
 images: [string] .
 
@@ -100,6 +101,7 @@ neutral: float .
 dataPending: bool .
 seen: bool .
 isRead: bool .
+needNotifications: bool .
 
 dateAdded: dateTime @index(hour) .
 startDate: dateTime @index(hour) .
@@ -109,6 +111,7 @@ dueDate: dateTime @index(hour) .
 lastLoginedAt: dateTime @index(hour) .
 createdAt: dateTime @index(hour) .
 updatedAt: dateTime @index(hour) .
+lastNotifiedAt: dateTime @index(hour) .
 
 location: geo .
 sign: password .
@@ -205,6 +208,8 @@ type User {
   roles
   # 当前用户的课程
   lessons
+  # 课程的通知设置
+  lessonNotificationSettings
 }
 
 # 帖子
@@ -599,4 +604,11 @@ type LessonMetaData {
   semester
   # 当前第几周
   week
+}
+
+type LessonNotificationSettings {
+  # 是否需要上课通知
+  needNotifications
+  # 上次通知的时间
+  lastNotifiedAt
 }

@@ -1,18 +1,30 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { Admin } from '../admin/models/admin.model'
-import { CurrentAdmin, CurrentPerson, Role, Roles } from '../auth/decorator'
+import { CurrentAdmin, CurrentPerson, CurrentUser, Role, Roles } from '../auth/decorator'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { PersonWithRoles } from '../user/models/user.model'
+import { PersonWithRoles, User } from '../user/models/user.model'
 import { LessonsService } from './lessons.service'
-import { AddLessonArgs, Lesson, LessonMetaData, LessonsConnection, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs } from './models/lessons.model'
+import { AddLessonArgs, Lesson, LessonMetaData, LessonNotificationSettings, LessonsConnection, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs, UpdateLessonNotificationSettingsArgs } from './models/lessons.model'
 
 @Resolver(of => Lesson)
 export class LessonsResolver {
   constructor (
     private readonly lessonsService: LessonsService
   ) {}
+
+  @Query(of => LessonNotificationSettings, { description: '获取当前用户上课通知的设置' })
+  @Roles(Role.User)
+  async lessonNotificationSettings (@CurrentUser() user: User) {
+    return await this.lessonsService.lessonNotificationSettings(user.id)
+  }
+
+  @Mutation(of => LessonNotificationSettings, { description: '更新用户上课通知设置' })
+  @Roles(Role.User)
+  async updateLessonNotificationSettings (@CurrentUser() user: User, @Args() args: UpdateLessonNotificationSettingsArgs) {
+    return await this.lessonsService.updateLessonNotificationSettings(user.id, args)
+  }
 
   @Mutation(of => Lesson, { description: '添加一个课程到当前用户' })
   @Roles(Role.Admin, Role.User)

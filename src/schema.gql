@@ -1808,6 +1808,14 @@ type SetDbSchema {
   convertedPrimitiveFields_: String!
 }
 
+type LessonNotificationSettings {
+  """是否订阅通知"""
+  needNotifications: Boolean!
+
+  """上次被通知的时间"""
+  lastNotifiedAt: String
+}
+
 type LessonMetaData {
   """当前开始学年"""
   startYear: Int!
@@ -2746,6 +2754,9 @@ type Query {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): RolesConnection!
 
+  """获取当前用户上课通知的设置"""
+  lessonNotificationSettings: LessonNotificationSettings!
+
   """获取最新的课程表元信息"""
   lessonMetaData: LessonMetaData!
 
@@ -3444,6 +3455,12 @@ type Mutation {
 
   """创建角色"""
   createRole(title: String!): Role!
+
+  """更新用户上课通知设置"""
+  updateLessonNotificationSettings(
+    """是否订阅通知"""
+    needNotifications: Boolean!
+  ): LessonNotificationSettings!
 
   """添加一个课程到当前用户"""
   addLesson(
