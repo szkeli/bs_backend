@@ -62,7 +62,7 @@ export class LessonsResolver {
   }
 
   @Mutation(of => String, { description: '测试接口，手动触发一个上课课程通知' })
-  @Roles(Role.Admin, Role.User)
+  @Roles(Role.Admin)
   // TODO 统一测试方法
   async triggerLessonNotification (@Args() args: TriggerLessonNotificationArgs) {
     return (await this.lessonsService.triggerLessonNotification(args)).errmsg
