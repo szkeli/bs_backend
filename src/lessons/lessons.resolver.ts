@@ -43,6 +43,12 @@ export class LessonsResolver {
     return await this.lessonsService.deleteLesson(user.id, lessonId)
   }
 
+  @Mutation(of => Lesson, { description: '用户更新一个课程' })
+  @Roles(Role.User)
+  async updateLesson (@CurrentUser() user: User, @Args() args: UpdateLessonArgs) {
+    return await this.lessonsService.updateLesson(user.id, args)
+  }
+
   @Mutation(of => Lesson, { description: '管理员添加课程到某用户' })
   @Roles(Role.Admin)
   async addLessonToUser (@CurrentAdmin() Admin: Admin, @Args() args: AddLessonArgs, @Args('to') to: string) {
@@ -59,12 +65,6 @@ export class LessonsResolver {
   @Roles(Role.Admin, Role.User)
   async lessonMetaData () {
     return await this.lessonsService.lessonMetaData()
-  }
-
-  @Mutation(of => Lesson, { description: '管理员更新一个课程' })
-  @Roles(Role.Admin)
-  async updateLesson (@CurrentAdmin() admin: Admin, @Args() args: UpdateLessonArgs) {
-    return await this.lessonsService.updateLesson(admin.id, args)
   }
 
   @Query(of => LessonsConnection, { description: '获取所有的课程' })

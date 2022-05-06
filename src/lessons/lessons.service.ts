@@ -309,8 +309,100 @@ export class LessonsService {
     })
   }
 
-  async updateLesson (id: string, args: UpdateLessonArgs) {
-    throw new Error('Method not implemented.')
+  async updateLesson (id: string, { lessonId, lessonItems, destination, color, educatorName, circle, name }: UpdateLessonArgs) {
+    const query = `
+      query v($id: string, $lessonId: string) {
+        v(func: uid($id)) @filter(type(User)) { v as uid }
+        # 课程是否存在
+        u(func: eq(lessonId, $lessonId)) @filter(type(Lesson)) { u as uid }
+        q(func: uid(v)) {
+          id: uid
+          lessons @filter(eq(lessonId, $lessonId)) {
+            q as uid
+            lessonItems @filter(type(LessonItem)) {
+              lessonItems as uid
+            }
+          }
+        }
+        lessonItems(func: uid(lessonItems)) {
+          id: uid
+        }
+        target(func: uid(q)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const updateCond = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) )'
+    const updateMutation = {
+      uid: 'uid(q)',
+      'dgraph.type': 'Lesson',
+      destination,
+      color,
+      educatorName,
+      circle,
+      name
+    }
+    const deleteCond = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) and not eq(len(lessonItems), 0) )'
+    const deleteMutation = {
+      uid: 'uid(lessonItems)',
+      'dgraph.type': 'LessonItem'
+    }
+    const updateLessonItem = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) and eq(len(lessonItems), 0) )'
+    const updateLessonItemMutation = {
+      uid: 'uid(q)',
+      'dgraph.type': 'Lesson',
+      lessonItems: lessonItems?.map((item, index) => ({
+        uid: `_:lessonItem_${index}`,
+        start: item.start,
+        end: item.end,
+        dayInWeek: item.dayInWeek,
+        circle: item.circle,
+        description: item.description,
+        destination: item.destination
+      }))
+    }
+
+    const res = await this.dbService.commitMutation<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+      q: Array<{uid: string, lessons: Lesson[]}>
+      target: Lesson[]
+    }>({
+      query,
+      mutations: (lessonItems?.length ?? 0) !== 0
+        ? [
+            { condition: deleteCond, mutation: deleteMutation, delete: true },
+            { condition: updateCond, mutation: updateMutation, delete: false },
+            { condition: updateLessonItem, mutation: updateLessonItemMutation, delete: false }
+          ]
+        : [
+            { condition: deleteCond, mutation: deleteMutation, delete: true }
+          ],
+      vars: { $id: id, $lessonId: lessonId }
+    })
+
+    if (res.json.v.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+
+    if (res.json.u.length !== 1) {
+      throw new LessonNotFoundException(lessonId)
+    }
+
+    if (res.json.q.length !== 1) {
+      throw new UserNotHasTheLesson(id, lessonId)
+    }
+
+    console.error({
+      res, b: res.json.target[0], q: res.json.q[0]?.lessons
+    })
+
+    Object.assign(res.json.target[0], {
+      destination, color, educatorName, circle, name, lessonId
+    })
+
+    return res.json.target[0]
   }
 
   /**
