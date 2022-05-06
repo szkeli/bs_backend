@@ -3540,30 +3540,6 @@ type Mutation {
   """从当前用户中删除一个课程"""
   deleteLesson(lessonId: String!): Boolean!
 
-  """用户更新一个课程"""
-  updateLesson(
-    """课程名称"""
-    name: String!
-
-    """上课地点，对于未列出的课程，此项可为 null"""
-    destination: String
-
-    """课程id"""
-    lessonId: String
-
-    """授课教师的名字"""
-    educatorName: String!
-
-    """自定义课程时的颜色"""
-    color: String
-
-    """课程的周数的数组，例如[2, 3, 4, 8, 9]"""
-    circle: [Int!]!
-
-    """lessonItem，对于未列出的课程，此项可为 null"""
-    lessonItems: [LessonItemInput!]
-  ): Lesson!
-
   """管理员添加课程到某用户"""
   addLessonToUser(
     to: String!

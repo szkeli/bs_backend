@@ -1,5 +1,6 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import { Admin } from '../admin/models/admin.model'
 import { CurrentAdmin, CurrentUser, Role, Roles } from '../auth/decorator'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
@@ -9,7 +10,7 @@ import { LessonsService } from './lessons.service'
 import {
   AddLessonArgs, Lesson, LessonMetaData, LessonNotificationSettings,
   LessonsConnection, TriggerLessonNotificationArgs,
-  UpdateLessonArgs, UpdateLessonMetaDataArgs,
+  UpdateLessonMetaDataArgs,
   UpdateLessonNotificationSettingsArgs
 } from './models/lessons.model'
 
@@ -43,11 +44,11 @@ export class LessonsResolver {
     return await this.lessonsService.deleteLesson(user.id, lessonId)
   }
 
-  @Mutation(of => Lesson, { description: '用户更新一个课程' })
-  @Roles(Role.User)
-  async updateLesson (@CurrentUser() user: User, @Args() args: UpdateLessonArgs) {
-    return await this.lessonsService.updateLesson(user.id, args)
-  }
+  // @Mutation(of => Lesson, { description: '用户更新一个课程' })
+  // @Roles(Role.User)
+  // async updateLesson (@CurrentUser() user: User, @Args() args: UpdateLessonArgs) {
+  //   return await this.lessonsService.updateLesson(user.id, args)
+  // }
 
   @Mutation(of => Lesson, { description: '管理员添加课程到某用户' })
   @Roles(Role.Admin)

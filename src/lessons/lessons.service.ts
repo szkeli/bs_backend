@@ -29,6 +29,8 @@ export class LessonsService {
         q(func: uid(v)) {
           lessons @filter(type(Lesson) and eq(lessonId, $lessonId)) {
             q as uid
+            # 该课程的所有lessonItems
+            lessonItems as lessonItems @filter(type(LessonItem))
           }
         }
       }
@@ -36,7 +38,11 @@ export class LessonsService {
     const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) )'
     const mutation = {
       uid: 'uid(q)',
-      'dgraph.type': 'Lesson'
+      'dgraph.type': 'Lesson',
+      lessonItems: {
+        uid: 'uid(lessonItems)',
+        'dgraph.type': 'LessonItem'
+      }
     }
 
     const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
