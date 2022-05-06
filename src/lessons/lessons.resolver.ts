@@ -56,7 +56,7 @@ export class LessonsResolver {
   }
 
   @Query(of => LessonMetaData, { description: '获取最新的课程表元信息' })
-  @Roles(Role.Admin)
+  @Roles(Role.Admin, Role.User)
   async lessonMetaData () {
     return await this.lessonsService.lessonMetaData()
   }
