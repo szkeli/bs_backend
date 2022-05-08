@@ -303,7 +303,7 @@ export const getLessonNotificationTemplate = (openId: string, items: LessonNotif
       },
       data: {
         first: {
-          value: `明天你有${items.length ?? 'N/A'}门课程`
+          value: process.env.NODE_ENV === 'production' ? `明天你有${items.length ?? 'N/A'}门课程` : `测试：明天你有${items.length ?? 'N/A'}门课程`
         },
         // 所有课程
         // 线性代数；音乐；体育；（列举全部课程用分号连接）
@@ -315,8 +315,9 @@ export const getLessonNotificationTemplate = (openId: string, items: LessonNotif
         // 【1，2节】8:30-9：55 线性代数
         keyword2: {
           value: items
-            .map(i => `${fmtLessonTimeByDayInWeekThroughSchoolTimeTable(i.start, i.end)} ${i.lesson[0]?.name ?? 'N/A'}`)
-            .sort()
+            .map(i => ({ start: i.start, end: i.end, i }))
+            .sort((a, b) => a.start - a.end)
+            .map(({ start, end, i }) => `${fmtLessonTimeByDayInWeekThroughSchoolTimeTable(i.start, i.end)} ${i.lesson[0]?.name ?? 'N/A'}`)
             .join('\n')
         },
         // 上课地点
@@ -324,8 +325,9 @@ export const getLessonNotificationTemplate = (openId: string, items: LessonNotif
         // 【1，2节】师院B204
         keyword3: {
           value: items
-            .map(i => `[${i.start},${i.end}节] ${i.lesson[0]?.destination ?? 'N/A'}`)
-            .sort()
+            .map(i => ({ start: i.start, end: i.end, i }))
+            .sort((a, b) => a.start - b.start)
+            .map(({ start, end, i }) => `[${i.start},${i.end}节] ${i?.destination ?? 'N/A'}`)
             .join('\n')
         },
         remark: {
