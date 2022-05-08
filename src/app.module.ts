@@ -1,4 +1,4 @@
-import { CacheModule, Module } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { ConfigModule } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import { GraphQLModule } from '@nestjs/graphql'
@@ -44,7 +44,7 @@ import { SearchModule } from './search/search.module'
 import { SharedModule } from './shared/shared.module'
 import { StsModule } from './sts/sts.module'
 import { SubjectModule } from './subject/subject.module'
-import { TasksService } from './tasks/tasks.service'
+import { TasksModule } from './tasks/tasks.module'
 import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
@@ -53,7 +53,6 @@ import { WxModule } from './wx/wx.module'
 
 @Module({
   imports: [
-    CacheModule.register(),
     ScheduleModule.forRoot(),
     GraphQLModule.forRoot({
       installSubscriptionHandlers: true,
@@ -114,7 +113,8 @@ import { WxModule } from './wx/wx.module'
     RolesModule,
     LessonsModule,
     MentionsModule,
-    HashtagsModule
+    HashtagsModule,
+    TasksModule
   ],
   controllers: [AppController],
   providers: [
@@ -127,8 +127,7 @@ import { WxModule } from './wx/wx.module'
     {
       provide: APP_GUARD,
       useClass: RoleAuthGuard
-    },
-    TasksService
+    }
   ]
 })
 export class AppModule {}

@@ -156,3 +156,9 @@ export class BadOpenIdException extends HttpException {
     super(`用户 ${to} 的 openId 在此处不适用`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class LessonMetaDataLengthException extends HttpException {
+  constructor (len: number) {
+    super(`LessonMetaData 长度: ${len} 不为1`, HttpStatus.FORBIDDEN)
+  }
+}

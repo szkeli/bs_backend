@@ -2,19 +2,24 @@ import { CACHE_MANAGER, Inject, Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 import { Cache } from 'cache-manager'
 
+import { DbService } from '../db/db.service'
+import { LessonsService } from '../lessons/lessons.service'
+import { LessonMetaData } from '../lessons/models/lessons.model'
 @Injectable()
 export class TasksService {
   constructor (
     private readonly schedulerRegistry: SchedulerRegistry,
+    private readonly dbService: DbService,
+    private readonly lessonsService: LessonsService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
   ) {}
 
   private readonly logger = new Logger(TasksService.name)
 
   // 每10秒执行的任务
-  @Cron(CronExpression.EVERY_10_SECONDS, {
-    name: 'lessonNotificationJob'
-  })
+  // @Cron(CronExpression.EVERY_10_SECONDS, {
+  //   name: 'lessonNotificationJob'
+  // })
   async triggerExery10Seconds (taskType: TaskType) {
     // 符合以下规则的用户
     // 今天有课 &&
@@ -82,15 +87,66 @@ export class TasksService {
   }
 
   // 每天早上8点的任务
-  @Cron(CronExpression.EVERY_DAY_AT_8AM)
+  // @Cron(CronExpression.EVERY_DAY_AT_8AM)
   async triggerEveryDayAt8AM () {
     this.logger.debug('called at every day on 8 AM...')
   }
 
   // 每天晚上10点的任务
-  @Cron(CronExpression.EVERY_DAY_AT_10PM)
+  // @Cron(CronExpression.EVERY_DAY_AT_10PM)
   async triggerEveryDayAt10PM () {
     this.logger.debug('called at every day on 10 PM...')
+  }
+
+  // 每天更新LessonMetaData
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  async triggerEveryDayAtMinight () {
+    const query = `
+      query {
+        metadata(func: type(LessonMetaData)) {
+          metadata as id: uid
+          week as week
+          dayInWeek as dayInWeek
+          weekPlushOne as math(week + 1)
+          dayInWeekPlushOne as math(dayInWeek + 1)
+        }
+        var(func: uid(metadata)) @filter(lt(val(dayInWeek), 7)) {
+          l as uid
+          val(weekPlushOne)
+        }
+        var(func: uid(metadata)) @filter(eq(val(dayInWeek), 7)) {
+          e as uid
+          val(dayInWeekPlushOne)
+        }
+      }
+    `
+    const plushDayInWeekCond = '@if( eq(len(metadata), 1) and eq(len(l), 1) )'
+    const plushDayInWeekMutation = {
+      uid: 'uid(metadata)',
+      dayInWeek: 'val(dayInWeekPlushOne)'
+    }
+
+    const plushWeekCond = '@if( eq(len(metadata), 1) and eq(len(e), 1) )'
+    const plushWeekMutation = {
+      uid: 'uid(metadata)',
+      dayInWeek: 1,
+      week: 'val(weekPlushOne)'
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      metadata: LessonMetaData[]
+    }>({
+      query,
+      mutations: [
+        { condition: plushDayInWeekCond, mutation: plushDayInWeekMutation },
+        { condition: plushWeekCond, mutation: plushWeekMutation }
+      ],
+      vars: {}
+    })
+
+    if (res.json.metadata.length !== 1) {
+      this.logger.error(`LessonMetaData 长度 ${res.json.metadata.length} 不为 1`)
+    }
   }
 }
 
