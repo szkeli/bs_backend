@@ -316,7 +316,7 @@ export const getLessonNotificationTemplate = (openId: string, items: LessonNotif
         keyword2: {
           value: items
             .map(i => ({ start: i.start, end: i.end, i }))
-            .sort((a, b) => a.start - a.end)
+            .sort((a, b) => a.start - b.start)
             .map(({ start, end, i }) => `${fmtLessonTimeByDayInWeekThroughSchoolTimeTable(i.start, i.end)} ${i.lesson[0]?.name ?? 'N/A'}`)
             .join('\n')
         },

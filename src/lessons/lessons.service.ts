@@ -205,7 +205,7 @@ export class LessonsService {
     const query = `
       query v($id: string) {
         user(func: uid($id)) @filter(type(User)) {
-          lessons @filter(type(Lesson) and eq(circle, ${week}) and eq(startYear, ${startYear}) and eq(endYear, ${endYear}) and eq(semester, ${semester})) {
+          lessons @filter(type(Lesson) and eq(startYear, ${startYear}) and eq(endYear, ${endYear}) and eq(semester, ${semester})) {
             items as lessonItems @filter(type(LessonItem) and eq(dayInWeek, ${dayInWeek}) and eq(circle, ${week}))
           }
           openId

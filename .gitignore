@@ -3,6 +3,7 @@
 /node_modules
 
 src/schema.gql
+schema.gql
 
 .env
 frpc.ini
