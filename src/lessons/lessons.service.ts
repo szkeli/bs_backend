@@ -315,7 +315,7 @@ export class LessonsService {
     })
   }
 
-  async updateLesson (id: string, { lessonId, lessonItems, destination, color, educatorName, circle, name }: UpdateLessonArgs) {
+  async updateLesson (id: string, args: UpdateLessonArgs) {
     const query = `
       query v($id: string, $lessonId: string) {
         v(func: uid($id)) @filter(type(User)) { v as uid }
@@ -335,57 +335,30 @@ export class LessonsService {
         }
         target(func: uid(q)) {
           id: uid
-          expand(_all_)
+          expand(_all_) {
+            expand(_all_)
+          }
         }
       }
     `
     const updateCond = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) )'
     const updateMutation = {
       uid: 'uid(q)',
-      'dgraph.type': 'Lesson',
-      destination,
-      color,
-      educatorName,
-      circle,
-      name
-    }
-    const deleteCond = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) and not eq(len(lessonItems), 0) )'
-    const deleteMutation = {
-      uid: 'uid(lessonItems)',
-      'dgraph.type': 'LessonItem'
-    }
-    const updateLessonItem = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) and eq(len(lessonItems), 0) )'
-    const updateLessonItemMutation = {
-      uid: 'uid(q)',
-      'dgraph.type': 'Lesson',
-      lessonItems: lessonItems?.map((item, index) => ({
-        uid: `_:lessonItem_${index}`,
-        start: item.start,
-        end: item.end,
-        dayInWeek: item.dayInWeek,
-        circle: item.circle,
-        description: item.description,
-        destination: item.destination
-      }))
+      'dgraph.type': 'Lesson'
     }
 
-    const res = await this.dbService.commitMutation<Map<string, string>, {
+    Object.assign(updateMutation, args)
+
+    delete (updateMutation as any).lessonId
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
       u: Array<{uid: string}>
       q: Array<{uid: string, lessons: Lesson[]}>
       target: Lesson[]
     }>({
       query,
-      mutations: (lessonItems?.length ?? 0) !== 0
-        ? [
-            { condition: deleteCond, mutation: deleteMutation, delete: true },
-            { condition: updateCond, mutation: updateMutation, delete: false },
-            { condition: updateLessonItem, mutation: updateLessonItemMutation, delete: false }
-          ]
-        : [
-            { condition: deleteCond, mutation: deleteMutation, delete: true }
-          ],
-      vars: { $id: id, $lessonId: lessonId }
+      mutations: [{ condition: updateCond, mutation: updateMutation }],
+      vars: { $id: id, $lessonId: args.lessonId }
     })
 
     if (res.json.v.length !== 1) {
@@ -393,20 +366,14 @@ export class LessonsService {
     }
 
     if (res.json.u.length !== 1) {
-      throw new LessonNotFoundException(lessonId)
+      throw new LessonNotFoundException(args.lessonId)
     }
 
     if (res.json.q.length !== 1) {
-      throw new UserNotHasTheLesson(id, lessonId)
+      throw new UserNotHasTheLesson(id, args.lessonId)
     }
 
-    console.error({
-      res, b: res.json.target[0], q: res.json.q[0]?.lessons
-    })
-
-    Object.assign(res.json.target[0], {
-      destination, color, educatorName, circle, name, lessonId
-    })
+    Object.assign(res.json.target[0], args)
 
     return res.json.target[0]
   }

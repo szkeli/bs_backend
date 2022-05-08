@@ -139,26 +139,26 @@ export class Lesson {
 
 @ArgsType()
 export class UpdateLessonArgs {
-  @Field({ description: '课程名称' })
-    name: string
+  @Field({ description: '课程名称', nullable: true })
+    name?: string | null
 
   @Field({ description: '上课地点，对于未列出的课程，此项可为 null', nullable: true })
     destination: string
 
-  @Field({ description: '课程id', nullable: true })
-    lessonId?: string | null
+  @Field({ description: '课程id' })
+    lessonId: string
 
-  @Field({ description: '授课教师的名字' })
-    educatorName: string
+  @Field({ description: '授课教师的名字', nullable: true })
+    educatorName?: string | null
 
   @Field(of => String, { nullable: true, description: '自定义课程时的颜色' })
-    color: string
+    color?: string | null
 
-  @Field(of => [Int], { description: '课程的周数的数组，例如[2, 3, 4, 8, 9]' })
-    circle: number[]
+  @Field(of => [Int], { description: '课程的周数的数组，例如[2, 3, 4, 8, 9]', nullable: true })
+    circle?: number[] | null
 
-  @Field(of => [LessonItemInput], { description: 'lessonItem，对于未列出的课程，此项可为 null', nullable: true })
-    lessonItems?: LessonItemInput[] | null
+  // @Field(of => [LessonItemInput], { description: 'lessonItem，对于未列出的课程，此项可为 null', nullable: true })
+  //   lessonItems?: LessonItemInput[] | null
 }
 
 @ArgsType()

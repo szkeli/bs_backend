@@ -10,6 +10,7 @@ import { LessonsService } from './lessons.service'
 import {
   AddLessonArgs, Lesson, LessonMetaData, LessonNotificationSettings,
   LessonsConnection, TriggerLessonNotificationArgs,
+  UpdateLessonArgs,
   UpdateLessonMetaDataArgs,
   UpdateLessonNotificationSettingsArgs
 } from './models/lessons.model'
@@ -36,6 +37,11 @@ export class LessonsResolver {
   @Roles(Role.User)
   async addLesson (@CurrentUser() user: User, @Args() args: AddLessonArgs) {
     return await this.lessonsService.addLesson(user.id, args)
+  }
+
+  @Mutation(of => Lesson, { description: '更新一个课程' })
+  async updateLesson (@CurrentUser() user: User, @Args() args: UpdateLessonArgs) {
+    return await this.lessonsService.updateLesson(user.id, args)
   }
 
   @Mutation(of => Boolean, { description: '从当前用户中删除一个课程' })
