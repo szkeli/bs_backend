@@ -40,6 +40,7 @@ export class LessonsResolver {
   }
 
   @Mutation(of => Lesson, { description: '更新一个课程' })
+  @Roles(Role.User)
   async updateLesson (@CurrentUser() user: User, @Args() args: UpdateLessonArgs) {
     return await this.lessonsService.updateLesson(user.id, args)
   }

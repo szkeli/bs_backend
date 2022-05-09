@@ -55,14 +55,14 @@ export class LessonsService {
       vars: { $id: id, $lessonId: lessonId }
     })
 
-    if (res.json.q.length !== 1) {
-      throw new UserNotHasTheLesson(id, lessonId)
-    }
-    if (res.json.u.length !== 1) {
+    if (res.json.v.length !== 1) {
       throw new UserNotFoundException(id)
     }
-    if (res.json.v.length !== 1) {
+    if (res.json.u.length !== 1) {
       throw new LessonNotFoundException(lessonId)
+    }
+    if (res.json.q.length !== 1) {
+      throw new UserNotHasTheLesson(id, lessonId)
     }
 
     return true
