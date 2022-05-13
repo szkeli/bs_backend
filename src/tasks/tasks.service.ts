@@ -195,7 +195,9 @@ export class TasksService {
   }
 
   // 每天更新LessonMetaData
-  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT)
+  @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, {
+    timeZone: 'Asia/Shanghai'
+  })
   async triggerEveryDayAtMinight () {
     const query = `
       query {
