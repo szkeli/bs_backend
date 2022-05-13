@@ -308,7 +308,11 @@ export const getLessonNotificationTemplate = (openId: string, items: LessonNotif
         // 所有课程
         // 线性代数；音乐；体育；（列举全部课程用分号连接）
         keyword1: {
-          value: items.map(i => i.lesson[0]?.name ?? 'N/A').join('；') ?? 'N/A'
+          value: items
+            .map(i => ({ start: i.start, end: i.end, i }))
+            .sort((a, b) => a.start - b.start)
+            .map(({ start, end, i }) => i.lesson[0]?.name ?? 'N/A')
+            .join(';') ?? 'N/A'
         },
         // 课程名称和时间
         // 【1，2节】8:30-9：55 线性代数
