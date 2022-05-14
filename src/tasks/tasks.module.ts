@@ -4,6 +4,7 @@ import { CosService } from '../cos/cos.service'
 import { DbService } from '../db/db.service'
 import { LessonsService } from '../lessons/lessons.service'
 import { WxService } from '../wx/wx.service'
+import { TasksResolver } from './tasks.resolver'
 import { TasksService } from './tasks.service'
 
 @Module({
@@ -15,7 +16,8 @@ import { TasksService } from './tasks.service'
     CosService,
     TasksService,
     DbService,
-    LessonsService
+    LessonsService,
+    TasksResolver
   ]
 })
 export class TasksModule {}

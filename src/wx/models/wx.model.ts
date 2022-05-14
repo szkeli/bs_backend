@@ -258,3 +258,8 @@ export class WxSubscriptionInfo {
   @Field(of => WX_SUBSCRIBE_SCENE, { description: '返回用户关注的渠道来源' })
     subscribe_scene: WX_SUBSCRIBE_SCENE
 }
+
+export interface WxSendUniformMessageRet {
+  errcode: 40037 | 41028 | 41029 | 41030 | 45009 | 40003 | 40013 | 0
+  errmsg: string
+}

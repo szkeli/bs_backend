@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 
 import { BadOpenIdException, LessonNotFoundException, UserNotFoundException, UserNotHasLessonsTodayExcepton, UserNotHasTheLesson } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
@@ -11,6 +11,8 @@ import { AddLessonArgs, FilterLessonsArgs, Lesson, LessonItem, LessonMetaData, L
 
 @Injectable()
 export class LessonsService {
+  private readonly logger = new Logger(LessonsService.name)
+
   constructor (
     private readonly dbService: DbService,
     private readonly wxService: WxService
@@ -484,5 +486,31 @@ export class LessonsService {
 
     const template = getLessonNotificationTemplate(res.user[0]?.openId, res.items)
     return await this.wxService.sendUniformMessage(template)
+  }
+
+  async mockTriggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek }: TriggerLessonNotificationArgs) {
+    this.logger.debug(`mockTriggerLessonNotification: to: ${to}`)
+    const res = await this.filterLessons(to, {
+      week,
+      dayInWeek,
+      startYear,
+      endYear,
+      semester
+    })
+
+    if (res.user.length === 0) {
+      throw new UserNotFoundException(to)
+    }
+
+    if (res.items.length === 0) {
+      throw new UserNotHasLessonsTodayExcepton(to)
+    }
+
+    if (!res.user[0]?.openId || res.user[0]?.openId === '') {
+      throw new BadOpenIdException(to)
+    }
+
+    const template = getLessonNotificationTemplate(res.user[0]?.openId, res.items)
+    return await this.wxService.mockSendUniformMessage(template)
   }
 }

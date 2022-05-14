@@ -37,6 +37,7 @@ pin: uid @reverse .
 about: uid @reverse .
 sentiment: uid @reverse .
 lessonNotificationSettings: uid @reverse .
+lessonNotificationStatus: uid @reverse .
 
 images: [string] .
 
@@ -87,7 +88,7 @@ recipientId: int .
 viewId: int .
 start: int .
 end: int .
-studentId: int .
+studentId: int @index(int) .
 dayInWeek: int .
 semester: int .
 startYear: int .
@@ -210,6 +211,8 @@ type User {
   lessons
   # 课程的通知设置
   lessonNotificationSettings
+  # 课程通知的通知状态
+  lessonNotificationStatus
 }
 
 # 帖子
@@ -611,6 +614,9 @@ type LessonMetaData {
 type LessonNotificationSettings {
   # 是否需要上课通知
   needNotifications
+}
+
+type LessonNotificationStatus {
   # 上次通知的时间
   lastNotifiedAt
   # 当前通知的发送状态

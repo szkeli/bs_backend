@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable, Logger } from '@nestjs/common'
 import axios from 'axios'
 
 import { CosService } from '../cos/cos.service'
@@ -8,11 +8,14 @@ import {
   GetWXMiniProgrameShortLinkArgs,
   GetWXSubscriptionInfoArgs,
   SendSubscribeMessageArgs,
-  SendUniformMessageArgs
+  SendUniformMessageArgs,
+  WxSendUniformMessageRet
 } from './models/wx.model'
 
 @Injectable()
 export class WxService {
+  private readonly logger = new Logger(WxService.name)
+
   constructor (
     private readonly cosService: CosService
   ) {}
@@ -91,10 +94,15 @@ export class WxService {
         access_token: accessToken
       },
       data: config
-    }).then(r => r.data as unknown as {
-      errcode: 40037 | 41028 | 41029 | 41030 | 45009 | 40003 | 40013 | 0
-      errmsg: string
-    })
+    }).then(r => r.data as unknown as WxSendUniformMessageRet)
+  }
+
+  async mockSendUniformMessage (config: SendUniformMessageArgs) {
+    this.logger.debug('mockSendUniformMessage')
+    return {
+      errcode: 0,
+      errmsg: 'ok'
+    } as unknown as WxSendUniformMessageRet
   }
 
   async getWXMiniProgrameShortLink (config: GetWXMiniProgrameShortLinkArgs) {

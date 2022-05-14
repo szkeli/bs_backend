@@ -1,14 +1,17 @@
 import { CACHE_MANAGER, Inject, Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 import { Cache } from 'cache-manager'
+import { CronJob } from 'cron'
 
+import { LESSON_NOTIFY_JOB_NAME } from '../constants'
 import { DbService } from '../db/db.service'
 import { LessonsService } from '../lessons/lessons.service'
 import { LESSON_NOTIFY_STATE, LessonMetaData } from '../lessons/models/lessons.model'
-import { ids2String, now } from '../tool'
+import { ids2String, now, sleep } from '../tool'
 
 @Injectable()
 export class TasksService {
+  private readonly logger = new Logger(TasksService.name)
   constructor (
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly dbService: DbService,
@@ -16,182 +19,324 @@ export class TasksService {
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
   ) {}
 
-  private readonly logger = new Logger(TasksService.name)
-
-  // 每10秒执行的任务
-  // @Cron(CronExpression.EVERY_10_SECONDS, {
-  //   name: 'lessonNotificationJob'
-  // })
-  async triggerExery10Seconds (taskType: TaskType) {
-    const res = await this.getAndPendding()
-
-    const res2 = await this.sendNotification(res)
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const res3 = await this.tagThem(res, res2 as any)
-
-    // 获取发送成功的用户的id和发送失败的用户的id
-    // 将发送成功的用户的lessonNotificationSettings.state改为succeeded，
-    // lessonNotificationSettings.lastNotified改为今天08:00
-    // 发送失败的用户的state改为failed
-    // 函数退出
-    this.logger.error('called every 10 seconds...')
-  }
-
-  async tagThem (res: NotificationTaskArgs, res2: Array<{status: string, value: any}>) {
-    const ids = []
-    res2.forEach((i, index) => {
-      if (i.status === 'fulfilled') {
-        ids.push(res[index])
-      }
-    })
-    const idsString = ids2String(ids)
+  async test () {
     const query = `
       query {
-        users(func: uid(${idsString})) @filter(type(User)) {
+        var(func: type(User)) {
           users as uid
+        }
+        users(func: uid(users)) {
+          id: uid
+          status as lessonNotificationStatus @filter(type(LessonNotificationStatus))
         }
       }
     `
-    const condition = `@if( eq(len(users), ${ids.length}) )`
     const mutation = {
-      uid: 'uid(users)',
-      lessonNotificationSettings: {
-        'dgraph.type': 'LessonNotificationSettings',
-        state: LESSON_NOTIFY_STATE.SUCCEEDED,
-        lastNotifiedAt: now()
-      }
+      uid: 'uid(status)',
+      'dgraph.type': 'LessonNotificationStatus',
+      lastNotifiedAt: now(),
+      state: LESSON_NOTIFY_STATE.FAILED
     }
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const res222 = await this.dbService.commitConditionalUperts({
+    const condition = '@if( not eq(len(users), 0) )'
+
+    const res = await this.dbService.commitConditionalUperts({
       query,
-      mutations: [{ condition, mutation }],
+      mutations: [{ mutation, condition }],
+      vars: {}
+    })
+    console.error(res)
+  }
+
+  async testTr () {
+    await this.triggerExery10Seconds(TaskType.GF)
+
+    return 'success'
+  }
+
+  // 每天早上8点的任务
+  // @Cron(CronExpression.EVERY_DAY_AT_8AM, {
+  //   timeZone: 'Asia/Shanghai'
+  // })
+  async triggerEveryDayAt8AM () {
+    this.logger.debug('called at every day on 8 AM...')
+  }
+
+  // 每天晚上10点的任务
+  // @Cron(CronExpression.EVERY_DAY_AT_10PM, {
+  //   timeZone: 'Asia/Shanghai'
+  // })
+  async triggerEveryDayAt10PM () {
+    const job = new CronJob(
+      CronExpression.EVERY_10_SECONDS,
+      async () => await this.triggerExery10Seconds(TaskType.GM)
+    )
+
+    this.schedulerRegistry
+      .addCronJob(LESSON_NOTIFY_JOB_NAME, job)
+
+    job.start()
+    this.logger.debug('called at every day on 10 PM...')
+  }
+
+  async triggerExery10Seconds (taskType: TaskType) {
+    const res = await this.getAndPendding(taskType)
+
+    console.error(res.json.valiedUser)
+
+    if (res.json.valiedUser.length === 0) {
+      this.schedulerRegistry
+        .getCronJob(LESSON_NOTIFY_JOB_NAME)
+        .stop()
+    }
+    const res2 = await this.mockSendNotification(res)
+    console.error(res2)
+    const res3 = await this.tagThem(res, res2 as any)
+    console.error(res3)
+
+    this.logger.debug('called every 10 seconds...')
+  }
+
+  async tagThem (res: NotificationTaskArgs, res2: Array<{status: string, value: any}>) {
+    console.error({ res, res2 })
+    const succeededIds = []
+    const failedIds = []
+
+    res2.forEach((i, index) => {
+      if (i.status === 'fulfilled') {
+        succeededIds.push(res.json.valiedUser[index].id)
+      }
+      if (i.status === 'rejected') {
+        failedIds.push(res.json.valiedUser[index].id)
+      }
+    })
+    const succeededIdsString = ids2String(succeededIds)
+    const failedIdsString = ids2String(failedIds)
+    console.error({ succeededIdsString, failedIdsString, succeededIds, failedIds })
+
+    const query = `
+      query {
+        succeeded(func: uid(${succeededIdsString})) @filter(type(User)) {
+          succeededs as uid
+          sstatus as lessonNotificationStatus @filter(type(LessonNotificationStatus))
+        }
+        failed(func: uid(${failedIdsString})) @filter(type(User)) {
+          faileds as uid
+          fstatus as lessonNotificationStatus @filter(type(LessonNotificationStatus))
+        }
+      }
+    `
+    const succeededCond = `@if( eq(len(succeededs), ${succeededIds.length}) )`
+    const succeededMutation = {
+      uid: 'uid(sstatus)',
+      'dgraph.type': 'LessonNotificationStatus',
+      state: LESSON_NOTIFY_STATE.SUCCEEDED,
+      lastNotifiedAt: now()
+    }
+
+    const failedCond = `@if( eq(len(faileds), ${failedIds.length}) )`
+    const failedMutation = {
+      uid: 'uid(fstatus)',
+      'dgraph.type': 'LessonNotificationStatus',
+      state: LESSON_NOTIFY_STATE.FAILED,
+      lastNotifiedAt: now()
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    return await this.dbService.commitConditionalUperts({
+      query,
+      mutations: [
+        { condition: succeededCond, mutation: succeededMutation },
+        { condition: failedCond, mutation: failedMutation }
+      ],
       vars: {}
     })
   }
 
-  async getAndPendding () {
-    // 符合以下规则的用户
-    // 今天有课 &&
-    // (lessonNotificationSettings.needNotifications为true或者null) &&
-    // ((lessonNotificationSettings.state为null或者failed) && (当前时间 - lessonNotificationSettings.lastNotified < 20小时)) &&
-    // (lessonNotificationSettings.state为succeeded && (当前时间 - lessonNotificationSettings.lastNotified > 20小时))
+  async getAndPendding (taskType: TaskType) {
+    // 一次性通知的用户个数
+    const PATCH_USER_COUNT_MAX = 1 // 3
+    const LAST_NOTIFY_FAILED_S = 1 // 18 * 60 * 60
+    const LAST_NOTIFY_SUCCEEDED_S = 1 // 18 * 60 * 60
+    const PENDDING_VAILED_TIME_S = 5 * 60
+    const FAILED_VAILED_TIME_S = 10 * 60
 
-    // 获取10个符合规则的用户的id 并标记lessonNotificationSettings.state为pendding
+    const metadataTemplate = taskType === TaskType.GM
+      ? `
+      metadata(func: type(LessonMetaData)) {
+        startYear as startYear 
+        endYear as endYear
+        semester as semester
+        week as week
+        dayInWeek as dayInWeek
+      }
+    `
+      : `
+      metadata(func: type(LessonMetaData)) {
+        startYear as startYear 
+        endYear as endYear
+        semester as semester
+        oldWeek as week
+        oldDayInWeek as dayInWeek
+
+        week as math(cond(oldDayInWeek == 7, oldWeek + 1, oldWeek))
+        dayInWeek as math(cond(oldDayInWeek == 7, 1, oldDayInWeek))
+      }
+      `
     const query = `
       query v($succeeded: string, $failed: string, $pendding: string) {
         # 今天的日期
-        metadata(func: type(LessonMetaData)) {
-          week as week
-          endYear as endYear
-          startYear as startYear 
-          semester as semester
-          a: day as dayInWeek
-          dayInWeek: dayInWeek as math(day + 2)
-        }
-        # 所有默认被通知的用户(没有LessonNotificationSettings)
-        var(func: type(User)) @filter(not has(lessonNotificationSettings)) { users1 as uid }
-        # 所有主动允许通知的用户
+        ${metadataTemplate}
         var(func: type(User)) {
-          lessonNotificationSettings as lessonNotificationSettings @filter(type(LessonNotificationSettings) and not eq(needNotifications, false) ) {
+          status as lessonNotificationStatus @filter(type(LessonNotificationStatus)) {
             lastNotifiedAt as lastNotifiedAt
-
-            # lastNotifiedAt 距今的小时数
-            hours as math(since(lastNotifiedAt)/(60*60))
-            ~lessonNotificationSettings {
+            # lastNotifiedAt 距今的秒数
+            secounds as math(since(lastNotifiedAt))
+          }
+        }
+        # 1. 所有默认被通知的用户 (not has(LessonNotificationSettings) && type(lessonNotificationSettings) != LessonNotificationSettings)
+        var(func: type(User)) @filter(not has(lessonNotificationSettings)) {
+          users1 as uid 
+        }
+        # 2. 所有主动允许通知的用户
+        var(func: type(User)) {
+          lessonNotificationSettings @filter(type(LessonNotificationSettings) and (eq(needNotifications, true) or not has(needNotifications)) ) {
+            ~lessonNotificationSettings @filter(type(User)) {
               users2 as uid
             }
           } 
         }
-        # 所有上次通知失败或者state为null的用户(当前时间 - lastNotifiedAt < 20小时)
-        var(func: uid(lessonNotificationSettings)) @filter((not has(state) or eq(state, $failed)) and (lt(val(hours), 20) or not has(lastNotifiedAt))) {
-          ~lessonNotificationSettings {
-            users3 as uid
-          }
-        }
-        # 所有上次通知成功的用户(当前时间 - lastNotifiedAt > 20小时)
-        var(func: uid(lessonNotificationSettings)) @filter(eq(state, $succeeded) and (gt(val(hours), 20) or not has(lastNotifiedAt))) {
-          ~lessonNotificationSettings {
-            users4 as uid
-          }
-        }
-        # 所有今天有课的用户
+        # 3. 所有今天有课的用户
         var(func: type(LessonItem)) @filter(eq(circle, val(week)) and eq(dayInWeek, val(dayInWeek))) {
           ~lessonItems @filter(eq(endYear, val(endYear)) and eq(startYear, val(startYear)) and eq(semester, val(semester))) {
             ~lessons @filter(type(User)) {
-              users5 as uid
+              users3 as uid
             }
           }
+        }
+        # 4. 所有没有 LessonNotificationStatus 的用户
+        var(func: type(User)) @filter(not has(lessonNotificationStatus)) {
+          users4 as uid
+        }
+        # 5. 所有18小时前通知失败的用户(当前时间 - lastNotifiedAt < 18h)
+        var(func: uid(status)) @filter((eq(state, $failed)) and lt(val(secounds), ${LAST_NOTIFY_FAILED_S})) {
+          ~lessonNotificationStatus @filter(type(User)) {
+            users5 as uid
+          }
+        }
+        # 6. 所有18小时前通知成功的用户(当前时间 - lastNotifiedAt > 18小时) (TODO)
+        var(func: uid(status)) @filter(eq(state, $succeeded) and gt(val(secounds), ${LAST_NOTIFY_SUCCEEDED_S})) {
+          ~lessonNotificationStatus @filter(type(User)) {
+            users6 as uid
+          }
+        }
+        # 7. 所有 PENDDING 超过 5min 的用户
+        var(func: uid(status)) @filter(eq(state, $pendding) and gt(val(secounds), ${PENDDING_VAILED_TIME_S})) {
+          ~lessonNotificationStatus @filter(type(User)) {
+            users7 as uid
+          }
+        }
+        # 8. 所有 10min 内通知失败的用户，重新发起通知
+        var(func: uid(status)) @filter(eq(state, $failed) and lt(val(secounds), ${FAILED_VAILED_TIME_S})) {
+          ~lessonNotificationStatus @filter(type(User)) {
+            users8 as uid
+          }
+        }
+        # 9. (默认被通知 || 主动允许被通知的用户) && 今天有课的用户
+        var(func: type(User)) @filter(uid(users1, users2) and uid(users3)) {
+          users9 as uid
+        }
+
+        # 符合规则的用户
+        var(func: uid(users9)) @filter(uid(users4, users5, users6, users7, users8)) {
+          users10 as uid
         }
         users1(func: uid(users1)) {
           uid
         }
         users2(func:uid(users2)) {
-            uid
+          uid
         }
         users3(func: uid(users3)) {
-            uid
+          uid
         }
         users4(func: uid(users4)) {
-            uid
+          uid
         }
         users5(func: uid(users5)) {
-            uid
+          uid
         }
-        # 符合规则的用户
-        users(func: type(User)) @filter(uid(users1, users2) and uid(users1, users3, users4) and uid(users1, users5))  {
-          valiedUser as uid
+        users6(func: uid(users6)) {
+          uid
         }
-        valiedUser(func: uid(valiedUser), orderdesc: createdAt, first: 10) {
+        users7(func: uid(users7)) {
+          uid
+        }
+        users8(func: uid(users8)) {
+          uid
+        }
+        users9(func: uid(users9)) {
+          uid
+        }
+        users10(func: uid(users10)) {
+          uid
+        }
+        
+        valiedUser(func: uid(users10), orderdesc: createdAt, first: ${PATCH_USER_COUNT_MAX}) {
           payload as id: uid
+          lstatus as lessonNotificationStatus @filter(type(LessonNotificationStatus))
         }
       }
     `
     // pendding 待通知的用户
     const condition = '@if( not eq(len(payload), 0) )'
     const mutation = {
-      uid: 'uid(payload)',
-      lessonNotificationSettings: {
-        'dgraph.type': 'LessonNotificationSettings',
-        state: LESSON_NOTIFY_STATE.PENDDING
-      }
+      uid: 'uid(lstatus)',
+      'dgraph.type': 'LessonNotificationStatus',
+      state: LESSON_NOTIFY_STATE.PENDDING,
+      lastNotifiedAt: now()
     }
+
     return await this.dbService.commitConditionalUperts({
       query,
       mutations: [{ condition, mutation }],
       vars: {
-        $succeeded: LESSON_NOTIFY_STATE.SUCCEEDED,
         $failed: LESSON_NOTIFY_STATE.FAILED,
-        $pendding: LESSON_NOTIFY_STATE.PENDDING
+        $pendding: LESSON_NOTIFY_STATE.PENDDING,
+        $succeeded: LESSON_NOTIFY_STATE.SUCCEEDED
       }
     }) as NotificationTaskArgs
   }
 
   async sendNotification (args: NotificationTaskArgs) {
-    // 并发发送通知
     const { week, dayInWeek, startYear, endYear, semester } = args.json.metadata[0]
 
     console.error(args.json.metadata[0])
-    const dd = [{ id: '0x2bcb' }, { id: '0x2bcb' }]
 
     // eslint-disable-next-line @typescript-eslint/promise-function-async
-    return await Promise.allSettled(dd.map(({ id }) => {
+    return await Promise.allSettled(args.json.valiedUser.map(({ id }) => {
       return this.lessonsService.triggerLessonNotification({
         to: id, week, dayInWeek, startYear, endYear, semester
       })
     }))
   }
 
-  // 每天早上8点的任务
-  // @Cron(CronExpression.EVERY_DAY_AT_8AM)
-  async triggerEveryDayAt8AM () {
-    this.logger.debug('called at every day on 8 AM...')
-  }
+  async mockSendNotification (args: NotificationTaskArgs) {
+    const { week, dayInWeek, startYear, endYear, semester } = args.json.metadata[0]
 
-  // 每天晚上10点的任务
-  // @Cron(CronExpression.EVERY_DAY_AT_10PM)
-  async triggerEveryDayAt10PM () {
-    this.logger.debug('called at every day on 10 PM...')
+    console.error(args.json.metadata[0])
+
+    const t = 60 * 2 * 1000
+
+    this.logger.debug(`mockSendNotification: sleepping ${t}ms...`)
+
+    await sleep(t)
+
+    // eslint-disable-next-line @typescript-eslint/promise-function-async
+    return await Promise.allSettled(args.json.valiedUser.map(({ id }) => {
+      return this.lessonsService.mockTriggerLessonNotification({
+        to: id, week, dayInWeek, startYear, endYear, semester
+      })
+    }))
   }
 
   // 每天更新LessonMetaData
@@ -250,9 +395,9 @@ export class TasksService {
 
 enum TaskType {
   // 早上8点的通知
-  gm = 'gm',
+  GM = 'gm',
   // 晚上10点的通知
-  gf = 'gf'
+  GF = 'gf'
 }
 
 interface NotificationTaskArgs {
