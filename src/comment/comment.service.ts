@@ -4,15 +4,15 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
-import { CommentNotFoundException, SystemAdminNotFoundException, UserNotFoundException } from '../app.exception'
+import { CommentNotFoundException, PostNotFoundException, SystemAdminNotFoundException, UserNotFoundException } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { PUB_SUB_KEY } from '../constants'
 import { NlpService } from '../nlp/nlp.service'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
-import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, now, relayfyArrayForward, sha1 } from '../tool'
+import { IImage, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, imagesV2fy, now, relayfyArrayForward, sha1 } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
@@ -37,7 +37,24 @@ export class CommentService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async addCommentOnUser (id: string, { content, to, isAnonymous, images }: AddCommentArgs) {
+  async images (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Comment)) {
+          images as imagesV2 @filter(type(Image))
+        }
+        imagesV2(func: uid(images), orderasc: index) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{imagesV2: [IImage]}>({ query, vars: { $id: id } })
+
+    return res.imagesV2
+  }
+
+  async addCommentOnUser (id: string, { content, to, isAnonymous, images }: AddCommentArgs): Promise<CommentWithTo> {
     const query = `
       query v($id: string, $to: string) {
         # 系统 
@@ -67,6 +84,7 @@ export class CommentService {
         }
       }
     `
+    const imagesV2 = imagesV2fy(images)
     const textCensor = await this.censorsService.textCensor(content)
     const _sentiment = await this.nlpService.sentimentAnalysis(content)
 
@@ -176,6 +194,9 @@ export class CommentService {
     } else {
       Object.assign(mutation2, { creator: { uid: id } })
     }
+    if ((imagesV2?.length ?? 0) !== 0) {
+      Object.assign(mutation1.comments, { imagesV2 })
+    }
 
     if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
       Object.assign(mutation1.comments, { delete: iDelete })
@@ -236,7 +257,6 @@ export class CommentService {
     return {
       content,
       createdAt: now(),
-      images,
       id: res.uids.get('comment'),
       to
     }
@@ -707,6 +727,7 @@ export class CommentService {
           }
         }
       `
+    const imagesV2 = imagesV2fy(images)
 
     const textCensor = await this.censorsService.textCensor(content)
     const _sentiment = await this.nlpService.sentimentAnalysis(content)
@@ -794,6 +815,10 @@ export class CommentService {
       Object.assign(mutation2, { creator: { uid: creator } })
     }
 
+    if ((imagesV2?.length ?? 0) !== 0) {
+      Object.assign(mutation1.comments, { imagesV2 })
+    }
+
     if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
       Object.assign(mutation1.comments, { delete: iDelete })
     }
@@ -832,19 +857,18 @@ export class CommentService {
     }
 
     if (res.json.s.length !== 1) {
-      throw new ForbiddenException('请先创建userId为system的管理员')
+      throw new SystemAdminNotFoundException()
     }
     if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`用户 ${creator} 不存在`)
+      throw new UserNotFoundException(creator)
     }
     if (res.json.u.length !== 1) {
-      throw new ForbiddenException(`评论 ${commentId} 不存在`)
+      throw new CommentNotFoundException(commentId)
     }
 
     return {
       content,
       createdAt: _now,
-      images,
       id: res.uids.get('comment'),
       to: commentId
     }
@@ -873,6 +897,7 @@ export class CommentService {
         }
       }
     `
+    const imagesV2 = imagesV2fy(images)
 
     // 审查内容
     const textCensor = await this.censorsService.textCensor(content)
@@ -967,6 +992,10 @@ export class CommentService {
       Object.assign(mutation2, { creator: { uid: creator } })
     }
 
+    if ((imagesV2?.length ?? 0) !== 0) {
+      Object.assign(mutation1.comments, { imagesV2 })
+    }
+
     if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
       Object.assign(mutation1.comments, { delete: iDelete })
     }
@@ -1006,23 +1035,22 @@ export class CommentService {
     }
 
     if (res.json.s.length !== 1) {
-      throw new ForbiddenException('请先创建system管理员作为系统')
+      throw new SystemAdminNotFoundException()
     }
 
     if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`用户 ${creator} 不存在`)
+      throw new UserNotFoundException(creator)
     }
 
     if (res.json.u.length !== 1) {
-      throw new ForbiddenException(`帖子 ${postId} 不存在`)
+      throw new PostNotFoundException(postId)
     }
 
     return {
       content,
       createdAt: _now,
       id: res.uids.get('comment'),
-      to: postId,
-      images
+      to: postId
     }
   }
 

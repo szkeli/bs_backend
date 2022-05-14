@@ -1117,9 +1117,6 @@ type Comment {
   content: String!
   createdAt: String!
 
-  """评论包含的图片"""
-  images: [String!]
-
   """获取该评论下的所有评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
@@ -1179,6 +1176,9 @@ type Comment {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): MentionsConnection!
+
+  """评论的图片"""
+  images: [IImage]!
 }
 
 union CommentToUnion = Post | Comment | User | Anonymous

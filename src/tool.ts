@@ -343,3 +343,13 @@ export const getLessonNotificationTemplate = (openId: string, items: LessonNotif
 )
 
 export const sleep = async (ms: number) => await new Promise(resolve => setTimeout(resolve, ms))
+export const imagesV2fy = (images: string[]) => (
+  images?.map((image, index) => (
+    {
+      uid: `_:image_${index}`,
+      'dgraph.type': 'Image',
+      value: image,
+      index
+    }
+  ))
+)

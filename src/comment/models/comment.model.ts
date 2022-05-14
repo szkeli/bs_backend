@@ -21,9 +21,6 @@ export class Comment {
 
   @Field()
     createdAt: string
-
-  @Field(of => [String], { description: '评论包含的图片', nullable: true })
-    images: string[]
 }
 
 @ObjectType()

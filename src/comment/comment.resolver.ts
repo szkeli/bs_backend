@@ -21,7 +21,7 @@ import { DeletesService } from '../deletes/deletes.service'
 import { Delete } from '../deletes/models/deletes.model'
 import { Mention, MentionsConnection } from '../mentions/models/mentions.model'
 import { WithinArgs } from '../node/models/node.model'
-import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { IImage, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
@@ -161,5 +161,10 @@ export class CommentResolver {
   @ResolveField(of => MentionsConnection, { description: 'User 回复 User' })
   async mentions (@Parent() comment: Comment, @Args() args: RelayPagingConfigArgs) {
     return await this.commentService.mentions(comment.id, args)
+  }
+
+  @ResolveField(of => [IImage], { description: '评论的图片', nullable: 'items' })
+  async images (@Parent() comment: Comment) {
+    return await this.commentService.images(comment.id)
   }
 }
