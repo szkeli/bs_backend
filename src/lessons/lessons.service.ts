@@ -55,8 +55,7 @@ export class LessonsService {
     }
 
     if ((res.json.u.length ?? 0) !== 1) {
-      // TODO 提示当前用户不拥有该课程
-      throw new LessonNotFoundException(id)
+      throw new UserNotHasTheLesson(actorId, id)
     }
 
     return true
@@ -81,7 +80,7 @@ export class LessonsService {
         }
       }
     `
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) )'
+    const condition = '@if( eq(len(v), 1) and not eq(len(u), 0) and eq(len(q), 1) )'
     const mutation = {
       uid: 'uid(q)',
       'dgraph.type': 'Lesson',
@@ -104,7 +103,7 @@ export class LessonsService {
     if (res.json.v.length !== 1) {
       throw new UserNotFoundException(id)
     }
-    if (res.json.u.length !== 1) {
+    if (res.json.u.length === 0) {
       throw new LessonNotFoundException(lessonId)
     }
     if (res.json.q.length !== 1) {
