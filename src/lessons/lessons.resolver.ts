@@ -8,7 +8,7 @@ import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { User } from '../user/models/user.model'
 import { LessonsService } from './lessons.service'
 import {
-  AddLessonArgs, Lesson, LessonMetaData, LessonNotificationSettings,
+  AddLessonArgs, Lesson, LessonItem, LessonMetaData, LessonNotificationSettings,
   LessonsConnection, TriggerLessonNotificationArgs,
   UpdateLessonArgs,
   UpdateLessonMetaDataArgs,
@@ -93,6 +93,11 @@ export class LessonsResolver {
   @ResolveField(of => DeadlinesConnection, { description: '获取该课程的所有 deadline' })
   async deadlines (@Parent() lesson: Lesson, @Args() args: RelayPagingConfigArgs) {
     return await this.lessonsService.deadlines(lesson.id, args)
+  }
+
+  @ResolveField(of => [LessonItem], { description: '该课程下的所有课程实例', nullable: 'items' })
+  async lessonItems (@Parent() lesson: Lesson) {
+    return await this.lessonsService.lessonItems(lesson.id)
   }
 
   @Mutation(of => String, { description: '测试接口，手动触发一个上课课程通知' })

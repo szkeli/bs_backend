@@ -6,9 +6,6 @@ import { Connection } from '../../connections/models/connections.model'
 export class LessonNotificationSettings {
   @Field(of => Boolean, { defaultValue: true, description: '是否订阅通知' })
     needNotifications: boolean
-
-  @Field(of => String, { nullable: true, description: '上次被通知的时间' })
-    lastNotifiedAt: string
 }
 
 @ArgsType()
@@ -124,9 +121,6 @@ export class Lesson {
   @Field({ nullable: true, description: 'TODO, 授课教师的名字' })
     educatorName: string
 
-  @Field(of => [LessonItem], { nullable: true, description: 'lessonItem' })
-    lessonItems?: LessonItem[] | null
-
   @Field(of => Int, { nullable: true, description: 'TODO, 开始学年' })
     startYear: number
 
@@ -146,7 +140,7 @@ export class UpdateLessonArgs {
     name?: string | null
 
   @Field({ description: '上课地点，对于未列出的课程，此项可为 null', nullable: true })
-    destination: string
+    destination?: string | null
 
   @Field({ description: '课程id' })
     lessonId: string
@@ -159,9 +153,6 @@ export class UpdateLessonArgs {
 
   @Field(of => [Int], { description: '课程的周数的数组，例如[2, 3, 4, 8, 9]', nullable: true })
     circle?: number[] | null
-
-  // @Field(of => [LessonItemInput], { description: 'lessonItem，对于未列出的课程，此项可为 null', nullable: true })
-  //   lessonItems?: LessonItemInput[] | null
 }
 
 @ArgsType()

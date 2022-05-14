@@ -89,8 +89,8 @@ export class UserAlreadyHasTheCurriculum extends HttpException {
 }
 
 export class UserAlreadyHasTheLesson extends HttpException {
-  constructor (id: string) {
-    super('用户 id 早已添加该课程', HttpStatus.FORBIDDEN)
+  constructor (id: string, lessonId: string) {
+    super(`用户 ${id} 早已添加课程 ${lessonId}`, HttpStatus.FORBIDDEN)
   }
 }
 

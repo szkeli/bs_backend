@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common'
 
-import { BadOpenIdException, LessonNotFoundException, UserNotFoundException, UserNotHasLessonsTodayExcepton, UserNotHasTheLesson } from '../app.exception'
+import { BadOpenIdException, LessonNotFoundException, UserAlreadyHasTheLesson, UserNotFoundException, UserNotHasLessonsTodayExcepton, UserNotHasTheLesson } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
@@ -18,14 +18,31 @@ export class LessonsService {
     private readonly wxService: WxService
   ) {}
 
+  async lessonItems (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Lesson)) {
+          items as lessonItems @filter(type(LessonItem)) 
+        }
+        lessonItems(func: uid(items)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{lessonItems: LessonItem[]}>({ query, vars: { $id: id } })
+
+    return res.lessonItems
+  }
+
   async deleteLessonItem (actorId: string, id: string) {
     const query = `
       query v($actorId: string, $lessonItemId: string) {
         v(func: uid($actorId)) @filter(type(User)) { v as uid }
         var(func: uid($lessonItemId)) @filter(type(LessonItem)) {
           item as uid
-          a: ~lessonItem @filter(type(Lesson)) {
-            b: ~lesson @filter(type(User) and uid(v)) {
+          ~lessonItems @filter(type(Lesson)) {
+            ~lessons @filter(uid(v)) {
               u as uid
             }
           }
@@ -53,7 +70,6 @@ export class LessonsService {
     if (res.json.v.length !== 1) {
       throw new UserNotFoundException(actorId)
     }
-
     if ((res.json.u.length ?? 0) !== 1) {
       throw new UserNotHasTheLesson(actorId, id)
     }
@@ -113,7 +129,7 @@ export class LessonsService {
     return true
   }
 
-  async updateLessonNotificationSettings (id: string, { needNotifications }: UpdateLessonNotificationSettingsArgs) {
+  async updateLessonNotificationSettings (id: string, { needNotifications }: UpdateLessonNotificationSettingsArgs): Promise<LessonNotificationSettings> {
     const query = `
       query v($id: string) {
         u(func: uid($id)) @filter(type(User)) {
@@ -132,8 +148,7 @@ export class LessonsService {
       lessonNotificationSettings: {
         'dgraph.type': 'LessonNotificationSettings',
         uid: '_:settings',
-        needNotifications,
-        lastNotifiedAt: null
+        needNotifications
       }
     }
 
@@ -165,12 +180,11 @@ export class LessonsService {
     }
 
     return {
-      needNotifications,
-      lastNotifiedAt: null
+      needNotifications
     }
   }
 
-  async lessonNotificationSettings (id: string) {
+  async lessonNotificationSettings (id: string): Promise<LessonNotificationSettings> {
     const query = `
       query v($id: string) {
         var(func: uid($id)) @filter(type(User)) {
@@ -185,12 +199,11 @@ export class LessonsService {
     const res = await this.dbService.commitQuery<{settings: LessonNotificationSettings[]}>({ query, vars: { $id: id } })
 
     return res.settings[0] ?? {
-      needNotifications: true,
-      lastNotifiedAt: null
+      needNotifications: true
     }
   }
 
-  async lessonMetaData () {
+  async lessonMetaData (): Promise<LessonMetaData> {
     const query = `
       query {
         metadata(func: type(LessonMetaData)) {
@@ -203,7 +216,7 @@ export class LessonsService {
     return res.metadata[0]
   }
 
-  async updateLessonMetaData ({ startYear, endYear, semester, week, dayInWeek }: UpdateLessonMetaDataArgs) {
+  async updateLessonMetaData ({ startYear, endYear, semester, week, dayInWeek }: UpdateLessonMetaDataArgs): Promise<LessonMetaData> {
     const query = `
       query {
         var(func: type(LessonMetaData)) {
@@ -313,10 +326,7 @@ export class LessonsService {
     query v($id: string) {
       lesson (func: uid($id)) @filter(type(Lesson)) {
         id: uid
-        expand(_all_) {
-          id: uid
-          expand(_all_) 
-        }
+        expand(_all_) 
       }
     }
   `
@@ -344,10 +354,7 @@ export class LessonsService {
           totalCount(func: uid(lessons)) { count(uid) }
           objs(func: uid(${after ? 'q' : 'lessons'}), orderdesc: createdAt, first: ${first}) {
             id: uid
-            expand(_all_) {
-              id: uid
-              expand(_all_)
-            }
+            expand(_all_)
           }
           # 开始游标
           startO(func: uid(lessons), first: -1) { createdAt }
@@ -364,7 +371,7 @@ export class LessonsService {
     })
   }
 
-  async updateLesson (id: string, args: UpdateLessonArgs) {
+  async updateLesson (id: string, args: UpdateLessonArgs): Promise<Lesson> {
     const query = `
       query v($id: string, $lessonId: string) {
         v(func: uid($id)) @filter(type(User)) { v as uid }
@@ -384,9 +391,7 @@ export class LessonsService {
         }
         target(func: uid(q)) {
           id: uid
-          expand(_all_) {
-            expand(_all_)
-          }
+          expand(_all_)
         }
       }
     `
@@ -413,11 +418,9 @@ export class LessonsService {
     if (res.json.v.length !== 1) {
       throw new UserNotFoundException(id)
     }
-
     if (res.json.u.length !== 1) {
       throw new LessonNotFoundException(args.lessonId)
     }
-
     if (res.json.q.length !== 1) {
       throw new UserNotHasTheLesson(id, args.lessonId)
     }
@@ -440,10 +443,13 @@ export class LessonsService {
           # 当前用户是否存在
           v(func: uid($id)) @filter(type(User)) { v as uid }
           # 当前用户是否已经添加了该课程
-          q(func: uid(v)) {
+          var(func: uid(v)) {
               lessons @filter(type(Lesson) and eq(lessonId, $lessonId)) {
                   q as uid
               }
+          }
+          q(func: uid(q)) {
+            uid
           }
       }
     `
@@ -501,6 +507,10 @@ export class LessonsService {
       throw new UserNotFoundException(id)
     }
 
+    if (res.json.q.length === 1) {
+      throw new UserAlreadyHasTheLesson(id, args.lessonId)
+    }
+
     const _id = res.uids?.get('lesson') ?? res.json.q[0]?.lessons[0]?.uid
 
     return {
@@ -515,12 +525,6 @@ export class LessonsService {
       endYear: args.endYear,
       semester: args.semester,
       color: args.color,
-      lessonItems: lessonItems.map((item, index) => {
-        return {
-          ...item,
-          id: res.uids.get(`_:lessonItem_${index}`)
-        }
-      }),
       createdAt: now()
     }
   }

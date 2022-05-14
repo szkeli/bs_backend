@@ -1849,9 +1849,6 @@ type SetDbSchema {
 type LessonNotificationSettings {
   """是否订阅通知"""
   needNotifications: Boolean!
-
-  """上次被通知的时间"""
-  lastNotifiedAt: String
 }
 
 type LessonMetaData {
@@ -1919,9 +1916,6 @@ type Lesson {
   """TODO, 授课教师的名字"""
   educatorName: String
 
-  """lessonItem"""
-  lessonItems: [LessonItem!]
-
   """TODO, 开始学年"""
   startYear: Int
 
@@ -1951,6 +1945,9 @@ type Lesson {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): DeadlinesConnection!
+
+  """该课程下的所有课程实例"""
+  lessonItems: [LessonItem]!
 }
 
 type LessonsConnection {
