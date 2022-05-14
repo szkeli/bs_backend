@@ -87,7 +87,7 @@ export class DeadlinesService {
     }
   }
 
-  async createDeadline (id: string, { deadlineId, courseName, startDate, endDate, title, type }: AddDealineArgs) {
+  async createDeadline (id: string, { deadlineId, courseName, startDate, endDate, title, type }: AddDealineArgs): Promise<Deadline> {
     const query = `
       query v($id: string, $deadlineId: string) {
         u(func: uid($id)) @filter(type(User)) {
@@ -100,11 +100,12 @@ export class DeadlinesService {
         }
       }
     `
-    const condition = '@if( eq(len(), 1) and eq(len(v), 1) )'
+    const condition = '@if( eq(len(u), 1) and eq(len(v), 0) )'
     const mutation = {
       uid: 'uid(u)',
       deadlines: {
         uid: '_:deadline',
+        'dgraph.type': 'Deadline',
         deadlineId,
         createdAt: now(),
         courseName,
@@ -115,13 +116,31 @@ export class DeadlinesService {
       }
     }
 
-    const res = await this.dbService.commitConditionalUperts({
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+      v: Array<{uid: string}>
+    }>({
       query,
       mutations: [{ mutation, condition }],
       vars: { $id: id, $deadlineId: deadlineId }
     })
 
-    console.error(res)
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+    if (res.json.v.length !== 0) {
+      throw new UserAlreadyHasTheDeadline(id, deadlineId)
+    }
+
+    return {
+      id: res.uids.get('deadline'),
+      courseName,
+      startDate,
+      endDate,
+      title,
+      type,
+      createdAt: now()
+    }
   }
 
   async lesson (id: string) {
