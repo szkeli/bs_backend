@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common'
 
+import { UserAlreadyHasTheDeadline, UserNotFoundException, UserNotHasTheLesson } from '../app.exception'
 import { DbService } from '../db/db.service'
 import { Lesson } from '../lessons/models/lessons.model'
 import { now } from '../tool'
@@ -17,7 +18,7 @@ export class DeadlinesService {
     return await this.createDeadline(id, args)
   }
 
-  async addDeadlineToLesson (id: string, { lessonId, deadlineId, courseName, startDate, endDate, title, type }: AddDealineArgs) {
+  async addDeadlineToLesson (id: string, { lessonId, deadlineId, courseName, startDate, endDate, title, type }: AddDealineArgs): Promise<Deadline> {
     const query = `
       query v($id: string, $lessonId: string, $deadlineId: string) {
         # 当前用户是否存在
@@ -55,13 +56,35 @@ export class DeadlinesService {
       }
     }
 
-    const res = await this.dbService.commitConditionalUperts({
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+      v: Array<{lessons: Array<{uid: string}>}>
+      c: Array<{deadlines: Deadline[]}>
+    }>({
       query,
       mutations: [{ mutation, condition }],
       vars: { $id: id, $lessonId: lessonId, $deadlineId: deadlineId }
     })
 
-    console.error(res)
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+    if (res.json.v.length !== 1) {
+      throw new UserNotHasTheLesson(id, lessonId)
+    }
+    if (res.json.c.length !== 0) {
+      throw new UserAlreadyHasTheDeadline(id, deadlineId)
+    }
+
+    return {
+      id: res.uids.get('deadline'),
+      courseName,
+      startDate,
+      endDate,
+      title,
+      type,
+      createdAt: now()
+    }
   }
 
   async createDeadline (id: string, { deadlineId, courseName, startDate, endDate, title, type }: AddDealineArgs) {
