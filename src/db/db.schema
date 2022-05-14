@@ -22,6 +22,7 @@ lessons: [uid] @reverse .
 lessonItems: [uid] @reverse .
 mentions: [uid] @reverse .
 hashtags: [uid] @reverse .
+imagesV2: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -94,6 +95,7 @@ semester: int .
 startYear: int .
 endYear: int .
 week: int .
+index: int .
 
 positive: float .
 negative: float .
@@ -221,6 +223,8 @@ type Post {
   content
   # 帖子的图片
   images
+  # 帖子的图片
+  imagesV2
   # 帖子的创建者
   creator
   # 帖子的创建时间
@@ -300,7 +304,7 @@ type Comment {
   # 评论中 User 对 User 的回复
   mentions
   # 评论包含的图片
-  images
+  imagesV2
 }
 
 # 帖子的主题
@@ -321,6 +325,13 @@ type Subject {
   posts
   # 主题的删除信息
   delete
+}
+
+type Image {
+  # 图片的链接
+  value
+  # 图片的顺序
+  index
 }
 
 # 提及

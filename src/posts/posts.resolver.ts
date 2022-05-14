@@ -29,6 +29,7 @@ import { ReportsService } from '../reports/reports.service'
 import { VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
+  IImage,
   Nullable,
   Post,
   PostsConnection,
@@ -166,5 +167,10 @@ export class PostsResolver {
   @ResolveField(of => HashtagsConnection, { description: '该帖子的所有 Hashtag' })
   async hashtags (@Args() args: RelayPagingConfigArgs, @Parent() post: Post) {
     return await this.postsService.hashtags(post.id, args)
+  }
+
+  @ResolveField(of => [IImage], { description: '帖子的图片', nullable: 'items' })
+  async imagesV2 (@Parent() post: Post) {
+    return await this.postsService.imagesV2(post.id)
   }
 }

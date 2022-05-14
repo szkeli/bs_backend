@@ -5,7 +5,7 @@ import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
-import { PostNotFoundException } from '../app.exception'
+import { PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, UserNotAuthenException } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
@@ -17,6 +17,7 @@ import { PagingConfigArgs, User, UserWithFacets } from '../user/models/user.mode
 import { Vote, VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
+  IImage,
   Nullable,
   Post,
   PostsConnection,
@@ -33,6 +34,23 @@ export class PostsService {
     private readonly nlpService: NlpService
   ) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async imagesV2 (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Post)) {
+          images as imagesV2 @filter(type(Image))
+        }
+        imagesV2(func: uid(images), orderasc: index)  {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{imagesV2: [IImage]}>({ query, vars: { $id: id } })
+
+    return res.imagesV2
   }
 
   async hashtags (id: string, args: RelayPagingConfigArgs) {
@@ -379,6 +397,24 @@ export class PostsService {
         ${subjectId ? 'u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }' : ''}
       }
     `
+    const mutation = {
+      uid: 'uid(v)',
+      posts: {
+        uid: '_:post',
+        'dgraph.type': 'Post',
+        content,
+        createdAt: now
+      }
+    }
+    // 处理帖子图片
+    const imagesV2 = images?.map((image, index) => (
+      {
+        uid: `_:image_${index}`,
+        'dgraph.type': 'Image',
+        value: image,
+        index
+      }
+    ))
 
     // 审查帖子文本内容
     const textCensor = await this.censorsService.textCensor(content)
@@ -387,7 +423,7 @@ export class PostsService {
 
     // 帖子所属的主题
     const subject = {
-      uid: subjectId,
+      uid: 'uid(u)',
       posts: {
         uid: '_:post'
       }
@@ -417,7 +453,7 @@ export class PostsService {
 
     // 帖子的创建者
     const creator = {
-      uid: i,
+      uid: 'uid(v)',
       posts: {
         uid: '_:post'
       }
@@ -446,17 +482,6 @@ export class PostsService {
       }
     }
 
-    const mutation = {
-      uid: i,
-      posts: {
-        uid: '_:post',
-        'dgraph.type': 'Post',
-        content,
-        createdAt: now,
-        images: images ?? []
-      }
-    }
-
     // 帖子的创建者
     Object.assign(mutation.posts, { creator })
 
@@ -470,6 +495,11 @@ export class PostsService {
     // 发布匿名帖子
     if (isAnonymous) {
       Object.assign(mutation.posts, { anonymous })
+    }
+
+    // 帖子的图片信息
+    if ((imagesV2?.length ?? 0) !== 0) {
+      Object.assign(mutation.posts, { imagesV2 })
     }
 
     // 帖子实锤含有违规文本内容
@@ -494,20 +524,18 @@ export class PostsService {
     })
 
     if (res.json.s.length !== 1) {
-      throw new ForbiddenException('请先注册一个名为system的管理员初始化系统')
+      throw new SystemAdminNotFoundException()
     }
-
     if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`用户 ${i} 不存在`)
+      throw new UserNotAuthenException(i)
     }
     if (subjectId && res.json.u.length !== 1) {
-      throw new ForbiddenException(`主题 ${subjectId} 不存在`)
+      throw new SubjectNotFoundException(subjectId)
     }
 
     return {
-      id: res.uids.get('post') as unknown as any,
+      id: res.uids.get('post'),
       content,
-      images,
       createdAt: now
     }
   }

@@ -1,5 +1,5 @@
 import { Type } from '@nestjs/common'
-import { Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { ArgsType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 import { Connection as RelayConnection, Edge as RelayEdge, PageInfo as RelayPageInfo } from 'graphql-relay'
 
 export enum ORDER_BY {
@@ -78,4 +78,22 @@ export function Connection<GraphQLObject> (Ref: Type<GraphQLObject> | ValueRef) 
   }
 
   return IConnection as Type<IPainatedType<GraphQLObject>>
+}
+
+@ArgsType()
+export class RelayPagingConfigArgs {
+  @Field(of => Int, { description: '最新的n个对象', nullable: true, defaultValue: 10 })
+    first?: number
+
+  @Field(of => String, { description: '向前分页游标', nullable: true })
+    after?: string
+
+  @Field(of => Int, { description: '最早的n个对象', nullable: true })
+    last?: number
+
+  @Field(of => String, { description: '向后分页游标', nullable: true })
+    before?: string
+
+  @Field(of => ORDER_BY, { description: '排序方式', nullable: true, defaultValue: ORDER_BY.CREATED_AT_DESC })
+    orderBy?: ORDER_BY
 }

@@ -2,6 +2,18 @@ import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
 import { Connection, ORDER_BY } from '../../connections/models/connections.model'
 
+@ObjectType()
+export class IImage {
+  @Field()
+    id: string
+
+  @Field()
+    value: string
+
+  @Field(of => Int, { description: '图片顺序' })
+    index: number
+}
+
 export type Nullable<T> = T | null
 @ArgsType()
 export class CreatePostArgs {
@@ -33,8 +45,8 @@ export class Post {
   @Field()
     createdAt: string
 
-  @Field(type => [String], { nullable: true })
-    images: string[]
+  @Field(of => [String], { deprecationReason: 'use imagesV2 instead', nullable: true })
+    images?: string[] | null
 }
 
 export class PostWithCreatorId extends Post {
