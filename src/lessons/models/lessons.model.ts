@@ -1,4 +1,4 @@
-import { ArgsType, Field, InputType, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, InputType, Int, ObjectType, PartialType } from '@nestjs/graphql'
 
 import { Connection } from '../../connections/models/connections.model'
 
@@ -156,7 +156,13 @@ export class UpdateLessonArgs {
 }
 
 @ArgsType()
-export class AddLessonArgs {
+export class UpdateLessonArgsBase {
+  @Field(of => [LessonItemInput], { description: 'lessonItem，对于未列出的课程，此项可为 null', nullable: true })
+    lessonItems?: LessonItemInput[] | null
+}
+
+@ArgsType()
+export class AddLessonArgs extends PartialType(UpdateLessonArgsBase) {
   @Field({ description: '上课地点，对于未列出的课程，此项可为 null', nullable: true })
     destination: string
 
@@ -175,9 +181,6 @@ export class AddLessonArgs {
   @Field({ description: '课程号' })
     lessonId: string
 
-  @Field(of => [LessonItemInput], { description: 'lessonItem，对于未列出的课程，此项可为 null', nullable: true })
-    lessonItems?: LessonItemInput[] | null
-
   @Field(of => Int, { description: '开始学年' })
     startYear: number
 
@@ -189,6 +192,12 @@ export class AddLessonArgs {
 
   @Field(of => String, { nullable: true, description: '自定义课程时的颜色' })
     color: string
+}
+
+@ArgsType()
+export class AddLessonItemsArgs extends PartialType(UpdateLessonArgsBase) {
+  @Field()
+    lessonId: string
 }
 
 @ObjectType()

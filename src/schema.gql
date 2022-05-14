@@ -3510,6 +3510,9 @@ type Mutation {
 
   """添加一个课程到当前用户"""
   addLesson(
+    """lessonItem，对于未列出的课程，此项可为 null"""
+    lessonItems: [LessonItemInput!]
+
     """上课地点，对于未列出的课程，此项可为 null"""
     destination: String
 
@@ -3527,9 +3530,6 @@ type Mutation {
 
     """课程号"""
     lessonId: String!
-
-    """lessonItem，对于未列出的课程，此项可为 null"""
-    lessonItems: [LessonItemInput!]
 
     """开始学年"""
     startYear: Int!
@@ -3571,9 +3571,19 @@ type Mutation {
   """从当前用户中删除某节课"""
   deleteLessonItem(id: String!): Boolean!
 
+  """添加一个 LessonItem 到 Lesson"""
+  addLessonItems(
+    """lessonItem，对于未列出的课程，此项可为 null"""
+    lessonItems: [LessonItemInput!]
+    lessonId: String!
+  ): LessonItem!
+
   """管理员添加课程到某用户"""
   addLessonToUser(
     to: String!
+
+    """lessonItem，对于未列出的课程，此项可为 null"""
+    lessonItems: [LessonItemInput!]
 
     """上课地点，对于未列出的课程，此项可为 null"""
     destination: String
@@ -3592,9 +3602,6 @@ type Mutation {
 
     """课程号"""
     lessonId: String!
-
-    """lessonItem，对于未列出的课程，此项可为 null"""
-    lessonItems: [LessonItemInput!]
 
     """开始学年"""
     startYear: Int!

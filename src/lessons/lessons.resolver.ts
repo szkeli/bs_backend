@@ -8,7 +8,7 @@ import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { User } from '../user/models/user.model'
 import { LessonsService } from './lessons.service'
 import {
-  AddLessonArgs, Lesson, LessonItem, LessonMetaData, LessonNotificationSettings,
+  AddLessonArgs, AddLessonItemsArgs, Lesson, LessonItem, LessonMetaData, LessonNotificationSettings,
   LessonsConnection, TriggerLessonNotificationArgs,
   UpdateLessonArgs,
   UpdateLessonMetaDataArgs,
@@ -58,6 +58,12 @@ export class LessonsResolver {
   @Roles(Role.User)
   async deleteLessonItem (@CurrentUser() user: User, @Args('id') id: string) {
     return await this.lessonsService.deleteLessonItem(user.id, id)
+  }
+
+  @Mutation(of => LessonItem, { description: '添加一个 LessonItem 到 Lesson' })
+  @Roles(Role.User)
+  async addLessonItems (@CurrentUser() user: User, @Args() args: AddLessonItemsArgs) {
+    return await this.lessonsService.addLessonItems(user.id, args)
   }
 
   @Mutation(of => Lesson, { description: '管理员添加课程到某用户' })

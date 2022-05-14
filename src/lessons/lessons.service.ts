@@ -7,7 +7,7 @@ import { Deadline } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { getLessonNotificationTemplate, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { WxService } from '../wx/wx.service'
-import { AddLessonArgs, FilterLessonsArgs, Lesson, LessonItem, LessonMetaData, LessonNotificationSettings, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs, UpdateLessonNotificationSettingsArgs } from './models/lessons.model'
+import { AddLessonArgs, AddLessonItemsArgs, FilterLessonsArgs, Lesson, LessonItem, LessonMetaData, LessonNotificationSettings, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs, UpdateLessonNotificationSettingsArgs } from './models/lessons.model'
 
 @Injectable()
 export class LessonsService {
@@ -17,6 +17,52 @@ export class LessonsService {
     private readonly dbService: DbService,
     private readonly wxService: WxService
   ) {}
+
+  async addLessonItems (id: string, { lessonId, lessonItems }: AddLessonItemsArgs): Promise<Lesson> {
+    const query = `
+      query v($id: string, $lessonId: string) {
+        var(func: uid(u)) { 
+          lessons @filter(eq(lessonId, $lessonId) and type(Lesson)) {
+            v as uid
+          }
+        }
+        u(func: uid($id)) @filter(type(User)) { u as uid }
+        v(func: uid(v)) { 
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const items = lessonItems?.map((i, index) => (
+      {
+        uid: `_:lessonItem_${index}`,
+        'dgraph.type': 'LessonItem',
+        ...i
+      }
+    ))
+    const condition = '@if( eq(len(u), 1) and eq(len(v), 1) )'
+    const mutation = {
+      uid: 'uid(v)',
+      lessonItems: items
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+      v: Lesson[]
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id, $lessonId: lessonId }
+    })
+
+    if (res.json.v.length !== 1) {
+      throw new UserNotHasTheLesson(id, lessonId)
+    }
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+
+    return res.json.v[0]
+  }
 
   async lessonItems (id: string) {
     const query = `
