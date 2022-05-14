@@ -1992,7 +1992,7 @@ type Deadline {
   type: DEADLINE_TYPE!
 
   """deadline 对应的课程"""
-  lesson: Lesson!
+  lesson: Lesson
 }
 
 """deadline 的类型"""

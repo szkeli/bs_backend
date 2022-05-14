@@ -128,14 +128,11 @@ export class DeadlinesService {
     const query = `
     query v($id: string) {
       var(func: uid($id)) @filter(type(Deadline)) {
-        lesson as ~deadlines @filter(type(Lesson))
+        lesson as lesson @filter(type(Lesson))
       }
       lesson(func: uid(lesson)) {
         id: uid
-        expand(_all_) {
-          id: uid
-          expand(_all_)
-        }
+        expand(_all_)
       }
     }
   `

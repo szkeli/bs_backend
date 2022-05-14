@@ -21,7 +21,7 @@ export class DeadlinesResolver {
     return await this.deadlinesService.addDeadline(user.id, args)
   }
 
-  @ResolveField(of => Lesson, { description: 'deadline 对应的课程' })
+  @ResolveField(of => Lesson, { description: 'deadline 对应的课程', nullable: true })
   async lesson (@Parent() deadline: Deadline) {
     return await this.deadlinesService.lesson(deadline.id)
   }
