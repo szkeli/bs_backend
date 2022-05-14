@@ -29,7 +29,10 @@ export class LessonsResolver {
 
   @Mutation(of => LessonNotificationSettings, { description: '更新用户上课通知设置' })
   @Roles(Role.User)
-  async updateLessonNotificationSettings (@CurrentUser() user: User, @Args() args: UpdateLessonNotificationSettingsArgs) {
+  async updateLessonNotificationSettings (
+  @CurrentUser() user: User,
+    @Args() args: UpdateLessonNotificationSettingsArgs
+  ) {
     return await this.lessonsService.updateLessonNotificationSettings(user.id, args)
   }
 
@@ -51,11 +54,11 @@ export class LessonsResolver {
     return await this.lessonsService.deleteLesson(user.id, lessonId)
   }
 
-  // @Mutation(of => Lesson, { description: '用户更新一个课程' })
-  // @Roles(Role.User)
-  // async updateLesson (@CurrentUser() user: User, @Args() args: UpdateLessonArgs) {
-  //   return await this.lessonsService.updateLesson(user.id, args)
-  // }
+  @Mutation(of => Boolean, { description: '从当前用户中删除某节课' })
+  @Roles(Role.User)
+  async deleteLessonItem (@CurrentUser() user: User, @Args('id') id: string) {
+    return await this.lessonsService.deleteLessonItem(user.id, id)
+  }
 
   @Mutation(of => Lesson, { description: '管理员添加课程到某用户' })
   @Roles(Role.Admin)
@@ -82,6 +85,7 @@ export class LessonsResolver {
   }
 
   @Query(of => Lesson, { description: '以 id 获取指定课程' })
+  @Roles(Role.Admin, Role.User)
   async lesson (@Args('id') id: string) {
     return await this.lessonsService.lesson(id)
   }

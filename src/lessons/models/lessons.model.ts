@@ -55,6 +55,9 @@ export class UpdateLessonMetaDataArgs {
 
 @ObjectType()
 export class LessonItem {
+  @Field()
+    id: string
+
   @Field(of => Int, { description: '第几节课开始' })
     start: number
 

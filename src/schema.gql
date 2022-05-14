@@ -1861,6 +1861,8 @@ type LessonMetaData {
 }
 
 type LessonItem {
+  id: String!
+
   """第几节课开始"""
   start: Int!
 
@@ -3420,13 +3422,10 @@ type Mutation {
   """从某管理员移除一个权限"""
   removePrivilegeOnAdmin(privilege: IPRIVILEGE!, from: String!): Boolean!
 
-  """在指定用户上添加一个 deadline，如果指定的 curriculumId 存在，该 deadline 会关联到相应的课程"""
+  """用户添加一个 deadline"""
   addDeadline(
-    """该课程将被添加到的用户的 id"""
-    id: String!
-
     """deadline 对应的课程的 id"""
-    curriculumId: String
+    lessonId: String
 
     """唯一的 deadline id"""
     deadlineId: String!
@@ -3560,6 +3559,9 @@ type Mutation {
 
   """从当前用户中删除一个课程"""
   deleteLesson(lessonId: String!): Boolean!
+
+  """从当前用户中删除某节课"""
+  deleteLessonItem(id: String!): Boolean!
 
   """管理员添加课程到某用户"""
   addLessonToUser(

@@ -46,11 +46,8 @@ export class Deadline {
 
 @ArgsType()
 export class AddDealineArgs {
-  @Field({ description: '该课程将被添加到的用户的 id' })
-    id: string
-
   @Field({ description: 'deadline 对应的课程的 id', nullable: true })
-    curriculumId: string
+    lessonId?: string | null
 
   @Field({ description: '唯一的 deadline id' })
     deadlineId: string

@@ -18,6 +18,50 @@ export class LessonsService {
     private readonly wxService: WxService
   ) {}
 
+  async deleteLessonItem (actorId: string, id: string) {
+    const query = `
+      query v($actorId: string, $lessonItemId: string) {
+        v(func: uid($actorId)) @filter(type(User)) { v as uid }
+        var(func: uid($lessonItemId)) @filter(type(LessonItem)) {
+          item as uid
+          a: ~lessonItem @filter(type(Lesson)) {
+            b: ~lesson @filter(type(User) and uid(v)) {
+              u as uid
+            }
+          }
+        }
+        u(func: uid(u)) {
+          uid
+        }
+      }
+    `
+    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(item)',
+      'dgraph.type': 'LessonItem'
+    }
+
+    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
+      v: Array<{uid: string}>
+      u: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $actorId: actorId, $lessonItemId: id }
+    })
+
+    if (res.json.v.length !== 1) {
+      throw new UserNotFoundException(actorId)
+    }
+
+    if ((res.json.u.length ?? 0) !== 1) {
+      // TODO 提示当前用户不拥有该课程
+      throw new LessonNotFoundException(id)
+    }
+
+    return true
+  }
+
   async deleteLesson (id: string, lessonId: string) {
     const query = `
       query v($id: string, $lessonId: string) {
@@ -270,7 +314,10 @@ export class LessonsService {
     query v($id: string) {
       lesson (func: uid($id)) @filter(type(Lesson)) {
         id: uid
-        expand(_all_)
+        expand(_all_) {
+          id: uid
+          expand(_all_) 
+        }
       }
     }
   `
@@ -284,12 +331,12 @@ export class LessonsService {
   async lessons ({ first, after, orderBy }: RelayPagingConfigArgs) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.lessonsFRelayForward(first, after)
+      return await this.lessonsRelayForward(first, after)
     }
     throw new Error('Method not implemented.')
   }
 
-  async lessonsFRelayForward (first: number, after: string) {
+  async lessonsRelayForward (first: number, after: string) {
     const q1 = 'var(func: uid(lessons), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($after: string) {
@@ -299,6 +346,7 @@ export class LessonsService {
           objs(func: uid(${after ? 'q' : 'lessons'}), orderdesc: createdAt, first: ${first}) {
             id: uid
             expand(_all_) {
+              id: uid
               expand(_all_)
             }
           }
@@ -455,9 +503,25 @@ export class LessonsService {
     }
 
     const _id = res.uids?.get('lesson') ?? res.json.q[0]?.lessons[0]?.uid
+
     return {
       id: _id,
-      ...args,
+      description: args.description,
+      destination: args.destination,
+      name: args.name,
+      circle: args.circle,
+      lessonId: args.lessonId,
+      educatorName: args.educatorName,
+      startYear: args.startYear,
+      endYear: args.endYear,
+      semester: args.semester,
+      color: args.color,
+      lessonItems: lessonItems.map((item, index) => {
+        return {
+          ...item,
+          id: res.uids.get(`_:lessonItem_${index}`)
+        }
+      }),
       createdAt: now()
     }
   }
