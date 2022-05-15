@@ -70,7 +70,7 @@ export class CommentService {
             uid: commentCreator as uid
           }
           # 被评论的评论的评论对象（限制为 Comment 以致不能在首级评论使用评论用户功能）
-          to @filter(type(Comment)) {
+          ~comments @filter(type(Comment)) {
             uid: commentTo as uid
           }
           # 匿名信息
