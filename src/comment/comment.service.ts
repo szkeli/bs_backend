@@ -4,7 +4,7 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
-import { CommentNotFoundException, PostNotFoundException, SystemAdminNotFoundException, UserNotFoundException } from '../app.exception'
+import { CannotCommentUser, CommentNotFoundException, PostNotFoundException, SystemAdminNotFoundException, UserNotFoundException } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { ORDER_BY } from '../connections/models/connections.model'
@@ -78,6 +78,7 @@ export class CommentService {
             id: anonymous as uid
           }
         }
+        t(func: uid(commentTo)) { uid }
         # 评论者是否评论的创建者
         y(func: uid(u)) @filter(uid_in(creator, $id)) {
           y as uid
@@ -213,6 +214,7 @@ export class CommentService {
         creator: {uid: string}
         anonymous: {id: string}
       }>
+      t: Array<{uid: string}>
       // 评论者是否评论的创建者
       y: Array<{uid: string}>
     }>({
@@ -252,6 +254,9 @@ export class CommentService {
     }
     if (res.json.u.length !== 1) {
       throw new CommentNotFoundException(to)
+    }
+    if (res.json.t.length !== 1) {
+      throw new CannotCommentUser()
     }
 
     return {

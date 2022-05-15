@@ -168,3 +168,8 @@ export class LessonMetaDataLengthException extends HttpException {
     super(`LessonMetaData 长度: ${len} 不为1`, HttpStatus.FORBIDDEN)
   }
 }
+export class CannotCommentUser extends HttpException {
+  constructor () {
+    super('不能在第一级评论回复一个 User', HttpStatus.FORBIDDEN)
+  }
+}
