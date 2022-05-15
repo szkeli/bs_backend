@@ -60,30 +60,15 @@ export class WxService {
   }
 
   async getAccessToken () {
-    const appId = process.env.WX_OPEN_APP_ID
-    const appSecret = process.env.WX_OPEN_SECRET
-    const grantType = 'client_credential'
-
     const res = await axios({
       method: 'GET',
-      // https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=APPID&secret=APPSECRET
-      url: 'https://api.weixin.qq.com/cgi-bin/token',
-      params: {
-        grant_type: grantType,
-        appid: appId,
-        secret: appSecret
-      }
-    }).then(r => r.data as unknown as {
-      access_token: string | null
-      expires_in: number | null
-      errcode: -1 | 0 | 40001 | 40002 | 40003 | null
-      errmsg: string | null
-    })
+      url: 'https://api.szlikeyou.com/allocator'
+    }).then(r => r.data) as string
 
-    if (!res.access_token) {
-      throw new ForbiddenException(res.errmsg)
+    if (!res) {
+      throw new ForbiddenException('获取 access_token 失败')
     }
-    return res.access_token
+    return res
   }
 
   async sendUniformMessage (config: SendUniformMessageArgs) {

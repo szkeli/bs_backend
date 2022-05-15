@@ -532,7 +532,6 @@ export class LessonsService {
               lessons @filter(type(Lesson) and eq(lessonId, $lessonId)) {
                   q as uid
               }
-              status as lessonNotificationStatus @filter(type(LessonNotificationState))
           }
           q(func: uid(q)) {
             uid
@@ -580,25 +579,13 @@ export class LessonsService {
       }
     }
 
-    const cond = '@if( eq(len(status), 0) )'
-    const condMutation = {
-      uid: 'uid(v)',
-      lessonNotificationStatus: {
-        uid: '_:status',
-        'dgraph.type': 'LessonNotificationStatus',
-        state: LESSON_NOTIFY_STATE.FAILED,
-        lastNotifiedAt: now()
-      }
-    }
-
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
       q: Array<{lessons: Array<{uid: string}>}>
     }>({
       query,
       mutations: [
-        { mutation: createMutation, condition: create },
-        { mutation: condMutation, condition: cond }
+        { mutation: createMutation, condition: create }
       ],
       vars: { $id: id, $lessonId: args.lessonId }
     })
@@ -630,17 +617,6 @@ export class LessonsService {
   }
 
   async triggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek }: TriggerLessonNotificationArgs) {
-    // 主白板的 信息
-    //   openId: 'opjHf5ZWcbocQ17P9rJNmgiGd5aw',
-    // unionId: 'ocvA-5z2kHo97plsEaHZA2P7eb3k',
-    // sessionKey: 'J1hSVevnc+1GAiQ8Cyr7XQ==',
-    // 白板助手的信息
-    // openId: 'o5BZI5dwQz_Ki5wLFrmy8WY8EQlQ',
-    // unionId: 'ocvA-5z2kHo97plsEaHZA2P7eb3k',
-    // sessionKey: 'l6IIMu3zMZooJO40yr4b3g==',
-    // errcode: undefined,
-    // errmsg: undefined
-    // o5BZI5dwQz_Ki5wLFrmy8WY8EQlQ
     // 通过 to 查询相应用户的 openId
     const res = await this.filterLessons(to, {
       week,
@@ -653,19 +629,15 @@ export class LessonsService {
     if (res.user.length === 0) {
       throw new UserNotFoundException(to)
     }
-
     if (res.items.length === 0) {
       throw new UserNotHasLessonsTodayExcepton(to)
     }
-
     if (!res.user[0]?.openId || res.user[0]?.openId === '') {
       throw new BadOpenIdException(to)
     }
 
-    const template = getLessonNotificationTemplate('o5BZI5dwQz_Ki5wLFrmy8WY8EQlQ', res.items)
-    const a = await this.wxService.sendUniformMessage(template)
-    console.error(a)
-    return a
+    const template = getLessonNotificationTemplate(res.user[0]?.openId, res.items)
+    return await this.wxService.sendUniformMessage(template)
   }
 
   async mockTriggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek }: TriggerLessonNotificationArgs) {

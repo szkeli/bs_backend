@@ -313,7 +313,7 @@ export const getLessonNotificationTemplate = (openId: string, items: LessonNotif
             .map(i => ({ start: i.start, end: i.end, i }))
             .sort((a, b) => a.start - b.start)
             .map(({ start, end, i }) => i.lesson[0]?.name ?? 'N/A')
-            .join(';') ?? 'N/A'
+            .join('\n') ?? 'N/A'
         },
         // 课程名称和时间
         // 【1，2节】8:30-9：55 线性代数

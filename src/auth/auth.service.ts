@@ -9,6 +9,7 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { Delete } from '../deletes/models/deletes.model'
+import { LESSON_NOTIFY_STATE } from '../lessons/models/lessons.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Role } from '../roles/models/roles.model'
 import { atob, btoa, code2Session, getAuthenticationInfo, ids2String, now, relayfyArrayForward } from '../tool'
@@ -726,6 +727,7 @@ export class AuthService {
           id: v as uid
           expand(_all_)
           roles: dgraph.type
+          status as lessonNotificationStatus @filter(type(LessonNotificationState))
         }
       }
     `
@@ -734,13 +736,27 @@ export class AuthService {
       uid: 'uid(v)',
       lastLoginedAt: _now
     }
+
+    const cond = '@if( eq(len(status), 0) )'
+    const condMutation = {
+      uid: 'uid(v)',
+      lessonNotificationStatus: {
+        uid: '_:status',
+        'dgraph.type': 'LessonNotificationStatus',
+        state: LESSON_NOTIFY_STATE.FAILED,
+        lastNotifiedAt: now()
+      }
+    }
     if (grantType === CODE2SESSION_GRANT_TYPE.CURRICULUM) {
       Object.assign(mutation, { openId })
     }
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       user: UserWithRoles[]
     }>({
-      mutations: [{ mutation, condition }],
+      mutations: [
+        { mutation, condition },
+        { mutation: condMutation, condition: cond }
+      ],
       vars: {
         $unionId: unionId
       },
