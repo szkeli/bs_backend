@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 
-import { AuthenticationInfo, CheckUserResult, LoginResult, User } from 'src/user/models/user.model'
+import { AuthenticationInfo, CheckUserResult, CODE2SESSION_GRANT_TYPE, LoginResult, User } from 'src/user/models/user.model'
 
 import { AdminService } from '../admin/admin.service'
 import { AdminNotFoundException, RolesNotAllExistException, SystemAdminNotFoundException, UnionIdBeNullException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
@@ -715,7 +715,7 @@ export class AuthService {
   }
 
   async checkUserByCode ({ code, grantType }: LoginByCodeArgs) {
-    const { unionId } = await code2Session(code, grantType)
+    const { openId, unionId } = await code2Session(code, grantType)
     if (!unionId || unionId === '') {
       throw new UnionIdBeNullException()
     }
@@ -733,6 +733,9 @@ export class AuthService {
     const mutation = {
       uid: 'uid(v)',
       lastLoginedAt: _now
+    }
+    if (grantType === CODE2SESSION_GRANT_TYPE.CURRICULUM) {
+      Object.assign(mutation, { openId })
     }
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       user: UserWithRoles[]
