@@ -3,7 +3,8 @@ import { ConfigModule } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import { GraphQLModule } from '@nestjs/graphql'
 import { ScheduleModule } from '@nestjs/schedule'
-import { Context } from 'apollo-server-core'
+import { Context } from 'graphql-ws'
+import { Extra } from 'graphql-ws/lib/use/ws'
 import { join } from 'path'
 
 import { AdminModule } from './admin/admin.module'
@@ -69,14 +70,24 @@ import { WxModule } from './wx/wx.module'
           },
           keepAlive: 5000
         },
-        'graphql-ws': {
-          onConnect: (context: Context<any>) => {
-            const { extra } = context
-            extra.user = { user: {} }
+        'graphql-ws': true
+      },
+      context: ctx => {
+        // subscriptions-transport-ws 不走这个函数，因为 Apollo Server 3 的 bug
+        if (ctx.request) {
+          // http
+          // ps: 或者传 undefined 也行， @nestjs/graphql 内部会做 context = { req: req ?? request }
+          return { req: ctx.request }
+        } else if (ctx.extra) {
+          // graphql-ws
+          const { connectionParams, extra } = ctx as Context<Record<string, any>, Extra>
+          extra.request.headers = {
+            ...extra.request.headers,
+            ...connectionParams.headers ?? {}
           }
+          return { req: extra.request }
         }
       },
-      context: ({ req }) => ({ req }),
       debug: true,
       playground: true,
       sortSchema: false,
