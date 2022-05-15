@@ -60,7 +60,7 @@ export class LessonsResolver {
     return await this.lessonsService.deleteLessonItem(user.id, id)
   }
 
-  @Mutation(of => LessonItem, { description: '添加一个 LessonItem 到 Lesson' })
+  @Mutation(of => Lesson, { description: '添加一个 LessonItem 到 Lesson' })
   @Roles(Role.User)
   async addLessonItems (@CurrentUser() user: User, @Args() args: AddLessonItemsArgs) {
     return await this.lessonsService.addLessonItems(user.id, args)
@@ -111,5 +111,11 @@ export class LessonsResolver {
   // TODO 统一测试方法
   async triggerLessonNotification (@Args() args: TriggerLessonNotificationArgs) {
     return (await this.lessonsService.triggerLessonNotification(args)).errmsg
+  }
+
+  @Mutation(of => String, { description: '测试方法' })
+  @Roles(Role.User, Role.Admin)
+  async setLessonNotificationStatus () {
+    return await this.lessonsService.setLessonNotificationStatus()
   }
 }

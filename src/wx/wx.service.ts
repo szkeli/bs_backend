@@ -60,8 +60,8 @@ export class WxService {
   }
 
   async getAccessToken () {
-    const appId = process.env.APP_ID
-    const appSecret = process.env.APP_SECRET
+    const appId = process.env.WX_OPEN_APP_ID
+    const appSecret = process.env.WX_OPEN_SECRET
     const grantType = 'client_credential'
 
     const res = await axios({

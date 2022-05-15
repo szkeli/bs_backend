@@ -3576,7 +3576,7 @@ type Mutation {
     """lessonItem，对于未列出的课程，此项可为 null"""
     lessonItems: [LessonItemInput!]
     lessonId: String!
-  ): LessonItem!
+  ): Lesson!
 
   """管理员添加课程到某用户"""
   addLessonToUser(
@@ -3654,6 +3654,11 @@ type Mutation {
     """当前周数"""
     week: Int!
   ): String!
+
+  """测试方法"""
+  setLessonNotificationStatus: String!
+  tasksTest: String!
+  tasksTestTr: String!
 }
 
 """登录类型"""

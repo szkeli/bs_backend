@@ -48,7 +48,7 @@ export class TasksService {
   }
 
   async testTr () {
-    await this.triggerExery10Seconds(TaskType.GF)
+    await this.triggerEveryDayAt10PM()
 
     return 'success'
   }
@@ -68,7 +68,7 @@ export class TasksService {
   async triggerEveryDayAt10PM () {
     const job = new CronJob(
       CronExpression.EVERY_10_SECONDS,
-      async () => await this.triggerExery10Seconds(TaskType.GM)
+      async () => await this.triggerExery10Seconds(TaskType.GF)
     )
 
     this.schedulerRegistry
@@ -81,14 +81,17 @@ export class TasksService {
   async triggerExery10Seconds (taskType: TaskType) {
     const res = await this.getAndPendding(taskType)
 
-    console.error(res.json.valiedUser)
+    console.error(res)
 
     if (res.json.valiedUser.length === 0) {
+      this.logger.debug('schdulerStopping...')
       this.schedulerRegistry
         .getCronJob(LESSON_NOTIFY_JOB_NAME)
         .stop()
     }
-    const res2 = await this.mockSendNotification(res)
+
+    // const res2 = await this.mockSendNotification(res)
+    const res2 = await this.sendNotification(res)
     console.error(res2)
     const res3 = await this.tagThem(res, res2 as any)
     console.error(res3)
@@ -155,9 +158,13 @@ export class TasksService {
   async getAndPendding (taskType: TaskType) {
     // 一次性通知的用户个数
     const PATCH_USER_COUNT_MAX = 1 // 3
-    const LAST_NOTIFY_FAILED_S = 1 // 18 * 60 * 60
-    const LAST_NOTIFY_SUCCEEDED_S = 1 // 18 * 60 * 60
+    // 距离上一次失败通知多久的用户为有效用户
+    const LAST_NOTIFY_FAILED_S = 30 * 60 // 18 * 60 * 60
+    // 距离上一次成功通知多久的用户为有效用户
+    const LAST_NOTIFY_SUCCEEDED_S = 30 * 60 // 18 * 60 * 60
+    // 处于 PENDDING 有效期内不会重新发送通知
     const PENDDING_VAILED_TIME_S = 5 * 60
+    // 处于 FAILED 有效期内会重新发送通知
     const FAILED_VAILED_TIME_S = 10 * 60
 
     const metadataTemplate = taskType === TaskType.GM
@@ -175,11 +182,11 @@ export class TasksService {
         startYear as startYear 
         endYear as endYear
         semester as semester
-        oldWeek as week
-        oldDayInWeek as dayInWeek
+        oldWeek: oldWeek as week
+        oldDayInWeek: oldDayInWeek as dayInWeek
 
-        week as math(cond(oldDayInWeek == 7, oldWeek + 1, oldWeek))
-        dayInWeek as math(cond(oldDayInWeek == 7, 1, oldDayInWeek))
+        week: week as math(cond(oldDayInWeek == 7, oldWeek + 1, oldWeek))
+        dayInWeek: dayInWeek as math(cond(oldDayInWeek == 7, 1, oldDayInWeek))
       }
       `
     const query = `
@@ -283,12 +290,12 @@ export class TasksService {
         
         valiedUser(func: uid(users10), orderdesc: createdAt, first: ${PATCH_USER_COUNT_MAX}) {
           payload as id: uid
-          lstatus as lessonNotificationStatus @filter(type(LessonNotificationStatus))
+          lstatus as lessonNotificationStatus
         }
       }
     `
     // pendding 待通知的用户
-    const condition = '@if( not eq(len(payload), 0) )'
+    const condition = '@if( not eq(len(payload), 0) and not eq(len(lstatus), 0) )'
     const mutation = {
       uid: 'uid(lstatus)',
       'dgraph.type': 'LessonNotificationStatus',
@@ -310,8 +317,6 @@ export class TasksService {
   async sendNotification (args: NotificationTaskArgs) {
     const { week, dayInWeek, startYear, endYear, semester } = args.json.metadata[0]
 
-    console.error(args.json.metadata[0])
-
     // eslint-disable-next-line @typescript-eslint/promise-function-async
     return await Promise.allSettled(args.json.valiedUser.map(({ id }) => {
       return this.lessonsService.triggerLessonNotification({
@@ -325,7 +330,7 @@ export class TasksService {
 
     console.error(args.json.metadata[0])
 
-    const t = 60 * 2 * 1000
+    const t = 2 * 1000
 
     this.logger.debug(`mockSendNotification: sleepping ${t}ms...`)
 
@@ -344,6 +349,7 @@ export class TasksService {
     timeZone: 'Asia/Shanghai'
   })
   async triggerEveryDayAtMinight () {
+    await this.lessonsService.setLessonNotificationStatus()
     const query = `
       query {
         metadata(func: type(LessonMetaData)) {

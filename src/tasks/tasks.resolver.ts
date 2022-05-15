@@ -8,16 +8,16 @@ import { TasksService } from './tasks.service'
 export class TasksResolver {
   constructor (private readonly tasksService: TasksService) {}
 
-  // @Mutation(of => String)
-  // @NoAuth()
-  // async tasksTest () {
-  //   await this.tasksService.test()
-  //   return ''
-  // }
+  @Mutation(of => String)
+  @NoAuth()
+  async tasksTest () {
+    await this.tasksService.test()
+    return ''
+  }
 
-  // @Mutation(of => String)
-  // @NoAuth()
-  // async tasksTestTr () {
-  //   return await this.tasksService.testTr()
-  // }
+  @Mutation(of => String)
+  @NoAuth()
+  async tasksTestTr () {
+    return await this.tasksService.testTr()
+  }
 }

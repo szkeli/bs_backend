@@ -294,6 +294,7 @@ export const getLessonNotificationTemplate = (openId: string, items: LessonNotif
   {
     touser: openId,
     mp_template_msg: {
+      // 服务号 appId
       appid: 'wxfcf7b19fdd5d9770',
       template_id: '49nv12UdpuLNktBfXNrH61-ci3x71_FX8hhAew8fQoQ',
       url: 'http://weixin.qq.com/download',

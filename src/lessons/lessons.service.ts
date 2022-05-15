@@ -7,7 +7,7 @@ import { Deadline } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { getLessonNotificationTemplate, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { WxService } from '../wx/wx.service'
-import { AddLessonArgs, AddLessonItemsArgs, FilterLessonsArgs, Lesson, LessonItem, LessonMetaData, LessonNotificationSettings, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs, UpdateLessonNotificationSettingsArgs } from './models/lessons.model'
+import { AddLessonArgs, AddLessonItemsArgs, FilterLessonsArgs, Lesson, LESSON_NOTIFY_STATE, LessonItem, LessonMetaData, LessonNotificationSettings, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs, UpdateLessonNotificationSettingsArgs } from './models/lessons.model'
 
 @Injectable()
 export class LessonsService {
@@ -17,6 +17,43 @@ export class LessonsService {
     private readonly dbService: DbService,
     private readonly wxService: WxService
   ) {}
+
+  async setLessonNotificationStatus () {
+    const query = `
+      query v() {
+        var(func: type(User)) @filter(not has(lessonNotificationStatus)) {
+          users as uid
+        }
+        users(func: uid(users)) {
+          id: uid
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{users: Array<{id: string}>}>({ query })
+
+    const mutation = res.users.map(({ id }, index) => {
+      return {
+        mutation: {
+          uid: id,
+          lessonNotificationStatus: {
+            uid: `_:status_${index}`,
+            'dgraph.type': 'LessonNotificationStatus',
+            state: LESSON_NOTIFY_STATE.FAILED,
+            lastNotifiedAt: now()
+          }
+        },
+        condition: '@if( not eq(len(users), 0) )'
+      }
+    })
+
+    await this.dbService.commitConditionalUperts({
+      query,
+      mutations: mutation,
+      vars: {}
+    })
+
+    return 'success'
+  }
 
   async addLessonItems (id: string, { lessonId, lessonItems }: AddLessonItemsArgs): Promise<Lesson> {
     const query = `
@@ -495,6 +532,7 @@ export class LessonsService {
               lessons @filter(type(Lesson) and eq(lessonId, $lessonId)) {
                   q as uid
               }
+              status as lessonNotificationStatus @filter(type(LessonNotificationState))
           }
           q(func: uid(q)) {
             uid
@@ -542,12 +580,26 @@ export class LessonsService {
       }
     }
 
+    const cond = '@if( eq(len(status), 0) )'
+    const condMutation = {
+      uid: 'uid(v)',
+      lessonNotificationStatus: {
+        uid: '_:status',
+        'dgraph.type': 'LessonNotificationStatus',
+        state: LESSON_NOTIFY_STATE.FAILED,
+        lastNotifiedAt: now()
+      }
+    }
+
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
       q: Array<{lessons: Array<{uid: string}>}>
     }>({
       query,
-      mutations: [{ mutation: createMutation, condition: create }],
+      mutations: [
+        { mutation: createMutation, condition: create },
+        { mutation: condMutation, condition: cond }
+      ],
       vars: { $id: id, $lessonId: args.lessonId }
     })
 
@@ -578,6 +630,17 @@ export class LessonsService {
   }
 
   async triggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek }: TriggerLessonNotificationArgs) {
+    // 主白板的 信息
+    //   openId: 'opjHf5ZWcbocQ17P9rJNmgiGd5aw',
+    // unionId: 'ocvA-5z2kHo97plsEaHZA2P7eb3k',
+    // sessionKey: 'J1hSVevnc+1GAiQ8Cyr7XQ==',
+    // 白板助手的信息
+    // openId: 'o5BZI5dwQz_Ki5wLFrmy8WY8EQlQ',
+    // unionId: 'ocvA-5z2kHo97plsEaHZA2P7eb3k',
+    // sessionKey: 'l6IIMu3zMZooJO40yr4b3g==',
+    // errcode: undefined,
+    // errmsg: undefined
+    // o5BZI5dwQz_Ki5wLFrmy8WY8EQlQ
     // 通过 to 查询相应用户的 openId
     const res = await this.filterLessons(to, {
       week,
@@ -599,7 +662,7 @@ export class LessonsService {
       throw new BadOpenIdException(to)
     }
 
-    const template = getLessonNotificationTemplate(res.user[0]?.openId, res.items)
+    const template = getLessonNotificationTemplate('o5BZI5dwQz_Ki5wLFrmy8WY8EQlQ', res.items)
     return await this.wxService.sendUniformMessage(template)
   }
 
