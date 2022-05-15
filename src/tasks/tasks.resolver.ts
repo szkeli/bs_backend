@@ -15,9 +15,9 @@ export class TasksResolver {
   //   return ''
   // }
 
-  // @Mutation(of => String)
-  // @NoAuth()
-  // async tasksTestTr () {
-  //   return await this.tasksService.testTr()
-  // }
+  @Mutation(of => String, { description: '手动触发一个课程通知任务' })
+  @NoAuth()
+  async triggerTask () {
+    return await this.tasksService.testTr()
+  }
 }

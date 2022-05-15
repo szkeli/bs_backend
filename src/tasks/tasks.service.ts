@@ -62,9 +62,9 @@ export class TasksService {
   }
 
   // 每天晚上10点的任务
-  // @Cron(CronExpression.EVERY_DAY_AT_10PM, {
-  //   timeZone: 'Asia/Shanghai'
-  // })
+  @Cron(CronExpression.EVERY_DAY_AT_10PM, {
+    timeZone: 'Asia/Shanghai'
+  })
   async triggerEveryDayAt10PM () {
     const cron = this.schedulerRegistry.getCronJobs()
     for (const [i, j] of cron) {
@@ -89,8 +89,9 @@ export class TasksService {
   async triggerExery10Seconds (taskType: TaskType) {
     const res = await this.getAndPendding(taskType)
 
+    this.logger.debug(res.json.valiedUser.toString())
     if (res.json.valiedUser.length === 0) {
-      this.logger.debug('schdulerStopping...')
+      this.logger.debug('schdulerStopped')
       this.schedulerRegistry
         .getCronJob(LESSON_NOTIFY_JOB_NAME)
         .stop()

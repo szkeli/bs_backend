@@ -3655,10 +3655,8 @@ type Mutation {
     week: Int!
   ): String!
 
-  """测试方法"""
-  setLessonNotificationStatus: String!
-  tasksTest: String!
-  tasksTestTr: String!
+  """手动触发一个课程通知任务"""
+  triggerTask: String!
 }
 
 """登录类型"""
