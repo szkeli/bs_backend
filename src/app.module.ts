@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config'
 import { APP_GUARD } from '@nestjs/core'
 import { GraphQLModule } from '@nestjs/graphql'
 import { ScheduleModule } from '@nestjs/schedule'
+import { Context } from 'apollo-server-core'
 import { join } from 'path'
 
 import { AdminModule } from './admin/admin.module'
@@ -67,6 +68,12 @@ import { WxModule } from './wx/wx.module'
             return { req: webSocket.upgradeReq }
           },
           keepAlive: 5000
+        },
+        'graphql-ws': {
+          onConnect: (context: Context<any>) => {
+            const { extra } = context
+            extra.user = { user: {} }
+          }
         }
       },
       context: ({ req }) => ({ req }),
