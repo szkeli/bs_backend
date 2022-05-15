@@ -421,27 +421,20 @@ export class LessonsService {
     const query = `
       query v($id: string, $lessonId: string) {
         v(func: uid($id)) @filter(type(User)) { v as uid }
-        # 课程是否存在
-        u(func: eq(lessonId, $lessonId)) @filter(type(Lesson)) { u as uid }
         q(func: uid(v)) {
           id: uid
           lessons @filter(eq(lessonId, $lessonId)) {
             q as uid
-            lessonItems @filter(type(LessonItem)) {
-              lessonItems as uid
-            }
           }
         }
-        lessonItems(func: uid(lessonItems)) {
-          id: uid
-        }
+        l(func: uid(q)) { uid }
         target(func: uid(q)) {
           id: uid
           expand(_all_)
         }
       }
     `
-    const updateCond = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) )'
+    const updateCond = '@if( eq(len(v), 1) and not eq(len(q), 0) )'
     const updateMutation = {
       uid: 'uid(q)',
       'dgraph.type': 'Lesson'
@@ -450,24 +443,33 @@ export class LessonsService {
     Object.assign(updateMutation, args)
 
     delete (updateMutation as any).lessonId
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+
+    const mus = [
+      {
+        del: {
+          uid: 'uid(q)',
+          circle: null
+        },
+        set: updateMutation,
+        cond: updateCond
+      }
+    ]
+
+    const res = await this.dbService.commitMutation<Map<string, string>, {
       v: Array<{uid: string}>
-      u: Array<{uid: string}>
-      q: Array<{uid: string, lessons: Lesson[]}>
+      q: Array<{uid: string}>
+      l: Array<{uid: string}>
       target: Lesson[]
     }>({
       query,
-      mutations: [{ condition: updateCond, mutation: updateMutation }],
-      vars: { $id: id, $lessonId: args.lessonId }
+      vars: { $id: id, $lessonId: args.lessonId },
+      mutations: mus
     })
 
     if (res.json.v.length !== 1) {
       throw new UserNotFoundException(id)
     }
-    if (res.json.u.length !== 1) {
-      throw new LessonNotFoundException(args.lessonId)
-    }
-    if (res.json.q.length !== 1) {
+    if (res.json.l.length === 0) {
       throw new UserNotHasTheLesson(id, args.lessonId)
     }
 

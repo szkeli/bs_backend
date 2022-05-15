@@ -1,4 +1,5 @@
 import { Field, Float, Int, ObjectType } from '@nestjs/graphql'
+import { Mutation } from 'dgraph-js'
 
 export type UserId = string
 export type PostId = string
@@ -32,7 +33,19 @@ export interface CommitConditionalUpertsProps {
 }
 
 export interface CommitMutationProps {
-  mutations: Mutations[]
+  mutations: CommitMutationsType[]
+  query: string
+  vars: Vars
+}
+
+export interface CommitMutationsType {
+  del: object
+  set: object
+  cond: string | null
+}
+
+export interface CommitProps {
+  mutations: Mutation[]
   query: string
   vars: Vars
 }

@@ -51,14 +51,12 @@ export class DbService {
       if (mutations.length === 0) {
         throw new ForbiddenException('变更不能为空')
       }
-      const mus = mutations.map(m => {
+
+      const mus = mutations.map(({ del, set, cond }) => {
         const mu = new Mutation()
-        if (m.delete) {
-          mu.setDeleteJson(m.mutation)
-        } else {
-          mu.setSetJson(m.mutation)
-        }
-        mu.setCond(m.condition)
+        cond && mu.setCond(cond)
+        set && mu.setSetJson(set)
+        del && mu.setDeleteJson(del)
         return mu
       })
 
