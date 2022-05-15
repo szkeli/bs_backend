@@ -89,7 +89,8 @@ export class TasksService {
   async triggerExery10Seconds (taskType: TaskType) {
     const res = await this.getAndPendding(taskType)
 
-    this.logger.debug(res.json.valiedUser.toString())
+    // console.error(res.json)
+    this.logger.debug(`totalCount: ${res.json.totalCount[0]?.count ?? 0}, ` + 'valiedUser: ' + res.json.valiedUser.map(i => i.id).toString())
     if (res.json.valiedUser.length === 0) {
       this.logger.debug('schdulerStopped')
       this.schedulerRegistry
@@ -98,6 +99,7 @@ export class TasksService {
     }
 
     const res2 = await this.sendNotification(res)
+    // const res2 = await this.mockSendNotification(res)
     await this.tagThem(res, res2 as any)
 
     this.logger.debug('called every 10 seconds...')
@@ -118,6 +120,8 @@ export class TasksService {
     const succeededIdsString = ids2String(succeededIds)
     const failedIdsString = ids2String(failedIds)
 
+    this.logger.debug('succeededIds: ' + succeededIdsString)
+    this.logger.debug('failedIds: ' + failedIdsString)
     const query = `
       query {
         succeeded(func: uid(${succeededIdsString})) @filter(type(User)) {
@@ -159,15 +163,15 @@ export class TasksService {
 
   async getAndPendding (taskType: TaskType) {
     // 一次性通知的用户个数
-    const PATCH_USER_COUNT_MAX = 10 // 3
+    const PATCH_USER_COUNT_MAX = 20 // 3
     // 距离上一次失败通知多久的用户为有效用户
-    const LAST_NOTIFY_FAILED_S = 0.5 * 60 // 18 * 60 * 60
+    const LAST_NOTIFY_FAILED_S = 20 * 60 // 18 * 60 * 60
     // 距离上一次成功通知多久的用户为有效用户
-    const LAST_NOTIFY_SUCCEEDED_S = 0.5 * 60 // 18 * 60 * 60
+    const LAST_NOTIFY_SUCCEEDED_S = 20 * 60 // 18 * 60 * 60
     // 处于 PENDDING 有效期内不会重新发送通知
     const PENDDING_VAILED_TIME_S = 5 * 60
     // 处于 FAILED 有效期内会重新发送通知
-    const FAILED_VAILED_TIME_S = 10 * 60
+    const FAILED_VAILED_TIME_S = 5 * 60
 
     const metadataTemplate = taskType === TaskType.GM
       ? `
@@ -227,7 +231,7 @@ export class TasksService {
           users4 as uid
         }
         # 5. 所有18小时前通知失败的用户(当前时间 - lastNotifiedAt < 18h)
-        var(func: uid(status)) @filter((eq(state, $failed)) and lt(val(secounds), ${LAST_NOTIFY_FAILED_S})) {
+        var(func: uid(status)) @filter((eq(state, $failed)) and gt(val(secounds), ${LAST_NOTIFY_FAILED_S})) {
           ~lessonNotificationStatus @filter(type(User)) {
             users5 as uid
           }
@@ -290,6 +294,9 @@ export class TasksService {
           uid
         }
         
+        totalCount(func: uid(users10)) {
+          count(uid)
+        }
         valiedUser(func: uid(users10), orderdesc: createdAt, first: ${PATCH_USER_COUNT_MAX}) {
           payload as id: uid
           lstatus as lessonNotificationStatus
@@ -332,7 +339,7 @@ export class TasksService {
 
     console.error(args.json.metadata[0])
 
-    const t = 2 * 1000
+    const t = 0 * 1000
 
     this.logger.debug(`mockSendNotification: sleepping ${t}ms...`)
 
@@ -429,6 +436,9 @@ interface NotificationTaskArgs {
     }>
     valiedUser: Array<{
       id: string
+    }>
+    totalCount: Array<{
+      count: number
     }>
   }
 }
