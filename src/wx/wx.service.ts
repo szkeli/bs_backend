@@ -66,7 +66,8 @@ export class WxService {
 
     const res = await axios({
       method: 'GET',
-      url: 'http://api.weixin.qq.com/cgi-bin/token',
+      // https://api.weixin.qq.com/cgi-bin/token?grant_type=client_credential&appid=APPID&secret=APPSECRET
+      url: 'https://api.weixin.qq.com/cgi-bin/token',
       params: {
         grant_type: grantType,
         appid: appId,

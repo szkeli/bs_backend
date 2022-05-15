@@ -663,7 +663,9 @@ export class LessonsService {
     }
 
     const template = getLessonNotificationTemplate('o5BZI5dwQz_Ki5wLFrmy8WY8EQlQ', res.items)
-    return await this.wxService.sendUniformMessage(template)
+    const a = await this.wxService.sendUniformMessage(template)
+    console.error(a)
+    return a
   }
 
   async mockTriggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek }: TriggerLessonNotificationArgs) {
