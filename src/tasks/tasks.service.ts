@@ -98,8 +98,8 @@ export class TasksService {
         .stop()
     }
 
-    const res2 = await this.sendNotification(res)
-    // const res2 = await this.mockSendNotification(res)
+    // const res2 = await this.sendNotification(res)
+    const res2 = await this.mockSendNotification(res)
     await this.tagThem(res, res2 as any)
 
     this.logger.debug('called every 10 seconds...')
