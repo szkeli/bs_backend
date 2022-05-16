@@ -192,7 +192,7 @@ export class TasksService {
         oldDayInWeek: oldDayInWeek as dayInWeek
 
         week: week as math(cond(oldDayInWeek == 7, oldWeek + 1, oldWeek))
-        dayInWeek: dayInWeek as math(cond(oldDayInWeek == 7, 1, oldDayInWeek))
+        dayInWeek: dayInWeek as math(cond(oldDayInWeek == 7, 1, oldDayInWeek + 1))
       }
       `
     const query = `
