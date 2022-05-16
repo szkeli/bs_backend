@@ -3,7 +3,7 @@ import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify
 import { getLogger } from 'xmcommon'
 
 import { AppModule } from './app.module'
-import { NestLogger } from './logs/nest.logger'
+import { NestLogger } from './log4js/nest.logger'
 
 const log = getLogger(__filename)
 log.info('app running...')
