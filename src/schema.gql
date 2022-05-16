@@ -3511,12 +3511,6 @@ type Mutation {
   """设置创建时间小于当前系统时间的所有通知为已读"""
   setReadAllNotifications: Boolean!
 
-  """测试函数"""
-  test(
-    """对应的小程序"""
-    grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
-  ): String!
-
   """添加一个角色到某用户"""
   addRoleOnUser(roleId: String!, to: String!): User!
 

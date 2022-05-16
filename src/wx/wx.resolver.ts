@@ -1,12 +1,11 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
+import { Args, Query, Resolver } from '@nestjs/graphql'
 
-import { CurrentUser, NoAuth, Role, Roles } from '../auth/decorator'
-import { CODE2SESSION_GRANT_TYPE, User } from '../user/models/user.model'
+import { CurrentUser, Role, Roles } from '../auth/decorator'
+import { User } from '../user/models/user.model'
 import {
   GetUnlimitedWXacodeArgs, GetWXMiniProgrameShortLinkArgs,
   GetWXSubscriptionInfoArgs, SendSubscribeMessageArgs,
   SendUniformMessageArgs,
-  WXBaseArgs,
   WxSubscriptionInfo
 } from './models/wx.model'
 import { WxService } from './wx.service'
@@ -41,13 +40,5 @@ export class WxResolver {
   @Roles(Role.User)
   async getWXSubscriptionInfo (@CurrentUser() user: User, @Args() args: GetWXSubscriptionInfoArgs) {
     return await this.wxService.getWXSubscriptionInfo(user.id, args)
-  }
-
-  @Mutation(of => String, { description: '测试函数' })
-  @NoAuth()
-  async test (@Args() args: WXBaseArgs) {
-    const { appId, secret } = this.wxService.findAppIdAndSecretByGrantType(CODE2SESSION_GRANT_TYPE.WXOPEN)
-    const res = await this.wxService.getAccessToken(appId, secret)
-    return res
   }
 }
