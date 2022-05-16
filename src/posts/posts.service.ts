@@ -12,7 +12,7 @@ import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
-import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, relayfyArrayForward, sha1 } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, imagesV2ToImages, relayfyArrayForward, sha1 } from '../tool'
 import { PagingConfigArgs, User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
@@ -36,21 +36,32 @@ export class PostsService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async imagesV2 (id: string) {
+  async imagesV2 (id: string): Promise<string[]> {
     const query = `
       query v($id: string) {
         var(func: uid($id)) @filter(type(Post)) {
-          images as imagesV2 @filter(type(Image))
+          post as uid
+          imagesV2 as imagesV2 @filter(type(Image))
         }
-        imagesV2(func: uid(images), orderasc: index)  {
+        imagesV2(func: uid(imagesV2), orderasc: index)  {
           id: uid
           expand(_all_)
         }
+        post(func: uid(post)) {
+          images
+        }
       }
     `
-    const res = await this.dbService.commitQuery<{imagesV2: [IImage]}>({ query, vars: { $id: id } })
+    const res = await this.dbService.commitQuery<{
+      imagesV2: [IImage]
+      post: Array<{images: string[]}>
+    }>({ query, vars: { $id: id } })
 
-    return res.imagesV2
+    if (res.post[0]?.images) {
+      return res.post[0]?.images
+    }
+
+    return imagesV2ToImages(res.imagesV2)
   }
 
   async hashtags (id: string, args: RelayPagingConfigArgs) {

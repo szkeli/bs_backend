@@ -1094,19 +1094,10 @@ type Anonymous {
   to: PostAndCommentUnion!
 }
 
-type IImage {
-  id: String!
-  value: String!
-
-  """图片顺序"""
-  index: Int!
-}
-
 type Post {
   id: String!
   content: String!
   createdAt: String!
-  images: [String!] @deprecated(reason: "use imagesV2 instead")
 
   """帖子的创建者，当帖子是匿名帖子时，返回null"""
   creator: User
@@ -1208,7 +1199,7 @@ type Post {
   ): HashtagsConnection!
 
   """帖子的图片"""
-  imagesV2: [IImage]!
+  images: [String]!
 }
 
 type PostsConnection {
@@ -1300,7 +1291,7 @@ type Comment {
   ): MentionsConnection!
 
   """评论的图片"""
-  images: [IImage]!
+  images: [String]!
 }
 
 union CommentToUnion = Post | Comment | User | Anonymous

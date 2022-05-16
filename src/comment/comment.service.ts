@@ -12,7 +12,7 @@ import { PUB_SUB_KEY } from '../constants'
 import { NlpService } from '../nlp/nlp.service'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
 import { IImage, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, imagesV2fy, now, relayfyArrayForward, sha1 } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, imagesV2fy, imagesV2ToImages, now, relayfyArrayForward, sha1 } from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
@@ -37,7 +37,7 @@ export class CommentService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async images (id: string) {
+  async images (id: string): Promise<string[]> {
     const query = `
       query v($id: string) {
         var(func: uid($id)) @filter(type(Comment)) {
@@ -49,9 +49,9 @@ export class CommentService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{imagesV2: [IImage]}>({ query, vars: { $id: id } })
+    const res = await this.dbService.commitQuery<{imagesV2: IImage[]}>({ query, vars: { $id: id } })
 
-    return res.imagesV2
+    return imagesV2ToImages(res.imagesV2)
   }
 
   async addCommentOnUser (id: string, { content, to, isAnonymous, images }: AddCommentArgs): Promise<CommentWithTo> {

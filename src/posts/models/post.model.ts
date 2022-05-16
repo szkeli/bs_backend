@@ -15,6 +15,7 @@ export class IImage {
 }
 
 export type Nullable<T> = T | null
+
 @ArgsType()
 export class CreatePostArgs {
   @Field({ description: '帖子内容' })
@@ -44,9 +45,6 @@ export class Post {
 
   @Field()
     createdAt: string
-
-  @Field(of => [String], { deprecationReason: 'use imagesV2 instead', nullable: true })
-    images?: string[] | null
 }
 
 export class PostWithCreatorId extends Post {

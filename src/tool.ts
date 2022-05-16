@@ -5,7 +5,7 @@ import { verify } from 'jsonwebtoken'
 
 import { Code2SessionErrorException } from './app.exception'
 import { Lesson, LessonItem } from './lessons/models/lessons.model'
-import { Nullable } from './posts/models/post.model'
+import { IImage, Nullable } from './posts/models/post.model'
 import { AuthenticationInfo, CODE2SESSION_GRANT_TYPE, UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
 
 export async function exec<T, U> (l: string, bindings: object, aliases?: object) {
@@ -353,4 +353,8 @@ export const imagesV2fy = (images: string[]) => (
       index
     }
   ))
+)
+
+export const imagesV2ToImages = (images: IImage[]) => (
+  images?.map(i => (i.value))
 )

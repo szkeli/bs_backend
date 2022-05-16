@@ -29,7 +29,6 @@ import { ReportsService } from '../reports/reports.service'
 import { VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
-  IImage,
   Nullable,
   Post,
   PostsConnection,
@@ -169,8 +168,8 @@ export class PostsResolver {
     return await this.postsService.hashtags(post.id, args)
   }
 
-  @ResolveField(of => [IImage], { description: '帖子的图片', nullable: 'items' })
-  async imagesV2 (@Parent() post: Post) {
+  @ResolveField(of => [String], { description: '帖子的图片', nullable: 'items' })
+  async images (@Parent() post: Post): Promise<string[]> {
     return await this.postsService.imagesV2(post.id)
   }
 }
