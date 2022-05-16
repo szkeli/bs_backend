@@ -1,4 +1,12 @@
-import { ArgsType, Field, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { ArgsType, Field, InputType, Int, ObjectType, PartialType, registerEnumType } from '@nestjs/graphql'
+
+import { CODE2SESSION_GRANT_TYPE } from '../../user/models/user.model'
+
+@ArgsType()
+export class WXBaseArgs {
+  @Field(of => CODE2SESSION_GRANT_TYPE, { description: '对应的小程序', defaultValue: CODE2SESSION_GRANT_TYPE.BLANK_SPACE })
+    grantType: CODE2SESSION_GRANT_TYPE
+}
 
 @InputType()
 export class GetUnlimitedWXacodeArgsLineColor {
@@ -13,7 +21,7 @@ export class GetUnlimitedWXacodeArgsLineColor {
 }
 
 @ArgsType()
-export class GetUnlimitedWXacodeArgs {
+export class GetUnlimitedWXacodeArgs extends PartialType(WXBaseArgs) {
   @Field(of => String, { description: '详情见 https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/qr-code/wxacode.getUnlimited.html' })
     scene: string
 
@@ -40,7 +48,7 @@ export class GetUnlimitedWXacodeArgs {
 }
 
 @ArgsType()
-export class GetWXMiniProgrameShortLinkArgs {
+export class GetWXMiniProgrameShortLinkArgs extends PartialType(WXBaseArgs) {
   @Field(of => String, { description: '通过 Short Link 进入的小程序页面路径，必须是已经发布的小程序存在的页面，可携带 query，最大1024个字符' })
     page_url: string
 
@@ -133,7 +141,7 @@ export class SendUniformMessageArgs {
 }
 
 @ArgsType()
-export class SendSubscribeMessageArgs {
+export class SendSubscribeMessageArgs extends PartialType(WXBaseArgs) {
   @Field(of => String, { description: '接收者（用户）的 openid' })
     touser: string
 
@@ -221,7 +229,7 @@ registerEnumType(WX_SUBSCRIBE_INFO_LANG, {
 })
 
 @ArgsType()
-export class GetWXSubscriptionInfoArgs {
+export class GetWXSubscriptionInfoArgs extends PartialType(WXBaseArgs) {
   @Field(of => WX_SUBSCRIBE_INFO_LANG, { description: '返回国家地区语言版本，zh_CN 简体，zh_TW 繁体，en 英语', nullable: true })
     lang: WX_SUBSCRIBE_INFO_LANG
 

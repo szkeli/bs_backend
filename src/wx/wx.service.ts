@@ -3,6 +3,7 @@ import axios from 'axios'
 
 import { CosService } from '../cos/cos.service'
 import { sha1 } from '../tool'
+import { CODE2SESSION_GRANT_TYPE } from '../user/models/user.model'
 import {
   GetUnlimitedWXacodeArgs,
   GetWXMiniProgrameShortLinkArgs,
@@ -20,8 +21,9 @@ export class WxService {
     private readonly cosService: CosService
   ) {}
 
-  async getWXSubscriptionInfo (id: string, { lang, openid }: GetWXSubscriptionInfoArgs) {
-    const accessToken = await this.getAccessToken()
+  async getWXSubscriptionInfo (id: string, { lang, openid, grantType }: GetWXSubscriptionInfoArgs) {
+    const { appId, secret } = this.findAppIdAndSecretByGrantType(grantType)
+    const accessToken = await this.getAccessToken(appId, secret)
 
     const res = await axios({
       method: 'GET',
@@ -36,8 +38,9 @@ export class WxService {
     throw new Error('Method not implemented.')
   }
 
-  async sendSubscribeMessage (config: SendSubscribeMessageArgs) {
-    const accessToken = await this.getAccessToken()
+  async sendSubscribeMessage ({ grantType, ...config }: SendSubscribeMessageArgs) {
+    const { appId, secret } = this.findAppIdAndSecretByGrantType(grantType)
+    const accessToken = await this.getAccessToken(appId, secret)
     // config.data = JSON.parse(config.data)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const data = {
@@ -59,10 +62,13 @@ export class WxService {
     })
   }
 
-  async getAccessToken () {
+  async getAccessToken (appId: string, secret: string) {
     const res = await axios({
-      method: 'GET',
-      url: 'https://api.szlikeyou.com/allocator'
+      method: 'POST',
+      url: 'https://api.szlikeyou.com/allocator',
+      data: {
+        appId, secret
+      }
     }).then(r => r.data) as string
 
     if (!res) {
@@ -72,7 +78,8 @@ export class WxService {
   }
 
   async sendUniformMessage (config: SendUniformMessageArgs) {
-    const accessToken = await this.getAccessToken()
+    const { appId, secret } = this.findAppIdAndSecretByGrantType(CODE2SESSION_GRANT_TYPE.CURRICULUM)
+    const accessToken = await this.getAccessToken(appId, secret)
     return await axios({
       method: 'POST',
       url: 'https://api.weixin.qq.com/cgi-bin/message/wxopen/template/uniform_send',
@@ -91,8 +98,26 @@ export class WxService {
     } as unknown as WxSendUniformMessageRet
   }
 
-  async getWXMiniProgrameShortLink (config: GetWXMiniProgrameShortLinkArgs) {
-    const accessToken = await this.getAccessToken()
+  findAppIdAndSecretByGrantType (grantType: CODE2SESSION_GRANT_TYPE) {
+    let appId: string
+    let secret: string
+    if (grantType === CODE2SESSION_GRANT_TYPE.BLANK_SPACE) {
+      appId = process.env.APP_ID
+      secret = process.env.APP_SECRET
+    } else if (grantType === CODE2SESSION_GRANT_TYPE.CURRICULUM) {
+      appId = process.env.APP_ID_2
+      secret = process.env.APP_SECRET_2
+    } else if (grantType === CODE2SESSION_GRANT_TYPE.WXOPEN) {
+      appId = process.env.WX_OPEN_APP_ID
+      secret = process.env.WX_OPEN_SECRET
+    }
+
+    return { appId, secret }
+  }
+
+  async getWXMiniProgrameShortLink ({ grantType, ...config }: GetWXMiniProgrameShortLinkArgs) {
+    const { appId, secret } = this.findAppIdAndSecretByGrantType(grantType)
+    const accessToken = await this.getAccessToken(appId, secret)
     return await axios({
       method: 'POST',
       url: 'https://api.weixin.qq.com/wxa/genwxashortlink',
@@ -108,8 +133,9 @@ export class WxService {
     })
   }
 
-  async getUnlimitedWXacodeBuffer (config: GetUnlimitedWXacodeArgs) {
-    const accessToken = await this.getAccessToken()
+  async getUnlimitedWXacodeBuffer ({ grantType, ...config }: GetUnlimitedWXacodeArgs) {
+    const { appId, secret } = this.findAppIdAndSecretByGrantType(grantType)
+    const accessToken = await this.getAccessToken(appId, secret)
 
     const res = await axios({
       method: 'POST',

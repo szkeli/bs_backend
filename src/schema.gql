@@ -2676,6 +2676,9 @@ type Query {
   """文本审查的测试接口，测试一段文本是否违规"""
   censorText(content: String!): CensorResponse!
   getUnlimitedWXacode(
+    """对应的小程序"""
+    grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
+
     """
     详情见 https://developers.weixin.qq.com/miniprogram/dev/api-backend/open-api/qr-code/wxacode.getUnlimited.html
     """
@@ -2711,6 +2714,9 @@ type Query {
     is_hyaline: Boolean = false
   ): String!
   getWXMiniProgrameShortLink(
+    """对应的小程序"""
+    grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
+
     """通过 Short Link 进入的小程序页面路径，必须是已经发布的小程序存在的页面，可携带 query，最大1024个字符"""
     page_url: String!
 
@@ -2733,6 +2739,9 @@ type Query {
 
   """向小程序下发订阅消息"""
   sendSubscibeMessage(
+    """对应的小程序"""
+    grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
+
     """接收者（用户）的 openid"""
     touser: String!
 
@@ -2756,6 +2765,9 @@ type Query {
   通过 token 获取指定用户的微信公众号关注信息 https://developers.weixin.qq.com/doc/offiaccount/User_Management/Get_users_basic_information_UnionID.html#UinonId
   """
   getWXSubscriptionInfo(
+    """对应的小程序"""
+    grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
+
     """返回国家地区语言版本，zh_CN 简体，zh_TW 繁体，en 英语"""
     lang: WX_SUBSCRIBE_INFO_LANG
     openid: String!
@@ -3109,6 +3121,18 @@ enum SEARCHTYPE {
   COMMENT
   POST
   SUBJECT
+}
+
+"""登录类型"""
+enum CODE2SESSION_GRANT_TYPE {
+  """通过白板小程序"""
+  BLANK_SPACE
+
+  """通过课表小程序"""
+  CURRICULUM
+
+  """微信公众号"""
+  WXOPEN
 }
 
 input GetUnlimitedWXacodeArgsLineColor {
@@ -3487,6 +3511,12 @@ type Mutation {
   """设置创建时间小于当前系统时间的所有通知为已读"""
   setReadAllNotifications: Boolean!
 
+  """测试函数"""
+  test(
+    """对应的小程序"""
+    grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
+  ): String!
+
   """添加一个角色到某用户"""
   addRoleOnUser(roleId: String!, to: String!): User!
 
@@ -3648,15 +3678,6 @@ type Mutation {
 
   """手动触发一个课程通知任务"""
   triggerTask: String!
-}
-
-"""登录类型"""
-enum CODE2SESSION_GRANT_TYPE {
-  """通过白板小程序"""
-  BLANK_SPACE
-
-  """通过课表小程序"""
-  CURRICULUM
 }
 
 input AuthenticationInfo {

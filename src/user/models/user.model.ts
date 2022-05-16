@@ -21,6 +21,7 @@ import { NOTIFICATION_ACTION, NOTIFICATION_TYPE } from '../../notifications/mode
 export enum CODE2SESSION_GRANT_TYPE {
   BLANK_SPACE = 'BLANK_SPACE',
   CURRICULUM = 'CURRICULUM',
+  WXOPEN = 'WXOPEN'
 }
 
 registerEnumType(CODE2SESSION_GRANT_TYPE, {
@@ -32,6 +33,9 @@ registerEnumType(CODE2SESSION_GRANT_TYPE, {
     },
     CURRICULUM: {
       description: '通过课表小程序'
+    },
+    WXOPEN: {
+      description: '微信公众号'
     }
   }
 })
