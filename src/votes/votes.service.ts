@@ -4,6 +4,7 @@ import { PubSub } from 'graphql-subscriptions'
 
 import { DbService } from 'src/db/db.service'
 
+import { CommentNotFoundException, UserAlreayAddUpvoteOnIt, UserNotFoundException } from '../app.exception'
 import { Comment } from '../comment/models/comment.model'
 import { PUB_SUB_KEY } from '../constants'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
@@ -114,6 +115,8 @@ export class VotesService {
     const now = new Date().toISOString()
     const query = `
       query v($voter: string, $to: string) {
+        # 评论的创建者是否点赞的发起者
+        var(func: uid(u)) @filter(uid_in(creator, $voter)) { y as uid }
         # 1. 用户存在
         v(func: uid($voter)) @filter(type(User)) { v as uid }
         # 2. 评论存在
@@ -122,27 +125,21 @@ export class VotesService {
           expand(_all_)
           dgraph.type
         }
-        # 3. 用户没有为评论点过赞
-        x(func: uid($voter)) @filter(type(User)) {
+        # 3. 用户是否已点赞评论
+        x(func: uid(v)) {
           votes @filter(type(Vote)) {
-            to @filter(uid($to) AND type(Comment)) {
+            to @filter(uid(u)) {
               x as uid
             }
           }
         }
         # 评论的创建者
-        comment(func: uid($to)) @filter(type(Comment)) {
+        comment(func: uid(u)) {
           creator @filter(type(User)) {
             commentCreator as uid
           }
         }
-        # 评论的创建者是否点赞的发起者
-        y(func: uid($to)) @filter(type(Comment) and uid_in(creator, $to)) {
-          creator @filter(type(User)) {
-            y as uid
-          }
-        }
-        voteCountOfComment(func: uid($to)) @filter(type(Comment)) { voteCount: count(votes) }
+        voteCountOfComment(func: uid(u)) { voteCount: count(votes) }
       }
     `
     const addUpvoteOnCommentCondition = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 0) )'
@@ -190,7 +187,6 @@ export class VotesService {
       v: Array<{uid: string}>
       u: Comment[]
       x: Array<{votes: any}>
-      y: Array<{uid: string}>
       comment: Array<{creator: {uid: string}}>
       voteCountOfComment: [{ voteCount: number }]
     }>({
@@ -216,14 +212,14 @@ export class VotesService {
     }
 
     if (res.json.x?.length !== 0) {
-      throw new ForbiddenException('不能重复点赞')
+      throw new UserAlreayAddUpvoteOnIt(voter, to)
     }
 
     if (res.json.v.length !== 1) {
-      throw new ForbiddenException(`用户 ${voter} 不存在`)
+      throw new UserNotFoundException(voter)
     }
     if (res.json.u.length !== 1) {
-      throw new ForbiddenException(`评论 ${to} 不存在`)
+      throw new CommentNotFoundException(to)
     }
 
     return res.json.u[0]

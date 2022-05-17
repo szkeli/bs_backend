@@ -173,3 +173,9 @@ export class CannotCommentUser extends HttpException {
     super('不能在第一级评论回复一个 User', HttpStatus.FORBIDDEN)
   }
 }
+
+export class UserAlreayAddUpvoteOnIt extends HttpException {
+  constructor (id: string, it: string) {
+    super(`用户 ${id} 已经点赞 ${it}`, HttpStatus.FORBIDDEN)
+  }
+}
