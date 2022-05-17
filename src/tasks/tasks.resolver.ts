@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { Mutation, Resolver } from '@nestjs/graphql'
 
-import { NoAuth } from '../auth/decorator'
+import { Role, Roles } from '../auth/decorator'
 import { TasksService } from './tasks.service'
 
 @Resolver()
@@ -16,7 +15,7 @@ export class TasksResolver {
   // }
 
   @Mutation(of => String, { description: '手动触发一个课程通知任务' })
-  @NoAuth()
+  @Roles(Role.Admin)
   async triggerTask () {
     return await this.tasksService.testTr()
   }

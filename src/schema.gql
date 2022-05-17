@@ -3668,6 +3668,7 @@ type Mutation {
 
     """当前周数"""
     week: Int!
+    taskType: TASK_TYPE!
   ): String!
 
   """手动触发一个课程通知任务"""
@@ -3724,6 +3725,14 @@ input LessonItemInput {
 
   """上课地点"""
   destination: String!
+}
+
+enum TASK_TYPE {
+  """早上8点的提醒"""
+  GM
+
+  """晚上10点的提醒"""
+  GF
 }
 
 type Subscription {

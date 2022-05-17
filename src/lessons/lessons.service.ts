@@ -616,7 +616,7 @@ export class LessonsService {
     }
   }
 
-  async triggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek }: TriggerLessonNotificationArgs) {
+  async triggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek, taskType }: TriggerLessonNotificationArgs) {
     // 通过 to 查询相应用户的 openId
     const res = await this.filterLessons(to, {
       week,
@@ -636,11 +636,11 @@ export class LessonsService {
       throw new BadOpenIdException(to)
     }
 
-    const template = getLessonNotificationTemplate(res.user[0]?.openId, res.items)
+    const template = getLessonNotificationTemplate(res.user[0]?.openId, res.items, taskType)
     return await this.wxService.sendUniformMessage(template)
   }
 
-  async mockTriggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek }: TriggerLessonNotificationArgs) {
+  async mockTriggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek, taskType }: TriggerLessonNotificationArgs) {
     this.logger.debug(`mockTriggerLessonNotification: to: ${to}`)
     const res = await this.filterLessons(to, {
       week,
@@ -662,7 +662,7 @@ export class LessonsService {
       throw new BadOpenIdException(to)
     }
 
-    const template = getLessonNotificationTemplate(res.user[0]?.openId, res.items)
+    const template = getLessonNotificationTemplate(res.user[0]?.openId, res.items, taskType)
     return await this.wxService.mockSendUniformMessage(template)
   }
 }

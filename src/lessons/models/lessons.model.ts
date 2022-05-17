@@ -1,6 +1,7 @@
 import { ArgsType, Field, InputType, Int, ObjectType, PartialType } from '@nestjs/graphql'
 
 import { Connection } from '../../connections/models/connections.model'
+import { TASK_TYPE } from '../../tasks/models/tasks.model'
 
 @ObjectType()
 export class LessonNotificationSettings {
@@ -230,6 +231,9 @@ export class TriggerLessonNotificationArgs {
 
   @Field(of => Int, { description: '当前周数' })
     week: number
+
+  @Field(of => TASK_TYPE)
+    taskType: TASK_TYPE
 }
 
 @ArgsType()

@@ -6,6 +6,7 @@ import { verify } from 'jsonwebtoken'
 import { Code2SessionErrorException } from './app.exception'
 import { Lesson, LessonItem } from './lessons/models/lessons.model'
 import { IImage, Nullable } from './posts/models/post.model'
+import { TASK_TYPE } from './tasks/models/tasks.model'
 import { AuthenticationInfo, CODE2SESSION_GRANT_TYPE, UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
 
 export async function exec<T, U> (l: string, bindings: object, aliases?: object) {
@@ -290,8 +291,11 @@ export const fmtLessonItems = (items: LessonItem[]) =>
 
 export type LessonNotificationTemplateItem = Array<LessonItem & { lesson: Lesson[] }>
 
-export const getLessonNotificationTemplate = (openId: string, items: LessonNotificationTemplateItem) => (
-  {
+export const getLessonNotificationTemplate = (openId: string, items: LessonNotificationTemplateItem, taskType: TASK_TYPE) => {
+  const a = taskType === TASK_TYPE.GM ? '今天' : '明天'
+  const b = process.env.NODE_ENV === 'production' ? '' : '测试：'
+
+  return {
     touser: openId,
     mp_template_msg: {
       // 服务号 appId
@@ -304,7 +308,7 @@ export const getLessonNotificationTemplate = (openId: string, items: LessonNotif
       },
       data: {
         first: {
-          value: process.env.NODE_ENV === 'production' ? `明天你有${items.length ?? 'N/A'}门课程` : `测试：明天你有${items.length ?? 'N/A'}门课程`
+          value: `${b}${a}你有${items.length ?? 'N/A'}门课程`
         },
         // 所有课程
         // 线性代数；音乐；体育；（列举全部课程用分号连接）
@@ -341,7 +345,7 @@ export const getLessonNotificationTemplate = (openId: string, items: LessonNotif
       }
     }
   }
-)
+}
 
 export const sleep = async (ms: number) => await new Promise(resolve => setTimeout(resolve, ms))
 export const imagesV2fy = (images: string[]) => (

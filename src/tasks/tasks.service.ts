@@ -8,6 +8,7 @@ import { DbService } from '../db/db.service'
 import { LessonsService } from '../lessons/lessons.service'
 import { LESSON_NOTIFY_STATE, LessonMetaData } from '../lessons/models/lessons.model'
 import { ids2String, now, sleep } from '../tool'
+import { TASK_TYPE } from './models/tasks.model'
 
 @Injectable()
 export class TasksService {
@@ -49,20 +50,37 @@ export class TasksService {
 
   async testTr () {
     await this.triggerEveryDayAt10PM()
-
+    // await this.triggerEveryDayAt8AM()
     return 'success'
   }
 
   // 每天早上8点的任务
-  // @Cron(CronExpression.EVERY_DAY_AT_8AM, {
-  //   timeZone: 'Asia/Shanghai'
-  // })
+  @Cron(CronExpression.EVERY_DAY_AT_8AM, {
+    timeZone: 'Asia/Shanghai'
+  })
   async triggerEveryDayAt8AM () {
+    const cron = this.schedulerRegistry.getCronJobs()
+    for (const [i, j] of cron) {
+      if (i === LESSON_NOTIFY_JOB_NAME) {
+        j.start()
+        return
+      }
+    }
+
+    const job = new CronJob(
+      CronExpression.EVERY_10_SECONDS,
+      async () => await this.triggerExery10Seconds(TASK_TYPE.GM)
+    )
+
+    this.schedulerRegistry
+      .addCronJob(LESSON_NOTIFY_JOB_NAME, job)
+    job.start()
+
     this.logger.debug('called at every day on 8 AM...')
   }
 
   // 每天晚上10点的任务
-  @Cron(CronExpression.EVERY_DAY_AT_10PM, {
+  @Cron(CronExpression.EVERY_DAY_AT_11PM, {
     timeZone: 'Asia/Shanghai'
   })
   async triggerEveryDayAt10PM () {
@@ -76,7 +94,7 @@ export class TasksService {
 
     const job = new CronJob(
       CronExpression.EVERY_10_SECONDS,
-      async () => await this.triggerExery10Seconds(TaskType.GF)
+      async () => await this.triggerExery10Seconds(TASK_TYPE.GF)
     )
 
     this.schedulerRegistry
@@ -86,10 +104,9 @@ export class TasksService {
     this.logger.debug('called at every day on 10 PM...')
   }
 
-  async triggerExery10Seconds (taskType: TaskType) {
+  async triggerExery10Seconds (taskType: TASK_TYPE) {
     const res = await this.getAndPendding(taskType)
 
-    // console.error(res.json)
     this.logger.debug(`totalCount: ${res.json.totalCount[0]?.count ?? 0}, ` + 'valiedUser: ' + res.json.valiedUser.map(i => i.id).toString())
     if (res.json.valiedUser.length === 0) {
       this.logger.debug('schdulerStopped')
@@ -98,8 +115,8 @@ export class TasksService {
         .stop()
     }
 
-    // const res2 = await this.sendNotification(res)
-    const res2 = await this.mockSendNotification(res)
+    const res2 = await this.sendNotification(res, taskType)
+    // const res2 = await this.mockSendNotification(res, taskType)
     await this.tagThem(res, res2 as any)
 
     this.logger.debug('called every 10 seconds...')
@@ -161,7 +178,7 @@ export class TasksService {
     })
   }
 
-  async getAndPendding (taskType: TaskType) {
+  async getAndPendding (taskType: TASK_TYPE) {
     // 一次性通知的用户个数
     const PATCH_USER_COUNT_MAX = 20 // 3
     // 距离上一次失败通知多久的用户为有效用户
@@ -173,7 +190,7 @@ export class TasksService {
     // 处于 FAILED 有效期内会重新发送通知
     const FAILED_VAILED_TIME_S = 5 * 60
 
-    const metadataTemplate = taskType === TaskType.GM
+    const metadataTemplate = taskType === TASK_TYPE.GM
       ? `
       metadata(func: type(LessonMetaData)) {
         startYear as startYear 
@@ -323,18 +340,18 @@ export class TasksService {
     }) as NotificationTaskArgs
   }
 
-  async sendNotification (args: NotificationTaskArgs) {
+  async sendNotification (args: NotificationTaskArgs, taskType: TASK_TYPE) {
     const { week, dayInWeek, startYear, endYear, semester } = args.json.metadata[0]
 
     // eslint-disable-next-line @typescript-eslint/promise-function-async
     return await Promise.allSettled(args.json.valiedUser.map(({ id }) => {
       return this.lessonsService.triggerLessonNotification({
-        to: id, week, dayInWeek, startYear, endYear, semester
+        to: id, week, dayInWeek, startYear, endYear, semester, taskType
       })
     }))
   }
 
-  async mockSendNotification (args: NotificationTaskArgs) {
+  async mockSendNotification (args: NotificationTaskArgs, taskType: TASK_TYPE) {
     const { week, dayInWeek, startYear, endYear, semester } = args.json.metadata[0]
 
     console.error(args.json.metadata[0])
@@ -348,7 +365,7 @@ export class TasksService {
     // eslint-disable-next-line @typescript-eslint/promise-function-async
     return await Promise.allSettled(args.json.valiedUser.map(({ id }) => {
       return this.lessonsService.mockTriggerLessonNotification({
-        to: id, week, dayInWeek, startYear, endYear, semester
+        to: id, week, dayInWeek, startYear, endYear, semester, taskType
       })
     }))
   }
@@ -406,13 +423,6 @@ export class TasksService {
       this.logger.error(`LessonMetaData 长度 ${res.json.metadata.length} 不为 1`)
     }
   }
-}
-
-enum TaskType {
-  // 早上8点的通知
-  GM = 'gm',
-  // 晚上10点的通知
-  GF = 'gf'
 }
 
 interface NotificationTaskArgs {
