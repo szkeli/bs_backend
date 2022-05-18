@@ -375,7 +375,6 @@ export class TasksService {
     timeZone: 'Asia/Shanghai'
   })
   async triggerEveryDayAtMinight () {
-    await this.lessonsService.setLessonNotificationStatus()
     const query = `
       query {
         metadata(func: type(LessonMetaData)) {
