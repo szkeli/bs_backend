@@ -80,7 +80,7 @@ export class TasksService {
   }
 
   // 每天晚上10点的任务
-  @Cron(CronExpression.EVERY_DAY_AT_11PM, {
+  @Cron(CronExpression.EVERY_DAY_AT_10PM, {
     timeZone: 'Asia/Shanghai'
   })
   async triggerEveryDayAt10PM () {
