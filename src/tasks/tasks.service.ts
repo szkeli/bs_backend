@@ -59,24 +59,7 @@ export class TasksService {
     timeZone: 'Asia/Shanghai'
   })
   async triggerEveryDayAt8AM () {
-    const cron = this.schedulerRegistry.getCronJobs()
-    for (const [i, j] of cron) {
-      if (i === LESSON_NOTIFY_JOB_NAME) {
-        j.start()
-        return
-      }
-    }
-
-    const job = new CronJob(
-      CronExpression.EVERY_10_SECONDS,
-      async () => await this.triggerExery10Seconds(TASK_TYPE.GM)
-    )
-
-    this.schedulerRegistry
-      .addCronJob(LESSON_NOTIFY_JOB_NAME, job)
-    job.start()
-
-    this.logger.debug('called at every day on 8 AM...')
+    this.startJob(TASK_TYPE.GM)
   }
 
   // 每天晚上10点的任务
@@ -84,35 +67,32 @@ export class TasksService {
     timeZone: 'Asia/Shanghai'
   })
   async triggerEveryDayAt10PM () {
-    const cron = this.schedulerRegistry.getCronJobs()
-    for (const [i, j] of cron) {
-      if (i === LESSON_NOTIFY_JOB_NAME) {
-        j.start()
-        return
-      }
-    }
+    this.startJob(TASK_TYPE.GF)
+  }
 
+  startJob (taskType: TASK_TYPE) {
     const job = new CronJob(
       CronExpression.EVERY_10_SECONDS,
-      async () => await this.triggerExery10Seconds(TASK_TYPE.GF)
+      async () => await this.triggerExery10Seconds(taskType)
     )
 
     this.schedulerRegistry
       .addCronJob(LESSON_NOTIFY_JOB_NAME, job)
     job.start()
 
-    this.logger.debug('called at every day on 10 PM...')
+    const i = taskType === TASK_TYPE.GF ? '10 PM' : '8 AM'
+    this.logger.debug(`called at every day on ${i}...`)
   }
 
   async triggerExery10Seconds (taskType: TASK_TYPE) {
     const res = await this.getAndPendding(taskType)
 
     this.logger.debug(`totalCount: ${res.json.totalCount[0]?.count ?? 0}, ` + 'valiedUser: ' + res.json.valiedUser.map(i => i.id).toString())
-    if (res.json.valiedUser.length === 0) {
+    const exist = this.schedulerRegistry.doesExist('cron', LESSON_NOTIFY_JOB_NAME)
+
+    if (res.json.valiedUser.length === 0 && exist) {
       this.logger.debug('schdulerStopped')
-      this.schedulerRegistry
-        .getCronJob(LESSON_NOTIFY_JOB_NAME)
-        .stop()
+      this.schedulerRegistry.deleteCronJob(LESSON_NOTIFY_JOB_NAME)
     }
 
     const res2 = await this.sendNotification(res, taskType)
