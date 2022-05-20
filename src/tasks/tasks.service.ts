@@ -68,6 +68,27 @@ export class TasksService {
     this.startJob(TASK_TYPE.GF)
   }
 
+  @Cron(CronExpression.EVERY_DAY_AT_11PM, {
+    timeZone: 'Asia/Shanghai'
+  })
+  async triggerEveryDayAt11PM () {
+    this.stopJob(TASK_TYPE.GF)
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_9AM, {
+    timeZone: 'Asia/Shanghai'
+  })
+  async triggerEveryDayAt9AM () {
+    this.stopJob(TASK_TYPE.GM)
+  }
+
+  stopJob (_taskType: TASK_TYPE) {
+    const exist = this.schedulerRegistry.doesExist('cron', LESSON_NOTIFY_JOB_NAME)
+    if (exist) {
+      this.schedulerRegistry.deleteCronJob(LESSON_NOTIFY_JOB_NAME)
+    }
+  }
+
   startJob (taskType: TASK_TYPE) {
     const job = new CronJob(
       CronExpression.EVERY_5_SECONDS,
