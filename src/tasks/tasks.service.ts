@@ -1,6 +1,5 @@
-import { CACHE_MANAGER, Inject, Injectable, Logger } from '@nestjs/common'
+import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule'
-import { Cache } from 'cache-manager'
 import { CronJob } from 'cron'
 
 import { LESSON_NOTIFY_JOB_NAME } from '../constants'
@@ -16,8 +15,7 @@ export class TasksService {
   constructor (
     private readonly schedulerRegistry: SchedulerRegistry,
     private readonly dbService: DbService,
-    private readonly lessonsService: LessonsService,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
+    private readonly lessonsService: LessonsService
   ) {}
 
   async test () {

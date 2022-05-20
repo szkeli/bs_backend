@@ -113,9 +113,9 @@ export class LessonsResolver {
     return (await this.lessonsService.triggerLessonNotification(args)).errmsg
   }
 
-  // @Mutation(of => String, { description: '测试方法' })
-  // @Roles(Role.User, Role.Admin)
-  // async setLessonNotificationStatus () {
-  //   return await this.lessonsService.setLessonNotificationStatus()
-  // }
+  @Mutation(of => String, { description: '测试方法' })
+  @Roles(Role.Admin)
+  async setLessonNotificationStatus () {
+    return await this.lessonsService.setLessonNotificationStatus()
+  }
 }

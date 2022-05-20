@@ -3671,6 +3671,9 @@ type Mutation {
     taskType: TASK_TYPE!
   ): String!
 
+  """测试方法"""
+  setLessonNotificationStatus: String!
+
   """手动触发一个课程通知任务"""
   triggerTask: String!
 }
