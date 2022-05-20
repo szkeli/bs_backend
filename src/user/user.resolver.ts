@@ -33,6 +33,7 @@ import {
   UpdateUserArgs,
   User,
   UsersConnection,
+  UsersConnectionWithRelay,
   UserWithPrivateProps
 } from './models/user.model'
 import { UserService } from './user.service'
@@ -67,6 +68,13 @@ export class UserResolver {
   @CheckPolicies(new MustWithCredentialPolicyHandler(), new ViewAppStatePolicyHandler())
   async registerWithin (@Args() { startTime, endTime }: WithinArgs, @Args() { first, offset }: PagingConfigArgs) {
     return await this.userService.registerWithin(startTime, endTime, first, offset)
+  }
+
+  @Query(of => UsersConnectionWithRelay, { description: '指定时间段内认证的用户' })
+  @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler(), new ViewAppStatePolicyHandler())
+  async authenWithin (@Args() { startTime, endTime }: WithinArgs, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.authenWithin(startTime, endTime, args)
   }
 
   @Mutation(of => User, { description: '更新用户画像' })

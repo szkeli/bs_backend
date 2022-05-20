@@ -30,6 +30,42 @@ export class UserService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async authenWithin (startTime: string, endTime: string, { after, first, orderBy }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.authenWithinRelayForward(startTime, endTime, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async authenWithinRelayForward (startTime: string, endTime: string, first: number, after: string) {
+    const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($after: string, $startTime: string, $endTime: string) {
+        var(func: between(createdAt, $startTime, $endTime)) @filter(type(User) and not eq(openId, "") and not eq(unionId, "") and has(credential)) {
+          users as uid
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(users)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'users'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        # 开始游标
+        startO(func: uid(users), first: -1) { createdAt }
+        # 结束游标
+        endO(func: uid(users), first: 1) { createdAt }
+      }
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<User>>({ query, vars: { $startTime: startTime, $endTime: endTime, $after: after } })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
+  }
+
   async lessons (id: string, { after, first, orderBy }: RelayPagingConfigArgs, filter: FilterLessonArgs) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
