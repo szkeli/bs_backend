@@ -8,6 +8,7 @@ import { NestLogger } from './log4js/nest.logger'
 const log = getLogger(__filename)
 log.info('app running...')
 async function bootstrap () {
+  process.setMaxListeners(500)
   const app = await NestFactory.create<NestFastifyApplication>(
     AppModule,
     new FastifyAdapter(),
