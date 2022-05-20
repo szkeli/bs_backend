@@ -70,8 +70,8 @@ export class TasksService {
 
   startJob (taskType: TASK_TYPE) {
     const job = new CronJob(
-      CronExpression.EVERY_10_SECONDS,
-      async () => await this.triggerExery10Seconds(taskType)
+      CronExpression.EVERY_5_SECONDS,
+      async () => await this.triggerExery5Seconds(taskType)
     )
 
     this.schedulerRegistry
@@ -82,7 +82,7 @@ export class TasksService {
     this.logger.debug(`called at every day on ${i}...`)
   }
 
-  async triggerExery10Seconds (taskType: TASK_TYPE) {
+  async triggerExery5Seconds (taskType: TASK_TYPE) {
     const res = await this.getAndPendding(taskType)
 
     this.logger.debug(`totalCount: ${res.json.totalCount[0]?.count ?? 0}, ` + 'valiedUser: ' + res.json.valiedUser.map(i => i.id).toString())
@@ -158,15 +158,15 @@ export class TasksService {
 
   async getAndPendding (taskType: TASK_TYPE) {
     // 一次性通知的用户个数
-    const PATCH_USER_COUNT_MAX = 20 // 3
+    const PATCH_USER_COUNT_MAX = 50 // 3
     // 距离上一次失败通知多久的用户为有效用户
-    const LAST_NOTIFY_FAILED_S = 20 * 60 // 18 * 60 * 60
+    const LAST_NOTIFY_FAILED_S = 100 * 60 // 18 * 60 * 60
     // 距离上一次成功通知多久的用户为有效用户
-    const LAST_NOTIFY_SUCCEEDED_S = 20 * 60 // 18 * 60 * 60
+    const LAST_NOTIFY_SUCCEEDED_S = 100 * 60 // 18 * 60 * 60
     // 处于 PENDDING 有效期内不会重新发送通知
-    const PENDDING_VAILED_TIME_S = 5 * 60
+    const PENDDING_VAILED_TIME_S = 10 * 60
     // 处于 FAILED 有效期内会重新发送通知
-    const FAILED_VAILED_TIME_S = 5 * 60
+    const FAILED_VAILED_TIME_S = 10 * 60
 
     const metadataTemplate = taskType === TASK_TYPE.GM
       ? `
