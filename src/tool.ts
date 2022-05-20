@@ -293,7 +293,7 @@ export type LessonNotificationTemplateItem = Array<LessonItem & { lesson: Lesson
 
 export const getLessonNotificationTemplate = (openId: string, items: LessonNotificationTemplateItem, taskType: TASK_TYPE) => {
   const a = taskType === TASK_TYPE.GM ? '今天' : '明天'
-  const b = process.env.NODE_ENV === 'production' ? '' : '测试：'
+  const b = process.env.NODE_ENV === 'production' ? '' : ''
 
   return {
     touser: openId,
