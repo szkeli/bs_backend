@@ -747,9 +747,13 @@ export class AuthService {
         lastNotifiedAt: now()
       }
     }
-    if (grantType === CODE2SESSION_GRANT_TYPE.CURRICULUM) {
-      Object.assign(mutation, { openId })
+    if (grantType === CODE2SESSION_GRANT_TYPE.BLANK_SPACE) {
+      Object.assign(mutation, { blankspaceOpenId: openId })
     }
+    if (grantType === CODE2SESSION_GRANT_TYPE.CURRICULUM) {
+      Object.assign(mutation, { blankspaceAssistantOpenId: openId })
+    }
+
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       user: UserWithRoles[]
     }>({
@@ -757,9 +761,7 @@ export class AuthService {
         { mutation, condition },
         { mutation: condMutation, condition: cond }
       ],
-      vars: {
-        $unionId: unionId
-      },
+      vars: { $unionId: unionId },
       query
     })
 
