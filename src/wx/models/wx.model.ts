@@ -129,7 +129,7 @@ export class MpTemplateMsg {
 }
 
 @ArgsType()
-export class SendUniformMessageArgs {
+export class SendUniformMessageArgs extends PartialType(WXBaseArgs) {
   @Field(of => String, { description: '用户openid，可以是小程序的openid，也可以是mp_template_msg.appid对应的公众号的openid' })
     touser: string
 

@@ -77,8 +77,8 @@ export class WxService {
     return res
   }
 
-  async sendUniformMessage (config: SendUniformMessageArgs) {
-    const { appId, secret } = this.findAppIdAndSecretByGrantType(CODE2SESSION_GRANT_TYPE.CURRICULUM)
+  async sendUniformMessage (config: SendUniformMessageArgs, grantType: CODE2SESSION_GRANT_TYPE) {
+    const { appId, secret } = this.findAppIdAndSecretByGrantType(grantType)
     const accessToken = await this.getAccessToken(appId, secret)
     return await axios({
       method: 'POST',
@@ -90,8 +90,8 @@ export class WxService {
     }).then(r => r.data as unknown as WxSendUniformMessageRet)
   }
 
-  async mockSendUniformMessage (config: SendUniformMessageArgs) {
-    this.logger.debug('mockSendUniformMessage')
+  async mockSendUniformMessage (_config: SendUniformMessageArgs, grantType: CODE2SESSION_GRANT_TYPE) {
+    this.logger.debug(`mockSendUniformMessage, grantType: ${grantType}`)
     return {
       errcode: 0,
       errmsg: 'ok'

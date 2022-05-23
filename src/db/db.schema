@@ -57,6 +57,8 @@ subCampus: string @index(term) .
 school: string @index(term) .
 grade: string @index(term) .
 openId: string @index(hash) .
+blankspaceOpenId: string @index(hash) .
+blankspaceAssistantOpenId: string @index(hash) .
 unionId: string @index(hash) .
 state: string @index(hash) .
 value: string @index(hash) .
@@ -175,6 +177,10 @@ type User {
   grade
   # 用户的openId
   openId
+  # 用户在白板小程序内的openId
+  blankspaceOpenId
+  # 用户在白板助手小程序内的openId
+  blankspaceAssistantOpenId
   # 用户的unionId
   unionId
   # 用户注册时间

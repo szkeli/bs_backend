@@ -114,8 +114,8 @@ export class TasksService {
       this.schedulerRegistry.deleteCronJob(LESSON_NOTIFY_JOB_NAME)
     }
 
-    const res2 = await this.sendNotification(res, taskType)
-    // const res2 = await this.mockSendNotification(res, taskType)
+    // const res2 = await this.sendNotification(res, taskType)
+    const res2 = await this.mockSendNotification(res, taskType)
     await this.tagThem(res, res2 as any)
 
     this.logger.debug('called every 5 seconds...')

@@ -110,7 +110,7 @@ export class LessonsResolver {
   @Roles(Role.Admin)
   // TODO 统一测试方法
   async triggerLessonNotification (@Args() args: TriggerLessonNotificationArgs) {
-    return (await this.lessonsService.triggerLessonNotification(args)).errmsg
+    return (await this.lessonsService.triggerLessonNotification(args))?.errmsg
   }
 
   @Mutation(of => String, { description: '测试方法' })

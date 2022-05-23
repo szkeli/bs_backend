@@ -26,8 +26,8 @@ export class WxResolver {
 
   @Query(of => String)
   @Roles(Role.Admin, Role.User)
-  async sendUniformMessage (@Args() config: SendUniformMessageArgs) {
-    return (await this.wxService.sendUniformMessage(config)).errmsg
+  async sendUniformMessage (@Args() { grantType, ...config }: SendUniformMessageArgs) {
+    return (await this.wxService.sendUniformMessage(config, grantType)).errmsg
   }
 
   @Query(of => String, { description: '向小程序下发订阅消息' })

@@ -2747,6 +2747,9 @@ type Query {
     is_permanent: Boolean = false
   ): String!
   sendUniformMessage(
+    """对应的小程序"""
+    grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
+
     """用户openid，可以是小程序的openid，也可以是mp_template_msg.appid对应的公众号的openid"""
     touser: String!
 
@@ -3153,6 +3156,9 @@ enum CODE2SESSION_GRANT_TYPE {
 
   """微信公众号"""
   WXOPEN
+
+  """未知的登录类型"""
+  UNKNOWN
 }
 
 input GetUnlimitedWXacodeArgsLineColor {

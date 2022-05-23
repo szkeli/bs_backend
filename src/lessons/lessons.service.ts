@@ -6,6 +6,8 @@ import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { getLessonNotificationTemplate, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { CODE2SESSION_GRANT_TYPE } from '../user/models/user.model'
+import { WxSendUniformMessageRet } from '../wx/models/wx.model'
 import { WxService } from '../wx/wx.service'
 import { AddLessonArgs, AddLessonItemsArgs, FilterLessonsArgs, Lesson, LESSON_NOTIFY_STATE, LessonItem, LessonMetaData, LessonNotificationSettings, TriggerLessonNotificationArgs, UpdateLessonArgs, UpdateLessonMetaDataArgs, UpdateLessonNotificationSettingsArgs } from './models/lessons.model'
 
@@ -350,6 +352,8 @@ export class LessonsService {
             items as lessonItems @filter(type(LessonItem) and eq(dayInWeek, ${dayInWeek}) and eq(circle, ${week}))
           }
           openId
+          blankspaceOpenId
+          blankspaceAssistantOpenId
         }
         items(func: uid(items)) {
           expand(_all_)
@@ -362,7 +366,11 @@ export class LessonsService {
     `
     return await this.dbService.commitQuery<{
       items: Array<LessonItem & { lesson: Lesson[] }>
-      user: Array<{ openId: string }>
+      user: Array<{
+        openId: string
+        blankspaceOpenId: string
+        blankspaceAssistantOpenId: string
+      }>
     }>({
       query, vars: { $id: id }
     })
@@ -632,16 +640,61 @@ export class LessonsService {
     if (res.items.length === 0) {
       throw new UserNotHasLessonsTodayExcepton(to)
     }
-    if (!res.user[0]?.openId || res.user[0]?.openId === '') {
+
+    const { openId, grantType } = this.handleOpenId(res.user[0]?.openId, res.user[0]?.blankspaceOpenId, res.user[0]?.blankspaceAssistantOpenId)
+
+    if (openId === '') {
       throw new BadOpenIdException(to)
     }
 
-    const template = getLessonNotificationTemplate(res.user[0]?.openId, res.items, taskType)
-    return await this.wxService.sendUniformMessage(template)
+    const template = getLessonNotificationTemplate(openId, res.items, taskType)
+
+    // 未知的 openId 同时尝试使用白板和白板助手的 accessToken 向微信服务器提交统一消息请求
+    // 至少有一个请求会失败
+    if (grantType === CODE2SESSION_GRANT_TYPE.UNKNOWN) {
+      return await Promise.allSettled([
+        this.wxService.sendUniformMessage(template, CODE2SESSION_GRANT_TYPE.BLANK_SPACE),
+        this.wxService.sendUniformMessage(template, CODE2SESSION_GRANT_TYPE.CURRICULUM)
+      ]).then(r =>
+        r
+          ?.filter(i => i.status === 'fulfilled')
+          ?.map((i: PromiseFulfilledResult<WxSendUniformMessageRet>) => i.value)
+          ?.at(0)
+      )
+    }
+
+    return await this.wxService.sendUniformMessage(template, grantType)
+  }
+
+  handleOpenId (openId: string, blankspaceOpenId: string, blankspaceAssistantOpenId: string) {
+    if (blankspaceOpenId && blankspaceOpenId !== '') {
+      return {
+        openId: blankspaceOpenId,
+        grantType: CODE2SESSION_GRANT_TYPE.BLANK_SPACE
+      }
+    }
+    if (blankspaceAssistantOpenId && blankspaceAssistantOpenId !== '') {
+      return {
+        openId: blankspaceAssistantOpenId,
+        grantType: CODE2SESSION_GRANT_TYPE.CURRICULUM
+      }
+    }
+    if (openId && openId !== '') {
+      return {
+        openId,
+        grantType: CODE2SESSION_GRANT_TYPE.UNKNOWN
+      }
+    }
+
+    return {
+      openId: '',
+      granType: CODE2SESSION_GRANT_TYPE.UNKNOWN
+    }
   }
 
   async mockTriggerLessonNotification ({ to, startYear, endYear, semester, week, dayInWeek, taskType }: TriggerLessonNotificationArgs) {
     this.logger.debug(`mockTriggerLessonNotification: to: ${to}`)
+
     const res = await this.filterLessons(to, {
       week,
       dayInWeek,
@@ -653,16 +706,32 @@ export class LessonsService {
     if (res.user.length === 0) {
       throw new UserNotFoundException(to)
     }
-
     if (res.items.length === 0) {
       throw new UserNotHasLessonsTodayExcepton(to)
     }
 
-    if (!res.user[0]?.openId || res.user[0]?.openId === '') {
+    const { openId, grantType } = this.handleOpenId(res.user[0]?.openId, res.user[0]?.blankspaceOpenId, res.user[0]?.blankspaceAssistantOpenId)
+
+    if (openId === '') {
       throw new BadOpenIdException(to)
     }
 
-    const template = getLessonNotificationTemplate(res.user[0]?.openId, res.items, taskType)
-    return await this.wxService.mockSendUniformMessage(template)
+    const template = getLessonNotificationTemplate(openId, res.items, taskType)
+
+    // 未知的 openId 同时尝试使用白板和白板助手的 accessToken 向微信服务器提交统一消息请求
+    // 至少有一个请求会失败
+    if (grantType === CODE2SESSION_GRANT_TYPE.UNKNOWN) {
+      return await Promise.allSettled([
+        this.wxService.mockSendUniformMessage(template, CODE2SESSION_GRANT_TYPE.BLANK_SPACE),
+        this.wxService.mockSendUniformMessage(template, CODE2SESSION_GRANT_TYPE.CURRICULUM)
+      ]).then(r => {
+        return r
+          ?.filter(i => i.status === 'fulfilled')
+          ?.map((i: PromiseFulfilledResult<WxSendUniformMessageRet>) => i.value)
+          ?.at(0)
+      })
+    }
+
+    return await this.wxService.mockSendUniformMessage(template, grantType)
   }
 }
