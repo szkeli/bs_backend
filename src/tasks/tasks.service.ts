@@ -118,7 +118,7 @@ export class TasksService {
     // const res2 = await this.mockSendNotification(res, taskType)
     await this.tagThem(res, res2 as any)
 
-    this.logger.debug('called every 10 seconds...')
+    this.logger.debug('called every 5 seconds...')
   }
 
   async tagThem (res: NotificationTaskArgs, res2: Array<{status: string, value: any}>) {
