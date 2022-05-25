@@ -34,12 +34,14 @@ export class RoleAuthGuard implements CanActivate {
     const canActive = await guard.canActivate(context)
 
     const ctx = GqlExecutionContext.create(context)
-    const { user } = ctx.getContext().req as unknown as { user: UserWithRolesAndPrivilegesAndCredential }
+    const user = ctx.getContext()?.req?.user as unknown as UserWithRolesAndPrivilegesAndCredential
 
     const ability = this.caslAbilityFactory.createForAdminAndUser(user)
     const hasAccess = policies.every(handler => this.execPolicyHandler(handler, ability))
 
-    if (!hasAccess) throw new ForbiddenException('权限不足')
+    if (!hasAccess) {
+      throw new ForbiddenException('权限不足')
+    }
 
     return canActive
   }
@@ -54,7 +56,7 @@ export const RoleGuard = ({ roles, maybeAuth }: Props) => {
   return class GqlAuthGuard extends AuthGuard('jwt') {
     getRequest (context: ExecutionContext) {
       const ctx = GqlExecutionContext.create(context)
-      const { req } = ctx?.getContext()
+      const req = ctx?.getContext()?.req
       if (!req) {
         throw new ForbiddenException('undefined')
       }
