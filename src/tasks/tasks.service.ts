@@ -68,6 +68,7 @@ export class TasksService {
     this.startJob(TASK_TYPE.GF)
   }
 
+  // 11PM 停止课程通知
   @Cron(CronExpression.EVERY_DAY_AT_11PM, {
     timeZone: 'Asia/Shanghai'
   })
@@ -75,6 +76,7 @@ export class TasksService {
     this.stopJob(TASK_TYPE.GF)
   }
 
+  // 9AM 停止课程通知
   @Cron(CronExpression.EVERY_DAY_AT_9AM, {
     timeZone: 'Asia/Shanghai'
   })
@@ -114,8 +116,8 @@ export class TasksService {
       this.schedulerRegistry.deleteCronJob(LESSON_NOTIFY_JOB_NAME)
     }
 
-    // const res2 = await this.sendNotification(res, taskType)
-    const res2 = await this.mockSendNotification(res, taskType)
+    const res2 = await this.sendNotification(res, taskType)
+    // const res2 = await this.mockSendNotification(res, taskType)
     await this.tagThem(res, res2 as any)
 
     this.logger.debug('called every 5 seconds...')
