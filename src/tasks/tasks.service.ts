@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule'
 import { CronJob } from 'cron'
+import * as log4js from 'log4js'
 
 import { LESSON_NOTIFY_JOB_NAME } from '../constants'
 import { DbService } from '../db/db.service'
@@ -8,6 +9,24 @@ import { LessonsService } from '../lessons/lessons.service'
 import { LESSON_NOTIFY_STATE, LessonMetaData } from '../lessons/models/lessons.model'
 import { ids2String, now, sleep } from '../tool'
 import { TASK_TYPE } from './models/tasks.model'
+
+log4js.configure({
+  appenders: {
+    default: {
+      type: 'dateFile',
+      filename: 'default.log',
+      pattern: 'yyyy-MM-dd'
+    }
+  },
+  categories: {
+    default: {
+      appenders: ['default'],
+      level: 'debug'
+    }
+  }
+})
+
+const mlogger = log4js.getLogger('default')
 
 @Injectable()
 export class TasksService {
@@ -57,6 +76,7 @@ export class TasksService {
     timeZone: 'Asia/Shanghai'
   })
   async triggerEveryDayAt8AM () {
+    mlogger.debug('started at 8 AM')
     this.startJob(TASK_TYPE.GM)
   }
 
@@ -65,6 +85,7 @@ export class TasksService {
     timeZone: 'Asia/Shanghai'
   })
   async triggerEveryDayAt10PM () {
+    mlogger.debug('started at 10PM')
     this.startJob(TASK_TYPE.GF)
   }
 
@@ -73,6 +94,7 @@ export class TasksService {
     timeZone: 'Asia/Shanghai'
   })
   async triggerEveryDayAt11PM () {
+    mlogger.debug('stopped at 11PM')
     this.stopJob(TASK_TYPE.GF)
   }
 
@@ -81,6 +103,7 @@ export class TasksService {
     timeZone: 'Asia/Shanghai'
   })
   async triggerEveryDayAt9AM () {
+    mlogger.debug('stopped at 9AM')
     this.stopJob(TASK_TYPE.GM)
   }
 
@@ -108,19 +131,19 @@ export class TasksService {
   async triggerExery5Seconds (taskType: TASK_TYPE) {
     const res = await this.getAndPendding(taskType)
 
-    this.logger.debug(`totalCount: ${res.json.totalCount[0]?.count ?? 0}, ` + 'valiedUser: ' + res.json.valiedUser.map(i => i.id).toString())
+    mlogger.debug(`totalCount: ${res.json.totalCount[0]?.count ?? 0}, ` + 'valiedUser: ' + res.json.valiedUser.map(i => i.id).toString())
     const exist = this.schedulerRegistry.doesExist('cron', LESSON_NOTIFY_JOB_NAME)
 
     if (res.json.valiedUser.length === 0 && exist) {
-      this.logger.debug('schdulerStopped')
+      mlogger.debug('schdulerStopped')
       this.schedulerRegistry.deleteCronJob(LESSON_NOTIFY_JOB_NAME)
     }
 
     const res2 = await this.sendNotification(res, taskType)
     // const res2 = await this.mockSendNotification(res, taskType)
+    mlogger.debug(JSON.stringify(res2))
     await this.tagThem(res, res2 as any)
-
-    this.logger.debug('called every 5 seconds...')
+    mlogger.debug('called every 5 seconds...')
   }
 
   async tagThem (res: NotificationTaskArgs, res2: Array<{status: string, value: any}>) {
@@ -138,8 +161,8 @@ export class TasksService {
     const succeededIdsString = ids2String(succeededIds)
     const failedIdsString = ids2String(failedIds)
 
-    this.logger.debug('succeededIds: ' + succeededIdsString)
-    this.logger.debug('failedIds: ' + failedIdsString)
+    mlogger.debug('succeededIds: ' + succeededIdsString)
+    mlogger.debug('failedIds: ' + failedIdsString)
     const query = `
       query {
         succeeded(func: uid(${succeededIdsString})) @filter(type(User)) {
