@@ -9,10 +9,10 @@ import { ICredential } from '../credentials/models/credentials.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { RolesConnection } from '../roles/models/roles.model'
-import { AuthenticateUserArgs, LoginResult, PersonLoginArgs, PersonWithRoles, User } from '../user/models/user.model'
+import { AuthenticateUserArgs, LoginResult, Person, PersonLoginArgs, PersonWithRoles, User } from '../user/models/user.model'
 import { AuthService } from './auth.service'
-import { CheckPolicies, CurrentUser, NoAuth, Roles } from './decorator'
-import { Authenable, LoginByCodeArgs, Role, UserAuthenInfosConnection } from './model/auth.model'
+import { CheckPolicies, CurrentPerson, CurrentUser, NoAuth, Roles } from './decorator'
+import { Authenable, LoginByCodeArgs, Role, UpdatePasswordArgs, UpdatePasswordResultUnion, UserAuthenInfosConnection } from './model/auth.model'
 
 @Resolver(of => Authenable)
 export class AuthResolver {
@@ -29,6 +29,13 @@ export class AuthResolver {
   @NoAuth()
   async loginByCode (@Args() args: LoginByCodeArgs) {
     return await this.authService.loginByCode(args)
+  }
+
+  @Mutation(of => UpdatePasswordResultUnion, { description: '更改密码' })
+  @Roles(Role.Admin, Role.User)
+  async updatePassword (@CurrentPerson() person: Person, @Args() { sign }: UpdatePasswordArgs) {
+    const v = sign_calculus(sign)
+    return await this.authService.updatePassword(person.id, v)
   }
 
   @ResolveField(of => User, { description: '提交信息的用户' })

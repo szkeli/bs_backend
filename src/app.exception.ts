@@ -179,3 +179,9 @@ export class UserAlreayAddUpvoteOnIt extends HttpException {
     super(`用户 ${id} 已经点赞 ${it}`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class IncorrectPasswordException extends HttpException {
+  constructor () {
+    super('密码错误', HttpStatus.FORBIDDEN)
+  }
+}

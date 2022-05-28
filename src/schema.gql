@@ -3369,6 +3369,12 @@ type Mutation {
     grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
   ): LoginResult!
 
+  """更改密码"""
+  updatePassword(
+    """新密码"""
+    sign: String!
+  ): UpdatePasswordResultUnion!
+
   """认证用户"""
   authenUser(
     """待认证的用户id"""
@@ -3703,6 +3709,8 @@ type Mutation {
   """手动触发一个课程通知任务"""
   triggerTask: String!
 }
+
+union UpdatePasswordResultUnion = Admin | User
 
 input AuthenticationInfo {
   """用户头像"""
