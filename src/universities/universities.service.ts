@@ -6,6 +6,7 @@ import { DbService } from '../db/db.service'
 import { Institute } from '../institutes/models/institutes.model'
 import { SubCampus } from '../subcampus/models/subcampus.model'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { User } from '../user/models/user.model'
 import { CreateUniversityArgs, University } from './models/universities.models'
 
 @Injectable()
@@ -16,8 +17,41 @@ export class UniversitiesService {
     throw new Error('Method not implemented.')
   }
 
-  async users (id: string, args: RelayPagingConfigArgs) {
+  async users (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.usersRelayForward(id, first, after)
+    }
     throw new Error('Method not implemented.')
+  }
+
+  async usersRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+        query v($id: string, $after: string) {
+            var(func: uid($id)) @filter(type(University)) {
+                users as users @filter(type(Institue))
+            }
+            ${after ? q1 : ''}
+            totalCount(func: uid(users)) { count(uid) }
+            objs(func: uid(${after ? 'q' : 'users'}), orderdesc: createdAt, first: ${first}) {
+                id: uid
+                expand(_all_)
+            }
+            startO(func: uid(users), first: -1) { createdAt }
+            endO(func: uid(users), first: 1) { createdAt }
+        }
+    `
+    const res = await this.dbService.commitQuery <RelayfyArrayParam<User>>({
+      query,
+      vars: { $id: id, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async subcampuses (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
