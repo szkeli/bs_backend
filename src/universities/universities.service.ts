@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 
 import { UniversityAlreadyExsistException } from '../app.exception'
-import { RelayPagingConfigArgs } from '../connections/models/connections.model'
+import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
-import { now } from '../tool'
+import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { CreateUniversityArgs, University } from './models/universities.models'
 
 @Injectable()
@@ -64,7 +64,41 @@ export class UniversitiesService {
     throw new Error('Method not implemented.')
   }
 
-  async universities (args: RelayPagingConfigArgs) {
+  async universities ({ after, orderBy, first }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
+    if (after && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.universitiesRelayForward(after, first)
+    }
     throw new Error('Method not implemented.')
+  }
+
+  async universitiesRelayForward (after: string, first: number) {
+    const q1 = 'var(func: uid(universities), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+        query v($after: string) {
+            var(func: type(University)) {
+                universities as uid
+            }
+            ${after ? q1 : ''}
+            totalCount(func: uid(universities)) { count(uid) }
+            objs(func: uid(${after ? 'q' : 'universities'}), orderdesc: createdAt, first: ${first}) {
+                id: uid
+                expand(_all_)
+            }
+            # 开始游标
+            startO(func: uid(universities), first: -1) { createdAt }
+            # 结束游标
+            endO(func: uid(universities), first: 1) { createdAt }
+        } 
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<University>>({
+      query, vars: { $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 }

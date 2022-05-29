@@ -12,6 +12,9 @@ export class University {
 
   @Field({ description: '该大学的 logo' })
     logoUrl: string
+
+  @Field()
+    createdAt: string
 }
 
 @ArgsType()

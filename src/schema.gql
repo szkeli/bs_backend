@@ -2278,6 +2278,7 @@ type University {
 
   """该大学的 logo"""
   logoUrl: String!
+  createdAt: String!
 
   """该大学的所有学院"""
   institutes(
