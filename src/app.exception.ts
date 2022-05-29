@@ -179,3 +179,9 @@ export class UserAlreayAddUpvoteOnIt extends HttpException {
     super(`用户 ${id} 已经点赞 ${it}`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class UniversityAlreadyExsistException extends HttpException {
+  constructor (name: string) {
+    super(`大学 ${name} 已存在`, HttpStatus.FORBIDDEN)
+  }
+}
