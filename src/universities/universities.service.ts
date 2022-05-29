@@ -5,6 +5,7 @@ import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connectio
 import { DbService } from '../db/db.service'
 import { Institute } from '../institutes/models/institutes.model'
 import { SubCampus } from '../subcampus/models/subcampus.model'
+import { Subject } from '../subject/model/subject.model'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { User } from '../user/models/user.model'
 import { CreateUniversityArgs, University } from './models/universities.models'
@@ -13,8 +14,41 @@ import { CreateUniversityArgs, University } from './models/universities.models'
 export class UniversitiesService {
   constructor (private readonly dbService: DbService) {}
 
-  async subjects (id: string, args: RelayPagingConfigArgs) {
+  async subjects (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.subjectsRelayForward(id, first, after)
+    }
     throw new Error('Method not implemented.')
+  }
+
+  async subjectsRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(subjects), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+        query v($id: string, $after: string) {
+            var(func: uid($id)) @filter(type(University)) {
+                subjects as subjects @filter(type(Subject))
+            }
+            ${after ? q1 : ''}
+            totalCount(func: uid(subjects)) { count(uid) }
+            objs(func: uid(${after ? 'q' : 'users'}), orderdesc: createdAt, first: ${first}) {
+                id: uid
+                expand(_all_)
+            }
+            startO(func: uid(subjects), first: -1) { createdAt }
+            endO(func: uid(subjects), first: 1) { createdAt }
+        }
+    `
+    const res = await this.dbService.commitQuery <RelayfyArrayParam<Subject>>({
+      query,
+      vars: { $id: id, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async users (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
