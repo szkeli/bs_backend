@@ -2218,35 +2218,6 @@ enum WX_SUBSCRIBE_SCENE {
   ADD_SCENE_OTHERS
 }
 
-type University {
-  """大学的唯一id"""
-  id: String!
-
-  """该大学的名字"""
-  name: String!
-
-  """该大学的 logo"""
-  logoUrl: String!
-}
-
-type UniversitiesConnection {
-  edges: [UniversityEdge!]!
-  pageInfo: UniversityPageInfo!
-  totalCount: Int!
-}
-
-type UniversityEdge {
-  node: University
-  cursor: String
-}
-
-type UniversityPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
 type Institute {
   id: String!
   logoUrl: String!
@@ -2292,6 +2263,107 @@ type SubCampusEdge {
 }
 
 type SubCampusPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type University {
+  """大学的唯一id"""
+  id: String!
+
+  """该大学的名字"""
+  name: String!
+
+  """该大学的 logo"""
+  logoUrl: String!
+
+  """该大学的所有学院"""
+  institutes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): InstitutesConnection!
+
+  """该大学的所有校区"""
+  subcampuses(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubCampusesConnection!
+
+  """该大学内的所有 User"""
+  users(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UsersConnection!
+
+  """该大学拥有的所有 Subject"""
+  subjects(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubjectsConnection!
+}
+
+type UniversitiesConnection {
+  edges: [UniversityEdge!]!
+  pageInfo: UniversityPageInfo!
+  totalCount: Int!
+}
+
+type UniversityEdge {
+  node: University
+  cursor: String
+}
+
+type UniversityPageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!
