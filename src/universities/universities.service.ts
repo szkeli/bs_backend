@@ -101,7 +101,7 @@ export class UniversitiesService {
     const query = `
         query v($id: string, $after: string) {
             var(func: uid($id)) @filter(type(University)) {
-                subcampuses as subcampuses @filter(type(SubCampus))
+                subcampuses as subCampuses @filter(type(SubCampus))
             }
             ${after ? q1 : ''}
             totalCount(func: uid(subcampuses)) { count(uid) }
