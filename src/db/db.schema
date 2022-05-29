@@ -23,6 +23,8 @@ lessonItems: [uid] @reverse .
 mentions: [uid] @reverse .
 hashtags: [uid] @reverse .
 imagesV2: [uid] @reverse .
+subCampuses: [uid] @reverse .
+institutes: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -42,6 +44,7 @@ lessonNotificationStatus: uid @reverse .
 
 images: [string] .
 
+logoUrl: string @index(hash) .
 userId: string @index(exact, hash, fulltext) .
 name: string @index(exact, fulltext) .
 avatarImageUrl: string @index(exact) .
@@ -638,4 +641,40 @@ type LessonNotificationStatus {
   lastNotifiedAt
   # 当前通知的发送状态
   state
+}
+
+# 大学
+type University {
+  # 该大学的名字
+  name
+  # 该大学的 logo 
+  logoUrl
+  # 该大学所有的用户
+  users
+  # 该大学所有的校区
+  subCampuses
+  # 该大学所有的学院
+  institutes
+  # 该大学的所有主题
+  subjects
+  # 当前对象的创建时间
+  createdAt
+}
+
+# 大学的学院
+type Institute {
+  # 学院的名字
+  name
+  # 学院的 logo
+  logoUrl
+  # 当前对象的创建时间
+  createdAt
+}
+
+# 大学的校区
+type SubCampus {
+  # 校区的名字
+  name
+  # 当前对象的创建时间
+  createdAt
 }

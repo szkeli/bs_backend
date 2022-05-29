@@ -2218,6 +2218,35 @@ enum WX_SUBSCRIBE_SCENE {
   ADD_SCENE_OTHERS
 }
 
+type University {
+  """大学的唯一id"""
+  id: String!
+
+  """该大学的名字"""
+  name: String!
+
+  """该大学的 logo"""
+  logoUrl: String!
+}
+
+type UniversitiesConnection {
+  edges: [UniversityEdge!]!
+  pageInfo: UniversityPageInfo!
+  totalCount: Int!
+}
+
+type UniversityEdge {
+  node: University
+  cursor: String
+}
+
+type UniversityPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type Query {
   """以postId获取一个帖子"""
   post(id: String!): Post!
@@ -2880,6 +2909,23 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): HashtagsConnection!
+  university(id: String!): University!
+  universities(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UniversitiesConnection!
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
@@ -3702,6 +3748,13 @@ type Mutation {
 
   """手动触发一个课程通知任务"""
   triggerTask: String!
+  createUniversity(
+    """大学的名字"""
+    name: String!
+
+    """大学的 logo"""
+    logoUrl: String!
+  ): University!
 }
 
 input AuthenticationInfo {

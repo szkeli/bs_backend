@@ -52,6 +52,7 @@ import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
 import { WxModule } from './wx/wx.module'
+import { UniversitiesModule } from './universities/universities.module';
 
 @Module({
   imports: [
@@ -132,7 +133,8 @@ import { WxModule } from './wx/wx.module'
     LessonsModule,
     MentionsModule,
     HashtagsModule,
-    TasksModule
+    TasksModule,
+    UniversitiesModule
   ],
   controllers: [AppController],
   providers: [
