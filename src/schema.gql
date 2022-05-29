@@ -2274,6 +2274,30 @@ type InstitutePageInfo {
   hasNextPage: Boolean!
 }
 
+type SubCampus {
+  id: String!
+  name: String!
+  university: University!
+}
+
+type SubCampusesConnection {
+  edges: [SubCampusEdge!]!
+  pageInfo: SubCampusPageInfo!
+  totalCount: Int!
+}
+
+type SubCampusEdge {
+  node: SubCampus
+  cursor: String
+}
+
+type SubCampusPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type Query {
   """以postId获取一个帖子"""
   post(id: String!): Post!
@@ -2970,6 +2994,23 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): InstitutesConnection!
+  subcampus(id: String!): SubCampus!
+  subcampuses(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubCampusesConnection!
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
@@ -3809,6 +3850,13 @@ type Mutation {
     """学院的 logo"""
     logoUrl: String!
   ): Institute!
+  createSubCampus(
+    """校区所在的大学"""
+    id: String!
+
+    """校区的名字"""
+    name: String!
+  ): SubCampus!
 }
 
 input AuthenticationInfo {

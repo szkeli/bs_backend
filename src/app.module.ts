@@ -54,6 +54,7 @@ import { VotesModule } from './votes/votes.module'
 import { WxModule } from './wx/wx.module'
 import { UniversitiesModule } from './universities/universities.module';
 import { InstitutesModule } from './institutes/institutes.module';
+import { SubcampusModule } from './subcampus/subcampus.module';
 
 @Module({
   imports: [
@@ -136,7 +137,8 @@ import { InstitutesModule } from './institutes/institutes.module';
     HashtagsModule,
     TasksModule,
     UniversitiesModule,
-    InstitutesModule
+    InstitutesModule,
+    SubcampusModule
   ],
   controllers: [AppController],
   providers: [
