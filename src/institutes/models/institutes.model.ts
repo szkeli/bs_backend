@@ -12,6 +12,9 @@ export class Institute {
 
   @Field()
     name: string
+
+  @Field()
+    createdAt: string
 }
 
 @ObjectType()

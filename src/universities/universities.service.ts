@@ -3,6 +3,7 @@ import { Injectable } from '@nestjs/common'
 import { UniversityAlreadyExsistException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
+import { Institute } from '../institutes/models/institutes.model'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { CreateUniversityArgs, University } from './models/universities.models'
 
@@ -22,8 +23,41 @@ export class UniversitiesService {
     throw new Error('Method not implemented.')
   }
 
-  async institutes (id: string, args: RelayPagingConfigArgs) {
+  async institutes (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.instituesRelayForward(id, first, after)
+    }
     throw new Error('Method not implemented.')
+  }
+
+  async instituesRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(institues), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+        query v($id: string, $after: string) {
+            var(func: uid($id)) @filter(type(University)) {
+                institues as institues @filter(type(Institue))
+            }
+            ${after ? q1 : ''}
+            totalCount(func: uid(institues)) { count(uid) }
+            objs(func: uid(${after ? 'q' : 'institues'}), orderdesc: createdAt, first: ${first}) {
+                id: uid
+                expand(_all_)
+            }
+            startO(func: uid(institues), first: -1) { createdAt }
+            endO(func: uid(institues), first: 1) { createdAt }
+        }
+    `
+    const res = await this.dbService.commitQuery <RelayfyArrayParam<Institute>>({
+      query,
+      vars: { $id: id, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async createUniversity ({ name, logoUrl }: CreateUniversityArgs) {

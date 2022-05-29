@@ -2222,6 +2222,7 @@ type Institute {
   id: String!
   logoUrl: String!
   name: String!
+  createdAt: String!
 
   """当前学院所在的大学"""
   university: University!
