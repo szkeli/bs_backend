@@ -64,7 +64,7 @@ export class UniversitiesService {
     const query = `
         query v($id: string, $after: string) {
             var(func: uid($id)) @filter(type(University)) {
-                users as users @filter(type(Institue))
+                users as users @filter(type(User))
             }
             ${after ? q1 : ''}
             totalCount(func: uid(users)) { count(uid) }
@@ -101,7 +101,7 @@ export class UniversitiesService {
     const query = `
         query v($id: string, $after: string) {
             var(func: uid($id)) @filter(type(University)) {
-                subcampuses as subcampuses @filter(type(Institue))
+                subcampuses as subcampuses @filter(type(SubCampus))
             }
             ${after ? q1 : ''}
             totalCount(func: uid(subcampuses)) { count(uid) }
@@ -128,26 +128,26 @@ export class UniversitiesService {
   async institutes (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.instituesRelayForward(id, first, after)
+      return await this.institutesRelayForward(id, first, after)
     }
     throw new Error('Method not implemented.')
   }
 
-  async instituesRelayForward (id: string, first: number, after: string) {
-    const q1 = 'var(func: uid(institues), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+  async institutesRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(institutes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($id: string, $after: string) {
             var(func: uid($id)) @filter(type(University)) {
-                institues as institues @filter(type(Institue))
+                institutes as institutes @filter(type(Institute))
             }
             ${after ? q1 : ''}
             totalCount(func: uid(institues)) { count(uid) }
-            objs(func: uid(${after ? 'q' : 'institues'}), orderdesc: createdAt, first: ${first}) {
+            objs(func: uid(${after ? 'q' : 'institutes'}), orderdesc: createdAt, first: ${first}) {
                 id: uid
                 expand(_all_)
             }
-            startO(func: uid(institues), first: -1) { createdAt }
-            endO(func: uid(institues), first: 1) { createdAt }
+            startO(func: uid(institutes), first: -1) { createdAt }
+            endO(func: uid(institutes), first: 1) { createdAt }
         }
     `
     const res = await this.dbService.commitQuery <RelayfyArrayParam<Institute>>({
