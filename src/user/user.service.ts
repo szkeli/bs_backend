@@ -15,6 +15,7 @@ import { Privilege, PrivilegesConnection } from '../privileges/models/privileges
 import { Role } from '../roles/models/roles.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import { atob, btoa, code2Session, edgifyByCreatedAt, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { University } from '../universities/models/universities.models'
 import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   RegisterUserArgs,
@@ -28,6 +29,30 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async university (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(User)) {
+          ~users @filter(type(University)) {
+            university as uid
+          }
+        }
+        university(func: uid(university)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      university: University[]
+    }>({
+      query,
+      vars: { $id: id }
+    })
+
+    return res.university[0]
   }
 
   async authenWithin (startTime: string, endTime: string, { after, first, orderBy }: RelayPagingConfigArgs) {

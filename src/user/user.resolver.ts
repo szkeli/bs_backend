@@ -22,6 +22,7 @@ import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { RolesConnection } from '../roles/models/roles.model'
+import { University } from '../universities/models/universities.models'
 import { VotesConnection, VotesConnectionWithRelay, VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
 import { VotesService } from '../votes/votes.service'
 import {
@@ -187,6 +188,11 @@ export class UserResolver {
   @ResolveField(of => ICredential, { description: '当前用户的认证凭证，未认证用户为null', nullable: true })
   async credential (@Parent() user: User) {
     return await this.userService.credential(user.id)
+  }
+
+  @ResolveField(of => University, { description: '当前用户所在的大学' })
+  async university (@Parent() user: User) {
+    return await this.userService.university(user.id)
   }
 
   @Query(of => NotificationsConnection, { description: '测试接口，某用户的所有回复通知，非当前用户获取到null', nullable: true })
