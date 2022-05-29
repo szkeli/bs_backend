@@ -9,6 +9,9 @@ export class SubCampus {
 
   @Field()
     name: string
+
+  @Field()
+    createdAt: string
 }
 
 @ObjectType()
