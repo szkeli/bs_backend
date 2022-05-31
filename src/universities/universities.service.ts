@@ -174,7 +174,7 @@ export class UniversitiesService {
                 institutes as institutes @filter(type(Institute))
             }
             ${after ? q1 : ''}
-            totalCount(func: uid(institues)) { count(uid) }
+            totalCount(func: uid(institutes)) { count(uid) }
             objs(func: uid(${after ? 'q' : 'institutes'}), orderdesc: createdAt, first: ${first}) {
                 id: uid
                 expand(_all_)
@@ -183,7 +183,7 @@ export class UniversitiesService {
             endO(func: uid(institutes), first: 1) { createdAt }
         }
     `
-    const res = await this.dbService.commitQuery <RelayfyArrayParam<Institute>>({
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Institute>>({
       query,
       vars: { $id: id, $after: after }
     })
