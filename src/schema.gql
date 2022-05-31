@@ -3963,6 +3963,7 @@ type Mutation {
     """校区的名字"""
     name: String!
   ): SubCampus!
+  deleteSubCampus(id: String!): Boolean!
 }
 
 input AuthenticationInfo {

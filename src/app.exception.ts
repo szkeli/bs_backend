@@ -198,6 +198,12 @@ export class SubCampusAlreadyAtTheUniversityExxception extends HttpException {
   }
 }
 
+export class SubCampusNotFoundException extends HttpException {
+  constructor (id: string) {
+    super(`校区 ${id} 不存在`, HttpStatus.FORBIDDEN)
+  }
+}
+
 export class InstituteAlreadyAtTheUniversityException extends HttpException {
   constructor (id: string, name: string) {
     super(`大学 ${id} 已有名为 ${name} 的学院`, HttpStatus.FORBIDDEN)

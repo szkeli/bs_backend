@@ -25,3 +25,9 @@ export class CreateSubCampusArgs {
   @Field({ description: '校区的名字' })
     name: string
 }
+
+@ArgsType()
+export class DeleteSubCampusArgs {
+  @Field()
+    id: string
+}

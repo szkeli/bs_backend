@@ -1,15 +1,50 @@
 import { Injectable } from '@nestjs/common'
 
-import { SubCampusAlreadyAtTheUniversityExxception, UniversityNotFoundException } from '../app.exception'
+import { SubCampusAlreadyAtTheUniversityExxception, SubCampusNotFoundException, UniversityNotFoundException } from '../app.exception'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { now } from '../tool'
 import { University } from '../universities/models/universities.models'
-import { CreateSubCampusArgs, SubCampus } from './models/subcampus.model'
+import { CreateSubCampusArgs, DeleteSubCampusArgs, SubCampus } from './models/subcampus.model'
 
 @Injectable()
 export class SubcampusService {
   constructor (private readonly dbService: DbService) {}
+
+  async deleteSubCampus ({ id }: DeleteSubCampusArgs) {
+    const query = `
+      query v($id: string) {
+        s(func: uid($id)) @filter(type(SubCampus)) { 
+          s as uid
+          ~subCampuses @filter(type(University)) {
+            u as uid
+          }
+        }
+      }
+    `
+    const condition = '@if( eq(len(s), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      subCampuses: {
+        uid: 'uid(s)',
+        'dgraph.type': 'SubCampus'
+      }
+    }
+
+    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
+      s: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id }
+    })
+
+    if (res.json.s.length !== 1) {
+      throw new SubCampusNotFoundException(id)
+    }
+
+    return true
+  }
 
   async university (id: string) {
     const query = `
