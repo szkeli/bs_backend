@@ -5,7 +5,8 @@ import { DbService } from 'src/db/db.service'
 
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, now, relayfyArrayForward } from '../tool'
+import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { University } from '../universities/models/universities.models'
 import { User } from '../user/models/user.model'
 import {
   CreateSubjectArgs,
@@ -21,6 +22,42 @@ export class SubjectService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async universities (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.universitiesRelayForward(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async universitiesRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(universities), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(Subject)) {
+          universities as ~subjects @filter(type(University))
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(universities)) { count(uid) }
+        objes(func: uid(${after ? 'q' : 'universities'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(universities), first: -1) { createdAt }
+        endO(func: uid(universities), first: 1) { createdAt }
+      }
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<University>>({
+      query,
+      vars: { $id: id, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async subjectsWithRelay ({ orderBy, first, after, before, last }: RelayPagingConfigArgs): Promise<SubjectsConnectionWithRelay> {
