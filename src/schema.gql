@@ -3945,6 +3945,7 @@ type Mutation {
     """大学的 logo"""
     logoUrl: String!
   ): University!
+  updateUniversity(id: String!, name: String, logoUrl: String): University!
   createInstitute(
     """学院所在的大学的 id"""
     id: String!

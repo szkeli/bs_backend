@@ -28,3 +28,15 @@ export class CreateUniversityArgs {
 
 @ObjectType()
 export class UniversitiesConnection extends Connection<University>(University) {}
+
+@ArgsType()
+export class UpdateUniversityArgs {
+  @Field()
+    id: string
+
+  @Field({ nullable: true })
+    name?: string
+
+  @Field({ nullable: true })
+    logoUrl?: string
+}

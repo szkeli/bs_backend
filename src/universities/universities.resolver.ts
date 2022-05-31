@@ -7,7 +7,7 @@ import { InstitutesConnection } from '../institutes/models/institutes.model'
 import { SubCampusesConnection } from '../subcampus/models/subcampus.model'
 import { SubjectsConnection } from '../subject/model/subject.model'
 import { UsersConnection } from '../user/models/user.model'
-import { CreateUniversityArgs, UniversitiesConnection, University } from './models/universities.models'
+import { CreateUniversityArgs, UniversitiesConnection, University, UpdateUniversityArgs } from './models/universities.models'
 import { UniversitiesService } from './universities.service'
 
 @Resolver(of => University)
@@ -31,6 +31,12 @@ export class UniversitiesResolver {
   //   添加权限检测
   async createUniversity (@Args() args: CreateUniversityArgs) {
     return await this.universitiesService.createUniversity(args)
+  }
+
+  @Mutation(of => University)
+  @Roles(Role.Admin)
+  async updateUniversity (@Args() args: UpdateUniversityArgs) {
+    return await this.universitiesService.updateUniversity(args)
   }
 
   @ResolveField(of => InstitutesConnection, { description: '该大学的所有学院' })

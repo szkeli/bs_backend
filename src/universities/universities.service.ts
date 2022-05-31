@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 
-import { UniversityAlreadyExsistException } from '../app.exception'
+import { UniversityAlreadyExsistException, UniversityNotFoundException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { Institute } from '../institutes/models/institutes.model'
@@ -8,11 +8,44 @@ import { SubCampus } from '../subcampus/models/subcampus.model'
 import { Subject } from '../subject/model/subject.model'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { User } from '../user/models/user.model'
-import { CreateUniversityArgs, University } from './models/universities.models'
+import { CreateUniversityArgs, University, UpdateUniversityArgs } from './models/universities.models'
 
 @Injectable()
 export class UniversitiesService {
   constructor (private readonly dbService: DbService) {}
+
+  async updateUniversity ({ id, ...args }: UpdateUniversityArgs) {
+    const query = `
+      query v($id: string) {
+        u(func: uid($id)) @filter(type(University)) {
+          id: u as uid
+          expand(_all_)
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)'
+    }
+
+    Object.assign(mutation, args)
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: University[]
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id }
+    })
+
+    if (res.json.u.length !== 1) {
+      throw new UniversityNotFoundException(id)
+    }
+
+    Object.assign(res.json.u[0], args)
+
+    return res.json.u[0]
+  }
 
   async subjects (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
     after = handleRelayForwardAfter(after)
