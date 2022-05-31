@@ -8,11 +8,40 @@ import { SubCampus } from '../subcampus/models/subcampus.model'
 import { Subject } from '../subject/model/subject.model'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { User } from '../user/models/user.model'
-import { CreateUniversityArgs, University, UpdateUniversityArgs } from './models/universities.models'
+import { CreateUniversityArgs, DeleteUniversityArgs, University, UpdateUniversityArgs } from './models/universities.models'
 
 @Injectable()
 export class UniversitiesService {
   constructor (private readonly dbService: DbService) {}
+
+  async deleteUniversity ({ id }: DeleteUniversityArgs) {
+    const query = `
+      query v($id: string) {
+        u(func: uid($id)) @filter(type(University)) {
+          u as uid
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      'dgraph.type': 'University'
+    }
+
+    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
+      u: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id }
+    })
+
+    if (res.json.u.length !== 1) {
+      throw new UniversityNotFoundException(id)
+    }
+
+    return true
+  }
 
   async updateUniversity ({ id, ...args }: UpdateUniversityArgs) {
     const query = `

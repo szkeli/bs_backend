@@ -40,3 +40,9 @@ export class UpdateUniversityArgs {
   @Field({ nullable: true })
     logoUrl?: string
 }
+
+@ArgsType()
+export class DeleteUniversityArgs {
+  @Field()
+    id: string
+}

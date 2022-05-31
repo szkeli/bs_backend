@@ -39,6 +39,14 @@ export class UniversitiesResolver {
     return await this.universitiesService.updateUniversity(args)
   }
 
+  // 对于 University 只能实现添加 Delete 来实现标记删除
+  // @Mutation(of => Boolean)
+  // @Roles(Role.Admin)
+  // //
+  // async deleteUniversity (@Args() args: DeleteUniversityArgs) {
+  //   return await this.universitiesService.deleteUniversity(args)
+  // }
+
   @ResolveField(of => InstitutesConnection, { description: '该大学的所有学院' })
   async institutes (@Parent() university: University, @Args() args: RelayPagingConfigArgs) {
     return await this.universitiesService.institutes(university.id, args)
