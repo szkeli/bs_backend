@@ -11,6 +11,7 @@ export class InstitutesResolver {
   constructor (private readonly institutesService: InstitutesService) {}
 
   @Query(of => Institute)
+  @Roles(Role.Admin, Role.User)
   async institute (@Args('id') id: string) {
     return await this.institutesService.institute(id)
   }

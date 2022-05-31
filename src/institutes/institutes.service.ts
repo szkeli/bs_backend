@@ -61,7 +61,19 @@ export class InstitutesService {
   }
 
   async institute (id: string) {
-    throw new Error('Method not implemented.')
+    const query = `
+      query v($id: string) {
+        i(func: uid($id)) @filter(type(Institute)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{i: Institute[]}>({
+      query, vars: { $id: id }
+    })
+
+    return res.i[0]
   }
 
   async institutes ({ first, after, orderBy }: RelayPagingConfigArgs) {
