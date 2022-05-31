@@ -162,7 +162,7 @@ export class UniversitiesService {
     })
   }
 
-  async createUniversity ({ name, logoUrl }: CreateUniversityArgs) {
+  async createUniversity ({ name, logoUrl }: CreateUniversityArgs): Promise<University> {
     const query = `
         query v($name: string) {
             university(func: eq(name, $name)) @filter(type(University)) {
@@ -173,6 +173,7 @@ export class UniversitiesService {
     const condition = '@if( eq(len(u), 0) )'
     const mutation = {
       uid: '_:university',
+      'dgraph.type': 'University',
       name,
       logoUrl,
       createdAt: now()
@@ -190,9 +191,10 @@ export class UniversitiesService {
     }
 
     return {
-      id: res.uids.get('_:university'),
+      id: res.uids.get('university'),
       name,
-      logoUrl
+      logoUrl,
+      createdAt: now()
     }
   }
 
