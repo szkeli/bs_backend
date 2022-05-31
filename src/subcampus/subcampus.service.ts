@@ -51,6 +51,7 @@ export class SubcampusService {
       uid: 'uid(u)',
       subCampuses: {
         uid: '_:subcampuses',
+        'dgraph.type': 'SubCampus',
         name,
         createdAt: now()
       }
@@ -73,7 +74,7 @@ export class SubcampusService {
     }
 
     return {
-      id: res.uids.get('_:subcampuses'),
+      id: res.uids.get('subcampuses'),
       name,
       createdAt: now()
     }

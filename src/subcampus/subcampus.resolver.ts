@@ -1,5 +1,6 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
+import { Role, Roles } from '../auth/decorator'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { University } from '../universities/models/universities.models'
 import { CreateSubCampusArgs, SubCampus, SubCampusesConnection } from './models/subcampus.model'
@@ -20,6 +21,7 @@ export class SubcampusResolver {
   }
 
   @Mutation(of => SubCampus)
+  @Roles(Role.Admin)
   async createSubCampus (@Args() args: CreateSubCampusArgs) {
     return await this.subcampusService.createSubCampus(args)
   }
