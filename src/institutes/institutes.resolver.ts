@@ -1,5 +1,6 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
+import { Role, Roles } from '../auth/decorator'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { University } from '../universities/models/universities.models'
 import { InstitutesService } from './institutes.service'
@@ -20,6 +21,7 @@ export class InstitutesResolver {
   }
 
   @Mutation(of => Institute)
+  @Roles(Role.Admin)
   async createInstitute (@Args() args: CreateInstituteArgs) {
     return await this.institutesService.createInstitute(args)
   }
