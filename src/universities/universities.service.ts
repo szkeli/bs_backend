@@ -219,7 +219,7 @@ export class UniversitiesService {
 
   async universities ({ after, orderBy, first }: RelayPagingConfigArgs) {
     after = handleRelayForwardAfter(after)
-    if (after && orderBy === ORDER_BY.CREATED_AT_DESC) {
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.universitiesRelayForward(after, first)
     }
     throw new Error('Method not implemented.')
