@@ -209,3 +209,9 @@ export class InstituteAlreadyAtTheUniversityException extends HttpException {
     super(`大学 ${id} 已有名为 ${name} 的学院`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class InstituteNotFoundException extends HttpException {
+  constructor (id: string) {
+    super(`学院 ${id} 不存在`, HttpStatus.FORBIDDEN)
+  }
+}

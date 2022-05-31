@@ -1,15 +1,50 @@
 import { Injectable } from '@nestjs/common'
 
-import { InstituteAlreadyAtTheUniversityException, UniversityNotFoundException } from '../app.exception'
+import { InstituteAlreadyAtTheUniversityException, InstituteNotFoundException, UniversityNotFoundException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { University } from '../universities/models/universities.models'
-import { CreateInstituteArgs, Institute } from './models/institutes.model'
+import { CreateInstituteArgs, DeleteInstituteArgs, Institute } from './models/institutes.model'
 
 @Injectable()
 export class InstitutesService {
   constructor (private readonly dbService: DbService) {}
+
+  async deleteInstitute ({ id }: DeleteInstituteArgs) {
+    const query = `
+      query v($id: string) {
+        s(func: uid($id)) @filter(type(Institute)) { 
+          s as uid
+          ~institutes @filter(type(University)) {
+            u as uid
+          }
+        }
+      }
+    `
+    const condition = '@if( eq(len(s), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      institutes: {
+        uid: 'uid(s)',
+        'dgraph.type': 'Institute'
+      }
+    }
+
+    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
+      s: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id }
+    })
+
+    if (res.json.s.length !== 1) {
+      throw new InstituteNotFoundException(id)
+    }
+
+    return true
+  }
 
   async university (id: string) {
     const query = `

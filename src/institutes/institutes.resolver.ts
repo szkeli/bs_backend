@@ -4,7 +4,7 @@ import { Role, Roles } from '../auth/decorator'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { University } from '../universities/models/universities.models'
 import { InstitutesService } from './institutes.service'
-import { CreateInstituteArgs, Institute, InstitutesConnection } from './models/institutes.model'
+import { CreateInstituteArgs, DeleteInstituteArgs, Institute, InstitutesConnection } from './models/institutes.model'
 
 @Resolver(of => Institute)
 export class InstitutesResolver {
@@ -26,6 +26,12 @@ export class InstitutesResolver {
   @Roles(Role.Admin)
   async createInstitute (@Args() args: CreateInstituteArgs) {
     return await this.institutesService.createInstitute(args)
+  }
+
+  @Mutation(of => Boolean)
+  @Roles(Role.Admin)
+  async deleteInstitute (@Args() args: DeleteInstituteArgs) {
+    return await this.institutesService.deleteInstitute(args)
   }
 
   @ResolveField(of => University, { description: '当前学院所在的大学' })

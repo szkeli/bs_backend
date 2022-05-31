@@ -3956,6 +3956,7 @@ type Mutation {
     """学院的 logo"""
     logoUrl: String!
   ): Institute!
+  deleteInstitute(id: String!): Boolean!
   createSubCampus(
     """校区所在的大学"""
     id: String!

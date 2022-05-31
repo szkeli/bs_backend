@@ -31,3 +31,9 @@ export class CreateInstituteArgs {
   @Field({ description: '学院的 logo' })
     logoUrl: string
 }
+
+@ArgsType()
+export class DeleteInstituteArgs {
+  @Field()
+    id: string
+}
