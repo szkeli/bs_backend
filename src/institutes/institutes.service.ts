@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 
 import { InstituteAlreadyAtTheUniversityException, UniversityNotFoundException } from '../app.exception'
-import { RelayPagingConfigArgs } from '../connections/models/connections.model'
+import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
-import { now } from '../tool'
+import { now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { CreateInstituteArgs, Institute } from './models/institutes.model'
 
 @Injectable()
@@ -64,7 +64,40 @@ export class InstitutesService {
     throw new Error('Method not implemented.')
   }
 
-  async institutes (args: RelayPagingConfigArgs) {
+  async institutes ({ first, after, orderBy }: RelayPagingConfigArgs) {
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.institutesRelayForward(after, first)
+    }
     throw new Error('Method not implemented.')
+  }
+
+  async institutesRelayForward (after: string, first: number) {
+    const q1 = 'var(func: uid(institutes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($after: string) {
+        var(func: type(Institute)) {
+          institutes as uid
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(institutes)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'institutes'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(institutes), first: -1) { createdAt }
+        endO(func: uid(institutes), first: 1) { createdAt }
+      }
+    `
+
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Institute>>({
+      query,
+      vars: { $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 }

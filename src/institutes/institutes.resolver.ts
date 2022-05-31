@@ -16,6 +16,7 @@ export class InstitutesResolver {
   }
 
   @Query(of => InstitutesConnection)
+  @Roles(Role.Admin, Role.User)
   async institutes (@Args() args: RelayPagingConfigArgs) {
     return await this.institutesService.institutes(args)
   }
