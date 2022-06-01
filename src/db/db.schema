@@ -173,8 +173,10 @@ type User {
   # 用户的学校
   school
   # 用户所在的校区
+  # deprecated
   subCampus
   # 用户所在的学院
+  # deprecated
   college
   # 用户的年级
   grade
@@ -669,6 +671,8 @@ type Institute {
   name
   # 学院的 logo
   logoUrl
+  # 该学院内的所有 user
+  users
   # 当前对象的创建时间
   createdAt
 }
@@ -677,6 +681,8 @@ type Institute {
 type SubCampus {
   # 校区的名字
   name
+  # 该校区内的所有 User
+  users
   # 当前对象的创建时间
   createdAt
 }
