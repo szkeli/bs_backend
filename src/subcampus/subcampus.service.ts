@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 
-import { SubCampusAlreadyAtTheUniversityExxception, SubCampusNotFoundException, UniversityNotFoundException } from '../app.exception'
+import { SubCampusAlreadyAtTheUniversityExxception, SubCampusNotFoundException, UniversityHasBeenDeletedException, UniversityNotFoundException } from '../app.exception'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { now } from '../tool'
@@ -79,9 +79,13 @@ export class SubcampusService {
                 }
             }
             v(func: uid(v)) { uid }
+            # 被添加 SubCampus 的大学是否已被标记删除
+            j(func: uid(u)) @filter(not has(delete)) {
+              j as uid
+            }
         }
       `
-    const condition = '@if( eq(len(u), 1) and eq(len(v), 0) )'
+    const condition = '@if( eq(len(u), 1) and eq(len(v), 0) and eq(len(j), 1) )'
     const mutation = {
       uid: 'uid(u)',
       subCampuses: {
@@ -94,6 +98,7 @@ export class SubcampusService {
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       u: Array<{uid: string}>
       v: Array<{uid: string}>
+      j: Array<{uid: string}>
     }>({
       query,
       mutations: [{ mutation, condition }],
@@ -103,9 +108,11 @@ export class SubcampusService {
     if (res.json.u.length !== 1) {
       throw new UniversityNotFoundException(id)
     }
-
     if (res.json.v.length !== 0) {
       throw new SubCampusAlreadyAtTheUniversityExxception(id, name)
+    }
+    if (res.json.j.length !== 1) {
+      throw new UniversityHasBeenDeletedException(id)
     }
 
     return {
