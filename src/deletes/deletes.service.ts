@@ -46,7 +46,7 @@ export class DeletesService {
     const query = `
       query v($deleteId: string) {
         delete(func: uid($deleteId)) @filter(type(Delete)) {
-          to @filter(type(Comment) or type(Post) or type(Subject) or type(UserAuthenInfo)) {
+          to @filter(type(Comment) or type(Post) or type(Subject) or type(UserAuthenInfo) or type(University)) {
             id: uid
             expand(_all_)
             dgraph.type

@@ -5,6 +5,7 @@ import { Comment } from '../../comment/models/comment.model'
 import { Connection } from '../../connections/models/connections.model'
 import { Post } from '../../posts/models/post.model'
 import { Subject } from '../../subject/model/subject.model'
+import { University } from '../../universities/models/universities.models'
 
 @ObjectType()
 export class Delete {
@@ -20,7 +21,7 @@ export class DeletesConnection extends Connection<Delete>(Delete) {}
 
 export const DeletedUnion = createUnionType({
   name: 'DeletedUnion',
-  types: () => [Post, Comment, Subject, UserAuthenInfo],
+  types: () => [Post, Comment, Subject, UserAuthenInfo, University],
   resolveType (v: {'dgraph.type': string[]}) {
     if (v['dgraph.type']?.includes('Post')) {
       return Post
@@ -33,6 +34,9 @@ export const DeletedUnion = createUnionType({
     }
     if (v['dgraph.type']?.includes('UserAuthenInfo')) {
       return UserAuthenInfo
+    }
+    if (v['dgraph.type']?.includes('University')) {
+      return University
     }
   }
 })
