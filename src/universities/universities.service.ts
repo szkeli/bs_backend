@@ -14,6 +14,35 @@ import { CreateUniversityArgs, DeleteUniversityArgs, University, UpdateUniversit
 export class UniversitiesService {
   constructor (private readonly dbService: DbService) {}
 
+  async addAllUserToUniversity (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(University) and not has(delete)) {
+          u as uid
+        }
+
+        var(func: type(User)) {
+          users as uid
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      users: {
+        uid: 'uid(users)'
+      }
+    }
+
+    await this.dbService.commitConditionalUperts({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id }
+    })
+
+    return true
+  }
+
   async deleteUniversity (adminId: string, { id, description }: DeleteUniversityArgs) {
     const query = `
       query v($adminId: string, $id: string) {

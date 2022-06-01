@@ -3954,6 +3954,9 @@ type Mutation {
     """为何删除它"""
     description: String
   ): Boolean!
+
+  """测试接口，将当前所有用户添加到某个学校"""
+  addAllUserToUniversity(id: String!): Boolean!
   createInstitute(
     """学院所在的大学的 id"""
     id: String!

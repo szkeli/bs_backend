@@ -1,8 +1,9 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { Admin } from '../admin/models/admin.model'
-import { CurrentAdmin, NoAuth, Roles } from '../auth/decorator'
+import { CheckPolicies, CurrentAdmin, NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
+import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { InstitutesConnection } from '../institutes/models/institutes.model'
 import { SubCampusesConnection } from '../subcampus/models/subcampus.model'
@@ -67,5 +68,12 @@ export class UniversitiesResolver {
   @ResolveField(of => SubjectsConnection, { description: '该大学拥有的所有 Subject' })
   async subjects (@Parent() university: University, @Args() args: RelayPagingConfigArgs) {
     return await this.universitiesService.subjects(university.id, args)
+  }
+
+  @Mutation(of => Boolean, { description: '测试接口，将当前所有用户添加到某个学校' })
+  @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
+  async addAllUserToUniversity (@Args('id') id: string) {
+    return await this.universitiesService.addAllUserToUniversity(id)
   }
 }
