@@ -179,3 +179,9 @@ export class UserAlreayAddUpvoteOnIt extends HttpException {
     super(`用户 ${id} 已经点赞 ${it}`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class ContentLenExceedException extends HttpException {
+  constructor (len: number) {
+    super(`内容长度不能大于 ${len}`, HttpStatus.FORBIDDEN)
+  }
+}

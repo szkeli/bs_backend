@@ -5,7 +5,10 @@ import {
   TextDetectionItemsReq,
   TextDetectionReq
 } from '@huaweicloud/huaweicloud-sdk-moderation'
-import { ForbiddenException, Injectable } from '@nestjs/common'
+import { Injectable } from '@nestjs/common'
+
+import { ContentLenExceedException } from '../app.exception'
+import { CENSOR_SUGGESTION } from './models/censors.model'
 
 @Injectable()
 export class CensorsService {
@@ -29,7 +32,7 @@ export class CensorsService {
 
   async textCensor (content: string) {
     if (content.length >= 5000) {
-      throw new ForbiddenException('内容长度暂时不能大于5000')
+      throw new ContentLenExceedException(5000)
     }
 
     const request = new RunTextModerationRequest()
@@ -37,8 +40,13 @@ export class CensorsService {
       new TextDetectionItemsReq().withText(content)
     ]))
 
-    return await this.client
+    const res = await this.client
       .runTextModeration(request)
       .then(r => r.result)
+
+    return {
+      detail: res.detail ?? {},
+      suggestion: res.suggestion ?? CENSOR_SUGGESTION.PASS
+    }
   }
 }
