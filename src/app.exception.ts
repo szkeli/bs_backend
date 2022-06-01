@@ -186,6 +186,12 @@ export class UniversityAlreadyExsistException extends HttpException {
   }
 }
 
+export class UniversityHasBeenDeletedException extends HttpException {
+  constructor (id: string) {
+    super(`大学 ${id} 已被删除`, HttpStatus.FORBIDDEN)
+  }
+}
+
 export class UniversityNotFoundException extends HttpException {
   constructor (id: string) {
     super(`大学 ${id} 不存在`, HttpStatus.FORBIDDEN)
