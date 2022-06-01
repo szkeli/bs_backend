@@ -14,26 +14,43 @@ import { CreateUniversityArgs, DeleteUniversityArgs, University, UpdateUniversit
 export class UniversitiesService {
   constructor (private readonly dbService: DbService) {}
 
-  async deleteUniversity ({ id }: DeleteUniversityArgs) {
+  async deleteUniversity (adminId: string, { id, description }: DeleteUniversityArgs) {
     const query = `
-      query v($id: string) {
-        u(func: uid($id)) @filter(type(University)) {
+      query v($adminId: string, $id: string) {
+        # 被删除的大学存在且未被标记删除
+        u(func: uid($id)) @filter(type(University) and not has(delete)) {
           u as uid
+        }
+        # 执行删除操作的管理员存在
+        i(func: uid($adminId)) @filter(type(Admin)) {
+          deleteCreator as uid
         }
       }
     `
     const condition = '@if( eq(len(u), 1) )'
     const mutation = {
       uid: 'uid(u)',
-      'dgraph.type': 'University'
+      'dgraph.type': 'University',
+      delete: {
+        uid: '_:delete',
+        'dgraph.type': 'Delete',
+        createdAt: now(),
+        description,
+        creator: {
+          uid: 'uid(deleteCreator)'
+        },
+        to: {
+          uid: 'uid(u)'
+        }
+      }
     }
 
-    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       u: Array<{uid: string}>
     }>({
       query,
       mutations: [{ mutation, condition }],
-      vars: { $id: id }
+      vars: { $adminId: adminId, $id: id }
     })
 
     if (res.json.u.length !== 1) {

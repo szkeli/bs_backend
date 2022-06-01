@@ -1,13 +1,14 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
-import { NoAuth, Roles } from '../auth/decorator'
+import { Admin } from '../admin/models/admin.model'
+import { CurrentAdmin, NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { InstitutesConnection } from '../institutes/models/institutes.model'
 import { SubCampusesConnection } from '../subcampus/models/subcampus.model'
 import { SubjectsConnection } from '../subject/model/subject.model'
 import { UsersConnection } from '../user/models/user.model'
-import { CreateUniversityArgs, UniversitiesConnection, University, UpdateUniversityArgs } from './models/universities.models'
+import { CreateUniversityArgs, DeleteUniversityArgs, UniversitiesConnection, University, UpdateUniversityArgs } from './models/universities.models'
 import { UniversitiesService } from './universities.service'
 
 @Resolver(of => University)
@@ -39,13 +40,14 @@ export class UniversitiesResolver {
     return await this.universitiesService.updateUniversity(args)
   }
 
+  @Mutation(of => Boolean, { description: '标记删除一个 University' })
+  @Roles(Role.Admin)
   // 对于 University 只能实现添加 Delete 来实现标记删除
-  // @Mutation(of => Boolean)
-  // @Roles(Role.Admin)
-  // //
-  // async deleteUniversity (@Args() args: DeleteUniversityArgs) {
-  //   return await this.universitiesService.deleteUniversity(args)
-  // }
+  // 因为仅仅删除 University 本身仍会留下它包含的
+  // Institutes, SubCampuses, Users
+  async deleteUniversity (@CurrentAdmin() admin: Admin, @Args() args: DeleteUniversityArgs) {
+    return await this.universitiesService.deleteUniversity(admin.id, args)
+  }
 
   @ResolveField(of => InstitutesConnection, { description: '该大学的所有学院' })
   async institutes (@Parent() university: University, @Args() args: RelayPagingConfigArgs) {

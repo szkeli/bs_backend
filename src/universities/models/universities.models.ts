@@ -45,4 +45,7 @@ export class UpdateUniversityArgs {
 export class DeleteUniversityArgs {
   @Field()
     id: string
+
+  @Field({ description: '为何删除它', nullable: true })
+    description: string
 }

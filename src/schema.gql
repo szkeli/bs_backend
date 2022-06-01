@@ -3946,6 +3946,14 @@ type Mutation {
     logoUrl: String!
   ): University!
   updateUniversity(id: String!, name: String, logoUrl: String): University!
+
+  """标记删除一个 University"""
+  deleteUniversity(
+    id: String!
+
+    """为何删除它"""
+    description: String
+  ): Boolean!
   createInstitute(
     """学院所在的大学的 id"""
     id: String!
