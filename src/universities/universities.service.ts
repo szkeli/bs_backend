@@ -245,7 +245,7 @@ export class UniversitiesService {
   async createUniversity ({ name, logoUrl }: CreateUniversityArgs): Promise<University> {
     const query = `
         query v($name: string) {
-            university(func: eq(name, $name)) @filter(type(University)) {
+            university(func: eq(name, $name)) @filter(type(University) and not has(delete)) {
                 u as uid
             }
         }
