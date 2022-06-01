@@ -47,6 +47,7 @@ export class UniversitiesService {
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       u: Array<{uid: string}>
+      i: Array<{uid: string}>
     }>({
       query,
       mutations: [{ mutation, condition }],
@@ -280,7 +281,7 @@ export class UniversitiesService {
   async university (id: string) {
     const query = `
         query v($id: string) {
-            university(func: uid($id)) @filter(type(University)) {
+            university(func: uid($id)) @filter(type(University) and not has(delete)) {
                 id: uid
                 expand(_all_)
             }
@@ -292,6 +293,10 @@ export class UniversitiesService {
       query,
       vars: { $id: id }
     })
+
+    if (res.university.length === 0) {
+      throw new UniversityNotFoundException(id)
+    }
 
     return res.university[0]
   }
@@ -308,7 +313,7 @@ export class UniversitiesService {
     const q1 = 'var(func: uid(universities), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($after: string) {
-            var(func: type(University)) {
+            var(func: type(University)) @filter(not has(delete)) {
                 universities as uid
             }
             ${after ? q1 : ''}
