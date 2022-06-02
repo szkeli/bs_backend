@@ -1,5 +1,6 @@
-import { ArgsType, Field, InterfaceType, ObjectType } from '@nestjs/graphql'
+import { ArgsType, createUnionType, Field, InterfaceType, ObjectType } from '@nestjs/graphql'
 
+import { Admin } from '../../admin/models/admin.model'
 import { AppAbility } from '../../casl/models/casl.model'
 import { Connection } from '../../connections/models/connections.model'
 import { ICredential } from '../../credentials/models/credentials.model'
@@ -91,3 +92,22 @@ export class LoginByCodeArgs {
   @Field(of => CODE2SESSION_GRANT_TYPE, { defaultValue: CODE2SESSION_GRANT_TYPE.BLANK_SPACE, nullable: true, description: '登录类型' })
     grantType?: CODE2SESSION_GRANT_TYPE
 }
+
+@ArgsType()
+export class UpdatePasswordArgs {
+  @Field({ description: '新密码' })
+    sign: string
+}
+
+export const UpdatePasswordResultUnion = createUnionType({
+  name: 'UpdatePasswordResultUnion',
+  types: () => [Admin, User],
+  resolveType (v: {'dgraph.type': string[]}) {
+    if (v['dgraph.type']?.includes('User')) {
+      return User
+    }
+    if (v['dgraph.type']?.includes('Admin')) {
+      return Admin
+    }
+  }
+})

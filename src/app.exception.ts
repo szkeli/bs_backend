@@ -221,3 +221,8 @@ export class InstituteNotFoundException extends HttpException {
     super(`学院 ${id} 不存在`, HttpStatus.FORBIDDEN)
   }
 }
+export class IncorrectPasswordException extends HttpException {
+  constructor () {
+    super('密码错误', HttpStatus.FORBIDDEN)
+  }
+}

@@ -2184,6 +2184,34 @@ type HashtagPageInfo {
   hasNextPage: Boolean!
 }
 
+type Institute {
+  id: String!
+  logoUrl: String!
+  name: String!
+  createdAt: String!
+
+  """当前学院所在的大学"""
+  university: University!
+}
+
+type InstitutesConnection {
+  edges: [InstituteEdge!]!
+  pageInfo: InstitutePageInfo!
+  totalCount: Int!
+}
+
+type InstituteEdge {
+  node: Institute
+  cursor: String
+}
+
+type InstitutePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type SentimentAnalysisResult {
   """正面分数"""
   positive: Float!
@@ -2275,6 +2303,31 @@ type AvatarImageUploadCredentialInfo {
   key: String!
 }
 
+type SubCampus {
+  id: String!
+  name: String!
+  createdAt: String!
+  university: University!
+}
+
+type SubCampusesConnection {
+  edges: [SubCampusEdge!]!
+  pageInfo: SubCampusPageInfo!
+  totalCount: Int!
+}
+
+type SubCampusEdge {
+  node: SubCampus
+  cursor: String
+}
+
+type SubCampusPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type View {
   id: String!
   createdAt: String!
@@ -2345,59 +2398,6 @@ enum WX_SUBSCRIBE_SCENE {
 
   """其他"""
   ADD_SCENE_OTHERS
-}
-
-type Institute {
-  id: String!
-  logoUrl: String!
-  name: String!
-  createdAt: String!
-
-  """当前学院所在的大学"""
-  university: University!
-}
-
-type InstitutesConnection {
-  edges: [InstituteEdge!]!
-  pageInfo: InstitutePageInfo!
-  totalCount: Int!
-}
-
-type InstituteEdge {
-  node: Institute
-  cursor: String
-}
-
-type InstitutePageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type SubCampus {
-  id: String!
-  name: String!
-  createdAt: String!
-  university: University!
-}
-
-type SubCampusesConnection {
-  edges: [SubCampusEdge!]!
-  pageInfo: SubCampusPageInfo!
-  totalCount: Int!
-}
-
-type SubCampusEdge {
-  node: SubCampus
-  cursor: String
-}
-
-type SubCampusPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
 }
 
 type Query {
@@ -3605,6 +3605,12 @@ type Mutation {
     grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
   ): LoginResult!
 
+  """更改密码"""
+  updatePassword(
+    """新密码"""
+    sign: String!
+  ): UpdatePasswordResultUnion!
+
   """认证用户"""
   authenUser(
     """待认证的用户id"""
@@ -3977,6 +3983,8 @@ type Mutation {
   ): SubCampus!
   deleteSubCampus(id: String!): Boolean!
 }
+
+union UpdatePasswordResultUnion = Admin | User
 
 input AuthenticationInfo {
   """用户头像"""

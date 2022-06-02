@@ -14,7 +14,7 @@ import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Role } from '../roles/models/roles.model'
 import { atob, btoa, code2Session, getAuthenticationInfo, ids2String, now, relayfyArrayForward } from '../tool'
 import { UserService } from '../user/user.service'
-import { LoginByCodeArgs, Payload, UserAuthenInfo, UserWithRoles } from './model/auth.model'
+import { LoginByCodeArgs, Payload, UpdatePasswordResultUnion, UserAuthenInfo, UserWithRoles } from './model/auth.model'
 
 @Injectable()
 export class AuthService {
@@ -24,6 +24,37 @@ export class AuthService {
     private readonly adminService: AdminService,
     private readonly dbService: DbService
   ) {}
+
+  async updatePassword (id: string, v: string) {
+    const query = `
+      query v($id: string, $sign: string) {
+        u(func: uid($id)) @filter(type(User) or type(Admin)) {
+          id: u as uid
+          expand(_all_)
+          # need for transfer current object into UserAndAdminUnion
+          dgraph.type
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      sign: v
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<typeof UpdatePasswordResultUnion>
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id, $sign: v }
+    })
+
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+
+    return res.json.u[0]
+  }
 
   async roles (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
     after = btoa(after)
