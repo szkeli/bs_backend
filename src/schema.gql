@@ -4002,6 +4002,15 @@ input AuthenticationInfo {
   """校区"""
   subCampus: String!
 
+  """学院的id的数组"""
+  institutes: [String!]!
+
+  """校区的id的数组"""
+  subCampuses: [String!]!
+
+  """大学的id的数组"""
+  universities: [String!]!
+
   """学校"""
   school: String!
 

@@ -25,6 +25,7 @@ hashtags: [uid] @reverse .
 imagesV2: [uid] @reverse .
 subCampuses: [uid] @reverse .
 institutes: [uid] @reverse .
+universities: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -460,6 +461,12 @@ type UserAuthenInfo {
   avatarImageUrl
   # 申请的角色
   roles
+  # 申请的大学
+  universities
+  # 申请的学院
+  institutes
+  # 申请的校区
+  subCampuses
 }
 
 # 权限

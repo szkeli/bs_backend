@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt'
 import { AuthenticationInfo, CheckUserResult, CODE2SESSION_GRANT_TYPE, LoginResult, User } from 'src/user/models/user.model'
 
 import { AdminService } from '../admin/admin.service'
-import { AdminNotFoundException, RolesNotAllExistException, SystemAdminNotFoundException, UnionIdBeNullException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
+import { AdminNotFoundException, InstituteNotAllExistException, RolesNotAllExistException, SubCampusNotAllExistException, SystemAdminNotFoundException, UnionIdBeNullException, UniversityNotAllExistException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
@@ -443,10 +443,26 @@ export class AuthService {
     return user
   }
 
-  async addInfoForAuthenUser (id: string, info: AuthenticationInfo) {
+  /**
+   * User 提交待审核的信息到审核列表
+   * @param id 待认证的 User
+   * @param info 认证信息
+   * @returns Promise<User>
+   */
+  async addInfoForAuthenUser (id: string, info: AuthenticationInfo): Promise<User> {
     const roleIds = info.roles
     const roleIdsLen = info.roles?.length ?? 0
     const roleIdsStr = ids2String(info.roles)
+
+    const universitiyIds = info.universities
+    const instituteIds = info.institutes
+    const subCampusIds = info.subCampuses
+    const universitiesLen = info.universities.length
+    const institutesLen = info.institutes.length
+    const subCampusesLen = info.subCampuses.length
+    const universitiesStr = ids2String(info.universities)
+    const institutesStr = ids2String(info.institutes)
+    const subCampusesStr = ids2String(info.subCampuses)
 
     const query = `
       query v($id: string) {
@@ -461,13 +477,36 @@ export class AuthService {
             i as uid
           }
         }
+        # User 申请的 Universities
+        universities(func: uid(${universitiesStr})) @filter(type(University)) {
+          universities as uid
+        }
+        # User 申请的 Institutes
+        institutes(func: uid(${institutesStr})) @filter(type(Institute)) {
+          institutes as uid
+          universitiesOfInstitutes as ~institutes @filter(type(University))
+        }
+        # User 申请的 SubCampuses
+        subCampuses(func: uid(${subCampusesStr})) @filter(type(SubCampus)) {
+          subCampuses as uid
+          universitiesOfSubCampuses as ~subCampuses @filter(type(University))
+        }
+        # Institutes 和 SubCampuses 对应的 University 的数组是否与申请的 Universities 相同
+        k(func: uid(universities)) @filter(not uid(universitiesOfInstitutes, universitiesOfSubCampuses)) {
+          k as uid
+        }
         user(func: uid(v)) {
           id: uid
           expand(_all_)
         }
       }
     `
+
     delete info.roles
+    delete info.universities
+    delete info.institutes
+    delete info.subCampuses
+
     const condition = `@if( eq(len(v), 1) and eq(len(u), 0) and eq(len(i), 0) and eq(len(x), ${roleIdsLen}) )`
     const mutation = {
       uid: '_:user-authen-info',
@@ -479,9 +518,26 @@ export class AuthService {
       }
     }
 
+    // 添加 Universities, Institutes, SubCampuses 到 UserAuthenInfo
+    const subCondition = `@if( eq(len(k), 0) and eq(len(universities), ${universitiesLen}) and eq(len(institutes), ${institutesLen}) and eq(len(subCampuses), ${subCampusesLen}) )`
+    const subMutation = {
+      uid: '_:user-authen-info',
+      'dgraph.type': 'UserAuthenInfo',
+      universities: {
+        uid: 'uid(universities)'
+      },
+      institutes: {
+        uid: 'uid(institutes)'
+      },
+      subCampuses: {
+        uid: 'uid(subCampuses)'
+      }
+    }
+
     const withRolesCondition = `@if( eq(len(v), 1) and eq(len(u), 0) and eq(len(i), 0) and eq(len(x), ${roleIdsLen}) )`
     const withRolesMutation = {
       uid: '_:user-authen-info',
+      'dgraph.type': 'UserAuthenInfo',
       roles: {
         uid: 'uid(x)'
       }
@@ -492,11 +548,16 @@ export class AuthService {
       u: Array<{uid: string}>
       x: Array<{uid: string}>
       i: Array<{uid: string}>
+      k: Array<{uid: string}>
+      universities: Array<{uid: string}>
+      institutes: Array<{uid: string}>
+      subCampuses: Array<{uid: string}>
       user: User[]
     }>({
       query,
       mutations: [
         { mutation, condition },
+        { mutation: subMutation, condition: subCondition },
         { mutation: withRolesMutation, condition: withRolesCondition }
       ],
       vars: { $id: id }
@@ -508,13 +569,23 @@ export class AuthService {
     if (res.json.u.length !== 0) {
       throw new UserHadSubmitAuthenInfoException(id)
     }
-
     if (res.json.x.length !== roleIdsLen) {
       throw new RolesNotAllExistException(roleIds)
     }
-
     if (res.json.i.length !== 0) {
       throw new UserHadAuthenedException(id)
+    }
+    if (res.json.universities.length !== universitiesLen) {
+      throw new UniversityNotAllExistException(universitiyIds)
+    }
+    if (res.json.institutes.length !== institutesLen) {
+      throw new InstituteNotAllExistException(instituteIds)
+    }
+    if (res.json.subCampuses.length !== subCampusesLen) {
+      throw new SubCampusNotAllExistException(subCampusIds)
+    }
+    if (res.json.k.length !== 0) {
+      throw new ForbiddenException('universities 没有完全包含 institutes 和 subCampuses 相应的 University')
     }
 
     return res.json.user[0]

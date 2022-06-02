@@ -25,6 +25,24 @@ export class RolesNotAllExistException extends HttpException {
   }
 }
 
+export class UniversityNotAllExistException extends HttpException {
+  constructor (ids: string[]) {
+    super(`请求数据 ${ids.toString()} 存在未定义的大学的 id`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class InstituteNotAllExistException extends HttpException {
+  constructor (ids: string[]) {
+    super(`请求数据 ${ids.toString()} 存在未定义的学院的 id`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class SubCampusNotAllExistException extends HttpException {
+  constructor (ids: string[]) {
+    super(`请求数据 ${ids.toString()} 存在未定义的校区的 id`, HttpStatus.FORBIDDEN)
+  }
+}
+
 export class RoleNotFoundException extends HttpException {
   constructor (id: string) {
     super(`角色 ${id} 不存在`, HttpStatus.FORBIDDEN)
@@ -224,5 +242,17 @@ export class InstituteNotFoundException extends HttpException {
 export class IncorrectPasswordException extends HttpException {
   constructor () {
     super('密码错误', HttpStatus.FORBIDDEN)
+  }
+}
+
+export class LackSomeOfPropsException extends HttpException {
+  constructor (lack: string[]) {
+    super(`autoAuthenUserSelf 时，AuthenticationInfo 缺少 ${lack.toString()} 元素`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class UnknownPropsException extends HttpException {
+  constructor (unknown: string[]) {
+    super(`autoAuthenUserSelf 时，AuthenticationInfo 中 ${unknown.toString()} 属性作用未定义`, HttpStatus.FORBIDDEN)
   }
 }

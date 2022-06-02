@@ -56,7 +56,10 @@ export class AuthResolver {
 
   @Mutation(of => User, { description: '认证用户' })
   @Roles(Role.Admin, Role.User)
-  async authenUser (@CurrentUser() person: PersonWithRoles, @Args() { id, token, info }: AuthenticateUserArgs) {
+  async authenUser (
+  @CurrentUser() person: PersonWithRoles,
+    @Args() { id, token, info }: AuthenticateUserArgs
+  ) {
     if (person.id === id && token) {
       return await this.authService.autoAuthenUserSelf(id, token)
     }

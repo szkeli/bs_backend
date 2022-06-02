@@ -114,6 +114,15 @@ export class AuthenticationInfo {
   @Field({ description: '校区' })
     subCampus: string
 
+  @Field(of => [String], { description: '学院的id的数组' })
+    institutes: string[]
+
+  @Field(of => [String], { description: '校区的id的数组' })
+    subCampuses: string[]
+
+  @Field(of => [String], { description: '大学的id的数组' })
+    universities: string[]
+
   @Field({ description: '学校' })
     school: string
 
