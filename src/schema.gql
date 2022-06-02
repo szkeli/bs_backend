@@ -382,6 +382,45 @@ type User implements Person & Node {
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
 
+  """当前用户所在的大学"""
+  university: University!
+
+  """当前用户所属的学院"""
+  institutes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): InstitutesConnection!
+
+  """当前用户所属的校区"""
+  subCampuses(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubCampusesConnection!
+
   """回复的通知"""
   replyNotifications(
     """最新的n个对象"""
@@ -622,6 +661,45 @@ interface Person implements Node {
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
 
+  """当前用户所在的大学"""
+  university: University!
+
+  """当前用户所属的学院"""
+  institutes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): InstitutesConnection!
+
+  """当前用户所属的校区"""
+  subCampuses(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubCampusesConnection!
+
   """回复的通知"""
   replyNotifications(
     """最新的n个对象"""
@@ -845,6 +923,45 @@ type LoginResult implements Node & Person {
 
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
+
+  """当前用户所在的大学"""
+  university: University!
+
+  """当前用户所属的学院"""
+  institutes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): InstitutesConnection!
+
+  """当前用户所属的校区"""
+  subCampuses(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubCampusesConnection!
 
   """回复的通知"""
   replyNotifications(
@@ -1598,6 +1715,24 @@ type Subject {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): PostsConnectionWithRelay!
+
+  """具有该 Subject 的所有大学"""
+  universities(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UniversitiesConnection!
 }
 
 type SubjectsConnection {
@@ -1651,6 +1786,108 @@ type ICredentialPageInfo {
   hasNextPage: Boolean!
 }
 
+type University {
+  """大学的唯一id"""
+  id: String!
+
+  """该大学的名字"""
+  name: String!
+
+  """该大学的 logo"""
+  logoUrl: String!
+  createdAt: String!
+
+  """该大学的所有学院"""
+  institutes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): InstitutesConnection!
+
+  """该大学的所有校区"""
+  subcampuses(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubCampusesConnection!
+
+  """该大学内的所有 User"""
+  users(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UsersConnectionWithRelay!
+
+  """该大学拥有的所有 Subject"""
+  subjects(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubjectsConnection!
+}
+
+type UniversitiesConnection {
+  edges: [UniversityEdge!]!
+  pageInfo: UniversityPageInfo!
+  totalCount: Int!
+}
+
+type UniversityEdge {
+  node: University
+  cursor: String
+}
+
+type UniversityPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type Delete {
   id: String!
   createdAt: String!
@@ -1662,7 +1899,7 @@ type Delete {
   to: DeletedUnion!
 }
 
-union DeletedUnion = Post | Comment | Subject | UserAuthenInfo
+union DeletedUnion = Post | Comment | Subject | UserAuthenInfo | University
 
 type DeletesConnection {
   edges: [DeleteEdge!]!
@@ -2055,6 +2292,34 @@ type HashtagPageInfo {
   hasNextPage: Boolean!
 }
 
+type Institute {
+  id: String!
+  logoUrl: String!
+  name: String!
+  createdAt: String!
+
+  """当前学院所在的大学"""
+  university: University!
+}
+
+type InstitutesConnection {
+  edges: [InstituteEdge!]!
+  pageInfo: InstitutePageInfo!
+  totalCount: Int!
+}
+
+type InstituteEdge {
+  node: Institute
+  cursor: String
+}
+
+type InstitutePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type SentimentAnalysisResult {
   """正面分数"""
   positive: Float!
@@ -2144,6 +2409,31 @@ type AvatarImageUploadCredentialInfo {
   bucket: String!
   region: String!
   key: String!
+}
+
+type SubCampus {
+  id: String!
+  name: String!
+  createdAt: String!
+  university: University!
+}
+
+type SubCampusesConnection {
+  edges: [SubCampusEdge!]!
+  pageInfo: SubCampusPageInfo!
+  totalCount: Int!
+}
+
+type SubCampusEdge {
+  node: SubCampus
+  cursor: String
+}
+
+type SubCampusPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
 }
 
 type View {
@@ -2880,6 +3170,57 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): HashtagsConnection!
+  university(id: String!): University!
+  universities(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UniversitiesConnection!
+  institute(id: String!): Institute!
+  institutes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): InstitutesConnection!
+  subcampus(id: String!): SubCampus!
+  subcampuses(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubCampusesConnection!
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
@@ -3091,6 +3432,45 @@ type UserWithPrivateProps implements Person & Node {
 
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
+
+  """当前用户所在的大学"""
+  university: University!
+
+  """当前用户所属的学院"""
+  institutes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): InstitutesConnection!
+
+  """当前用户所属的校区"""
+  subCampuses(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubCampusesConnection!
 
   """回复的通知"""
   replyNotifications(
@@ -3368,6 +3748,12 @@ type Mutation {
     """登录类型"""
     grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
   ): LoginResult!
+
+  """更改密码"""
+  updatePassword(
+    """新密码"""
+    sign: String!
+  ): UpdatePasswordResultUnion!
 
   """认证用户"""
   authenUser(
@@ -3702,7 +4088,47 @@ type Mutation {
 
   """手动触发一个课程通知任务"""
   triggerTask: String!
+  createUniversity(
+    """大学的名字"""
+    name: String!
+
+    """大学的 logo"""
+    logoUrl: String!
+  ): University!
+  updateUniversity(id: String!, name: String, logoUrl: String): University!
+
+  """标记删除一个 University"""
+  deleteUniversity(
+    id: String!
+
+    """为何删除它"""
+    description: String
+  ): Boolean!
+
+  """测试接口，将当前所有用户添加到某个学校"""
+  addAllUserToUniversity(id: String!): Boolean!
+  createInstitute(
+    """学院所在的大学的 id"""
+    id: String!
+
+    """学院的名字"""
+    name: String!
+
+    """学院的 logo"""
+    logoUrl: String!
+  ): Institute!
+  deleteInstitute(id: String!): Boolean!
+  createSubCampus(
+    """校区所在的大学"""
+    id: String!
+
+    """校区的名字"""
+    name: String!
+  ): SubCampus!
+  deleteSubCampus(id: String!): Boolean!
 }
+
+union UpdatePasswordResultUnion = Admin | User
 
 input AuthenticationInfo {
   """用户头像"""
@@ -3719,6 +4145,15 @@ input AuthenticationInfo {
 
   """校区"""
   subCampus: String!
+
+  """学院的id的数组"""
+  institutes: [String!]!
+
+  """校区的id的数组"""
+  subCampuses: [String!]!
+
+  """大学的id的数组"""
+  universities: [String!]!
 
   """学校"""
   school: String!

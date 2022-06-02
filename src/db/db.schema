@@ -23,6 +23,9 @@ lessonItems: [uid] @reverse .
 mentions: [uid] @reverse .
 hashtags: [uid] @reverse .
 imagesV2: [uid] @reverse .
+subCampuses: [uid] @reverse .
+institutes: [uid] @reverse .
+universities: [uid] @reverse .
 
 credential: uid @reverse .
 subject: uid @reverse .
@@ -42,6 +45,7 @@ lessonNotificationStatus: uid @reverse .
 
 images: [string] .
 
+logoUrl: string @index(hash) .
 userId: string @index(exact, hash, fulltext) .
 name: string @index(exact, fulltext) .
 avatarImageUrl: string @index(exact) .
@@ -170,8 +174,10 @@ type User {
   # 用户的学校
   school
   # 用户所在的校区
+  # deprecated
   subCampus
   # 用户所在的学院
+  # deprecated
   college
   # 用户的年级
   grade
@@ -455,6 +461,12 @@ type UserAuthenInfo {
   avatarImageUrl
   # 申请的角色
   roles
+  # 申请的大学
+  universities
+  # 申请的学院
+  institutes
+  # 申请的校区
+  subCampuses
 }
 
 # 权限
@@ -638,4 +650,46 @@ type LessonNotificationStatus {
   lastNotifiedAt
   # 当前通知的发送状态
   state
+}
+
+# 大学
+type University {
+  # 该大学的名字
+  name
+  # 该大学的 logo 
+  logoUrl
+  # 该大学所有的用户
+  users
+  # 该大学所有的校区
+  subCampuses
+  # 该大学所有的学院
+  institutes
+  # 该大学的所有主题
+  subjects
+  # 当前对象的创建时间
+  createdAt
+  # 标记大学被删除
+  delete
+}
+
+# 大学的学院
+type Institute {
+  # 学院的名字
+  name
+  # 学院的 logo
+  logoUrl
+  # 该学院内的所有 user
+  users
+  # 当前对象的创建时间
+  createdAt
+}
+
+# 大学的校区
+type SubCampus {
+  # 校区的名字
+  name
+  # 该校区内的所有 User
+  users
+  # 当前对象的创建时间
+  createdAt
 }

@@ -3,7 +3,7 @@ import axios from 'axios'
 import * as crypto from 'crypto'
 import { verify } from 'jsonwebtoken'
 
-import { Code2SessionErrorException } from './app.exception'
+import { Code2SessionErrorException, LackSomeOfPropsException, UnknownPropsException } from './app.exception'
 import { Lesson, LessonItem } from './lessons/models/lessons.model'
 import { IImage, Nullable } from './posts/models/post.model'
 import { TASK_TYPE } from './tasks/models/tasks.model'
@@ -222,7 +222,10 @@ export const getAuthenticationInfo = function (token: string): AuthenticationInf
     'gender',
     'college',
     'grade',
-    'name'
+    'name',
+    'universities',
+    'institutes',
+    'subCampuses'
   ]
   // const require = Object.keys(AuthenticationInfo)
   const has = Object.keys(tokenRes) || []
@@ -234,11 +237,11 @@ export const getAuthenticationInfo = function (token: string): AuthenticationInf
   const unknown = c.filter(v => !require.includes(v) && has.includes(v))
 
   if (lack.length !== 0) {
-    throw new ForbiddenException(`autoAuthenUserSelf 时，AuthenticationInfo 缺少 ${lack.toString()} 元素`)
+    throw new LackSomeOfPropsException(lack)
   }
 
   if (unknown.length !== 0) {
-    throw new ForbiddenException(`autoAuthenUserSelf 时，AuthenticationInfo 中 ${unknown.toString()} 属性作用未定义`)
+    throw new UnknownPropsException(unknown)
   }
 
   return {
@@ -250,7 +253,10 @@ export const getAuthenticationInfo = function (token: string): AuthenticationInf
     gender: tokenRes.gender,
     grade: tokenRes.grade,
     roles: tokenRes.roles,
-    name: tokenRes.name
+    name: tokenRes.name,
+    universities: tokenRes.universities,
+    institutes: tokenRes.institutes,
+    subCampuses: tokenRes.subCampuses
   }
 }
 

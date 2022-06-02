@@ -2,8 +2,9 @@
 /dist
 /node_modules
 
-src/schema.gql
+/src/schema.gql
 schema.gql
+*.gql
 
 .env
 frpc.ini

@@ -14,6 +14,7 @@ import { PagingConfigArgs, User } from 'src/user/models/user.model'
 import { Role } from '../auth/model/auth.model'
 import { CreateSubjectPolicyHandler, DeleteSubjectPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { Delete } from '../deletes/models/deletes.model'
+import { UniversitiesConnection } from '../universities/models/universities.models'
 import {
   CreateSubjectArgs,
   Subject,
@@ -87,5 +88,10 @@ export class SubjectResolver {
   @ResolveField(of => PostsConnectionWithRelay)
   async postsWithRelay (@Parent() subject: Subject, @Args() paging: RelayPagingConfigArgs) {
     return await this.subjectService.postsWithRelay(subject.id, paging)
+  }
+
+  @ResolveField(of => UniversitiesConnection, { description: '具有该 Subject 的所有大学' })
+  async universities (@Parent() subject: Subject, @Args() args: RelayPagingConfigArgs) {
+    return await this.subjectService.universities(subject.id, args)
   }
 }

@@ -25,6 +25,24 @@ export class RolesNotAllExistException extends HttpException {
   }
 }
 
+export class UniversityNotAllExistException extends HttpException {
+  constructor (ids: string[]) {
+    super(`请求数据 ${ids.toString()} 存在未定义的大学的 id`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class InstituteNotAllExistException extends HttpException {
+  constructor (ids: string[]) {
+    super(`请求数据 ${ids.toString()} 存在未定义的学院的 id`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class SubCampusNotAllExistException extends HttpException {
+  constructor (ids: string[]) {
+    super(`请求数据 ${ids.toString()} 存在未定义的校区的 id`, HttpStatus.FORBIDDEN)
+  }
+}
+
 export class RoleNotFoundException extends HttpException {
   constructor (id: string) {
     super(`角色 ${id} 不存在`, HttpStatus.FORBIDDEN)
@@ -183,5 +201,64 @@ export class UserAlreayAddUpvoteOnIt extends HttpException {
 export class ContentLenExceedException extends HttpException {
   constructor (len: number) {
     super(`内容长度不能大于 ${len}`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class UniversityAlreadyExsistException extends HttpException {
+  constructor (name: string) {
+    super(`大学 ${name} 已存在`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class UniversityHasBeenDeletedException extends HttpException {
+  constructor (id: string) {
+    super(`大学 ${id} 已被删除`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class UniversityNotFoundException extends HttpException {
+  constructor (id: string) {
+    super(`大学 ${id} 不存在`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class SubCampusAlreadyAtTheUniversityExxception extends HttpException {
+  constructor (id: string, name: string) {
+    super(`大学 ${id} 已有名为 ${name} 的校区`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class SubCampusNotFoundException extends HttpException {
+  constructor (id: string) {
+    super(`校区 ${id} 不存在`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class InstituteAlreadyAtTheUniversityException extends HttpException {
+  constructor (id: string, name: string) {
+    super(`大学 ${id} 已有名为 ${name} 的学院`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class InstituteNotFoundException extends HttpException {
+  constructor (id: string) {
+    super(`学院 ${id} 不存在`, HttpStatus.FORBIDDEN)
+  }
+}
+export class IncorrectPasswordException extends HttpException {
+  constructor () {
+    super('密码错误', HttpStatus.FORBIDDEN)
+  }
+}
+
+export class LackSomeOfPropsException extends HttpException {
+  constructor (lack: string[]) {
+    super(`autoAuthenUserSelf 时，AuthenticationInfo 缺少 ${lack.toString()} 元素`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class UnknownPropsException extends HttpException {
+  constructor (unknown: string[]) {
+    super(`autoAuthenUserSelf 时，AuthenticationInfo 中 ${unknown.toString()} 属性作用未定义`, HttpStatus.FORBIDDEN)
   }
 }

@@ -29,6 +29,7 @@ import { DeadlinesModule } from './deadlines/deadlines.module'
 import { DeletesModule } from './deletes/deletes.module'
 import { FoldsModule } from './folds/folds.module'
 import { HashtagsModule } from './hashtags/hashtags.module'
+import { InstitutesModule } from './institutes/institutes.module'
 import { LessonsModule } from './lessons/lessons.module'
 import { MentionsModule } from './mentions/mentions.module'
 import { MessagesModule } from './messages/messages.module'
@@ -45,8 +46,10 @@ import { RolesModule } from './roles/roles.module'
 import { SearchModule } from './search/search.module'
 import { SharedModule } from './shared/shared.module'
 import { StsModule } from './sts/sts.module'
+import { SubcampusModule } from './subcampus/subcampus.module'
 import { SubjectModule } from './subject/subject.module'
 import { TasksModule } from './tasks/tasks.module'
+import { UniversitiesModule } from './universities/universities.module'
 import { UserModule } from './user/user.module'
 import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
@@ -132,7 +135,10 @@ import { WxModule } from './wx/wx.module'
     LessonsModule,
     MentionsModule,
     HashtagsModule,
-    TasksModule
+    TasksModule,
+    UniversitiesModule,
+    InstitutesModule,
+    SubcampusModule
   ],
   controllers: [AppController],
   providers: [
