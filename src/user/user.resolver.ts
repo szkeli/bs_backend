@@ -14,6 +14,7 @@ import { ConversationsService } from '../conversations/conversations.service'
 import { ConversationsConnection } from '../conversations/models/conversations.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
+import { InstitutesConnection } from '../institutes/models/institutes.model'
 import { FilterLessonArgs, LessonsConnection } from '../lessons/models/lessons.model'
 import { WithinArgs } from '../node/models/node.model'
 import { NOTIFICATION_TYPE, NotificationsConnection } from '../notifications/models/notifications.model'
@@ -22,6 +23,7 @@ import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { RolesConnection } from '../roles/models/roles.model'
+import { SubCampusesConnection } from '../subcampus/models/subcampus.model'
 import { University } from '../universities/models/universities.models'
 import { VotesConnection, VotesConnectionWithRelay, VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
 import { VotesService } from '../votes/votes.service'
@@ -193,6 +195,16 @@ export class UserResolver {
   @ResolveField(of => University, { description: '当前用户所在的大学' })
   async university (@Parent() user: User) {
     return await this.userService.university(user.id)
+  }
+
+  @ResolveField(of => InstitutesConnection, { description: '当前用户所属的学院' })
+  async institutes (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.institutes(user.id, args)
+  }
+
+  @ResolveField(of => SubCampusesConnection, { description: '当前用户所属的校区' })
+  async subCampuses (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.subCampuses(user.id, args)
   }
 
   @Query(of => NotificationsConnection, { description: '测试接口，某用户的所有回复通知，非当前用户获取到null', nullable: true })
