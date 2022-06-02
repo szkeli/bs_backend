@@ -308,7 +308,7 @@ export class AuthService {
   }
 
   /**
-   * 管理员通过认证
+   * 管理员直接将认证信息附加到 User
    * @param actorId 管理员id
    * @param id 用户id
    * @param info 认证信息
@@ -317,6 +317,16 @@ export class AuthService {
     const roleIds = info.roles
     const roleIdsLen = info.roles?.length ?? 0
     const roleIdsStr = ids2String(info.roles)
+
+    const universitiyIds = info.universities
+    const instituteIds = info.institutes
+    const subCampusIds = info.subCampuses
+    const universitiesLen = info.universities.length
+    const institutesLen = info.institutes.length
+    const subCampusesLen = info.subCampuses.length
+    const universitiesStr = ids2String(info.universities)
+    const institutesStr = ids2String(info.institutes)
+    const subCampusesStr = ids2String(info.subCampuses)
 
     // 将info附加到用户画像并添加credential信息
     const query = `
@@ -335,6 +345,24 @@ export class AuthService {
             n as uid
           }
         }
+        # User 申请的 Universities
+        universities(func: uid(${universitiesStr})) @filter(type(University)) {
+          universities as uid
+        }
+        # User 申请的 Institutes
+        institutes(func: uid(${institutesStr})) @filter(type(Institute)) {
+          institutes as uid
+          universitiesOfInstitutes as ~institutes @filter(type(University))
+        }
+        # User 申请的 SubCampuses
+        subCampuses(func: uid(${subCampusesStr})) @filter(type(SubCampus)) {
+          subCampuses as uid
+          universitiesOfSubCampuses as ~subCampuses @filter(type(University))
+        }
+        # Institutes 和 SubCampuses 对应的 University 的数组是否与申请的 Universities 相同
+        k(func: uid(universities)) @filter(not uid(universitiesOfInstitutes, universitiesOfSubCampuses)) {
+          k as uid
+        }
         # 用户原信息
         user(func: uid(u)) {
           id: uid
@@ -344,10 +372,14 @@ export class AuthService {
         c(func: type(UserAuthenInfo)) @filter(uid_in(to, $id) and not has(delete)) { c as uid }
       }
     `
-    const condition = `@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) and eq(len(x), ${roleIdsLen}) )`
 
     delete info.images
     delete info.roles
+    delete info.universities
+    delete info.institutes
+    delete info.subCampuses
+
+    const condition = `@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) and eq(len(x), ${roleIdsLen}) )`
     const mutation = {
       uid: id,
       'dgraph.type': 'User',
@@ -374,6 +406,28 @@ export class AuthService {
             uid: '_:credential'
           }
         }
+      }
+    }
+
+    const addUniversityCond = `@if( eq(len(k), 0) and eq(len(universities), ${universitiesLen}) )`
+    const addUniversityMut = {
+      uid: 'uid(universities)',
+      users: {
+        uid: 'uid(u)'
+      }
+    }
+    const addInstituteCond = `@if( eq(len(k), 0) and eq(len(institutes), ${institutesLen}) )`
+    const addInstituteMut = {
+      uid: 'uid(institutes)',
+      users: {
+        uid: 'uid(u)'
+      }
+    }
+    const addSubCampusCond = `@if( eq(len(k), 0) and eq(len(subCampuses), ${subCampusesLen}) )`
+    const addSubCampusMut = {
+      uid: 'uid(subCampuses)',
+      users: {
+        uid: 'uid(u)'
       }
     }
 
@@ -413,11 +467,18 @@ export class AuthService {
       u: Array<{uid: string}>
       n: Array<{uid: string}>
       x: Array<{uid: string}>
+      universities: Array<{uid: string}>
+      institutes: Array<{uid: string}>
+      subCampuses: Array<{uid: string}>
+      k: Array<{uid: string}>
       user: User[]
     }>({
       query,
       mutations: [
         { mutation, condition },
+        { mutation: addUniversityMut, condition: addUniversityCond },
+        { mutation: addInstituteMut, condition: addInstituteCond },
+        { mutation: addSubCampusMut, condition: addSubCampusCond },
         { mutation: addDeleteOnTheUserAuthenInfoMutation, condition: deleteTheUserAuthenInfoCondi }
       ],
       vars: { $actorId: actorId, $id: id }
@@ -432,9 +493,20 @@ export class AuthService {
     if (res.json.n.length !== 0) {
       throw new UserHadAuthenedException(id)
     }
-
     if (res.json.x.length !== roleIdsLen) {
       throw new RolesNotAllExistException(roleIds)
+    }
+    if (res.json.universities.length !== universitiesLen) {
+      throw new UniversityNotAllExistException(universitiyIds)
+    }
+    if (res.json.institutes.length !== institutesLen) {
+      throw new InstituteNotAllExistException(instituteIds)
+    }
+    if (res.json.subCampuses.length !== subCampusesLen) {
+      throw new SubCampusNotAllExistException(subCampusIds)
+    }
+    if (res.json.k.length !== 0) {
+      throw new ForbiddenException('universities 没有完全包含 institutes 和 subCampuses 相应的 University')
     }
 
     const user = res.json.user[0]
