@@ -49,8 +49,6 @@ export class PostsService {
       vars: { $id: id }
     })
 
-    console.error(res)
-
     return res.subject[0]
   }
 
