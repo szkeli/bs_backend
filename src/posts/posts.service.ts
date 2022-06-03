@@ -41,7 +41,7 @@ export class PostsService {
     const query = `
       query v($id: string) {
         var(func: uid($id)) @filter(type(Post)) {
-          university ~posts @filter(type(University))
+          university as ~posts @filter(type(University))
         }
         university(func: uid(university)) {
           id: uid
