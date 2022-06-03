@@ -13,6 +13,7 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
 import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, imagesV2ToImages, relayfyArrayForward, sha1 } from '../tool'
+import { University } from '../universities/models/universities.models'
 import { PagingConfigArgs, User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
@@ -34,6 +35,26 @@ export class PostsService {
     private readonly nlpService: NlpService
   ) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async university (id: string): Promise<University> {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Post)) {
+          university ~posts @filter(type(University))
+        }
+        university(func: uid(university)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{university: University[]}>({
+      query,
+      vars: { $id: id }
+    })
+
+    return res.university[0]
   }
 
   async imagesV2 (id: string): Promise<string[]> {

@@ -1317,6 +1317,9 @@ type Post {
 
   """帖子的图片"""
   images: [String]!
+
+  """该帖子所在的大学"""
+  university: University!
 }
 
 type PostsConnection {

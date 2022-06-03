@@ -26,6 +26,7 @@ import { HashtagsConnection } from '../hashtags/models/hashtags.model'
 import { WithinArgs } from '../node/models/node.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
+import { University } from '../universities/models/universities.models'
 import { VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
@@ -171,5 +172,10 @@ export class PostsResolver {
   @ResolveField(of => [String], { description: '帖子的图片', nullable: 'items' })
   async images (@Parent() post: Post): Promise<string[]> {
     return await this.postsService.imagesV2(post.id)
+  }
+
+  @ResolveField(of => University, { description: '该帖子所在的大学' })
+  async university (@Parent() post: Post): Promise<University> {
+    return await this.postsService.university(post.id)
   }
 }
