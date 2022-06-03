@@ -456,14 +456,6 @@ export class PostsService {
     // 获取帖子文本的情感信息
     const _sentiment = await this.nlpService.sentimentAnalysis(content)
 
-    // 帖子所属的主题
-    const subject = {
-      uid: 'uid(u)',
-      posts: {
-        uid: '_:post'
-      }
-    }
-
     // 帖子的匿名信息
     const anonymous = {
       uid: '_:anonymous',
@@ -524,48 +516,47 @@ export class PostsService {
         # creator 是否存在
         v(func: uid($creator)) @filter(type(User)) { v as uid }
         # Subject 是否存在
-        u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }
+        ${subjectId ? 'u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }' : ''}
       }
     `
+
+    const mutations = []
 
     // 将 Post 添加到 Subject
     const addToSubjectCond = `@if( 
       eq(len(v), 1)
       and eq(len(system), 1)
-      and eq(len(u), 1) 
+      and eq(len(u), 1)
     )`
     const addToSubjectMut = {
-      uid: 'uid(v)',
+      uid: 'uid(u)',
       posts: {
-        uid: '_:post',
-        'graph.type': 'Post',
-        // 帖子的创建者
-        creator,
-        // 贴子内容的情感信息
-        sentiment,
-        // 帖子所属的主题
-        subject
+        uid: '_:post'
       }
     }
 
+    if (subjectId) {
+      mutations.push({ mutation: addToSubjectMut, condition: addToSubjectCond })
+    }
+
     // 创建帖子，无 Subject
-    const createPostCond = '@if( eq(len(v), 1) and eq(len(system), 1) and eq(len(u), 0) )'
+    const createPostCond = '@if( eq(len(v), 1) and eq(len(system), 1) )'
     const createPostMut = {
       uid: 'uid(v)',
       posts: {
         uid: '_:post',
-        'graph.type': 'Post',
+        'dgraph.type': 'Post',
         // 帖子的创建者
         creator,
         // 贴子内容的情感信息
-        sentiment
+        sentiment,
+        content,
+        createdAt: now
       }
     }
 
-    // 发布具有主题的帖子
-    if (subjectId) {
-      Object.assign(createPostMut, { subject })
-    }
+    mutations.push({ mutation: createPostMut, condition: createPostCond })
+
     // 发布匿名帖子
     if (isAnonymous) {
       Object.assign(createPostMut, { anonymous })
@@ -587,10 +578,7 @@ export class PostsService {
       s: Array<{uid: string}>
       u: Array<{uid: string}>
     }>({
-      mutations: [
-        { mutation: addToSubjectMut, condition: addToSubjectCond },
-        { mutation: createPostMut, condition: createPostCond }
-      ],
+      mutations,
       query,
       vars: {
         $creator: i,
