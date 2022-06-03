@@ -181,7 +181,7 @@ export class UniversitiesService {
             }
             ${after ? q1 : ''}
             totalCount(func: uid(posts)) { count(uid) }
-            objs(func: uid(${after ? 'q' : 'users'}), orderdesc: createdAt, first: ${first}) {
+            objs(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
                 id: uid
                 expand(_all_)
             }
