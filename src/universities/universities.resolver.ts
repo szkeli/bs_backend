@@ -6,6 +6,7 @@ import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { InstitutesConnection } from '../institutes/models/institutes.model'
+import { PostsConnectionWithRelay } from '../posts/models/post.model'
 import { SubCampusesConnection } from '../subcampus/models/subcampus.model'
 import { SubjectsConnection } from '../subject/model/subject.model'
 import { UsersConnectionWithRelay } from '../user/models/user.model'
@@ -68,6 +69,11 @@ export class UniversitiesResolver {
   @ResolveField(of => SubjectsConnection, { description: '该大学拥有的所有 Subject' })
   async subjects (@Parent() university: University, @Args() args: RelayPagingConfigArgs) {
     return await this.universitiesService.subjects(university.id, args)
+  }
+
+  @ResolveField(of => PostsConnectionWithRelay, { description: '该大学拥有的所有 Post' })
+  async posts (@Parent() university: University, @Args() args: RelayPagingConfigArgs) {
+    return await this.universitiesService.posts(university.id, args)
   }
 
   @Mutation(of => Boolean, { description: '测试接口，将当前所有用户添加到某个学校' })

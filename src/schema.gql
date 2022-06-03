@@ -1868,6 +1868,24 @@ type University {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): SubjectsConnection!
+
+  """该大学拥有的所有 Post"""
+  posts(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PostsConnectionWithRelay!
 }
 
 type UniversitiesConnection {
@@ -4107,6 +4125,9 @@ type Mutation {
 
   """测试接口，将当前所有用户添加到某个学校"""
   addAllUserToUniversity(id: String!): Boolean!
+
+  """测试接口，将当前所有帖子添加到某个学校"""
+  addAllPostToUniversity(id: String!): Boolean!
   createInstitute(
     """学院所在的大学的 id"""
     id: String!
