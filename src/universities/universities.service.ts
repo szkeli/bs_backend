@@ -18,7 +18,7 @@ export class UniversitiesService {
   async addAllPostToUniversity (id: string) {
     const query = `
       query v($id: string) {
-        var(func: uid($id)) @filter(type(University) and not has(delete)) {
+        u(func: uid($id)) @filter(type(University) and not has(delete)) {
           u as uid
         }
         var(func: type(Post)) {
@@ -52,7 +52,7 @@ export class UniversitiesService {
   async addAllUserToUniversity (id: string) {
     const query = `
       query v($id: string) {
-        var(func: uid($id)) @filter(type(University) and not has(delete)) {
+        u(func: uid($id)) @filter(type(University) and not has(delete)) {
           u as uid
         }
 
