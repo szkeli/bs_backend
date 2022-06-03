@@ -14,6 +14,40 @@ import { CreateUniversityArgs, DeleteUniversityArgs, University, UpdateUniversit
 export class UniversitiesService {
   constructor (private readonly dbService: DbService) {}
 
+  async addAllPostToUniversity (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(University) and not has(delete)) {
+          u as uid
+        }
+        var(func: type(Post)) {
+          posts as uid
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      posts: {
+        uid: 'uid(posts)'
+      }
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id }
+    })
+
+    if (res.json.u.length !== 1) {
+      throw new UniversityNotFoundException(id)
+    }
+
+    return true
+  }
+
   async addAllUserToUniversity (id: string) {
     const query = `
       query v($id: string) {
@@ -34,11 +68,17 @@ export class UniversitiesService {
       }
     }
 
-    await this.dbService.commitConditionalUperts({
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+    }>({
       query,
       mutations: [{ mutation, condition }],
       vars: { $id: id }
     })
+
+    if (res.json.u.length !== 1) {
+      throw new UniversityNotFoundException(id)
+    }
 
     return true
   }

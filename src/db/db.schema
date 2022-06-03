@@ -660,6 +660,8 @@ type University {
   logoUrl
   # 该大学所有的用户
   users
+  # 该大学内所有的帖子
+  posts
   # 该大学所有的校区
   subCampuses
   # 该大学所有的学院

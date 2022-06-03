@@ -76,4 +76,11 @@ export class UniversitiesResolver {
   async addAllUserToUniversity (@Args('id') id: string) {
     return await this.universitiesService.addAllUserToUniversity(id)
   }
+
+  @Mutation(of => Boolean, { description: '测试接口，将当前所有帖子添加到某个学校' })
+  @Roles(Role.Admin)
+  @CheckPolicies(new MustWithCredentialPolicyHandler())
+  async addAllPostToUniversity (@Args('id') id: string) {
+    return await this.universitiesService.addAllPostToUniversity(id)
+  }
 }
