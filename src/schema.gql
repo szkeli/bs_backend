@@ -2541,6 +2541,11 @@ type Query {
 
   """Relay分页版的posts接口"""
   postsWithRelay(
+    filterEnum: POST_FILTER_ENUM = BASE_ON_UNIVERSITY_OF_CURRENT_USER
+
+    """与 filterEnum 联合使用，实现从某个大学获取帖子"""
+    universityId: String!
+
     """最新的n个对象"""
     first: Int = 10
 
@@ -3242,6 +3247,14 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): SubCampusesConnection!
+}
+
+enum POST_FILTER_ENUM {
+  """自动从当前用户所在的大学获取帖子，当前用户的 universities 为 null 时，返回的 Post 也是 null"""
+  BASE_ON_UNIVERSITY_OF_CURRENT_USER
+
+  """从某一个大学获取帖子"""
+  BASE_ON_UNIVERSITY_ID
 }
 
 union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin

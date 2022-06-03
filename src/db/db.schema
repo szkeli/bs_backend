@@ -251,8 +251,6 @@ type Post {
   location
   # 帖子的评论
   comments
-  # 所属主题
-  subject
   # 帖子的浏览
   views
   # 帖子的匿名

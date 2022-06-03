@@ -12,6 +12,7 @@ import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
+import { Subject } from '../subject/model/subject.model'
 import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, imagesV2ToImages, relayfyArrayForward, sha1 } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { PagingConfigArgs, User, UserWithFacets } from '../user/models/user.model'
@@ -21,6 +22,7 @@ import {
   IImage,
   Nullable,
   Post,
+  PostFilter,
   PostsConnection,
   PostsConnectionWithRelay,
   RelayPagingConfigArgs
@@ -28,6 +30,30 @@ import {
 
 @Injectable()
 export class PostsService {
+  async subject (id: string): Promise<Subject | null> {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Post)) {
+          subject as ~posts @filter(type(Subject))
+        }
+        subject(func: uid(subject)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      subject: Subject[]
+    }>({
+      query,
+      vars: { $id: id }
+    })
+
+    console.error(res)
+
+    return res.subject[0]
+  }
+
   private readonly dgraph: DgraphClient
   constructor (
     private readonly dbService: DbService,
@@ -414,30 +440,7 @@ export class PostsService {
 
   async createPost (i: string, { content, images, subjectId, isAnonymous }: CreatePostArgs): Promise<Post> {
     const now = new Date().toISOString()
-    const condition = `@if( 
-      eq(len(v), 1)
-      and eq(len(system), 1) 
-      ${subjectId ? 'and eq(len(u), 1) ' : ''}
-    )`
-    const query = `
-      query v($creator: string, $subjectId: string) {
-        # 系统
-        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
-        # 创建者存在
-        v(func: uid($creator)) @filter(type(User)) { v as uid }
-        # 主题存在
-        ${subjectId ? 'u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }' : ''}
-      }
-    `
-    const mutation = {
-      uid: 'uid(v)',
-      posts: {
-        uid: '_:post',
-        'dgraph.type': 'Post',
-        content,
-        createdAt: now
-      }
-    }
+
     // 处理帖子图片
     const imagesV2 = images?.map((image, index) => (
       {
@@ -514,29 +517,66 @@ export class PostsService {
       }
     }
 
-    // 帖子的创建者
-    Object.assign(mutation.posts, { creator })
+    const query = `
+      query v($creator: string, $subjectId: string) {
+        # system 是否存在
+        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
+        # creator 是否存在
+        v(func: uid($creator)) @filter(type(User)) { v as uid }
+        # Subject 是否存在
+        u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }
+      }
+    `
 
-    Object.assign(mutation.posts, { sentiment })
+    // 将 Post 添加到 Subject
+    const addToSubjectCond = `@if( 
+      eq(len(v), 1)
+      and eq(len(system), 1)
+      and eq(len(u), 1) 
+    )`
+    const addToSubjectMut = {
+      uid: 'uid(v)',
+      posts: {
+        uid: '_:post',
+        'graph.type': 'Post',
+        // 帖子的创建者
+        creator,
+        // 贴子内容的情感信息
+        sentiment,
+        // 帖子所属的主题
+        subject
+      }
+    }
+
+    // 创建帖子，无 Subject
+    const createPostCond = '@if( eq(len(v), 1) and eq(len(system), 1) and eq(len(u), 0) )'
+    const createPostMut = {
+      uid: 'uid(v)',
+      posts: {
+        uid: '_:post',
+        'graph.type': 'Post',
+        // 帖子的创建者
+        creator,
+        // 贴子内容的情感信息
+        sentiment
+      }
+    }
 
     // 发布具有主题的帖子
     if (subjectId) {
-      Object.assign(mutation.posts, { subject })
+      Object.assign(createPostMut, { subject })
     }
-
     // 发布匿名帖子
     if (isAnonymous) {
-      Object.assign(mutation.posts, { anonymous })
+      Object.assign(createPostMut, { anonymous })
     }
-
     // 帖子的图片信息
     if ((imagesV2?.length ?? 0) !== 0) {
-      Object.assign(mutation.posts, { imagesV2 })
+      Object.assign(createPostMut, { imagesV2 })
     }
-
     // 帖子实锤含有违规文本内容
-    if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
-      Object.assign(mutation.posts, { delete: iDelete })
+    if ((textCensor?.suggestion ?? CENSOR_SUGGESTION.PASS) === CENSOR_SUGGESTION.BLOCK) {
+      Object.assign(createPostMut, { delete: iDelete })
     }
 
     // TODO 帖子疑似含有违规内容，加入人工审查
@@ -547,7 +587,10 @@ export class PostsService {
       s: Array<{uid: string}>
       u: Array<{uid: string}>
     }>({
-      mutations: [{ mutation, condition }],
+      mutations: [
+        { mutation: addToSubjectMut, condition: addToSubjectCond },
+        { mutation: createPostMut, condition: createPostCond }
+      ],
       query,
       vars: {
         $creator: i,
@@ -710,7 +753,7 @@ export class PostsService {
     }
   }
 
-  async postsWithRelay ({ first, last, before, after, orderBy }: RelayPagingConfigArgs): Promise<Nullable<PostsConnectionWithRelay>> {
+  async postsWithRelay ({ first, last, before, after, orderBy }: RelayPagingConfigArgs, filter: PostFilter): Promise<Nullable<PostsConnectionWithRelay>> {
     after = btoa(after)
     before = btoa(before)
 

@@ -1,6 +1,23 @@
-import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 import { Connection, ORDER_BY } from '../../connections/models/connections.model'
+
+export enum POST_FILTER_ENUM {
+  BASE_ON_UNIVERSITY_OF_CURRENT_USER = 'BASE_ON_UNIVERSITY_OF_CURRENT_USER',
+  BASE_ON_UNIVERSITY_ID = 'BASE_ON_UNIVERSITY_ID'
+}
+
+registerEnumType(POST_FILTER_ENUM, {
+  name: 'POST_FILTER_ENUM',
+  valuesMap: {
+    BASE_ON_UNIVERSITY_OF_CURRENT_USER: {
+      description: '自动从当前用户所在的大学获取帖子，当前用户的 universities 为 null 时，返回的 Post 也是 null'
+    },
+    BASE_ON_UNIVERSITY_ID: {
+      description: '从某一个大学获取帖子'
+    }
+  }
+})
 
 @ObjectType()
 export class IImage {
@@ -76,6 +93,15 @@ export class RelayPagingConfigArgs {
 
   @Field(of => ORDER_BY, { description: '排序方式', nullable: true, defaultValue: ORDER_BY.CREATED_AT_DESC })
     orderBy?: ORDER_BY
+}
+
+@ArgsType()
+export class PostFilter {
+  @Field(of => POST_FILTER_ENUM, { defaultValue: POST_FILTER_ENUM.BASE_ON_UNIVERSITY_OF_CURRENT_USER })
+    filterEnum: POST_FILTER_ENUM
+
+  @Field(of => String, { description: '与 filterEnum 联合使用，实现从某个大学获取帖子' })
+    universityId: string
 }
 
 @ObjectType()

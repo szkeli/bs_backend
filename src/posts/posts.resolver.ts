@@ -32,6 +32,7 @@ import {
   CreatePostArgs,
   Nullable,
   Post,
+  PostFilter,
   PostsConnection,
   PostsConnectionWithRelay,
   RelayPagingConfigArgs
@@ -69,8 +70,8 @@ export class PostsResolver {
 
   @Query(of => PostsConnectionWithRelay, { description: 'Relay分页版的posts接口' })
   @MaybeAuth()
-  async postsWithRelay (@Args() paging: RelayPagingConfigArgs) {
-    return await this.postsService.postsWithRelay(paging)
+  async postsWithRelay (@Args() paging: RelayPagingConfigArgs, @Args() filter: PostFilter) {
+    return await this.postsService.postsWithRelay(paging, filter)
   }
 
   @Query(of => PostsConnectionWithRelay, { description: '按热度获取所有帖子' })
@@ -121,7 +122,7 @@ export class PostsResolver {
 
   @ResolveField(of => Subject, { nullable: true, description: '帖子所属的主题' })
   async subject (@Parent() post: Post): Promise<Subject | null> {
-    return await this.subjectService.findASubjectByPostId(post.id.toString())
+    return await this.postsService.subject(post.id)
   }
 
   @ResolveField(of => VotesConnection, { description: '帖子的点赞' })
