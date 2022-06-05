@@ -41,7 +41,7 @@ export class SubjectService {
         }
         ${after ? q1 : ''}
         totalCount(func: uid(universities)) { count(uid) }
-        objes(func: uid(${after ? 'q' : 'universities'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${after ? 'q' : 'universities'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
