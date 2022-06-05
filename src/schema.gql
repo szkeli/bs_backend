@@ -2815,6 +2815,8 @@ type Query {
 
   """获取所有主题"""
   subjectsWithRelay(
+    universityId: String
+
     """最新的n个对象"""
     first: Int = 10
 

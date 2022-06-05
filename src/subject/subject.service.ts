@@ -6,11 +6,12 @@ import { DbService } from 'src/db/db.service'
 import { UniversityNotFoundException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { User } from '../user/models/user.model'
 import {
   CreateSubjectArgs,
+  QuerySubjectsFilter,
   Subject,
   SubjectId,
   SubjectsConnection,
@@ -61,54 +62,51 @@ export class SubjectService {
     })
   }
 
-  async subjectsWithRelay ({ orderBy, first, after, before, last }: RelayPagingConfigArgs): Promise<SubjectsConnectionWithRelay> {
-    after = btoa(after)
-    before = btoa(before)
-
+  async subjectsWithRelay ({ orderBy, first, after }: RelayPagingConfigArgs, filter: QuerySubjectsFilter): Promise<SubjectsConnectionWithRelay> {
+    after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.subjectsWithRelayForward(first, after)
+      return await this.subjectsWithRelayForward(first, after, filter)
     }
 
     throw new ForbiddenException('undefined')
   }
 
-  async subjectsWithRelayForward (first: number, after: string): Promise<SubjectsConnectionWithRelay> {
+  async subjectsWithRelayForward (first: number, after: string, { universityId }: QuerySubjectsFilter): Promise<SubjectsConnectionWithRelay> {
     const q1 = 'var(func: uid(subjects), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const university = universityId
+      ? `
+      var(func: uid($universityId)) @filter(type(University)) {
+        subjects as subjects(orderdesc: createdAt) @filter(type(Subject) and not has(delete))
+      }
+    `
+      : `
+      var(func: type(Subject), orderdesc: createdAt) @filter(not has(delete)) {
+        subjects as uid
+      }
+    `
     const query = `
-      query v($after: string) {
-        var(func: type(Subject), orderdesc: createdAt) @filter(not has(delete)) {
-          subjects as uid
-        }
+      query v($after: string, $universityId: string) {
+        ${university}
         ${after ? q1 : ''}
         totalCount(func: uid(subjects)) {
           count(uid)
         }
-        subjects(func: uid(${after ? 'q' : 'subjects'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${after ? 'q' : 'subjects'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
-        # 开始游标
-        startSubject(func: uid(subjects), first: -1) {
-          createdAt
-        }
-        # 结束游标
-        endSubject(func: uid(subjects), first: 1) {
-          createdAt
-        }
+        startO(func: uid(subjects), first: -1) { createdAt }
+        endO(func: uid(subjects), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      subjects: Subject[]
-      startSubject: Array<{createdAt: string}>
-      endSubject: Array<{createdAt: string}>
-    }>({ query, vars: { $after: after } })
+
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Subject>>({
+      query,
+      vars: { $after: after, $universityId: universityId }
+    })
 
     return relayfyArrayForward({
-      startO: res.startSubject,
-      endO: res.endSubject,
-      objs: res.subjects,
-      totalCount: res.totalCount,
+      ...res,
       first,
       after
     })

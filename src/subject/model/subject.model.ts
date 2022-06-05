@@ -76,3 +76,9 @@ export class SubjectsConnection {
 
 @ObjectType()
 export class SubjectsConnectionWithRelay extends Connection<Subject>(Subject) {}
+
+@ArgsType()
+export class QuerySubjectsFilter {
+  @Field({ nullable: true })
+    universityId: string
+}
