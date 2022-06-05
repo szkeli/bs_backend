@@ -394,3 +394,9 @@ export class NotificationArgs {
   @Field(of => [NOTIFICATION_ACTION], { description: '按action获取通知', nullable: true, defaultValue: [NOTIFICATION_ACTION.ADD_COMMENT_ON_POST, NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT, NOTIFICATION_ACTION.ADD_COMMENT_ON_USER] })
     actions: NOTIFICATION_ACTION[]
 }
+
+@ArgsType()
+export class UsersWithRelayFilter {
+  @Field(of => String, { nullable: true })
+    universityId: string
+}

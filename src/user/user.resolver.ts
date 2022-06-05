@@ -37,6 +37,7 @@ import {
   User,
   UsersConnection,
   UsersConnectionWithRelay,
+  UsersWithRelayFilter,
   UserWithPrivateProps
 } from './models/user.model'
 import { UserService } from './user.service'
@@ -98,10 +99,16 @@ export class UserResolver {
     }
   }
 
-  @Query(of => UsersConnection, { description: '获取所有用户' })
+  @Query(of => UsersConnection, { deprecationReason: '使用 usersWithRelay', description: '获取所有用户' })
   @MaybeAuth()
   async users (@Args() args: PagingConfigArgs) {
     return await this.userService.users(args.first, args.offset)
+  }
+
+  @Query(of => UsersConnectionWithRelay)
+  @MaybeAuth()
+  async usersWithRelay (@Args() args: RelayPagingConfigArgs, @Args() filter: UsersWithRelayFilter) {
+    return await this.userService.usersWithRelay(args, filter)
   }
 
   @Query(of => User, { description: '以id获取用户' })

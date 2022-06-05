@@ -2630,7 +2630,25 @@ type Query {
   whoAmI: AdminAndUserWithPrivatePropsUnion!
 
   """获取所有用户"""
-  users(first: Int = 10, offset: Int = 0): UsersConnection!
+  users(first: Int = 10, offset: Int = 0): UsersConnection! @deprecated(reason: "使用 usersWithRelay")
+  usersWithRelay(
+    universityId: String
+
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UsersConnectionWithRelay!
 
   """以id获取用户"""
   user(id: String!): User!

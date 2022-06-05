@@ -23,7 +23,8 @@ import {
   RegisterUserArgs,
   UpdateUserArgs,
   User,
-  UsersConnection
+  UsersConnection,
+  UsersWithRelayFilter
 } from './models/user.model'
 
 @Injectable()
@@ -31,6 +32,57 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  /**
+   * 返回所有用户
+   * @param args Relay 分页参数
+   * @param filter 按条件返回所有用户
+   */
+  async usersWithRelay ({ first, after, orderBy }: RelayPagingConfigArgs, filter: UsersWithRelayFilter) {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.usersWithRelayForward(first, after, filter)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async usersWithRelayForward (first: number, after: string, { universityId }: UsersWithRelayFilter) {
+    const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const users = universityId
+      ? `
+      var(func: uid($universityId)) @filter(type(University)) {
+        users as users @filter(type(User))
+      }
+    `
+      : `
+      var(func: type(User)) {
+        users as uid
+      }
+      `
+    const query = `
+      query v($universityId: string, $after: string) {
+        ${users}
+        ${after ? q1 : ''}
+        totalCount(func: uid(users)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'users'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(users), first: -1) { createdAt }
+        endO(func: uid(users), first: 1) { createdAt }
+      }
+    `
+    const res = await this.dbService.commitQuery <RelayfyArrayParam<User>>({
+      query,
+      vars: { $universityId: universityId, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      after,
+      first
+    })
   }
 
   async subCampuses (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
