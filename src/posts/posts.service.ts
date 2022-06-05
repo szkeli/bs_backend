@@ -5,7 +5,7 @@ import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
-import { PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, UserNotAuthenException } from '../app.exception'
+import { PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, UniversityNotFoundException, UserNotAuthenException } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
@@ -436,7 +436,7 @@ export class PostsService {
     }
   }
 
-  async createPost (i: string, { content, images, subjectId, isAnonymous }: CreatePostArgs): Promise<Post> {
+  async createPost (i: string, { content, images, subjectId, isAnonymous, universityId }: CreatePostArgs): Promise<Post> {
     const now = new Date().toISOString()
 
     // 处理帖子图片
@@ -507,14 +507,17 @@ export class PostsService {
       }
     }
 
+    // TODO 检查该 University 是否包含相应的 Subject
     const query = `
-      query v($creator: string, $subjectId: string) {
+      query v($creator: string, $subjectId: string, $universityId: string) {
         # system 是否存在
         s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
         # creator 是否存在
         v(func: uid($creator)) @filter(type(User)) { v as uid }
         # Subject 是否存在
         ${subjectId ? 'u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }' : ''}
+        # University 是否存在
+        k(func: uid($universityId)) @filter(type(University)) { k as uid }
       }
     `
 
@@ -536,6 +539,16 @@ export class PostsService {
     if (subjectId) {
       mutations.push({ mutation: addToSubjectMut, condition: addToSubjectCond })
     }
+
+    const addToUniversityCond = '@if( eq(len(v), 1) and eq(len(system), 1) and eq(len(k), 1) )'
+    const addToUniversityMut = {
+      uid: 'uid(k)',
+      posts: {
+        uid: '_:post'
+      }
+    }
+
+    mutations.push({ mutation: addToUniversityMut, condition: addToUniversityCond })
 
     // 创建帖子，无 Subject
     const createPostCond = '@if( eq(len(v), 1) and eq(len(system), 1) )'
@@ -575,12 +588,14 @@ export class PostsService {
       v: Array<{uid: string}>
       s: Array<{uid: string}>
       u: Array<{uid: string}>
+      k: Array<{uid: string}>
     }>({
       mutations,
       query,
       vars: {
         $creator: i,
-        $subjectId: subjectId
+        $subjectId: subjectId,
+        $universityId: universityId
       }
     })
 
@@ -592,6 +607,9 @@ export class PostsService {
     }
     if (subjectId && res.json.u.length !== 1) {
       throw new SubjectNotFoundException(subjectId)
+    }
+    if (res.json.k.length !== 1) {
+      throw new UniversityNotFoundException(universityId)
     }
 
     return {

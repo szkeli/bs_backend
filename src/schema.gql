@@ -3656,8 +3656,11 @@ type Mutation {
     """帖子图片"""
     images: [String!]
 
-    """帖子所属的主题"""
+    """帖子所属的 Subject"""
     subjectId: String
+
+    """帖子所在的 University"""
+    universityId: String!
 
     """是否匿名帖子"""
     isAnonymous: Boolean = false
