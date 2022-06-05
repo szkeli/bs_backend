@@ -71,8 +71,8 @@ export class SubjectResolver {
 
   @Mutation(of => Subject, { description: '创建一个主题' })
   @CheckPolicies(new MustWithCredentialPolicyHandler(), new CreateSubjectPolicyHandler())
-  async createSubject (@CurrentUser() user: User, @Args() input: CreateSubjectArgs): Promise<Subject> {
-    return await this.subjectService.createASubject(user.id, input)
+  async createSubject (@CurrentUser() user: User, @Args() args: CreateSubjectArgs): Promise<Subject> {
+    return await this.subjectService.createSubject(user.id, args)
   }
 
   @ResolveField(of => User, { description: '主题的创建者' })

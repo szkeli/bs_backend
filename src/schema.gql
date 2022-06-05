@@ -3811,7 +3811,15 @@ type Mutation {
   updateSubject(id: String!, title: String, description: String, avatarImageUrl: String, backgroundImageUrl: String): Subject!
 
   """创建一个主题"""
-  createSubject(title: String!, description: String!, avatarImageUrl: String!, backgroundImageUrl: String!): Subject!
+  createSubject(
+    title: String!
+    description: String!
+    avatarImageUrl: String!
+    backgroundImageUrl: String!
+
+    """Subject 所在的大学的 id"""
+    universityId: String!
+  ): Subject!
 
   """举报一条评论"""
   addReportOnComment(
