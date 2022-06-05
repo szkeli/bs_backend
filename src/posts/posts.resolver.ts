@@ -32,9 +32,9 @@ import {
   CreatePostArgs,
   Nullable,
   Post,
-  PostFilter,
   PostsConnection,
   PostsConnectionWithRelay,
+  QueryPostsFilter,
   RelayPagingConfigArgs
 } from './models/post.model'
 import { PostsService } from './posts.service'
@@ -70,7 +70,7 @@ export class PostsResolver {
 
   @Query(of => PostsConnectionWithRelay, { description: 'Relay分页版的posts接口' })
   @MaybeAuth()
-  async postsWithRelay (@Args() paging: RelayPagingConfigArgs, @Args() filter: PostFilter) {
+  async postsWithRelay (@Args() paging: RelayPagingConfigArgs, @Args() filter: QueryPostsFilter) {
     return await this.postsService.postsWithRelay(paging, filter)
   }
 

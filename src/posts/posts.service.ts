@@ -13,7 +13,7 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
 import { Subject } from '../subject/model/subject.model'
-import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, imagesV2ToImages, relayfyArrayForward, sha1 } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { PagingConfigArgs, User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
@@ -22,9 +22,9 @@ import {
   IImage,
   Nullable,
   Post,
-  PostFilter,
   PostsConnection,
   PostsConnectionWithRelay,
+  QueryPostsFilter,
   RelayPagingConfigArgs
 } from './models/post.model'
 
@@ -625,57 +625,42 @@ export class PostsService {
     return res.post[0]
   }
 
-  async postsWithRelayForward (first: number, after: string | null): Promise<PostsConnectionWithRelay> {
+  async postsWithRelayForward (first: number, after: string | null, { universityId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
     const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const university = universityId
+      ? `
+      var(func: uid($universityId)) @filter(type(University)) {
+        posts as posts(orderdesc: createdAt) @filter(type(Post) and not has(delete) and not has(pin))
+      }
+    `
+      : `
+      var(func: type(Post), orderdesc: createdAt) @filter(not has(delete) and not has(pin)) { 
+        posts as uid
+      }
+    `
     const query = `
-      query v($after: string) {
-        var(func: type(Post), orderdesc: createdAt) @filter(not has(delete) and not has(pin)) { 
-          posts as uid
-        }
+      query v($after: string, $universityId: string) {
+        ${university}
         ${after ? q1 : ''}
         totalCount(func: uid(posts)) { count(uid) }
-        posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
-        # 开始游标
-        startPost(func: uid(posts), first: -1) {
-          id: uid
-          createdAt
-        }
-        # 结束游标
-        endPost(func: uid(posts), first: 1) {
-          id: uid
-          createdAt
-        }
+        startO(func: uid(posts), first: -1) { createdAt }
+        endO(func: uid(posts), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      posts: Post[]
-      startPost: Array<{id: string, createdAt: string}>
-      endPost: Array<{id: string, createdAt: string}>
-    }>({ query, vars: { $after: after } })
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Post>>({
+      query,
+      vars: { $after: after, $universityId: universityId }
+    })
 
-    const totalCount = res.totalCount[0]?.count ?? 0
-    const v = totalCount !== 0
-    const startPost = res.startPost[0]
-    const endPost = res.endPost[0]
-    const lastPost = res.posts?.slice(-1)[0]
-
-    const hasNextPage = endPost?.createdAt !== lastPost?.createdAt && endPost?.createdAt !== after && res.posts.length === first && totalCount !== first
-    const hasPreviousPage = after !== startPost?.createdAt && !!after
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      edges: edgifyByCreatedAt(res.posts ?? []),
-      pageInfo: {
-        endCursor: atob(lastPost?.createdAt),
-        startCursor: atob(res.posts[0]?.createdAt),
-        hasNextPage: hasNextPage && v,
-        hasPreviousPage: hasPreviousPage && v
-      }
-    }
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async postsWithRelayBackward (last: number, before: string | null): Promise<PostsConnectionWithRelay> {
@@ -739,9 +724,9 @@ export class PostsService {
     }
   }
 
-  async postsWithRelay ({ first, last, before, after, orderBy }: RelayPagingConfigArgs, filter: PostFilter): Promise<Nullable<PostsConnectionWithRelay>> {
-    after = btoa(after)
-    before = btoa(before)
+  async postsWithRelay ({ first, last, before, after, orderBy }: RelayPagingConfigArgs, filter: QueryPostsFilter): Promise<Nullable<PostsConnectionWithRelay>> {
+    after = handleRelayForwardAfter(after)
+    before = handleRelayBackwardBefore(before)
 
     if ((before && after) || (first && last)) {
       throw new ForbiddenException('同一时间只能使用after作为向后分页、before作为向前分页的游标')
@@ -751,7 +736,7 @@ export class PostsService {
     }
 
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.postsWithRelayForward(first, after)
+      return await this.postsWithRelayForward(first, after, filter)
     }
 
     if (first && orderBy === ORDER_BY.TRENDING) {
