@@ -696,7 +696,7 @@ export class PostsService {
     })
   }
 
-  async postsWithRelayBackward (last: number, before: string | null): Promise<PostsConnectionWithRelay> {
+  async postsWithRelayBackward (last: number, before: string | null, { universityId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
     const q1 = `
       var(func: uid(posts), orderdesc: createdAt) @filter(gt(createdAt, $before)) { q as uid }
       var(func: uid(q), orderasc: createdAt, first: ${last}) { v as uid }
@@ -704,14 +704,21 @@ export class PostsService {
     const q2 = `
       var(func: uid(posts), orderasc: createdAt, first: ${last}) { v as uid }
     `
-    const query = `
-    query v($before: string) {
+    const university = universityId
+      ? `
+      var(func: uid($universityId)) @filter(type(University)) {
+        posts as posts(orderdesc: createdAt) @filter(not has(delete))
+      }
+    `
+      : `
       var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
         posts as uid
       }
-      totalCount(func: uid(posts)) {
-        count(uid) 
-      }
+    `
+    const query = `
+    query v($before: string, $universityId: string) {
+      ${university}
+      totalCount(func: uid(posts)) { count(uid) }
 
       ${before ? q1 : q2}
       posts(func: uid(v), orderdesc: createdAt) {
@@ -736,7 +743,7 @@ export class PostsService {
       edge: Post[]
       startPost: Array<{id: string, createdAt: string}>
       endPost: Array<{id: string, createdAt: string}>
-    }>({ query, vars: { $before: before } })
+    }>({ query, vars: { $before: before, $universityId: universityId } })
 
     const startPost = res.startPost[0]
     const endPost = res.endPost[0]
@@ -761,9 +768,11 @@ export class PostsService {
     after = handleRelayForwardAfter(after)
     before = handleRelayBackwardBefore(before)
 
+    // TODO first 具有默认值，需要另外的判断逻辑
     if ((before && after) || (first && last)) {
       throw new ForbiddenException('同一时间只能使用after作为向后分页、before作为向前分页的游标')
     }
+    // TODO: fix: !first !last 对 last===0也生效
     if (!before && !after && !first && !last) {
       throw new ForbiddenException('必须指定向前分页或者向后分页')
     }
@@ -784,7 +793,7 @@ export class PostsService {
     }
 
     if (last) {
-      return await this.postsWithRelayBackward(last, before)
+      return await this.postsWithRelayBackward(last, before, filter)
     }
 
     return null
