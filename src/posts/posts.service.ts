@@ -305,11 +305,23 @@ export class PostsService {
     }
   }
 
-  async trendingPostsWithRelayForward (first: number, after: string): Promise<PostsConnectionWithRelay> {
+  async trendingPostsWithRelayForward (first: number, after: string, { universityId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
     const q1 = 'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
+    const university = universityId
+      ? `
+      var(func: uid($universityId)) @filter(type(University)) {
+        pre as posts(orderdesc: createdAt) @filter(type(Post))
+      }
+    `
+      : `
+      var(func: type(Post)) {
+        pre as uid
+      }
+    `
     const query = `
-      query v($after: string) {
-        v as var(func: type(Post)) @filter(not has(delete) and not has(pin)) {
+      query v($after: string, $universityId: string) {
+        ${university}
+        v as var(func: uid(pre)) @filter(not has(delete) and not has(pin)) {
           vc as count(votes @filter(type(Vote)))
           votesCount as math(sqrt(vc * 2))
           # TODO
@@ -355,7 +367,10 @@ export class PostsService {
       posts: Array<Post & {score: number}>
       startPost: Array<{score: number}>
       endPost: Array<{score: number}>
-    }>({ query, vars: { $after: after } })
+    }>({
+      query,
+      vars: { $after: after, $universityId: universityId }
+    })
 
     const totalCount = res.totalCount[0]?.count ?? 0
     const v = totalCount !== 0
@@ -382,7 +397,7 @@ export class PostsService {
     }
   }
 
-  async trendingPostsWithRelay ({ first, before, last, after, orderBy }: RelayPagingConfigArgs) {
+  async trendingPostsWithRelay ({ first, before, last, after, orderBy }: RelayPagingConfigArgs, filter: QueryPostsFilter) {
     after = btoa(after)
     if (after) {
       try {
@@ -392,7 +407,7 @@ export class PostsService {
       }
     }
     if (first) {
-      return await this.trendingPostsWithRelayForward(first, after)
+      return await this.trendingPostsWithRelayForward(first, after, filter)
     }
   }
 
@@ -765,7 +780,7 @@ export class PostsService {
           throw new ForbiddenException(`游标 ${after} 解析失败`)
         }
       }
-      return await this.trendingPostsWithRelayForward(first, after)
+      return await this.trendingPostsWithRelayForward(first, after, filter)
     }
 
     if (last) {

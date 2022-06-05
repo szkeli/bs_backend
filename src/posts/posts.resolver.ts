@@ -76,8 +76,8 @@ export class PostsResolver {
 
   @Query(of => PostsConnectionWithRelay, { description: '按热度获取所有帖子' })
   @MaybeAuth()
-  async trendingPostsWithRelay (@Args() paging: RelayPagingConfigArgs) {
-    return await this.postsService.trendingPostsWithRelay(paging)
+  async trendingPostsWithRelay (@Args() paging: RelayPagingConfigArgs, filter: QueryPostsFilter) {
+    return await this.postsService.trendingPostsWithRelay(paging, filter)
   }
 
   @Query(of => PostsConnection, { deprecationReason: '请使用 trendingPostsWithRelay' })
