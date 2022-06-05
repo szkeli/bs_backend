@@ -175,7 +175,7 @@ export class PostsResolver {
     return await this.postsService.imagesV2(post.id)
   }
 
-  @ResolveField(of => University, { description: '该帖子所在的大学' })
+  @ResolveField(of => University, { description: '该帖子所在的大学', nullable: true })
   async university (@Parent() post: Post): Promise<University> {
     return await this.postsService.university(post.id)
   }

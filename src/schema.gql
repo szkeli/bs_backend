@@ -1319,7 +1319,7 @@ type Post {
   images: [String]!
 
   """该帖子所在的大学"""
-  university: University!
+  university: University
 }
 
 type PostsConnection {
