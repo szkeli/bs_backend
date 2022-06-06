@@ -227,6 +227,19 @@ export const getAuthenticationInfo = function (token: string): AuthenticationInf
     'institutes',
     'subCampuses'
   ]
+  // {
+  //   "avatarImageUrl": "测试头像",
+  //   "studentId": 3219321,
+  //   "school": "深圳大学",
+  //   "subCampus": "粤海校区",
+  //   "gender": "MALE",
+  //   "college": "电信学院",
+  //   "grade": "2019级",
+  //   "name": "无糖加冰",
+  //   "universities": ["0x74b3"],
+  //   "subCampuses": ["0x74b8"],
+  //   "institutes": ["0x74c7"]
+  // }
   // const require = Object.keys(AuthenticationInfo)
   const has = Object.keys(tokenRes) || []
   const c = has.concat(require)
