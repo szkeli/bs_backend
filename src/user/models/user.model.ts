@@ -391,3 +391,33 @@ export class UsersWithRelayFilter {
   @Field(of => String, { nullable: true })
     universityId: string
 }
+
+@ObjectType()
+export class PrivateSettings {
+  @Field(of => Boolean, { nullable: true, description: '校区是否公开' })
+    isSubCampusPrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '年级是否公开' })
+    isGradePrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '学校是否公开' })
+    isUniversityPrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '学院是否公开' })
+    isInstitutePrivate: boolean
+}
+
+@ArgsType()
+export class UpdatePrivateSettingsArgs {
+  @Field(of => Boolean, { nullable: true, description: '校区是否公开' })
+    isSubCampusPrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '年级是否公开' })
+    isGradePrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '学校是否公开' })
+    isUniversityPrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '学院是否公开' })
+    isInstitutePrivate: boolean
+}

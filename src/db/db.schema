@@ -42,6 +42,7 @@ about: uid @reverse .
 sentiment: uid @reverse .
 lessonNotificationSettings: uid @reverse .
 lessonNotificationStatus: uid @reverse .
+privateSettings: uid @reverse .
 
 images: [string] .
 
@@ -111,6 +112,10 @@ dataPending: bool .
 seen: bool .
 isRead: bool .
 needNotifications: bool .
+isInstitutePrivate: bool .
+isUniversityPrivate: bool .
+isGradePrivate: bool .
+isSubCampusPrivate: bool .
 
 dateAdded: dateTime @index(hour) .
 startDate: dateTime @index(hour) .
@@ -227,6 +232,8 @@ type User {
   lessonNotificationSettings
   # 课程通知的通知状态
   lessonNotificationStatus
+  # 用户的隐私设定
+  privateSettings
 }
 
 # 帖子
@@ -641,6 +648,18 @@ type LessonMetaData {
 type LessonNotificationSettings {
   # 是否需要上课通知
   needNotifications
+}
+
+# 用户隐私范围设定
+type PrivateSettings {
+  # 校区是否公开
+  isSubCampusPrivate
+  # 年级是否公开
+  isGradePrivate
+  # 学校是否公开
+  isUniversityPrivate
+  # 学院是否公开
+  isInstitutePrivate
 }
 
 type LessonNotificationStatus {

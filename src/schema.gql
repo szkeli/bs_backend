@@ -467,6 +467,9 @@ type User implements Person & Node {
   """当前用户提交的认证信息"""
   authenInfo: UserAuthenInfo
 
+  """当前用户的隐私设定"""
+  privateSettings: PrivateSettings
+
   """学号"""
   studentId: Int
 
@@ -745,6 +748,9 @@ interface Person implements Node {
 
   """当前用户提交的认证信息"""
   authenInfo: UserAuthenInfo
+
+  """当前用户的隐私设定"""
+  privateSettings: PrivateSettings
 }
 
 interface Node {
@@ -1009,6 +1015,9 @@ type LoginResult implements Node & Person {
   """当前用户提交的认证信息"""
   authenInfo: UserAuthenInfo
 
+  """当前用户的隐私设定"""
+  privateSettings: PrivateSettings
+
   """学号"""
   studentId: Int
 
@@ -1070,6 +1079,20 @@ type UserPageInfo {
   endCursor: String
   hasPreviousPage: Boolean!
   hasNextPage: Boolean!
+}
+
+type PrivateSettings {
+  """校区是否公开"""
+  isSubCampusPrivate: Boolean
+
+  """年级是否公开"""
+  isGradePrivate: Boolean
+
+  """学校是否公开"""
+  isUniversityPrivate: Boolean
+
+  """学院是否公开"""
+  isInstitutePrivate: Boolean
 }
 
 type LessonNotificationSettings {
@@ -3560,6 +3583,9 @@ type UserWithPrivateProps implements Person & Node {
 
   """当前用户提交的认证信息"""
   authenInfo: UserAuthenInfo
+
+  """当前用户的隐私设定"""
+  privateSettings: PrivateSettings
 }
 
 enum SEARCHTYPE {
@@ -3689,6 +3715,21 @@ type Mutation {
 
   """更新用户画像"""
   updateUser(avatarImageUrl: String, userId: String, name: String, sign: String, isCollegePrivate: Boolean, isSchoolPrivate: Boolean, isGradePrivate: Boolean, isGenderPrivate: Boolean, isSubCampusPrivate: Boolean): User!
+
+  """更新当前用户的隐私信息"""
+  updatePrivateSettings(
+    """校区是否公开"""
+    isSubCampusPrivate: Boolean
+
+    """年级是否公开"""
+    isGradePrivate: Boolean
+
+    """学校是否公开"""
+    isUniversityPrivate: Boolean
+
+    """学院是否公开"""
+    isInstitutePrivate: Boolean
+  ): PrivateSettings!
 
   """点赞一个帖子"""
   addUpvoteOnPost(postId: String!): Post!

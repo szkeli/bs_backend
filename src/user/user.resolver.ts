@@ -32,7 +32,9 @@ import {
   NotificationArgs,
   PagingConfigArgs,
   Person,
+  PrivateSettings,
   RegisterUserArgs,
+  UpdatePrivateSettingsArgs,
   UpdateUserArgs,
   User,
   UsersConnection,
@@ -256,5 +258,16 @@ export class UserResolver {
   @ResolveField(of => UserAuthenInfo, { description: '当前用户提交的认证信息', nullable: true })
   async authenInfo (@Parent() user: User) {
     return await this.userService.authenInfo(user.id)
+  }
+
+  @ResolveField(of => PrivateSettings, { nullable: true, description: '当前用户的隐私设定' })
+  async privateSettings (@Parent() user: User) {
+    return await this.userService.privateSettings(user)
+  }
+
+  @Mutation(of => PrivateSettings, { description: '更新当前用户的隐私信息' })
+  @Roles(Role.User)
+  async updatePrivateSettings (@CurrentUser() user: User, @Args() args: UpdatePrivateSettingsArgs) {
+    return await this.userService.updatePrivateSettings(user, args)
   }
 }

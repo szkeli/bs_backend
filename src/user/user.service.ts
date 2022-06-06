@@ -20,7 +20,9 @@ import { atob, btoa, code2Session, edgifyByCreatedAt, handleRelayForwardAfter, n
 import { University } from '../universities/models/universities.models'
 import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
+  PrivateSettings,
   RegisterUserArgs,
+  UpdatePrivateSettingsArgs,
   UpdateUserArgs,
   User,
   UsersConnection,
@@ -32,6 +34,75 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  /**
+   * 更新指定用户的隐私设定
+   * @param args 新的 PrivateSettingsPatch
+   */
+  async updatePrivateSettings (user: User, args: UpdatePrivateSettingsArgs) {
+    const query = `
+      query v($id: string) {
+        u(func: uid($id)) @filter(type(User)) {
+          u as uid
+          settings as privateSettings @filter(type(PrivateSettings))
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      privateSettings: {
+        'dgraph.type': 'PrivateSettings',
+        ...args
+      }
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+      settings: PrivateSettings[]
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: user.id }
+    })
+
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(user?.id)
+    }
+
+    Object.assign(res.json.settings[0], args)
+
+    return res.json.settings[0]
+  }
+
+  /**
+   * 返回当前用户的 PrivateSettings
+   * @param user 某用户
+   */
+  async privateSettings (user: User) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(User)) {
+          settings as privateSettings @filter(type(PrivateSettings))
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      settings: PrivateSettings[]
+    }>({
+      query,
+      vars: { $id: user?.id }
+    })
+
+    return res.settings[0]
   }
 
   /**
