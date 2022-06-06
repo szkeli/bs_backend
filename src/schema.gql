@@ -419,7 +419,7 @@ type User implements Person & Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubCampusesConnection!
+  ): SubCampusesConnection
 
   """回复的通知"""
   replyNotifications(
@@ -701,7 +701,7 @@ interface Person implements Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubCampusesConnection!
+  ): SubCampusesConnection
 
   """回复的通知"""
   replyNotifications(
@@ -967,7 +967,7 @@ type LoginResult implements Node & Person {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubCampusesConnection!
+  ): SubCampusesConnection
 
   """回复的通知"""
   replyNotifications(
@@ -3536,7 +3536,7 @@ type UserWithPrivateProps implements Person & Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubCampusesConnection!
+  ): SubCampusesConnection
 
   """回复的通知"""
   replyNotifications(
