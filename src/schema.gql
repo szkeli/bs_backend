@@ -2408,6 +2408,31 @@ type TextClassificationResult {
   fifthClassProbability: Float
 }
 
+type SubCampus {
+  id: String!
+  name: String!
+  createdAt: String!
+  university: University!
+}
+
+type SubCampusesConnection {
+  edges: [SubCampusEdge!]!
+  pageInfo: SubCampusPageInfo!
+  totalCount: Int!
+}
+
+type SubCampusEdge {
+  node: SubCampus
+  cursor: String
+}
+
+type SubCampusPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type SearchResultItemConnection {
   edges: [SearchResultItemEdge!]!
   pageInfo: SearchResultItemPageInfo!
@@ -2419,7 +2444,7 @@ type SearchResultItemEdge {
   cursor: String
 }
 
-union SearchResultItem = Post | User | Comment | Subject
+union SearchResultItem = Post | User | Comment | Subject | University | Institute | SubCampus
 
 type SearchResultItemPageInfo {
   startCursor: String
@@ -2459,31 +2484,6 @@ type AvatarImageUploadCredentialInfo {
   bucket: String!
   region: String!
   key: String!
-}
-
-type SubCampus {
-  id: String!
-  name: String!
-  createdAt: String!
-  university: University!
-}
-
-type SubCampusesConnection {
-  edges: [SubCampusEdge!]!
-  pageInfo: SubCampusPageInfo!
-  totalCount: Int!
-}
-
-type SubCampusEdge {
-  node: SubCampus
-  cursor: String
-}
-
-type SubCampusPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
 }
 
 type View {
@@ -3595,10 +3595,24 @@ type UserWithPrivateProps implements Person & Node {
 }
 
 enum SEARCHTYPE {
+  """用户"""
   USER
   COMMENT
+
+  """评论"""
   POST
+
+  """主题"""
   SUBJECT
+
+  """大学"""
+  UNIVERSITY
+
+  """学院"""
+  INSTITUTE
+
+  """校区"""
+  SUBCAMPUS
 }
 
 """登录类型"""

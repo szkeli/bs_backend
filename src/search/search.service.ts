@@ -7,7 +7,8 @@ import { Comment } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Subject } from '../subject/model/subject.model'
-import { btoa, relayfyArrayForward } from '../tool'
+import { btoa, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { University } from '../universities/models/universities.models'
 import { User } from '../user/models/user.model'
 import { SearchArgs, SearchResultItemConnection, SEARCHTYPE } from './model/search.model'
 
@@ -34,7 +35,40 @@ export class SearchService {
     if (type === SEARCHTYPE.SUBJECT && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.searchSubject(query, first, after)
     }
+    if (type === SEARCHTYPE.UNIVERSITY && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.searchUniversity(query, first, after)
+    }
     throw new Error('Method not implemented.')
+  }
+
+  async searchUniversity (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+    const q1 = 'var(func: uid(universities), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($query: string, $after: string) {
+        var(func: type(University), orderdesc: createdAt) @filter(alloftext(name, $query) and not has(delete)) {
+          universities as uid
+        }
+        totalCount(func: uid(universities)) { count(uid) }
+        ${after ? q1 : ''}
+        objs(func: uid(${after ? 'q' : 'universities'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          dgraph.type
+          expand(_all_)
+        }
+        startO(func: uid(universities), first: -1) { createdAt }
+        endO(func: uid(universities), first: 1) { createdAt }
+      } 
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<University>>({
+      query,
+      vars: { $query: q, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async searchSubject (q: string, first: number, after: string) {
