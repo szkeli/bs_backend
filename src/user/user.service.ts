@@ -193,20 +193,25 @@ export class UserService {
     })
   }
 
-  async institutes (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+  async institutes (currentUser: User, id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.institutesRelayForward(id, first, after)
+      return await this.institutesRelayForward(currentUser, id, first, after)
     }
     throw new Error('Method not implemented.')
   }
 
-  async institutesRelayForward (id: string, first: number, after: string) {
+  async institutesRelayForward (currentUser: User, id: string, first: number, after: string) {
     const q1 = 'var(func: uid(institutes)) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string) {
         var(func: uid($id)) @filter(type(User)) {
+          settings as privateSettings @filter(type(PrivateSettings))
           institutes as ~users @filter(type(Institute))
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
         }
         ${after ? q1 : ''}
         totalCount(func: uid(institutes)) { count(uid) }
@@ -218,10 +223,14 @@ export class UserService {
         endO(func: uid(institutes), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<Institute>>({
+    const res = await this.dbService.commitQuery<{settings: PrivateSettings[]} & RelayfyArrayParam<Institute>>({
       query,
       vars: { $id: id }
     })
+
+    if (res.settings[0]?.isInstitutePrivate && currentUser?.id !== id) {
+      return null
+    }
 
     return relayfyArrayForward({
       ...res,

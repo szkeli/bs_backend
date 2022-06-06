@@ -401,7 +401,7 @@ type User implements Person & Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): InstitutesConnection!
+  ): InstitutesConnection
 
   """当前用户所属的校区"""
   subCampuses(
@@ -683,7 +683,7 @@ interface Person implements Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): InstitutesConnection!
+  ): InstitutesConnection
 
   """当前用户所属的校区"""
   subCampuses(
@@ -949,7 +949,7 @@ type LoginResult implements Node & Person {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): InstitutesConnection!
+  ): InstitutesConnection
 
   """当前用户所属的校区"""
   subCampuses(
@@ -3518,7 +3518,7 @@ type UserWithPrivateProps implements Person & Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): InstitutesConnection!
+  ): InstitutesConnection
 
   """当前用户所属的校区"""
   subCampuses(

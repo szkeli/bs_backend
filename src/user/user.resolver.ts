@@ -206,9 +206,9 @@ export class UserResolver {
     return await this.userService.university(currentUser, user.id)
   }
 
-  @ResolveField(of => InstitutesConnection, { description: '当前用户所属的学院' })
-  async institutes (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.institutes(user.id, args)
+  @ResolveField(of => InstitutesConnection, { nullable: true, description: '当前用户所属的学院' })
+  async institutes (@CurrentUser() currentUser: User, @Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.institutes(currentUser, user.id, args)
   }
 
   @ResolveField(of => SubCampusesConnection, { description: '当前用户所属的校区' })
