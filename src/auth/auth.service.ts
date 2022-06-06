@@ -739,6 +739,8 @@ export class AuthService {
       and eq(len(institutes), ${institutesLen}) 
       and eq(len(subCampuses), ${subCampusesLen}) 
     )`
+    // TODO school 属性已被弃用
+    // 需要使用新的对象（方式）存储（表示）用户私有数据
     const mutation = {
       uid: id,
       ...tokenRes,

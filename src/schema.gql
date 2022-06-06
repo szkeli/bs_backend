@@ -480,13 +480,13 @@ type User implements Person & Node {
   gender: GENDER
 
   """学院"""
-  college: String
+  college: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 institutes 代替")
 
   """校区"""
-  subCampus: String
+  subCampus: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 subCampuses 代替")
 
   """学校"""
-  school: String
+  school: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 university 代替")
 
   """年级"""
   grade: String
@@ -1022,13 +1022,13 @@ type LoginResult implements Node & Person {
   gender: GENDER
 
   """学院"""
-  college: String
+  college: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 institutes 代替")
 
   """校区"""
-  subCampus: String
+  subCampus: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 subCampuses 代替")
 
   """学校"""
-  school: String
+  school: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 university 代替")
 
   """年级"""
   grade: String
@@ -1474,13 +1474,13 @@ type UserAuthenInfo implements Authenable {
   studentId: Float!
 
   """学院"""
-  college: String!
+  college: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 institutes 代替")
 
   """校区"""
-  subCampus: String!
+  subCampus: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 subCampuses 代替")
 
   """学校"""
-  school: String!
+  school: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 universities 代替")
 
   """年级"""
   grade: String!
@@ -1488,7 +1488,7 @@ type UserAuthenInfo implements Authenable {
   """性别"""
   gender: GENDER!
 
-  """有效信息图片(e.g. 校园卡照片)的链接"""
+  """bug: 图片乱序，有效信息图片(e.g. 校园卡照片)的链接"""
   images: [String!]
 }
 
@@ -3301,13 +3301,13 @@ type UserWithPrivateProps implements Person & Node {
   gender: GENDER
 
   """学院"""
-  college: String
+  college: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 institutes 代替")
 
   """校区"""
-  subCampus: String
+  subCampus: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 subCampuses 代替")
 
   """学校"""
-  school: String
+  school: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 university 代替")
 
   """年级"""
   grade: String
@@ -4197,12 +4197,6 @@ input AuthenticationInfo {
   """学号"""
   studentId: Float!
 
-  """学院"""
-  college: String!
-
-  """校区"""
-  subCampus: String!
-
   """学院的id的数组"""
   institutes: [String!]!
 
@@ -4211,9 +4205,6 @@ input AuthenticationInfo {
 
   """大学的id的数组"""
   universities: [String!]!
-
-  """学校"""
-  school: String!
 
   """年级"""
   grade: String!

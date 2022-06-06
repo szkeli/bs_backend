@@ -108,12 +108,6 @@ export class AuthenticationInfo {
   @Field({ description: '学号' })
     studentId: number | null
 
-  @Field({ description: '学院' })
-    college: string
-
-  @Field({ description: '校区' })
-    subCampus: string
-
   @Field(of => [String], { description: '学院的id的数组' })
     institutes: string[]
 
@@ -122,9 +116,6 @@ export class AuthenticationInfo {
 
   @Field(of => [String], { description: '大学的id的数组' })
     universities: string[]
-
-  @Field({ description: '学校' })
-    school: string
 
   @Field({ description: '年级' })
     grade: string
@@ -230,13 +221,13 @@ export class User implements Person, Node {
   @Field(of => GENDER, { nullable: true, description: '用户性别' })
     gender?: GENDER | null
 
-  @Field({ description: '学院', nullable: true })
+  @Field({ description: '学院', nullable: true, deprecationReason: 'feature/multiuniversity 后废弃，请使用 institutes 代替' })
     college?: string | null
 
-  @Field({ description: '校区', nullable: true })
+  @Field({ description: '校区', nullable: true, deprecationReason: 'feature/multiuniversity 后废弃，请使用 subCampuses 代替' })
     subCampus?: string | null
 
-  @Field({ description: '学校', nullable: true })
+  @Field({ description: '学校', nullable: true, deprecationReason: 'feature/multiuniversity 后废弃，请使用 university 代替' })
     school?: string | null
 
   @Field({ description: '年级', nullable: true })
