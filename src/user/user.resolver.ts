@@ -201,9 +201,9 @@ export class UserResolver {
     return await this.userService.credential(user.id)
   }
 
-  @ResolveField(of => University, { description: '当前用户所在的大学' })
-  async university (@Parent() user: User) {
-    return await this.userService.university(user.id)
+  @ResolveField(of => University, { nullable: true, description: '当前用户所在的大学' })
+  async university (@CurrentUser() currentUser: User, @Parent() user: User) {
+    return await this.userService.university(currentUser, user.id)
   }
 
   @ResolveField(of => InstitutesConnection, { description: '当前用户所属的学院' })

@@ -383,7 +383,7 @@ type User implements Person & Node {
   credential: ICredential
 
   """当前用户所在的大学"""
-  university: University!
+  university: University
 
   """当前用户所属的学院"""
   institutes(
@@ -665,7 +665,7 @@ interface Person implements Node {
   credential: ICredential
 
   """当前用户所在的大学"""
-  university: University!
+  university: University
 
   """当前用户所属的学院"""
   institutes(
@@ -931,7 +931,7 @@ type LoginResult implements Node & Person {
   credential: ICredential
 
   """当前用户所在的大学"""
-  university: University!
+  university: University
 
   """当前用户所属的学院"""
   institutes(
@@ -3500,7 +3500,7 @@ type UserWithPrivateProps implements Person & Node {
   credential: ICredential
 
   """当前用户所在的大学"""
-  university: University!
+  university: University
 
   """当前用户所属的学院"""
   institutes(

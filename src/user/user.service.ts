@@ -230,13 +230,18 @@ export class UserService {
     })
   }
 
-  async university (id: string) {
+  async university (currentUser: User, id: string) {
     const query = `
       query v($id: string) {
         var(func: uid($id)) @filter(type(User)) {
+          settings as privateSettings @filter(type(PrivateSettings))
           ~users @filter(type(University)) {
             university as uid
           }
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
         }
         university(func: uid(university)) {
           id: uid
@@ -246,10 +251,16 @@ export class UserService {
     `
     const res = await this.dbService.commitQuery<{
       university: University[]
+      settings: PrivateSettings[]
     }>({
       query,
       vars: { $id: id }
     })
+
+    // 当前用户不是自己时，根据设定判断是否返回 null
+    if (currentUser?.id !== id && res.settings[0]?.isUniversityPrivate) {
+      return null
+    }
 
     return res.university[0]
   }
