@@ -20,6 +20,7 @@ import { atob, btoa, code2Session, edgifyByCreatedAt, handleRelayForwardAfter, n
 import { University } from '../universities/models/universities.models'
 import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
+  GENDER,
   PrivateSettings,
   RegisterUserArgs,
   UpdatePrivateSettingsArgs,
@@ -34,6 +35,39 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  /**
+   * 返回被请求的用户的性别
+   * @param currentUser 当前发起请求的用户
+   * @param user 被请求的用户
+   */
+  async gender (currentUser: User, user: User) {
+    const query = `
+      query v($id: string) {
+        user(func: uid($id)) @filter(type(User)) {
+          gender
+          settings as privateSettings @filter(type(PrivateSettings))
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      settings: PrivateSettings[]
+      user: Array<{gender: GENDER}>
+    }>({
+      query,
+      vars: { $id: user?.id }
+    })
+
+    if (currentUser?.id !== user?.id && res.settings[0]?.isGenderPrivate) {
+      return null
+    }
+
+    return res.user[0]?.gender
   }
 
   /**

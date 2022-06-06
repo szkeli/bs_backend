@@ -405,6 +405,9 @@ export class PrivateSettings {
 
   @Field(of => Boolean, { nullable: true, description: '学院是否公开' })
     isInstitutePrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '性别是否公开' })
+    isGenderPrivate: boolean
 }
 
 @ArgsType()
@@ -420,4 +423,7 @@ export class UpdatePrivateSettingsArgs {
 
   @Field(of => Boolean, { nullable: true, description: '学院是否公开' })
     isInstitutePrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '性别是否公开' })
+    isGenderPrivate: boolean
 }

@@ -116,6 +116,7 @@ isInstitutePrivate: bool .
 isUniversityPrivate: bool .
 isGradePrivate: bool .
 isSubCampusPrivate: bool .
+isGenderPrivate: bool .
 
 dateAdded: dateTime @index(hour) .
 startDate: dateTime @index(hour) .
@@ -660,6 +661,8 @@ type PrivateSettings {
   isUniversityPrivate
   # 学院是否公开
   isInstitutePrivate
+  # 性别是否公开
+  isGenderPrivate
 }
 
 type LessonNotificationStatus {

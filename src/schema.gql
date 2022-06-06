@@ -382,6 +382,9 @@ type User implements Person & Node {
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
 
+  """用户性别"""
+  gender: GENDER
+
   """当前用户所在的大学"""
   university: University
 
@@ -478,9 +481,6 @@ type User implements Person & Node {
 
   """微信unionId,注册时传入微信code自动通过微信提供的接口获取获取"""
   unionId: String!
-
-  """用户性别"""
-  gender: GENDER
 
   """学院"""
   college: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 institutes 代替")
@@ -664,6 +664,9 @@ interface Person implements Node {
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
 
+  """当前用户的性别"""
+  gender: GENDER
+
   """当前用户所在的大学"""
   university: University
 
@@ -757,16 +760,16 @@ interface Node {
   id: String!
 }
 
-enum NOTIFICATION_TYPE {
-  ALL
-  READ
-  UN_READ
-}
-
 enum GENDER {
   NONE
   MALE
   FEMALE
+}
+
+enum NOTIFICATION_TYPE {
+  ALL
+  READ
+  UN_READ
 }
 
 type LoginResult implements Node & Person {
@@ -930,6 +933,9 @@ type LoginResult implements Node & Person {
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
 
+  """用户性别"""
+  gender: GENDER
+
   """当前用户所在的大学"""
   university: University
 
@@ -1027,9 +1033,6 @@ type LoginResult implements Node & Person {
   """微信unionId,注册时传入微信code自动通过微信提供的接口获取获取"""
   unionId: String!
 
-  """用户性别"""
-  gender: GENDER
-
   """学院"""
   college: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 institutes 代替")
 
@@ -1093,6 +1096,9 @@ type PrivateSettings {
 
   """学院是否公开"""
   isInstitutePrivate: Boolean
+
+  """性别是否公开"""
+  isGenderPrivate: Boolean
 }
 
 type LessonNotificationSettings {
@@ -3320,7 +3326,7 @@ type UserWithPrivateProps implements Person & Node {
   """微信unionId,注册时传入微信code自动通过微信提供的接口获取获取"""
   unionId: String!
 
-  """用户性别"""
+  """当前用户的性别"""
   gender: GENDER
 
   """学院"""
@@ -3729,6 +3735,9 @@ type Mutation {
 
     """学院是否公开"""
     isInstitutePrivate: Boolean
+
+    """性别是否公开"""
+    isGenderPrivate: Boolean
   ): PrivateSettings!
 
   """点赞一个帖子"""
