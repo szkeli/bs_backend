@@ -50,7 +50,7 @@ export class SubcampusService {
     const query = `
         query v($id: string) {
             var(func: uid($id)) @filter(type(SubCampus)) {
-                university as ~subcampus @filter(type(University))
+                university as ~subCampuses @filter(type(University))
             }
             university(func: uid(university)) {
                 id: uid
