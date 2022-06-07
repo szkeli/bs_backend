@@ -473,6 +473,9 @@ type User implements Person & Node {
   """当前用户的隐私设定"""
   privateSettings: PrivateSettings
 
+  """获取当前用户上课通知的设置"""
+  lessonNotificationSettings: LessonNotificationSettings!
+
   """学号"""
   studentId: Int
 
@@ -754,6 +757,9 @@ interface Person implements Node {
 
   """当前用户的隐私设定"""
   privateSettings: PrivateSettings
+
+  """获取当前用户上课通知的设置"""
+  lessonNotificationSettings: LessonNotificationSettings!
 }
 
 interface Node {
@@ -1023,6 +1029,9 @@ type LoginResult implements Node & Person {
 
   """当前用户的隐私设定"""
   privateSettings: PrivateSettings
+
+  """获取当前用户上课通知的设置"""
+  lessonNotificationSettings: LessonNotificationSettings!
 
   """学号"""
   studentId: Int

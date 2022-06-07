@@ -15,7 +15,8 @@ import { ConversationsConnection } from '../conversations/models/conversations.m
 import { ICredential } from '../credentials/models/credentials.model'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { InstitutesConnection } from '../institutes/models/institutes.model'
-import { FilterLessonArgs, LessonsConnection } from '../lessons/models/lessons.model'
+import { LessonsService } from '../lessons/lessons.service'
+import { FilterLessonArgs, LessonNotificationSettings, LessonsConnection } from '../lessons/models/lessons.model'
 import { WithinArgs } from '../node/models/node.model'
 import { NOTIFICATION_TYPE, NotificationsConnection } from '../notifications/models/notifications.model'
 import { NotificationsService } from '../notifications/notifications.service'
@@ -52,7 +53,8 @@ export class UserResolver {
     private readonly reportsService: ReportsService,
     private readonly votesService: VotesService,
     private readonly commentsService: CommentService,
-    private readonly notificationsService: NotificationsService
+    private readonly notificationsService: NotificationsService,
+    private readonly lessonsService: LessonsService
   ) {}
 
   @Mutation(of => User, { description: '注册' })
@@ -267,6 +269,11 @@ export class UserResolver {
   @ResolveField(of => PrivateSettings, { nullable: true, description: '当前用户的隐私设定' })
   async privateSettings (@Parent() user: User) {
     return await this.userService.privateSettings(user)
+  }
+
+  @ResolveField(of => LessonNotificationSettings, { description: '获取当前用户上课通知的设置' })
+  async lessonNotificationSettings (@Parent() user: User) {
+    return await this.lessonsService.lessonNotificationSettings(user.id)
   }
 
   @Mutation(of => PrivateSettings, { description: '更新当前用户的隐私信息' })
