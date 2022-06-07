@@ -253,12 +253,18 @@ export class IncorrectPasswordException extends HttpException {
 
 export class LackSomeOfPropsException extends HttpException {
   constructor (lack: string[]) {
-    super(`autoAuthenUserSelf 时，AuthenticationInfo 缺少 ${lack.toString()} 元素`, HttpStatus.FORBIDDEN)
+    super(`autoAuthenUserSelf 时，AuthenticationInfo 缺少 ${lack.toString()} 属性`, HttpStatus.FORBIDDEN)
   }
 }
 
 export class UnknownPropsException extends HttpException {
   constructor (unknown: string[]) {
     super(`autoAuthenUserSelf 时，AuthenticationInfo 中 ${unknown.toString()} 属性作用未定义`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class InstitutesOrSubCampusesNotAllInTheUniversityException extends HttpException {
+  constructor (institutes: string[], subCampuses: string[], universities: string[]) {
+    super(`institutes: ${institutes.toString()} 对应的 universities 和 SubCampuses: ${subCampuses.toString()} 对应的 universities 不完全等于 ${universities.toString()}}`, HttpStatus.FORBIDDEN)
   }
 }

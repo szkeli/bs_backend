@@ -4,6 +4,7 @@ import { UniversityAlreadyExsistException, UniversityNotFoundException } from '.
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { Institute } from '../institutes/models/institutes.model'
+import { Post } from '../posts/models/post.model'
 import { SubCampus } from '../subcampus/models/subcampus.model'
 import { Subject } from '../subject/model/subject.model'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
@@ -14,10 +15,44 @@ import { CreateUniversityArgs, DeleteUniversityArgs, University, UpdateUniversit
 export class UniversitiesService {
   constructor (private readonly dbService: DbService) {}
 
+  async addAllPostToUniversity (id: string) {
+    const query = `
+      query v($id: string) {
+        u(func: uid($id)) @filter(type(University) and not has(delete)) {
+          u as uid
+        }
+        var(func: type(Post)) {
+          posts as uid
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      posts: {
+        uid: 'uid(posts)'
+      }
+    }
+
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id }
+    })
+
+    if (res.json.u.length !== 1) {
+      throw new UniversityNotFoundException(id)
+    }
+
+    return true
+  }
+
   async addAllUserToUniversity (id: string) {
     const query = `
       query v($id: string) {
-        var(func: uid($id)) @filter(type(University) and not has(delete)) {
+        u(func: uid($id)) @filter(type(University) and not has(delete)) {
           u as uid
         }
 
@@ -34,11 +69,17 @@ export class UniversitiesService {
       }
     }
 
-    await this.dbService.commitConditionalUperts({
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+    }>({
       query,
       mutations: [{ mutation, condition }],
       vars: { $id: id }
     })
+
+    if (res.json.u.length !== 1) {
+      throw new UniversityNotFoundException(id)
+    }
 
     return true
   }
@@ -121,6 +162,43 @@ export class UniversitiesService {
     Object.assign(res.json.u[0], args)
 
     return res.json.u[0]
+  }
+
+  async posts (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.postsRelayForward(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async postsRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+        query v($id: string, $after: string) {
+            var(func: uid($id)) @filter(type(University)) {
+                posts as posts @filter(type(Post))
+            }
+            ${after ? q1 : ''}
+            totalCount(func: uid(posts)) { count(uid) }
+            objs(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
+                id: uid
+                expand(_all_)
+            }
+            startO(func: uid(posts), first: -1) { createdAt }
+            endO(func: uid(posts), first: 1) { createdAt }
+        }
+    `
+    const res = await this.dbService.commitQuery <RelayfyArrayParam<Post>>({
+      query,
+      vars: { $id: id, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async subjects (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {

@@ -9,11 +9,14 @@ import { AdminService } from '../admin/admin.service'
 import { CensorsService } from '../censors/censors.service'
 import { CommentService } from '../comment/comment.service'
 import { ConversationsService } from '../conversations/conversations.service'
+import { CosService } from '../cos/cos.service'
 import { DeadlinesService } from '../deadlines/deadlines.service'
+import { LessonsService } from '../lessons/lessons.service'
 import { NotificationsService } from '../notifications/notifications.service'
 import { PubsubsModule } from '../pubsubs/pubsubs.module'
 import { ReportsService } from '../reports/reports.service'
 import { VotesModule } from '../votes/votes.module'
+import { WxService } from '../wx/wx.service'
 import { UserResolver } from './user.resolver'
 import { UserService } from './user.service'
 
@@ -35,7 +38,10 @@ import { UserService } from './user.service'
     DeadlinesService,
     CommentService,
     CensorsService,
-    NotificationsService
+    NotificationsService,
+    LessonsService,
+    WxService,
+    CosService
   ]
 })
 export class UserModule {}

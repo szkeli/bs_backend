@@ -20,10 +20,14 @@ import { atob, btoa, code2Session, edgifyByCreatedAt, handleRelayForwardAfter, n
 import { University } from '../universities/models/universities.models'
 import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
+  GENDER,
+  PrivateSettings,
   RegisterUserArgs,
+  UpdatePrivateSettingsArgs,
   UpdateUserArgs,
   User,
-  UsersConnection
+  UsersConnection,
+  UsersWithRelayFilter
 } from './models/user.model'
 
 @Injectable()
@@ -33,20 +37,178 @@ export class UserService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async subCampuses (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+  /**
+   * 返回被请求的用户的性别
+   * @param currentUser 当前发起请求的用户
+   * @param user 被请求的用户
+   */
+  async gender (currentUser: User, user: User) {
+    const query = `
+      query v($id: string) {
+        user(func: uid($id)) @filter(type(User)) {
+          gender
+          settings as privateSettings @filter(type(PrivateSettings))
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      settings: PrivateSettings[]
+      user: Array<{gender: GENDER}>
+    }>({
+      query,
+      vars: { $id: user?.id }
+    })
+
+    if (currentUser?.id !== user?.id && res.settings[0]?.isGenderPrivate) {
+      return null
+    }
+
+    return res.user[0]?.gender
+  }
+
+  /**
+   * 更新指定用户的隐私设定
+   * @param args 新的 PrivateSettingsPatch
+   */
+  async updatePrivateSettings (user: User, args: UpdatePrivateSettingsArgs) {
+    const query = `
+      query v($id: string) {
+        u(func: uid($id)) @filter(type(User)) {
+          u as uid
+          settings as privateSettings @filter(type(PrivateSettings))
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      privateSettings: {
+        'dgraph.type': 'PrivateSettings',
+        ...args
+      }
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+      settings: PrivateSettings[]
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: user.id }
+    })
+
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(user?.id)
+    }
+
+    Object.assign(res.json.settings[0], args)
+
+    return res.json.settings[0]
+  }
+
+  /**
+   * 返回当前用户的 PrivateSettings
+   * @param user 某用户
+   */
+  async privateSettings (user: User) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(User)) {
+          settings as privateSettings @filter(type(PrivateSettings))
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      settings: PrivateSettings[]
+    }>({
+      query,
+      vars: { $id: user?.id }
+    })
+
+    return res.settings[0]
+  }
+
+  /**
+   * 返回所有用户
+   * @param args Relay 分页参数
+   * @param filter 按条件返回所有用户
+   */
+  async usersWithRelay ({ first, after, orderBy }: RelayPagingConfigArgs, filter: UsersWithRelayFilter) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.subCampusesRelayForward(id, first, after)
+      return await this.usersWithRelayForward(first, after, filter)
     }
     throw new Error('Method not implemented.')
   }
 
-  async subCampusesRelayForward (id: string, first: number, after: string) {
+  async usersWithRelayForward (first: number, after: string, { universityId }: UsersWithRelayFilter) {
+    const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const users = universityId
+      ? `
+      var(func: uid($universityId)) @filter(type(University)) {
+        users as users @filter(type(User))
+      }
+    `
+      : `
+      var(func: type(User)) {
+        users as uid
+      }
+      `
+    const query = `
+      query v($universityId: string, $after: string) {
+        ${users}
+        ${after ? q1 : ''}
+        totalCount(func: uid(users)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'users'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(users), first: -1) { createdAt }
+        endO(func: uid(users), first: 1) { createdAt }
+      }
+    `
+    const res = await this.dbService.commitQuery <RelayfyArrayParam<User>>({
+      query,
+      vars: { $universityId: universityId, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      after,
+      first
+    })
+  }
+
+  async subCampuses (currentUser: User, id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.subCampusesRelayForward(currentUser, id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async subCampusesRelayForward (currentUser: User, id: string, first: number, after: string) {
     const q1 = 'var(func: uid(subCampuses)) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string) {
         var(func: uid($id)) @filter(type(User)) {
+          settings as privateSettings @filter(type(PrivateSettings))
           subCampuses as ~users @filter(type(SubCampus))
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
         }
         ${after ? q1 : ''}
         totalCount(func: uid(subCampuses)) { count(uid) }
@@ -58,10 +220,14 @@ export class UserService {
         endO(func: uid(subCampuses), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<SubCampus>>({
+    const res = await this.dbService.commitQuery<{settings: PrivateSettings[]} & RelayfyArrayParam<SubCampus>>({
       query,
       vars: { $id: id }
     })
+
+    if (currentUser?.id !== id && res.settings[0]?.isSubCampusPrivate) {
+      return null
+    }
 
     return relayfyArrayForward({
       ...res,
@@ -70,20 +236,25 @@ export class UserService {
     })
   }
 
-  async institutes (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+  async institutes (currentUser: User, id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.institutesRelayForward(id, first, after)
+      return await this.institutesRelayForward(currentUser, id, first, after)
     }
     throw new Error('Method not implemented.')
   }
 
-  async institutesRelayForward (id: string, first: number, after: string) {
+  async institutesRelayForward (currentUser: User, id: string, first: number, after: string) {
     const q1 = 'var(func: uid(institutes)) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string) {
         var(func: uid($id)) @filter(type(User)) {
+          settings as privateSettings @filter(type(PrivateSettings))
           institutes as ~users @filter(type(Institute))
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
         }
         ${after ? q1 : ''}
         totalCount(func: uid(institutes)) { count(uid) }
@@ -95,10 +266,14 @@ export class UserService {
         endO(func: uid(institutes), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<Institute>>({
+    const res = await this.dbService.commitQuery<{settings: PrivateSettings[]} & RelayfyArrayParam<Institute>>({
       query,
       vars: { $id: id }
     })
+
+    if (res.settings[0]?.isInstitutePrivate && currentUser?.id !== id) {
+      return null
+    }
 
     return relayfyArrayForward({
       ...res,
@@ -107,13 +282,18 @@ export class UserService {
     })
   }
 
-  async university (id: string) {
+  async university (currentUser: User, id: string) {
     const query = `
       query v($id: string) {
         var(func: uid($id)) @filter(type(User)) {
+          settings as privateSettings @filter(type(PrivateSettings))
           ~users @filter(type(University)) {
             university as uid
           }
+        }
+        settings(func: uid(settings)) {
+          id: uid
+          expand(_all_)
         }
         university(func: uid(university)) {
           id: uid
@@ -123,10 +303,16 @@ export class UserService {
     `
     const res = await this.dbService.commitQuery<{
       university: University[]
+      settings: PrivateSettings[]
     }>({
       query,
       vars: { $id: id }
     })
+
+    // 当前用户不是自己时，根据设定判断是否返回 null
+    if (currentUser?.id !== id && res.settings[0]?.isUniversityPrivate) {
+      return null
+    }
 
     return res.university[0]
   }

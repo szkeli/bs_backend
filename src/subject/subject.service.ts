@@ -1,15 +1,17 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
-import { DgraphClient, Mutation, Request } from 'dgraph-js'
+import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
+import { UniversityNotFoundException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { User } from '../user/models/user.model'
 import {
   CreateSubjectArgs,
+  QuerySubjectsFilter,
   Subject,
   SubjectId,
   SubjectsConnection,
@@ -40,7 +42,7 @@ export class SubjectService {
         }
         ${after ? q1 : ''}
         totalCount(func: uid(universities)) { count(uid) }
-        objes(func: uid(${after ? 'q' : 'universities'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${after ? 'q' : 'universities'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -60,54 +62,51 @@ export class SubjectService {
     })
   }
 
-  async subjectsWithRelay ({ orderBy, first, after, before, last }: RelayPagingConfigArgs): Promise<SubjectsConnectionWithRelay> {
-    after = btoa(after)
-    before = btoa(before)
-
+  async subjectsWithRelay ({ orderBy, first, after }: RelayPagingConfigArgs, filter: QuerySubjectsFilter): Promise<SubjectsConnectionWithRelay> {
+    after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.subjectsWithRelayForward(first, after)
+      return await this.subjectsWithRelayForward(first, after, filter)
     }
 
     throw new ForbiddenException('undefined')
   }
 
-  async subjectsWithRelayForward (first: number, after: string): Promise<SubjectsConnectionWithRelay> {
+  async subjectsWithRelayForward (first: number, after: string, { universityId }: QuerySubjectsFilter): Promise<SubjectsConnectionWithRelay> {
     const q1 = 'var(func: uid(subjects), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const university = universityId
+      ? `
+      var(func: uid($universityId)) @filter(type(University)) {
+        subjects as subjects(orderdesc: createdAt) @filter(type(Subject) and not has(delete))
+      }
+    `
+      : `
+      var(func: type(Subject), orderdesc: createdAt) @filter(not has(delete)) {
+        subjects as uid
+      }
+    `
     const query = `
-      query v($after: string) {
-        var(func: type(Subject), orderdesc: createdAt) @filter(not has(delete)) {
-          subjects as uid
-        }
+      query v($after: string, $universityId: string) {
+        ${university}
         ${after ? q1 : ''}
         totalCount(func: uid(subjects)) {
           count(uid)
         }
-        subjects(func: uid(${after ? 'q' : 'subjects'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${after ? 'q' : 'subjects'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
-        # 开始游标
-        startSubject(func: uid(subjects), first: -1) {
-          createdAt
-        }
-        # 结束游标
-        endSubject(func: uid(subjects), first: 1) {
-          createdAt
-        }
+        startO(func: uid(subjects), first: -1) { createdAt }
+        endO(func: uid(subjects), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      subjects: Subject[]
-      startSubject: Array<{createdAt: string}>
-      endSubject: Array<{createdAt: string}>
-    }>({ query, vars: { $after: after } })
+
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Subject>>({
+      query,
+      vars: { $after: after, $universityId: universityId }
+    })
 
     return relayfyArrayForward({
-      startO: res.startSubject,
-      endO: res.endSubject,
-      objs: res.subjects,
-      totalCount: res.totalCount,
+      ...res,
       first,
       after
     })
@@ -448,60 +447,64 @@ export class SubjectService {
     return res.json.subject[0]
   }
 
-  async createASubject (creator: string, input: CreateSubjectArgs) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const conditions = '@if( eq(len(v), 1) )'
-      const query = `
-      query {
-        q(func: uid(${creator})) @filter(type(User)) { v as uid }
+  /**
+   * 创建一个新的主题
+   * @param id 创建 Subject 的 User 的 id
+   * @param param1 相关参数
+   * @returns Promise<Subject>
+   */
+  async createSubject (id: string, { universityId, ...args }: CreateSubjectArgs): Promise<Subject> {
+    const query = `
+      query v($id: string, $universityId: string) {
+        q(func: uid($id)) @filter(type(User)) { q as uid }
+        u(func: uid($universityId)) @filter(type(University)) { u as uid }
       }
     `
-      const now = new Date().toISOString()
-
-      const mutation = {
-        uid: creator,
-        subjects: {
-          uid: '_:subject',
-          'dgraph.type': 'Subject',
-          title: input.title,
-          description: input.description,
-          avatarImageUrl: input.avatarImageUrl,
-          backgroundImageUrl: input.backgroundImageUrl,
-          createdAt: now,
-          creator: {
-            uid: creator,
-            subjects: {
-              uid: '_:subject'
-            }
-          }
+    const condition = '@if( eq(len(q), 1) and eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(q)',
+      subjects: {
+        uid: '_:subject',
+        'dgraph.type': 'Subject',
+        ...args,
+        createdAt: now(),
+        creator: {
+          uid: 'uid(q)'
         }
       }
+    }
 
-      const mu = new Mutation()
-      mu.setSetJson(mutation)
-      mu.setCond(conditions)
+    const addToUniversityCond = '@if( eq(len(q), 1) and eq(len(u), 1) )'
+    const addToUniversityMut = {
+      uid: 'uid(u)',
+      subjects: {
+        uid: '_:subject'
+      }
+    }
 
-      const req = new Request()
-      req.setQuery(query)
-      req.addMutations(mu)
-      req.setCommitNow(true)
-      const res = await txn.doRequest(req)
-      const v = res.getJson().q[0]
-      if (!v || !v.uid) {
-        throw new ForbiddenException(`用户 ${creator} 不存在`)
-      }
-      const u: Subject = {
-        id: res.getUidsMap().get('subject'),
-        createdAt: now,
-        title: input.title,
-        description: input.description,
-        avatarImageUrl: input.avatarImageUrl,
-        backgroundImageUrl: input.backgroundImageUrl
-      }
-      return u
-    } finally {
-      await txn.discard()
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      q: Array<{uid: string}>
+      u: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [
+        { mutation, condition },
+        { mutation: addToUniversityMut, condition: addToUniversityCond }
+      ],
+      vars: { $id: id, $universityId: universityId }
+    })
+
+    if (res.json.q.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+    if (res.json.u.length !== 1) {
+      throw new UniversityNotFoundException(universityId)
+    }
+
+    return {
+      id: res.uids.get('subject'),
+      createdAt: now(),
+      ...args
     }
   }
 

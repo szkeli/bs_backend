@@ -4,7 +4,7 @@ import { JwtService } from '@nestjs/jwt'
 import { AuthenticationInfo, CheckUserResult, CODE2SESSION_GRANT_TYPE, LoginResult, User } from 'src/user/models/user.model'
 
 import { AdminService } from '../admin/admin.service'
-import { AdminNotFoundException, InstituteNotAllExistException, RolesNotAllExistException, SubCampusNotAllExistException, SystemAdminNotFoundException, UnionIdBeNullException, UniversityNotAllExistException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
+import { AdminNotFoundException, InstituteNotAllExistException, InstitutesOrSubCampusesNotAllInTheUniversityException, RolesNotAllExistException, SubCampusNotAllExistException, SystemAdminNotFoundException, UnionIdBeNullException, UniversityNotAllExistException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
@@ -657,7 +657,7 @@ export class AuthService {
       throw new SubCampusNotAllExistException(subCampusIds)
     }
     if (res.json.k.length !== 0) {
-      throw new ForbiddenException('universities 没有完全包含 institutes 和 subCampuses 相应的 University')
+      throw new InstitutesOrSubCampusesNotAllInTheUniversityException(instituteIds, subCampusIds, universitiyIds)
     }
 
     return res.json.user[0]
@@ -674,20 +674,47 @@ export class AuthService {
     const roleIds = tokenRes.roles
     const roleIdsLen = roleIds?.length ?? 0
     const roleIdsStr = ids2String(roleIds)
-    delete tokenRes.roles
+
+    const universitiyIds = tokenRes.universities
+    const instituteIds = tokenRes.institutes
+    const subCampusIds = tokenRes.subCampuses
+    const universitiesStr = ids2String(tokenRes.universities)
+    const institutesStr = ids2String(tokenRes.institutes)
+    const subCampusesStr = ids2String(tokenRes.subCampuses)
+    const universitiesLen = tokenRes.universities.length
+    const institutesLen = tokenRes.institutes.length
+    const subCampusesLen = tokenRes.subCampuses.length
 
     const query = `
       query v($id: string) {
         # 根据 roleIds 查询 role 信息
         x(func: uid(${roleIdsStr})) @filter(type(Role)) { x as uid }
-        # 系统管理员
+        # system 是否存在
         s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
         u(func: uid($id)) @filter(type(User)) { u as uid }
-        # 用户未通过认证
+        # User 是否通过认证
         v(func: uid($id)) @filter(type(User)) {
           credential @filter(type(Credential)) {
             v as uid
           }
+        }
+        # User 申请的 Universities
+        universities(func: uid(${universitiesStr})) @filter(type(University)) {
+          universities as uid
+        }
+        # User 申请的 Institutes
+        institutes(func: uid(${institutesStr})) @filter(type(Institute)) {
+          institutes as uid
+          universitiesOfInstitutes as ~institutes @filter(type(University))
+        }
+        # User 申请的 SubCampuses 
+        subCampuses(func: uid(${subCampusesStr})) @filter(type(SubCampus)) {
+          subCampuses as uid
+          universitiesOfSubCampuses as ~subCampuses @filter(type(University))
+        }
+        # Institutes 和 SubCampuses 对应的 University 的数组是否与申请的 Universities 相同
+        k(func: uid(universities)) @filter(not uid(universitiesOfInstitutes, universitiesOfSubCampuses)) {
+          k as uid
         }
         user(func: uid(u)) {
           id: uid
@@ -695,7 +722,25 @@ export class AuthService {
         }
       }
     `
-    const condition = `@if( eq(len(u), 1) and eq(len(v), 0) and eq(len(system), 1) and eq(len(x), ${roleIdsLen}) )`
+
+    delete tokenRes.roles
+    delete tokenRes.universities
+    delete tokenRes.institutes
+    delete tokenRes.subCampuses
+
+    // 更新 User 信息
+    const condition = `@if( 
+      eq(len(u), 1)
+      and eq(len(v), 0) 
+      and eq(len(system), 1) 
+      and eq(len(x), ${roleIdsLen}) 
+      and eq(len(k), 0) 
+      and eq(len(universities), ${universitiesLen}) 
+      and eq(len(institutes), ${institutesLen}) 
+      and eq(len(subCampuses), ${subCampusesLen}) 
+    )`
+    // TODO school 属性已被弃用
+    // 需要使用新的对象（方式）存储（表示）用户私有数据
     const mutation = {
       uid: id,
       ...tokenRes,
@@ -724,6 +769,26 @@ export class AuthService {
       }
     }
 
+    // 将 User 添加到相应的 Universities, Institutes, SubCampuses
+    const addUniversityMut = {
+      uid: 'uid(universities)',
+      users: {
+        uid: 'uid(u)'
+      }
+    }
+    const addInstituteMut = {
+      uid: 'uid(institutes)',
+      users: {
+        uid: 'uid(u)'
+      }
+    }
+    const addSubCampusMut = {
+      uid: 'uid(subCampuses)',
+      users: {
+        uid: 'uid(u)'
+      }
+    }
+
     if (roleIdsLen !== 0) {
       Object.assign(mutation, {
         roles: roleIds.map(r => ({
@@ -740,10 +805,19 @@ export class AuthService {
       u: Array<{uid: string}>
       v: Array<{uid: string}>
       x: Array<{uid: string}>
+      universities: Array<{uid: string}>
+      institutes: Array<{uid: string}>
+      subCampuses: Array<{uid: string}>
+      k: Array<{uid: string}>
       user: User[]
     }>({
       query,
-      mutations: [{ mutation, condition }],
+      mutations: [
+        { mutation, condition },
+        { mutation: addUniversityMut, condition },
+        { mutation: addInstituteMut, condition },
+        { mutation: addSubCampusMut, condition }
+      ],
       vars: { $id: id }
     })
 
@@ -758,6 +832,18 @@ export class AuthService {
     }
     if (res.json.v.length !== 0) {
       throw new UserHadAuthenedException(id)
+    }
+    if (res.json.universities.length !== universitiesLen) {
+      throw new UniversityNotAllExistException(universitiyIds)
+    }
+    if (res.json.institutes.length !== institutesLen) {
+      throw new InstituteNotAllExistException(instituteIds)
+    }
+    if (res.json.subCampuses.length !== subCampusesLen) {
+      throw new SubCampusNotAllExistException(subCampusIds)
+    }
+    if (res.json.k.length !== 0) {
+      throw new InstitutesOrSubCampusesNotAllInTheUniversityException(instituteIds, subCampusIds, universitiyIds)
     }
 
     const user = res.json.user[0]

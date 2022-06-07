@@ -17,6 +17,9 @@ export class CreateSubjectArgs {
 
   @Field()
     backgroundImageUrl: string
+
+  @Field({ description: 'Subject 所在的大学的 id' })
+    universityId: string
 }
 
 @ObjectType()
@@ -73,3 +76,9 @@ export class SubjectsConnection {
 
 @ObjectType()
 export class SubjectsConnectionWithRelay extends Connection<Subject>(Subject) {}
+
+@ArgsType()
+export class QuerySubjectsFilter {
+  @Field({ nullable: true })
+    universityId: string
+}

@@ -217,17 +217,14 @@ export const getAuthenticationInfo = function (token: string): AuthenticationInf
   const require = [
     'avatarImageUrl',
     'studentId',
-    'school',
-    'subCampus',
     'gender',
-    'college',
     'grade',
     'name',
     'universities',
     'institutes',
     'subCampuses'
   ]
-  // const require = Object.keys(AuthenticationInfo)
+
   const has = Object.keys(tokenRes) || []
   const c = has.concat(require)
 
@@ -247,9 +244,6 @@ export const getAuthenticationInfo = function (token: string): AuthenticationInf
   return {
     avatarImageUrl: tokenRes.avatarImageUrl,
     studentId: tokenRes.studentId,
-    school: tokenRes.school,
-    subCampus: tokenRes.subCampus,
-    college: tokenRes.college,
     gender: tokenRes.gender,
     grade: tokenRes.grade,
     roles: tokenRes.roles,

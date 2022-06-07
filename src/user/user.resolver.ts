@@ -3,7 +3,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { CheckPolicies, CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
 import { PostsConnection, PostsConnectionWithRelay, RelayPagingConfigArgs } from 'src/posts/models/post.model'
 import { SubjectsConnection } from 'src/subject/model/subject.model'
-import { RawUser2UserWithPrivateProps, sign as sign_calculus } from 'src/tool'
+import { sign as sign_calculus } from 'src/tool'
 
 import { Admin } from '../admin/models/admin.model'
 import { Role, UserAuthenInfo, UserWithRoles } from '../auth/model/auth.model'
@@ -15,7 +15,8 @@ import { ConversationsConnection } from '../conversations/models/conversations.m
 import { ICredential } from '../credentials/models/credentials.model'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { InstitutesConnection } from '../institutes/models/institutes.model'
-import { FilterLessonArgs, LessonsConnection } from '../lessons/models/lessons.model'
+import { LessonsService } from '../lessons/lessons.service'
+import { FilterLessonArgs, LessonNotificationSettings, LessonsConnection } from '../lessons/models/lessons.model'
 import { WithinArgs } from '../node/models/node.model'
 import { NOTIFICATION_TYPE, NotificationsConnection } from '../notifications/models/notifications.model'
 import { NotificationsService } from '../notifications/notifications.service'
@@ -28,16 +29,19 @@ import { University } from '../universities/models/universities.models'
 import { VotesConnection, VotesConnectionWithRelay, VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
 import { VotesService } from '../votes/votes.service'
 import {
-  AdminAndUserWithPrivatePropsUnion,
+  GENDER,
   NotificationArgs,
   PagingConfigArgs,
   Person,
+  PrivateSettings,
   RegisterUserArgs,
+  UpdatePrivateSettingsArgs,
   UpdateUserArgs,
   User,
   UsersConnection,
   UsersConnectionWithRelay,
-  UserWithPrivateProps
+  UsersWithRelayFilter,
+  WhoAmIUnion
 } from './models/user.model'
 import { UserService } from './user.service'
 
@@ -49,7 +53,8 @@ export class UserResolver {
     private readonly reportsService: ReportsService,
     private readonly votesService: VotesService,
     private readonly commentsService: CommentService,
-    private readonly notificationsService: NotificationsService
+    private readonly notificationsService: NotificationsService,
+    private readonly lessonsService: LessonsService
   ) {}
 
   @Mutation(of => User, { description: '注册' })
@@ -86,22 +91,27 @@ export class UserResolver {
     return await this.userService.updateUser(user.id, args)
   }
 
-  @Query(of => AdminAndUserWithPrivatePropsUnion, { description: '当前id对应的的用户画像' })
+  @Query(of => WhoAmIUnion, { description: '当前id对应的的用户画像' })
   @Roles(Role.User, Role.Admin)
   async whoAmI (@CurrentUser() user: UserWithRoles) {
     if (user.roles.includes(Role.Admin)) {
       return new Admin(user as unknown as Admin)
     }
     if (user.roles.includes(Role.User)) {
-      const userWithPrivateProps = RawUser2UserWithPrivateProps(user)
-      return new UserWithPrivateProps(userWithPrivateProps)
+      return new User(user)
     }
   }
 
-  @Query(of => UsersConnection, { description: '获取所有用户' })
+  @Query(of => UsersConnection, { deprecationReason: '使用 usersWithRelay', description: '获取所有用户' })
   @MaybeAuth()
   async users (@Args() args: PagingConfigArgs) {
     return await this.userService.users(args.first, args.offset)
+  }
+
+  @Query(of => UsersConnectionWithRelay)
+  @MaybeAuth()
+  async usersWithRelay (@Args() args: RelayPagingConfigArgs, @Args() filter: UsersWithRelayFilter) {
+    return await this.userService.usersWithRelay(args, filter)
   }
 
   @Query(of => User, { description: '以id获取用户' })
@@ -192,19 +202,24 @@ export class UserResolver {
     return await this.userService.credential(user.id)
   }
 
-  @ResolveField(of => University, { description: '当前用户所在的大学' })
-  async university (@Parent() user: User) {
-    return await this.userService.university(user.id)
+  @ResolveField(of => GENDER, { nullable: true, description: '当前用户的性别' })
+  async gender (@CurrentUser() currentUser: User, @Parent() user: User) {
+    return await this.userService.gender(currentUser, user)
   }
 
-  @ResolveField(of => InstitutesConnection, { description: '当前用户所属的学院' })
-  async institutes (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.institutes(user.id, args)
+  @ResolveField(of => University, { nullable: true, description: '当前用户所在的大学' })
+  async university (@CurrentUser() currentUser: User, @Parent() user: User) {
+    return await this.userService.university(currentUser, user.id)
   }
 
-  @ResolveField(of => SubCampusesConnection, { description: '当前用户所属的校区' })
-  async subCampuses (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.subCampuses(user.id, args)
+  @ResolveField(of => InstitutesConnection, { nullable: true, description: '当前用户所属的学院' })
+  async institutes (@CurrentUser() currentUser: User, @Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.institutes(currentUser, user.id, args)
+  }
+
+  @ResolveField(of => SubCampusesConnection, { nullable: true, description: '当前用户所属的校区' })
+  async subCampuses (@CurrentUser() currentUser: User, @Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.subCampuses(currentUser, user.id, args)
   }
 
   @Query(of => NotificationsConnection, { description: '测试接口，某用户的所有回复通知，非当前用户获取到null', nullable: true })
@@ -249,5 +264,21 @@ export class UserResolver {
   @ResolveField(of => UserAuthenInfo, { description: '当前用户提交的认证信息', nullable: true })
   async authenInfo (@Parent() user: User) {
     return await this.userService.authenInfo(user.id)
+  }
+
+  @ResolveField(of => PrivateSettings, { nullable: true, description: '当前用户的隐私设定' })
+  async privateSettings (@Parent() user: User) {
+    return await this.userService.privateSettings(user)
+  }
+
+  @ResolveField(of => LessonNotificationSettings, { description: '获取当前用户上课通知的设置' })
+  async lessonNotificationSettings (@Parent() user: User) {
+    return await this.lessonsService.lessonNotificationSettings(user.id)
+  }
+
+  @Mutation(of => PrivateSettings, { description: '更新当前用户的隐私信息' })
+  @Roles(Role.User)
+  async updatePrivateSettings (@CurrentUser() user: User, @Args() args: UpdatePrivateSettingsArgs) {
+    return await this.userService.updatePrivateSettings(user, args)
   }
 }

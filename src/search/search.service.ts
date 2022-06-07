@@ -5,9 +5,12 @@ import { DbService } from 'src/db/db.service'
 
 import { Comment } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
+import { Institute } from '../institutes/models/institutes.model'
 import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { SubCampus } from '../subcampus/models/subcampus.model'
 import { Subject } from '../subject/model/subject.model'
-import { btoa, relayfyArrayForward } from '../tool'
+import { btoa, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { University } from '../universities/models/universities.models'
 import { User } from '../user/models/user.model'
 import { SearchArgs, SearchResultItemConnection, SEARCHTYPE } from './model/search.model'
 
@@ -34,7 +37,106 @@ export class SearchService {
     if (type === SEARCHTYPE.SUBJECT && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.searchSubject(query, first, after)
     }
+    if (type === SEARCHTYPE.UNIVERSITY && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.searchUniversity(query, first, after)
+    }
+    if (type === SEARCHTYPE.INSTITUTE && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.searchInstitute(query, first, after)
+    }
+    if (type === SEARCHTYPE.SUBCAMPUS && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.searchSubCampus(query, first, after)
+    }
     throw new Error('Method not implemented.')
+  }
+
+  async searchSubCampus (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+    const q1 = 'var(func: uid(subCampuses), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($query: string, $after: string) {
+        var(func: type(SubCampus), orderdesc: createdAt) @filter(alloftext(name, $query) and not has(delete)) {
+          subCampuses as uid
+        }
+        totalCount(func: uid(subCampuses)) { count(uid) }
+        ${after ? q1 : ''}
+        objs(func: uid(${after ? 'q' : 'subCampuses'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          dgraph.type
+          expand(_all_)
+        }
+        startO(func: uid(subCampuses), first: -1) { createdAt }
+        endO(func: uid(subCampuses), first: 1) { createdAt }
+      } 
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<SubCampus>>({
+      query,
+      vars: { $query: q, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
+  }
+
+  async searchInstitute (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+    const q1 = 'var(func: uid(institutes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($query: string, $after: string) {
+        var(func: type(Institute), orderdesc: createdAt) @filter(alloftext(name, $query) and not has(delete)) {
+          institutes as uid
+        }
+        totalCount(func: uid(institutes)) { count(uid) }
+        ${after ? q1 : ''}
+        objs(func: uid(${after ? 'q' : 'institutes'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          dgraph.type
+          expand(_all_)
+        }
+        startO(func: uid(institutes), first: -1) { createdAt }
+        endO(func: uid(institutes), first: 1) { createdAt }
+      } 
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Institute>>({
+      query,
+      vars: { $query: q, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
+  }
+
+  async searchUniversity (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+    const q1 = 'var(func: uid(universities), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($query: string, $after: string) {
+        var(func: type(University), orderdesc: createdAt) @filter(alloftext(name, $query) and not has(delete)) {
+          universities as uid
+        }
+        totalCount(func: uid(universities)) { count(uid) }
+        ${after ? q1 : ''}
+        objs(func: uid(${after ? 'q' : 'universities'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          dgraph.type
+          expand(_all_)
+        }
+        startO(func: uid(universities), first: -1) { createdAt }
+        endO(func: uid(universities), first: 1) { createdAt }
+      } 
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<University>>({
+      query,
+      vars: { $query: q, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async searchSubject (q: string, first: number, after: string) {

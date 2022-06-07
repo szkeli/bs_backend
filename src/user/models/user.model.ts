@@ -108,12 +108,6 @@ export class AuthenticationInfo {
   @Field({ description: '学号' })
     studentId: number | null
 
-  @Field({ description: '学院' })
-    college: string
-
-  @Field({ description: '校区' })
-    subCampus: string
-
   @Field(of => [String], { description: '学院的id的数组' })
     institutes: string[]
 
@@ -122,9 +116,6 @@ export class AuthenticationInfo {
 
   @Field(of => [String], { description: '大学的id的数组' })
     universities: string[]
-
-  @Field({ description: '学校' })
-    school: string
 
   @Field({ description: '年级' })
     grade: string
@@ -230,13 +221,13 @@ export class User implements Person, Node {
   @Field(of => GENDER, { nullable: true, description: '用户性别' })
     gender?: GENDER | null
 
-  @Field({ description: '学院', nullable: true })
+  @Field({ description: '学院', nullable: true, deprecationReason: 'feature/multiuniversity 后废弃，请使用 institutes 代替' })
     college?: string | null
 
-  @Field({ description: '校区', nullable: true })
+  @Field({ description: '校区', nullable: true, deprecationReason: 'feature/multiuniversity 后废弃，请使用 subCampuses 代替' })
     subCampus?: string | null
 
-  @Field({ description: '学校', nullable: true })
+  @Field({ description: '学校', nullable: true, deprecationReason: 'feature/multiuniversity 后废弃，请使用 university 代替' })
     school?: string | null
 
   @Field({ description: '年级', nullable: true })
@@ -366,7 +357,13 @@ export class PagingConfigArgs {
 export type CheckUserResult = User & {success: boolean, roles: Role[]}
 export const AdminAndUserWithPrivatePropsUnion = createUnionType({
   name: 'AdminAndUserWithPrivatePropsUnion',
+  description: '废弃，请使用 WhoAmIUnion 代替',
   types: () => [UserWithPrivateProps, Admin]
+})
+
+export const WhoAmIUnion = createUnionType({
+  name: 'WhoAmIUnion',
+  types: () => [User, Admin]
 })
 
 export const AdminAndUserUnion = createUnionType({
@@ -393,4 +390,46 @@ export class NotificationArgs {
 
   @Field(of => [NOTIFICATION_ACTION], { description: '按action获取通知', nullable: true, defaultValue: [NOTIFICATION_ACTION.ADD_COMMENT_ON_POST, NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT, NOTIFICATION_ACTION.ADD_COMMENT_ON_USER] })
     actions: NOTIFICATION_ACTION[]
+}
+
+@ArgsType()
+export class UsersWithRelayFilter {
+  @Field(of => String, { nullable: true })
+    universityId: string
+}
+
+@ObjectType()
+export class PrivateSettings {
+  @Field(of => Boolean, { nullable: true, description: '校区是否公开' })
+    isSubCampusPrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '年级是否公开' })
+    isGradePrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '学校是否公开' })
+    isUniversityPrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '学院是否公开' })
+    isInstitutePrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '性别是否公开' })
+    isGenderPrivate: boolean
+}
+
+@ArgsType()
+export class UpdatePrivateSettingsArgs {
+  @Field(of => Boolean, { nullable: true, description: '校区是否公开' })
+    isSubCampusPrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '年级是否公开' })
+    isGradePrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '学校是否公开' })
+    isUniversityPrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '学院是否公开' })
+    isInstitutePrivate: boolean
+
+  @Field(of => Boolean, { nullable: true, description: '性别是否公开' })
+    isGenderPrivate: boolean
 }

@@ -32,13 +32,13 @@ export class UserAuthenInfo implements Authenable {
   @Field({ description: '学号' })
     studentId: number | null
 
-  @Field({ description: '学院' })
+  @Field({ description: '学院', nullable: true, deprecationReason: 'feature/multiuniversity 中被弃用，请使用 institutes 代替' })
     college: string
 
-  @Field({ description: '校区' })
+  @Field({ description: '校区', nullable: true, deprecationReason: 'feature/multiuniversity 中被弃用，请使用 subCampuses 代替' })
     subCampus: string
 
-  @Field({ description: '学校' })
+  @Field({ description: '学校', nullable: true, deprecationReason: 'feature/multiuniversity 中被弃用，请使用 universities 代替' })
     school: string
 
   @Field({ description: '年级' })
@@ -47,7 +47,7 @@ export class UserAuthenInfo implements Authenable {
   @Field(of => GENDER, { description: '性别' })
     gender: GENDER
 
-  @Field(of => [String], { nullable: true, description: '有效信息图片(e.g. 校园卡照片)的链接' })
+  @Field(of => [String], { nullable: true, description: 'bug: 图片乱序，有效信息图片(e.g. 校园卡照片)的链接' })
     images?: string[]
 }
 

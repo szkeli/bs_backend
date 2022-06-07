@@ -17,6 +17,7 @@ import { Delete } from '../deletes/models/deletes.model'
 import { UniversitiesConnection } from '../universities/models/universities.models'
 import {
   CreateSubjectArgs,
+  QuerySubjectsFilter,
   Subject,
   SubjectId,
   SubjectsConnection,
@@ -43,8 +44,8 @@ export class SubjectResolver {
 
   @Query(of => SubjectsConnectionWithRelay, { description: '获取所有主题' })
   @NoAuth()
-  async subjectsWithRelay (@Args() paging: RelayPagingConfigArgs): Promise<SubjectsConnectionWithRelay> {
-    return await this.subjectService.subjectsWithRelay(paging)
+  async subjectsWithRelay (@Args() args: RelayPagingConfigArgs, @Args() filter: QuerySubjectsFilter): Promise<SubjectsConnectionWithRelay> {
+    return await this.subjectService.subjectsWithRelay(args, filter)
   }
 
   @Query(of => PostsConnectionWithRelay, { description: 'Relay版 以id获取某主题下所有帖子', deprecationReason: '请使用 subjects.postsWithRelay' })
@@ -71,8 +72,8 @@ export class SubjectResolver {
 
   @Mutation(of => Subject, { description: '创建一个主题' })
   @CheckPolicies(new MustWithCredentialPolicyHandler(), new CreateSubjectPolicyHandler())
-  async createSubject (@CurrentUser() user: User, @Args() input: CreateSubjectArgs): Promise<Subject> {
-    return await this.subjectService.createASubject(user.id, input)
+  async createSubject (@CurrentUser() user: User, @Args() args: CreateSubjectArgs): Promise<Subject> {
+    return await this.subjectService.createSubject(user.id, args)
   }
 
   @ResolveField(of => User, { description: '主题的创建者' })

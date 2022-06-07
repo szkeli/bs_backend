@@ -5,14 +5,16 @@ import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
-import { PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, UserNotAuthenException } from '../app.exception'
+import { PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, UniversityNotFoundException, UserNotAuthenException } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
-import { atob, btoa, DeletePrivateValue, edgify, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, imagesV2ToImages, relayfyArrayForward, sha1 } from '../tool'
+import { Subject } from '../subject/model/subject.model'
+import { atob, btoa, DeletePrivateValue, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
+import { University } from '../universities/models/universities.models'
 import { PagingConfigArgs, User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
@@ -22,11 +24,34 @@ import {
   Post,
   PostsConnection,
   PostsConnectionWithRelay,
+  QueryPostsFilter,
   RelayPagingConfigArgs
 } from './models/post.model'
 
 @Injectable()
 export class PostsService {
+  async subject (id: string): Promise<Subject | null> {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Post)) {
+          subject as ~posts @filter(type(Subject))
+        }
+        subject(func: uid(subject)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      subject: Subject[]
+    }>({
+      query,
+      vars: { $id: id }
+    })
+
+    return res.subject[0]
+  }
+
   private readonly dgraph: DgraphClient
   constructor (
     private readonly dbService: DbService,
@@ -34,6 +59,26 @@ export class PostsService {
     private readonly nlpService: NlpService
   ) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async university (id: string): Promise<University> {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Post)) {
+          university as ~posts @filter(type(University))
+        }
+        university(func: uid(university)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{university: University[]}>({
+      query,
+      vars: { $id: id }
+    })
+
+    return res.university[0]
   }
 
   async imagesV2 (id: string): Promise<string[]> {
@@ -260,11 +305,23 @@ export class PostsService {
     }
   }
 
-  async trendingPostsWithRelayForward (first: number, after: string): Promise<PostsConnectionWithRelay> {
+  async trendingPostsWithRelayForward (first: number, after: string, { universityId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
     const q1 = 'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
+    const university = universityId
+      ? `
+      var(func: uid($universityId)) @filter(type(University)) {
+        pre as posts(orderdesc: createdAt) @filter(type(Post))
+      }
+    `
+      : `
+      var(func: type(Post)) {
+        pre as uid
+      }
+    `
     const query = `
-      query v($after: string) {
-        v as var(func: type(Post)) @filter(not has(delete) and not has(pin)) {
+      query v($after: string, $universityId: string) {
+        ${university}
+        v as var(func: uid(pre)) @filter(not has(delete) and not has(pin)) {
           vc as count(votes @filter(type(Vote)))
           votesCount as math(sqrt(vc * 2))
           # TODO
@@ -310,7 +367,10 @@ export class PostsService {
       posts: Array<Post & {score: number}>
       startPost: Array<{score: number}>
       endPost: Array<{score: number}>
-    }>({ query, vars: { $after: after } })
+    }>({
+      query,
+      vars: { $after: after, $universityId: universityId }
+    })
 
     const totalCount = res.totalCount[0]?.count ?? 0
     const v = totalCount !== 0
@@ -337,7 +397,7 @@ export class PostsService {
     }
   }
 
-  async trendingPostsWithRelay ({ first, before, last, after, orderBy }: RelayPagingConfigArgs) {
+  async trendingPostsWithRelay ({ first, before, last, after, orderBy }: RelayPagingConfigArgs, filter: QueryPostsFilter) {
     after = btoa(after)
     if (after) {
       try {
@@ -347,7 +407,7 @@ export class PostsService {
       }
     }
     if (first) {
-      return await this.trendingPostsWithRelayForward(first, after)
+      return await this.trendingPostsWithRelayForward(first, after, filter)
     }
   }
 
@@ -391,32 +451,9 @@ export class PostsService {
     }
   }
 
-  async createPost (i: string, { content, images, subjectId, isAnonymous }: CreatePostArgs): Promise<Post> {
+  async createPost (i: string, { content, images, subjectId, isAnonymous, universityId }: CreatePostArgs): Promise<Post> {
     const now = new Date().toISOString()
-    const condition = `@if( 
-      eq(len(v), 1)
-      and eq(len(system), 1) 
-      ${subjectId ? 'and eq(len(u), 1) ' : ''}
-    )`
-    const query = `
-      query v($creator: string, $subjectId: string) {
-        # 系统
-        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
-        # 创建者存在
-        v(func: uid($creator)) @filter(type(User)) { v as uid }
-        # 主题存在
-        ${subjectId ? 'u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }' : ''}
-      }
-    `
-    const mutation = {
-      uid: 'uid(v)',
-      posts: {
-        uid: '_:post',
-        'dgraph.type': 'Post',
-        content,
-        createdAt: now
-      }
-    }
+
     // 处理帖子图片
     const imagesV2 = images?.map((image, index) => (
       {
@@ -431,14 +468,6 @@ export class PostsService {
     const textCensor = await this.censorsService.textCensor(content)
     // 获取帖子文本的情感信息
     const _sentiment = await this.nlpService.sentimentAnalysis(content)
-
-    // 帖子所属的主题
-    const subject = {
-      uid: 'uid(u)',
-      posts: {
-        uid: '_:post'
-      }
-    }
 
     // 帖子的匿名信息
     const anonymous = {
@@ -493,29 +522,78 @@ export class PostsService {
       }
     }
 
-    // 帖子的创建者
-    Object.assign(mutation.posts, { creator })
+    // TODO 检查该 University 是否包含相应的 Subject
+    const query = `
+      query v($creator: string, $subjectId: string, $universityId: string) {
+        # system 是否存在
+        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
+        # creator 是否存在
+        v(func: uid($creator)) @filter(type(User)) { v as uid }
+        # Subject 是否存在
+        ${subjectId ? 'u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }' : ''}
+        # University 是否存在
+        k(func: uid($universityId)) @filter(type(University)) { k as uid }
+      }
+    `
 
-    Object.assign(mutation.posts, { sentiment })
+    const mutations = []
 
-    // 发布具有主题的帖子
-    if (subjectId) {
-      Object.assign(mutation.posts, { subject })
+    // 将 Post 添加到 Subject
+    const addToSubjectCond = `@if( 
+      eq(len(v), 1)
+      and eq(len(system), 1)
+      and eq(len(u), 1)
+    )`
+    const addToSubjectMut = {
+      uid: 'uid(u)',
+      posts: {
+        uid: '_:post'
+      }
     }
+
+    if (subjectId) {
+      mutations.push({ mutation: addToSubjectMut, condition: addToSubjectCond })
+    }
+
+    const addToUniversityCond = '@if( eq(len(v), 1) and eq(len(system), 1) and eq(len(k), 1) )'
+    const addToUniversityMut = {
+      uid: 'uid(k)',
+      posts: {
+        uid: '_:post'
+      }
+    }
+
+    mutations.push({ mutation: addToUniversityMut, condition: addToUniversityCond })
+
+    // 创建帖子，无 Subject
+    const createPostCond = '@if( eq(len(v), 1) and eq(len(system), 1) )'
+    const createPostMut = {
+      uid: 'uid(v)',
+      posts: {
+        uid: '_:post',
+        'dgraph.type': 'Post',
+        // 帖子的创建者
+        creator,
+        // 贴子内容的情感信息
+        sentiment,
+        content,
+        createdAt: now
+      }
+    }
+
+    mutations.push({ mutation: createPostMut, condition: createPostCond })
 
     // 发布匿名帖子
     if (isAnonymous) {
-      Object.assign(mutation.posts, { anonymous })
+      Object.assign(createPostMut, { anonymous })
     }
-
     // 帖子的图片信息
     if ((imagesV2?.length ?? 0) !== 0) {
-      Object.assign(mutation.posts, { imagesV2 })
+      Object.assign(createPostMut, { imagesV2 })
     }
-
     // 帖子实锤含有违规文本内容
-    if (textCensor.suggestion === CENSOR_SUGGESTION.BLOCK) {
-      Object.assign(mutation.posts, { delete: iDelete })
+    if ((textCensor?.suggestion ?? CENSOR_SUGGESTION.PASS) === CENSOR_SUGGESTION.BLOCK) {
+      Object.assign(createPostMut, { delete: iDelete })
     }
 
     // TODO 帖子疑似含有违规内容，加入人工审查
@@ -525,12 +603,14 @@ export class PostsService {
       v: Array<{uid: string}>
       s: Array<{uid: string}>
       u: Array<{uid: string}>
+      k: Array<{uid: string}>
     }>({
-      mutations: [{ mutation, condition }],
+      mutations,
       query,
       vars: {
         $creator: i,
-        $subjectId: subjectId
+        $subjectId: subjectId,
+        $universityId: universityId
       }
     })
 
@@ -542,6 +622,9 @@ export class PostsService {
     }
     if (subjectId && res.json.u.length !== 1) {
       throw new SubjectNotFoundException(subjectId)
+    }
+    if (res.json.k.length !== 1) {
+      throw new UniversityNotFoundException(universityId)
     }
 
     return {
@@ -575,60 +658,45 @@ export class PostsService {
     return res.post[0]
   }
 
-  async postsWithRelayForward (first: number, after: string | null): Promise<PostsConnectionWithRelay> {
+  async postsWithRelayForward (first: number, after: string | null, { universityId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
     const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const university = universityId
+      ? `
+      var(func: uid($universityId)) @filter(type(University)) {
+        posts as posts(orderdesc: createdAt) @filter(type(Post) and not has(delete) and not has(pin))
+      }
+    `
+      : `
+      var(func: type(Post), orderdesc: createdAt) @filter(not has(delete) and not has(pin)) { 
+        posts as uid
+      }
+    `
     const query = `
-      query v($after: string) {
-        var(func: type(Post), orderdesc: createdAt) @filter(not has(delete) and not has(pin)) { 
-          posts as uid
-        }
+      query v($after: string, $universityId: string) {
+        ${university}
         ${after ? q1 : ''}
         totalCount(func: uid(posts)) { count(uid) }
-        posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
-        # 开始游标
-        startPost(func: uid(posts), first: -1) {
-          id: uid
-          createdAt
-        }
-        # 结束游标
-        endPost(func: uid(posts), first: 1) {
-          id: uid
-          createdAt
-        }
+        startO(func: uid(posts), first: -1) { createdAt }
+        endO(func: uid(posts), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      posts: Post[]
-      startPost: Array<{id: string, createdAt: string}>
-      endPost: Array<{id: string, createdAt: string}>
-    }>({ query, vars: { $after: after } })
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Post>>({
+      query,
+      vars: { $after: after, $universityId: universityId }
+    })
 
-    const totalCount = res.totalCount[0]?.count ?? 0
-    const v = totalCount !== 0
-    const startPost = res.startPost[0]
-    const endPost = res.endPost[0]
-    const lastPost = res.posts?.slice(-1)[0]
-
-    const hasNextPage = endPost?.createdAt !== lastPost?.createdAt && endPost?.createdAt !== after && res.posts.length === first && totalCount !== first
-    const hasPreviousPage = after !== startPost?.createdAt && !!after
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      edges: edgifyByCreatedAt(res.posts ?? []),
-      pageInfo: {
-        endCursor: atob(lastPost?.createdAt),
-        startCursor: atob(res.posts[0]?.createdAt),
-        hasNextPage: hasNextPage && v,
-        hasPreviousPage: hasPreviousPage && v
-      }
-    }
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
-  async postsWithRelayBackward (last: number, before: string | null): Promise<PostsConnectionWithRelay> {
+  async postsWithRelayBackward (last: number, before: string | null, { universityId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
     const q1 = `
       var(func: uid(posts), orderdesc: createdAt) @filter(gt(createdAt, $before)) { q as uid }
       var(func: uid(q), orderasc: createdAt, first: ${last}) { v as uid }
@@ -636,14 +704,21 @@ export class PostsService {
     const q2 = `
       var(func: uid(posts), orderasc: createdAt, first: ${last}) { v as uid }
     `
-    const query = `
-    query v($before: string) {
+    const university = universityId
+      ? `
+      var(func: uid($universityId)) @filter(type(University)) {
+        posts as posts(orderdesc: createdAt) @filter(not has(delete))
+      }
+    `
+      : `
       var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
         posts as uid
       }
-      totalCount(func: uid(posts)) {
-        count(uid) 
-      }
+    `
+    const query = `
+    query v($before: string, $universityId: string) {
+      ${university}
+      totalCount(func: uid(posts)) { count(uid) }
 
       ${before ? q1 : q2}
       posts(func: uid(v), orderdesc: createdAt) {
@@ -668,7 +743,7 @@ export class PostsService {
       edge: Post[]
       startPost: Array<{id: string, createdAt: string}>
       endPost: Array<{id: string, createdAt: string}>
-    }>({ query, vars: { $before: before } })
+    }>({ query, vars: { $before: before, $universityId: universityId } })
 
     const startPost = res.startPost[0]
     const endPost = res.endPost[0]
@@ -689,19 +764,21 @@ export class PostsService {
     }
   }
 
-  async postsWithRelay ({ first, last, before, after, orderBy }: RelayPagingConfigArgs): Promise<Nullable<PostsConnectionWithRelay>> {
-    after = btoa(after)
-    before = btoa(before)
+  async postsWithRelay ({ first, last, before, after, orderBy }: RelayPagingConfigArgs, filter: QueryPostsFilter): Promise<Nullable<PostsConnectionWithRelay>> {
+    after = handleRelayForwardAfter(after)
+    before = handleRelayBackwardBefore(before)
 
+    // TODO first 具有默认值，需要另外的判断逻辑
     if ((before && after) || (first && last)) {
       throw new ForbiddenException('同一时间只能使用after作为向后分页、before作为向前分页的游标')
     }
+    // TODO: fix: !first !last 对 last===0也生效
     if (!before && !after && !first && !last) {
       throw new ForbiddenException('必须指定向前分页或者向后分页')
     }
 
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.postsWithRelayForward(first, after)
+      return await this.postsWithRelayForward(first, after, filter)
     }
 
     if (first && orderBy === ORDER_BY.TRENDING) {
@@ -712,11 +789,11 @@ export class PostsService {
           throw new ForbiddenException(`游标 ${after} 解析失败`)
         }
       }
-      return await this.trendingPostsWithRelayForward(first, after)
+      return await this.trendingPostsWithRelayForward(first, after, filter)
     }
 
     if (last) {
-      return await this.postsWithRelayBackward(last, before)
+      return await this.postsWithRelayBackward(last, before, filter)
     }
 
     return null

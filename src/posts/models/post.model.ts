@@ -24,8 +24,11 @@ export class CreatePostArgs {
   @Field(type => [String], { description: '帖子图片', nullable: true })
     images: string[]
 
-  @Field({ nullable: true, description: '帖子所属的主题' })
+  @Field({ nullable: true, description: '帖子所属的 Subject' })
     subjectId: string
+
+  @Field({ description: '帖子所在的 University' })
+    universityId: string
 
   @Field(type => Boolean, { nullable: true, description: '是否匿名帖子', defaultValue: false })
     isAnonymous: boolean
@@ -76,6 +79,12 @@ export class RelayPagingConfigArgs {
 
   @Field(of => ORDER_BY, { description: '排序方式', nullable: true, defaultValue: ORDER_BY.CREATED_AT_DESC })
     orderBy?: ORDER_BY
+}
+
+@ArgsType()
+export class QueryPostsFilter {
+  @Field(of => String, { nullable: true })
+    universityId: string
 }
 
 @ObjectType()

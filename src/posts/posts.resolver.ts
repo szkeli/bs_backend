@@ -26,6 +26,7 @@ import { HashtagsConnection } from '../hashtags/models/hashtags.model'
 import { WithinArgs } from '../node/models/node.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
+import { University } from '../universities/models/universities.models'
 import { VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
@@ -33,6 +34,7 @@ import {
   Post,
   PostsConnection,
   PostsConnectionWithRelay,
+  QueryPostsFilter,
   RelayPagingConfigArgs
 } from './models/post.model'
 import { PostsService } from './posts.service'
@@ -68,14 +70,14 @@ export class PostsResolver {
 
   @Query(of => PostsConnectionWithRelay, { description: 'Relay分页版的posts接口' })
   @MaybeAuth()
-  async postsWithRelay (@Args() paging: RelayPagingConfigArgs) {
-    return await this.postsService.postsWithRelay(paging)
+  async postsWithRelay (@Args() paging: RelayPagingConfigArgs, @Args() filter: QueryPostsFilter) {
+    return await this.postsService.postsWithRelay(paging, filter)
   }
 
   @Query(of => PostsConnectionWithRelay, { description: '按热度获取所有帖子' })
   @MaybeAuth()
-  async trendingPostsWithRelay (@Args() paging: RelayPagingConfigArgs) {
-    return await this.postsService.trendingPostsWithRelay(paging)
+  async trendingPostsWithRelay (@Args() paging: RelayPagingConfigArgs, filter: QueryPostsFilter) {
+    return await this.postsService.trendingPostsWithRelay(paging, filter)
   }
 
   @Query(of => PostsConnection, { deprecationReason: '请使用 trendingPostsWithRelay' })
@@ -120,7 +122,7 @@ export class PostsResolver {
 
   @ResolveField(of => Subject, { nullable: true, description: '帖子所属的主题' })
   async subject (@Parent() post: Post): Promise<Subject | null> {
-    return await this.subjectService.findASubjectByPostId(post.id.toString())
+    return await this.postsService.subject(post.id)
   }
 
   @ResolveField(of => VotesConnection, { description: '帖子的点赞' })
@@ -171,5 +173,10 @@ export class PostsResolver {
   @ResolveField(of => [String], { description: '帖子的图片', nullable: 'items' })
   async images (@Parent() post: Post): Promise<string[]> {
     return await this.postsService.imagesV2(post.id)
+  }
+
+  @ResolveField(of => University, { description: '该帖子所在的大学', nullable: true })
+  async university (@Parent() post: Post): Promise<University> {
+    return await this.postsService.university(post.id)
   }
 }

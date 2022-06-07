@@ -382,8 +382,11 @@ type User implements Person & Node {
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
 
+  """用户性别"""
+  gender: GENDER
+
   """当前用户所在的大学"""
-  university: University!
+  university: University
 
   """当前用户所属的学院"""
   institutes(
@@ -401,7 +404,7 @@ type User implements Person & Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): InstitutesConnection!
+  ): InstitutesConnection
 
   """当前用户所属的校区"""
   subCampuses(
@@ -419,7 +422,7 @@ type User implements Person & Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubCampusesConnection!
+  ): SubCampusesConnection
 
   """回复的通知"""
   replyNotifications(
@@ -467,6 +470,12 @@ type User implements Person & Node {
   """当前用户提交的认证信息"""
   authenInfo: UserAuthenInfo
 
+  """当前用户的隐私设定"""
+  privateSettings: PrivateSettings
+
+  """获取当前用户上课通知的设置"""
+  lessonNotificationSettings: LessonNotificationSettings!
+
   """学号"""
   studentId: Int
 
@@ -476,17 +485,14 @@ type User implements Person & Node {
   """微信unionId,注册时传入微信code自动通过微信提供的接口获取获取"""
   unionId: String!
 
-  """用户性别"""
-  gender: GENDER
-
   """学院"""
-  college: String
+  college: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 institutes 代替")
 
   """校区"""
-  subCampus: String
+  subCampus: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 subCampuses 代替")
 
   """学校"""
-  school: String
+  school: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 university 代替")
 
   """年级"""
   grade: String
@@ -661,8 +667,11 @@ interface Person implements Node {
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
 
+  """当前用户的性别"""
+  gender: GENDER
+
   """当前用户所在的大学"""
-  university: University!
+  university: University
 
   """当前用户所属的学院"""
   institutes(
@@ -680,7 +689,7 @@ interface Person implements Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): InstitutesConnection!
+  ): InstitutesConnection
 
   """当前用户所属的校区"""
   subCampuses(
@@ -698,7 +707,7 @@ interface Person implements Node {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubCampusesConnection!
+  ): SubCampusesConnection
 
   """回复的通知"""
   replyNotifications(
@@ -745,22 +754,28 @@ interface Person implements Node {
 
   """当前用户提交的认证信息"""
   authenInfo: UserAuthenInfo
+
+  """当前用户的隐私设定"""
+  privateSettings: PrivateSettings
+
+  """获取当前用户上课通知的设置"""
+  lessonNotificationSettings: LessonNotificationSettings!
 }
 
 interface Node {
   id: String!
 }
 
-enum NOTIFICATION_TYPE {
-  ALL
-  READ
-  UN_READ
-}
-
 enum GENDER {
   NONE
   MALE
   FEMALE
+}
+
+enum NOTIFICATION_TYPE {
+  ALL
+  READ
+  UN_READ
 }
 
 type LoginResult implements Node & Person {
@@ -924,8 +939,11 @@ type LoginResult implements Node & Person {
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
 
+  """用户性别"""
+  gender: GENDER
+
   """当前用户所在的大学"""
-  university: University!
+  university: University
 
   """当前用户所属的学院"""
   institutes(
@@ -943,7 +961,7 @@ type LoginResult implements Node & Person {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): InstitutesConnection!
+  ): InstitutesConnection
 
   """当前用户所属的校区"""
   subCampuses(
@@ -961,7 +979,7 @@ type LoginResult implements Node & Person {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubCampusesConnection!
+  ): SubCampusesConnection
 
   """回复的通知"""
   replyNotifications(
@@ -1009,6 +1027,12 @@ type LoginResult implements Node & Person {
   """当前用户提交的认证信息"""
   authenInfo: UserAuthenInfo
 
+  """当前用户的隐私设定"""
+  privateSettings: PrivateSettings
+
+  """获取当前用户上课通知的设置"""
+  lessonNotificationSettings: LessonNotificationSettings!
+
   """学号"""
   studentId: Int
 
@@ -1018,17 +1042,14 @@ type LoginResult implements Node & Person {
   """微信unionId,注册时传入微信code自动通过微信提供的接口获取获取"""
   unionId: String!
 
-  """用户性别"""
-  gender: GENDER
-
   """学院"""
-  college: String
+  college: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 institutes 代替")
 
   """校区"""
-  subCampus: String
+  subCampus: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 subCampuses 代替")
 
   """学校"""
-  school: String
+  school: String @deprecated(reason: "feature/multiuniversity 后废弃，请使用 university 代替")
 
   """年级"""
   grade: String
@@ -1070,6 +1091,23 @@ type UserPageInfo {
   endCursor: String
   hasPreviousPage: Boolean!
   hasNextPage: Boolean!
+}
+
+type PrivateSettings {
+  """校区是否公开"""
+  isSubCampusPrivate: Boolean
+
+  """年级是否公开"""
+  isGradePrivate: Boolean
+
+  """学校是否公开"""
+  isUniversityPrivate: Boolean
+
+  """学院是否公开"""
+  isInstitutePrivate: Boolean
+
+  """性别是否公开"""
+  isGenderPrivate: Boolean
 }
 
 type LessonNotificationSettings {
@@ -1317,6 +1355,9 @@ type Post {
 
   """帖子的图片"""
   images: [String]!
+
+  """该帖子所在的大学"""
+  university: University
 }
 
 type PostsConnection {
@@ -1471,13 +1512,13 @@ type UserAuthenInfo implements Authenable {
   studentId: Float!
 
   """学院"""
-  college: String!
+  college: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 institutes 代替")
 
   """校区"""
-  subCampus: String!
+  subCampus: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 subCampuses 代替")
 
   """学校"""
-  school: String!
+  school: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 universities 代替")
 
   """年级"""
   grade: String!
@@ -1485,7 +1526,7 @@ type UserAuthenInfo implements Authenable {
   """性别"""
   gender: GENDER!
 
-  """有效信息图片(e.g. 校园卡照片)的链接"""
+  """bug: 图片乱序，有效信息图片(e.g. 校园卡照片)的链接"""
   images: [String!]
 }
 
@@ -1868,6 +1909,24 @@ type University {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): SubjectsConnection!
+
+  """该大学拥有的所有 Post"""
+  posts(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PostsConnectionWithRelay!
 }
 
 type UniversitiesConnection {
@@ -2358,6 +2417,31 @@ type TextClassificationResult {
   fifthClassProbability: Float
 }
 
+type SubCampus {
+  id: String!
+  name: String!
+  createdAt: String!
+  university: University!
+}
+
+type SubCampusesConnection {
+  edges: [SubCampusEdge!]!
+  pageInfo: SubCampusPageInfo!
+  totalCount: Int!
+}
+
+type SubCampusEdge {
+  node: SubCampus
+  cursor: String
+}
+
+type SubCampusPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type SearchResultItemConnection {
   edges: [SearchResultItemEdge!]!
   pageInfo: SearchResultItemPageInfo!
@@ -2369,7 +2453,7 @@ type SearchResultItemEdge {
   cursor: String
 }
 
-union SearchResultItem = Post | User | Comment | Subject
+union SearchResultItem = Post | User | Comment | Subject | University | Institute | SubCampus
 
 type SearchResultItemPageInfo {
   startCursor: String
@@ -2409,31 +2493,6 @@ type AvatarImageUploadCredentialInfo {
   bucket: String!
   region: String!
   key: String!
-}
-
-type SubCampus {
-  id: String!
-  name: String!
-  createdAt: String!
-  university: University!
-}
-
-type SubCampusesConnection {
-  edges: [SubCampusEdge!]!
-  pageInfo: SubCampusPageInfo!
-  totalCount: Int!
-}
-
-type SubCampusEdge {
-  node: SubCampus
-  cursor: String
-}
-
-type SubCampusPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
 }
 
 type View {
@@ -2520,6 +2579,8 @@ type Query {
 
   """Relay分页版的posts接口"""
   postsWithRelay(
+    universityId: String
+
     """最新的n个对象"""
     first: Int = 10
 
@@ -2601,10 +2662,28 @@ type Query {
   ): UsersConnectionWithRelay!
 
   """当前id对应的的用户画像"""
-  whoAmI: AdminAndUserWithPrivatePropsUnion!
+  whoAmI: WhoAmIUnion!
 
   """获取所有用户"""
-  users(first: Int = 10, offset: Int = 0): UsersConnection!
+  users(first: Int = 10, offset: Int = 0): UsersConnection! @deprecated(reason: "使用 usersWithRelay")
+  usersWithRelay(
+    universityId: String
+
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UsersConnectionWithRelay!
 
   """以id获取用户"""
   user(id: String!): User!
@@ -2771,6 +2850,8 @@ type Query {
 
   """获取所有主题"""
   subjectsWithRelay(
+    universityId: String
+
     """最新的n个对象"""
     first: Int = 10
 
@@ -3223,307 +3304,27 @@ type Query {
   ): SubCampusesConnection!
 }
 
-union AdminAndUserWithPrivatePropsUnion = UserWithPrivateProps | Admin
-
-"""包含属性是否个人可见的用户对象"""
-type UserWithPrivateProps implements Person & Node {
-  """学院属性是否私有"""
-  isCollegePrivate: Boolean
-
-  """校区属性是否私有"""
-  isSubCampusPrivate: Boolean
-
-  """性别属性是否私有"""
-  isGenderPrivate: Boolean
-
-  """学校属性是否私有"""
-  isSchoolPrivate: Boolean
-
-  """年级属性是否私有"""
-  isGradePrivate: Boolean
-  id: String!
-
-  """学号"""
-  studentId: Int
-  name: String!
-  userId: String!
-
-  """微信openId,注册时传入微信code自动通过微信提供的接口获取获取"""
-  openId: String!
-
-  """微信unionId,注册时传入微信code自动通过微信提供的接口获取获取"""
-  unionId: String!
-
-  """用户性别"""
-  gender: GENDER
-
-  """学院"""
-  college: String
-
-  """校区"""
-  subCampus: String
-
-  """学校"""
-  school: String
-
-  """年级"""
-  grade: String
-
-  """用户创建时间"""
-  createdAt: String!
-
-  """用户信息的更新时间"""
-  updatedAt: String!
-
-  """用户上一次调用login接口获取token的系统时间"""
-  lastLoginedAt: String!
-
-  """用户头像链接"""
-  avatarImageUrl: String
-
-  """当前用户创建的所有帖子"""
-  posts(first: Int = 10, offset: Int = 0): PostsConnection!
-  postsWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): PostsConnectionWithRelay!
-
-  """当前用户的所有点赞"""
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
-
-  """当前用户的所有点赞"""
-  votesWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): VotesConnectionWithRelay!
-
-  """当前用户的所有角色"""
-  roles(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): RolesConnection!
-
-  """当前用户发布的评论"""
-  comments(first: Int = 10, offset: Int = 0): CommentsConnection!
-  commentsWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): CommentsConnectionWithRelay!
-
-  """当前用户创建的所有主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-
-  """当前用户创建的所有会话"""
-  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
-
-  """当前用户收到的所有举报"""
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-
-  """当前用户的deadlines"""
-  deadlines(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): DeadlinesConnection!
-
-  """当前用户的所有课程"""
-  lessons(
-    """当前开始学年"""
-    startYear: Int!
-
-    """当前结束学年"""
-    endYear: Int!
-
-    """当前学期"""
-    semester: Int!
-
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): LessonsConnection!
-
-  """当前用户具有的权限"""
-  privileges(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): PrivilegesConnection!
-
-  """当前用户的认证凭证，未认证用户为null"""
-  credential: ICredential
-
-  """当前用户所在的大学"""
-  university: University!
-
-  """当前用户所属的学院"""
-  institutes(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): InstitutesConnection!
-
-  """当前用户所属的校区"""
-  subCampuses(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubCampusesConnection!
-
-  """回复的通知"""
-  replyNotifications(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-
-    """获取"""
-    type: NOTIFICATION_TYPE = ALL
-
-    """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
-  ): NotificationsConnection
-
-  """点赞的通知"""
-  upvoteNotifications(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-    type: NOTIFICATION_TYPE = ALL
-  ): VoteWithUnreadCountsConnection
-
-  """当前用户提交的认证信息"""
-  authenInfo: UserAuthenInfo
-}
+union WhoAmIUnion = User | Admin
 
 enum SEARCHTYPE {
+  """用户"""
   USER
   COMMENT
+
+  """评论"""
   POST
+
+  """主题"""
   SUBJECT
+
+  """大学"""
+  UNIVERSITY
+
+  """学院"""
+  INSTITUTE
+
+  """校区"""
+  SUBCAMPUS
 }
 
 """登录类型"""
@@ -3613,8 +3414,11 @@ type Mutation {
     """帖子图片"""
     images: [String!]
 
-    """帖子所属的主题"""
+    """帖子所属的 Subject"""
     subjectId: String
+
+    """帖子所在的 University"""
+    universityId: String!
 
     """是否匿名帖子"""
     isAnonymous: Boolean = false
@@ -3643,6 +3447,24 @@ type Mutation {
 
   """更新用户画像"""
   updateUser(avatarImageUrl: String, userId: String, name: String, sign: String, isCollegePrivate: Boolean, isSchoolPrivate: Boolean, isGradePrivate: Boolean, isGenderPrivate: Boolean, isSubCampusPrivate: Boolean): User!
+
+  """更新当前用户的隐私信息"""
+  updatePrivateSettings(
+    """校区是否公开"""
+    isSubCampusPrivate: Boolean
+
+    """年级是否公开"""
+    isGradePrivate: Boolean
+
+    """学校是否公开"""
+    isUniversityPrivate: Boolean
+
+    """学院是否公开"""
+    isInstitutePrivate: Boolean
+
+    """性别是否公开"""
+    isGenderPrivate: Boolean
+  ): PrivateSettings!
 
   """点赞一个帖子"""
   addUpvoteOnPost(postId: String!): Post!
@@ -3777,7 +3599,15 @@ type Mutation {
   updateSubject(id: String!, title: String, description: String, avatarImageUrl: String, backgroundImageUrl: String): Subject!
 
   """创建一个主题"""
-  createSubject(title: String!, description: String!, avatarImageUrl: String!, backgroundImageUrl: String!): Subject!
+  createSubject(
+    title: String!
+    description: String!
+    avatarImageUrl: String!
+    backgroundImageUrl: String!
+
+    """Subject 所在的大学的 id"""
+    universityId: String!
+  ): Subject!
 
   """举报一条评论"""
   addReportOnComment(
@@ -4107,6 +3937,9 @@ type Mutation {
 
   """测试接口，将当前所有用户添加到某个学校"""
   addAllUserToUniversity(id: String!): Boolean!
+
+  """测试接口，将当前所有帖子添加到某个学校"""
+  addAllPostToUniversity(id: String!): Boolean!
   createInstitute(
     """学院所在的大学的 id"""
     id: String!
@@ -4140,12 +3973,6 @@ input AuthenticationInfo {
   """学号"""
   studentId: Float!
 
-  """学院"""
-  college: String!
-
-  """校区"""
-  subCampus: String!
-
   """学院的id的数组"""
   institutes: [String!]!
 
@@ -4154,9 +3981,6 @@ input AuthenticationInfo {
 
   """大学的id的数组"""
   universities: [String!]!
-
-  """学校"""
-  school: String!
 
   """年级"""
   grade: String!
