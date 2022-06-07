@@ -357,7 +357,13 @@ export class PagingConfigArgs {
 export type CheckUserResult = User & {success: boolean, roles: Role[]}
 export const AdminAndUserWithPrivatePropsUnion = createUnionType({
   name: 'AdminAndUserWithPrivatePropsUnion',
+  description: '废弃，请使用 WhoAmIUnion 代替',
   types: () => [UserWithPrivateProps, Admin]
+})
+
+export const WhoAmIUnion = createUnionType({
+  name: 'WhoAmIUnion',
+  types: () => [User, Admin]
 })
 
 export const AdminAndUserUnion = createUnionType({

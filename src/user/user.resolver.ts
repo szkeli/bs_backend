@@ -3,7 +3,7 @@ import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/g
 import { CheckPolicies, CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
 import { PostsConnection, PostsConnectionWithRelay, RelayPagingConfigArgs } from 'src/posts/models/post.model'
 import { SubjectsConnection } from 'src/subject/model/subject.model'
-import { RawUser2UserWithPrivateProps, sign as sign_calculus } from 'src/tool'
+import { sign as sign_calculus } from 'src/tool'
 
 import { Admin } from '../admin/models/admin.model'
 import { Role, UserAuthenInfo, UserWithRoles } from '../auth/model/auth.model'
@@ -28,7 +28,6 @@ import { University } from '../universities/models/universities.models'
 import { VotesConnection, VotesConnectionWithRelay, VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
 import { VotesService } from '../votes/votes.service'
 import {
-  AdminAndUserWithPrivatePropsUnion,
   GENDER,
   NotificationArgs,
   PagingConfigArgs,
@@ -41,7 +40,7 @@ import {
   UsersConnection,
   UsersConnectionWithRelay,
   UsersWithRelayFilter,
-  UserWithPrivateProps
+  WhoAmIUnion
 } from './models/user.model'
 import { UserService } from './user.service'
 
@@ -90,15 +89,14 @@ export class UserResolver {
     return await this.userService.updateUser(user.id, args)
   }
 
-  @Query(of => AdminAndUserWithPrivatePropsUnion, { description: '当前id对应的的用户画像' })
+  @Query(of => WhoAmIUnion, { description: '当前id对应的的用户画像' })
   @Roles(Role.User, Role.Admin)
   async whoAmI (@CurrentUser() user: UserWithRoles) {
     if (user.roles.includes(Role.Admin)) {
       return new Admin(user as unknown as Admin)
     }
     if (user.roles.includes(Role.User)) {
-      const userWithPrivateProps = RawUser2UserWithPrivateProps(user)
-      return new UserWithPrivateProps(userWithPrivateProps)
+      return new User(user)
     }
   }
 
