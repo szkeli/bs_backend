@@ -7,6 +7,7 @@ import { Comment } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Institute } from '../institutes/models/institutes.model'
 import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { SubCampus } from '../subcampus/models/subcampus.model'
 import { Subject } from '../subject/model/subject.model'
 import { btoa, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { University } from '../universities/models/universities.models'
@@ -42,7 +43,40 @@ export class SearchService {
     if (type === SEARCHTYPE.INSTITUTE && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.searchInstitute(query, first, after)
     }
+    if (type === SEARCHTYPE.SUBCAMPUS && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.searchSubCampus(query, first, after)
+    }
     throw new Error('Method not implemented.')
+  }
+
+  async searchSubCampus (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+    const q1 = 'var(func: uid(subCampuses), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($query: string, $after: string) {
+        var(func: type(SubCampus), orderdesc: createdAt) @filter(alloftext(name, $query) and not has(delete)) {
+          subCampuses as uid
+        }
+        totalCount(func: uid(subCampuses)) { count(uid) }
+        ${after ? q1 : ''}
+        objs(func: uid(${after ? 'q' : 'subCampuses'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          dgraph.type
+          expand(_all_)
+        }
+        startO(func: uid(subCampuses), first: -1) { createdAt }
+        endO(func: uid(subCampuses), first: 1) { createdAt }
+      } 
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<SubCampus>>({
+      query,
+      vars: { $query: q, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async searchInstitute (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
