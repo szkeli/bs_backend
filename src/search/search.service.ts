@@ -5,6 +5,7 @@ import { DbService } from 'src/db/db.service'
 
 import { Comment } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
+import { Institute } from '../institutes/models/institutes.model'
 import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Subject } from '../subject/model/subject.model'
 import { btoa, relayfyArrayForward, RelayfyArrayParam } from '../tool'
@@ -38,7 +39,40 @@ export class SearchService {
     if (type === SEARCHTYPE.UNIVERSITY && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.searchUniversity(query, first, after)
     }
+    if (type === SEARCHTYPE.INSTITUTE && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.searchInstitute(query, first, after)
+    }
     throw new Error('Method not implemented.')
+  }
+
+  async searchInstitute (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+    const q1 = 'var(func: uid(institutes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($query: string, $after: string) {
+        var(func: type(Institute), orderdesc: createdAt) @filter(alloftext(name, $query) and not has(delete)) {
+          institutes as uid
+        }
+        totalCount(func: uid(institutes)) { count(uid) }
+        ${after ? q1 : ''}
+        objs(func: uid(${after ? 'q' : 'institutes'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          dgraph.type
+          expand(_all_)
+        }
+        startO(func: uid(institutes), first: -1) { createdAt }
+        endO(func: uid(institutes), first: 1) { createdAt }
+      } 
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Institute>>({
+      query,
+      vars: { $query: q, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async searchUniversity (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
