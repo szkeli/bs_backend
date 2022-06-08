@@ -385,11 +385,6 @@ export class AuthService {
       'dgraph.type': 'User',
       updatedAt: now(),
       ...info,
-      'school|private': false,
-      'grade|private': false,
-      'gender|private': false,
-      'subCampus|private': false,
-      'college|private': false,
       credential: {
         uid: '_:credential',
         'dgraph.type': 'Credential',
@@ -745,11 +740,6 @@ export class AuthService {
       uid: id,
       ...tokenRes,
       updatedAt: now(),
-      'school|private': false,
-      'grade|private': false,
-      'gender|private': false,
-      'subCampus|private': false,
-      'college|private': false,
       credential: {
         uid: '_:credential',
         'dgraph.type': 'Credential',
