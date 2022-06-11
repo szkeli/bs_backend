@@ -4,9 +4,11 @@ import { DgraphClient } from 'dgraph-js'
 import { MESSAGE_TYPE } from 'src/messages/models/messages.model'
 
 import { Comment } from '../comment/models/comment.model'
+import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { Conversation, CONVERSATION_STATE } from '../conversations/models/conversations.model'
 import { DbService } from '../db/db.service'
 import { Post } from '../posts/models/post.model'
+import { relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { User } from '../user/models/user.model'
 import { Report, REPORT_STATE, REPORT_TYPE, Report2Union, ReportsConnection } from './models/reports.model'
 
@@ -15,6 +17,43 @@ export class ReportsService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async reportsWithRelay ({ first, after, orderBy }: RelayPagingConfigArgs) {
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.reportsWithRelayForward(first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async reportsWithRelayForward (first: number, after: string) {
+    const q1 = 'var(func: uid(reports), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($after: string) {
+        var(func: type(Report)) {
+          reports as uid
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(reports)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'reports'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(reports), first: -1) { createdAt }
+        endO(func: uid(reports), first: 1) { createdAt }
+      }
+    `
+
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Report>>({
+      query,
+      vars: { $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   async report (id: string) {

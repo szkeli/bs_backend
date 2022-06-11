@@ -1,6 +1,7 @@
 import { ArgsType, createUnionType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 import { Comment } from '../../comment/models/comment.model'
+import { Connection } from '../../connections/models/connections.model'
 import { Node } from '../../node/models/node.model'
 import { Post } from '../../posts/models/post.model'
 import { User } from '../../user/models/user.model'
@@ -53,8 +54,6 @@ export class Report implements Node {
 
   @Field(type => REPORT_STATE)
     state: REPORT_STATE
-  // to: string
-  // creator: string
 }
 
 @ArgsType()
@@ -82,3 +81,6 @@ export class ReportsConnection {
   @Field(type => Int)
     totalCount: number
 }
+
+@ObjectType()
+export class ReportsConnectionWithRelay extends Connection<Report>(Report) {}

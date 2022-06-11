@@ -1,11 +1,12 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
-import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
+import { CheckPolicies, CurrentUser, NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
+import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { Conversation } from '../conversations/models/conversations.model'
 import { PagingConfigArgs, User } from '../user/models/user.model'
-import { AddReportToArgs, Report, Report2Union, ReportsConnection } from './models/reports.model'
+import { AddReportToArgs, Report, Report2Union, ReportsConnection, ReportsConnectionWithRelay } from './models/reports.model'
 import { ReportsService } from './reports.service'
 
 // 1. 创建一个会话
@@ -23,8 +24,15 @@ export class ReportsResolver {
   }
 
   @Query(of => ReportsConnection, { description: '获取所有的举报' })
+  @NoAuth()
   async reports (@Args() { first, offset }: PagingConfigArgs) {
     return await this.reportsService.reports(first, offset)
+  }
+
+  @Query(of => ReportsConnectionWithRelay, { description: '获取所有的举报' })
+  @NoAuth()
+  async reportsWithRelay (@Args() args: RelayPagingConfigArgs) {
+    return await this.reportsService.reportsWithRelay(args)
   }
 
   @Mutation(of => Report, { description: '举报一条评论' })
