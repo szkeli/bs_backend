@@ -177,7 +177,7 @@ export class UniversitiesService {
     const query = `
         query v($id: string, $after: string) {
             var(func: uid($id)) @filter(type(University)) {
-                posts as posts @filter(type(Post))
+                posts as posts @filter(type(Post) and not has(delete))
             }
             ${after ? q1 : ''}
             totalCount(func: uid(posts)) { count(uid) }
