@@ -1908,7 +1908,7 @@ type University {
 
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubjectsConnection!
+  ): SubjectsConnectionWithRelay!
 
   """该大学拥有的所有 Post"""
   posts(
