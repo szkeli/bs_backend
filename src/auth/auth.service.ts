@@ -856,7 +856,7 @@ export class AuthService {
     const q1 = 'var(func: uid(infos), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid } '
     const query = `
       query v($after: string) {
-        infos as var(func: type(UserAuthenInfo), orderdesc: createdAt) @filter(not has(delete))
+        infos as var(func: type(UserAuthenInfo), orderdesc: createdAt) @filter(not has(delete) and not has(avatarImageUrl))
 
         ${after ? q1 : ''}
         totalCount(func: uid(infos)) {
