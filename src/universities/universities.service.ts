@@ -177,7 +177,7 @@ export class UniversitiesService {
     const query = `
         query v($id: string, $after: string) {
             var(func: uid($id)) @filter(type(University)) {
-                posts as posts @filter(type(Post))
+                posts as posts @filter(type(Post) and not has(delete))
             }
             ${after ? q1 : ''}
             totalCount(func: uid(posts)) { count(uid) }
@@ -218,7 +218,7 @@ export class UniversitiesService {
             }
             ${after ? q1 : ''}
             totalCount(func: uid(subjects)) { count(uid) }
-            objs(func: uid(${after ? 'q' : 'users'}), orderdesc: createdAt, first: ${first}) {
+            objs(func: uid(${after ? 'q' : 'subjects'}), orderdesc: createdAt, first: ${first}) {
                 id: uid
                 expand(_all_)
             }

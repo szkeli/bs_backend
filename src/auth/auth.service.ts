@@ -385,11 +385,6 @@ export class AuthService {
       'dgraph.type': 'User',
       updatedAt: now(),
       ...info,
-      'school|private': false,
-      'grade|private': false,
-      'gender|private': false,
-      'subCampus|private': false,
-      'college|private': false,
       credential: {
         uid: '_:credential',
         'dgraph.type': 'Credential',
@@ -745,11 +740,6 @@ export class AuthService {
       uid: id,
       ...tokenRes,
       updatedAt: now(),
-      'school|private': false,
-      'grade|private': false,
-      'gender|private': false,
-      'subCampus|private': false,
-      'college|private': false,
       credential: {
         uid: '_:credential',
         'dgraph.type': 'Credential',
@@ -866,7 +856,7 @@ export class AuthService {
     const q1 = 'var(func: uid(infos), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid } '
     const query = `
       query v($after: string) {
-        infos as var(func: type(UserAuthenInfo), orderdesc: createdAt) @filter(not has(delete))
+        infos as var(func: type(UserAuthenInfo), orderdesc: createdAt) @filter(not has(delete) and not has(avatarImageUrl))
 
         ${after ? q1 : ''}
         totalCount(func: uid(infos)) {

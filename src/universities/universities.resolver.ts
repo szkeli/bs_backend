@@ -8,7 +8,7 @@ import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { InstitutesConnection } from '../institutes/models/institutes.model'
 import { PostsConnectionWithRelay } from '../posts/models/post.model'
 import { SubCampusesConnection } from '../subcampus/models/subcampus.model'
-import { SubjectsConnection } from '../subject/model/subject.model'
+import { SubjectsConnectionWithRelay } from '../subject/model/subject.model'
 import { UsersConnectionWithRelay } from '../user/models/user.model'
 import { CreateUniversityArgs, DeleteUniversityArgs, UniversitiesConnection, University, UpdateUniversityArgs } from './models/universities.models'
 import { UniversitiesService } from './universities.service'
@@ -66,7 +66,7 @@ export class UniversitiesResolver {
     return await this.universitiesService.users(university.id, args)
   }
 
-  @ResolveField(of => SubjectsConnection, { description: '该大学拥有的所有 Subject' })
+  @ResolveField(of => SubjectsConnectionWithRelay, { description: '该大学拥有的所有 Subject' })
   async subjects (@Parent() university: University, @Args() args: RelayPagingConfigArgs) {
     return await this.universitiesService.subjects(university.id, args)
   }
