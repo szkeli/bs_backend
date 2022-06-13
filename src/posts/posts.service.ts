@@ -930,7 +930,14 @@ export class PostsService {
       endVote: Array<{createdAt: string}>
       votes: Vote[]
       v: Array<{uid: string}>
-    }>({ query, vars: { $id: id, $after: after } })
+    }>({
+      query,
+      vars: {
+        $id: id,
+        $after: after,
+        $viewerId: viewerId
+      }
+    })
 
     const can = res.v.length === 0
 
