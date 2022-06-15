@@ -45,7 +45,7 @@ export class CensorsService {
       .then(r => r.result)
 
     return {
-      detail: res.detail ?? {},
+      detail: res?.detail ?? {},
       suggestion: res.suggestion ?? CENSOR_SUGGESTION.PASS
     }
   }
