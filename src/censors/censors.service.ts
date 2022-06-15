@@ -46,7 +46,7 @@ export class CensorsService {
 
     return {
       detail: res?.detail ?? {},
-      suggestion: res.suggestion ?? CENSOR_SUGGESTION.PASS
+      suggestion: res?.suggestion ?? CENSOR_SUGGESTION.PASS
     }
   }
 }
