@@ -825,7 +825,7 @@ export class PostsService {
     const q1 = 'var(func: uid(votes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $viewerId: string, $after: string) {
-        var(func: udi($id)) @filter(type(Post)) {
+        var(func: uid($id)) @filter(type(Post)) {
           votes as votes (orderdesc: createdAt) @filter(type(Vote))
         }
         # viewer是否已经点赞
