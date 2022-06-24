@@ -4,11 +4,56 @@ import { UserAlreadyCheckInException, UserNotFoundException } from '../app.excep
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { now } from '../tool'
+import { User } from '../user/models/user.model'
 import { ExperienceTransactionType } from './models/experiences.model'
 
 @Injectable()
 export class ExperiencesService {
   constructor (private readonly dbService: DbService) {}
+  async from (id: string) {
+    const query = `
+        query v($id: string) {
+            var(func: uid($id)) @filter(type(ExperiencePointsTransaction)) {
+                from as from @filter(type(User))
+            }
+            from(func: uid(from)) {
+                id: uid
+                expand(_all_)
+            }
+        }
+    `
+    const res = await this.dbService.commitQuery<{
+      from: User[]
+    }>({
+      query,
+      vars: { $id: id }
+    })
+
+    return res.from[0]
+  }
+
+  async to (id: string) {
+    const query = `
+        query v($id: string) {
+            var(func: uid($id)) @filter(type(ExperiencePointTransaction)) {
+                to as to @filter(type(User))
+            }
+            to(func: uid(to)) {
+                id: uid
+                expand(_all_)
+            }
+        }
+    `
+    const res = await this.dbService.commitQuery<{
+      to: User[]
+    }>({
+      query,
+      vars: { $id: id }
+    })
+
+    return res.to[0]
+  }
+
   /**
      * 用户的每日签到函数
      * 1. 创建响应的经验交易记录

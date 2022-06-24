@@ -2595,6 +2595,8 @@ type Experience {
   id: String!
   points: Int!
   transactionType: ExperienceTransactionType!
+  to: User!
+  from: User
 }
 
 enum ExperienceTransactionType {
