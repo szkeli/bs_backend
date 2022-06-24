@@ -244,6 +244,9 @@ export class User implements Person, Node {
 
   @Field({ description: '用户头像链接', nullable: true })
     avatarImageUrl?: string | null
+
+  @Field(of => Int, { description: '当前用户的经验', nullable: true })
+    experiencePoints?: number | null
 }
 
 @ObjectType()

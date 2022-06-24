@@ -55,6 +55,7 @@ import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
 import { WxModule } from './wx/wx.module'
+import { ExperiencesModule } from './experiences/experiences.module';
 
 @Module({
   imports: [
@@ -138,7 +139,8 @@ import { WxModule } from './wx/wx.module'
     TasksModule,
     UniversitiesModule,
     InstitutesModule,
-    SubcampusModule
+    SubcampusModule,
+    ExperiencesModule
   ],
   controllers: [AppController],
   providers: [

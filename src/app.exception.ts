@@ -268,3 +268,9 @@ export class InstitutesOrSubCampusesNotAllInTheUniversityException extends HttpE
     super(`institutes: ${institutes.toString()} 对应的 universities 和 SubCampuses: ${subCampuses.toString()} 对应的 universities 不完全等于 ${universities.toString()}}`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class UserAlreadyCheckInException extends HttpException {
+  constructor (id: string) {
+    super(`用户 ${id} 已经签到`, HttpStatus.FORBIDDEN)
+  }
+}
