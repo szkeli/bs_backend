@@ -9,6 +9,7 @@ import { UserAuthenInfo, UserWithRolesAndPrivilegesAndCredential } from '../auth
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { Deadline } from '../deadlines/models/deadlines.model'
+import { Experience } from '../experiences/models/experiences.model'
 import { Institute } from '../institutes/models/institutes.model'
 import { FilterLessonArgs, Lesson } from '../lessons/models/lessons.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
@@ -35,6 +36,45 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async experiencePointTransaction (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+    if (orderBy === ORDER_BY.CREATED_AT_DESC && first) {
+      return await this.experiencePointTransactionsWithRelayForward(id, first, after)
+    }
+    throw new Error('Method not implemented.')
+  }
+
+  async experiencePointTransactionsWithRelayForward (id: string, first: number, after: string) {
+    const q1 = 'var(func: uid(transactions), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(User)) {
+          u as uid
+        }
+        var(func: type(ExperiencePointTransaction), orderdesc: createdAt) @filter(uid_in(to, uid(u))) {
+          transactions as uid
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(transactions)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'transactions'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(transactions), first: -1) { createdAt }
+        endO(func: uid(transactions), first: 1) { createdAt }
+      }
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Experience>>({
+      query,
+      vars: { $id: id, $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 
   /**

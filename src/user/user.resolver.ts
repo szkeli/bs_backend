@@ -14,6 +14,7 @@ import { ConversationsService } from '../conversations/conversations.service'
 import { ConversationsConnection } from '../conversations/models/conversations.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
+import { ExperiencesConnection } from '../experiences/models/experiences.model'
 import { InstitutesConnection } from '../institutes/models/institutes.model'
 import { LessonsService } from '../lessons/lessons.service'
 import { FilterLessonArgs, LessonNotificationSettings, LessonsConnection } from '../lessons/models/lessons.model'
@@ -280,5 +281,10 @@ export class UserResolver {
   @Roles(Role.User)
   async updatePrivateSettings (@CurrentUser() user: User, @Args() args: UpdatePrivateSettingsArgs) {
     return await this.userService.updatePrivateSettings(user, args)
+  }
+
+  @ResolveField(of => ExperiencesConnection)
+  async experiencePointTransactions (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.experiencePointTransaction(user.id, args)
   }
 }
