@@ -66,7 +66,7 @@ export class ExperiencesService {
     const dailCheckInPoints = 10
 
     const query = `
-        query v($id: string, $zeroTime: string, $currentTime: string) {
+        query v($id: string, $zeroTime: string, $currentTime: string, $type: string) {
             # 当前用户存在
             u(func: uid($id)) @filter(type(User) and not has(delete)) {
                 u as uid
@@ -78,7 +78,7 @@ export class ExperiencesService {
             }
             # TODO: 当前用户今日没有签到
             # 当前用户的所有签到
-            var(func: type(ExperiencePointTransaction)) {
+            var(func: type(ExperiencePointTransaction)) @filter(eq(transactionType, $type)) {
                 to @filter(uid(u)) {
                     h as ~to
                 }
@@ -112,7 +112,8 @@ export class ExperiencesService {
       vars: {
         $id: id,
         $currentTime: now(),
-        $zeroTime: zeroTime
+        $zeroTime: zeroTime,
+        $type: ExperienceTransactionType.DAILY_CHECK_IN
       }
     })
 
