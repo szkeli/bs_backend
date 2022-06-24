@@ -43,6 +43,7 @@ sentiment: uid @reverse .
 lessonNotificationSettings: uid @reverse .
 lessonNotificationStatus: uid @reverse .
 privateSettings: uid @reverse .
+from: uid @reverse .
 
 images: [string] .
 
@@ -56,6 +57,7 @@ content: string @index(fulltext) .
 description: string @index(fulltext) .
 destination: string @index(fulltext) .
 type: string @index(term) .
+transactionType: string @index(term) .
 gender: string @index(term) .
 college: string @index(term) .
 subCampus: string @index(term) .
@@ -103,6 +105,7 @@ startYear: int .
 endYear: int .
 week: int .
 index: int .
+points: int @index(int) .
 
 positive: float .
 negative: float .
@@ -714,4 +717,17 @@ type SubCampus {
   users
   # 当前对象的创建时间
   createdAt
+}
+
+type ExperiencePointTransaction {
+  # 转移者(User)
+  from
+  # 被转移者(User)
+  to
+  # 数量
+  points
+  # 创建时间
+  createdAt
+  # 操作类型(mint,burn,daily check-in)
+  transactionType
 }
