@@ -2595,6 +2595,7 @@ type Experience {
   id: String!
   points: Int!
   transactionType: ExperienceTransactionType!
+  createdAt: String!
   to: User!
   from: User
 }

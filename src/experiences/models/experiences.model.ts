@@ -33,6 +33,9 @@ export class Experience {
 
   @Field(of => ExperienceTransactionType, { nullable: false })
     transactionType: ExperienceTransactionType
+
+  @Field(of => String)
+    createdAt: string
 }
 
 @ObjectType()

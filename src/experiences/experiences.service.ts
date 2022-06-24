@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common'
 
 import { UserAlreadyCheckInException, UserNotFoundException } from '../app.exception'
-import { RelayPagingConfigArgs } from '../connections/models/connections.model'
+import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
-import { now } from '../tool'
+import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { User } from '../user/models/user.model'
-import { ExperienceTransactionType } from './models/experiences.model'
+import { Experience, ExperienceTransactionType } from './models/experiences.model'
 
 @Injectable()
 export class ExperiencesService {
@@ -132,10 +132,53 @@ export class ExperiencesService {
   }
 
   async experiencePointsTransaction (id: string) {
+    const query = `
+        query v($id: string) {
+            g(func: uid($id)) @filter(type(ExperiencePointTransaction)) {
+                id: uid
+                expand(_all_)
+            }
+        }
+    `
+    const res = await this.dbService.commitQuery<{g: Experience[]}>({
+      query,
+      vars: { $id: id }
+    })
+    return res.g[0]
+  }
+
+  async experiencePointsTransactions ({ first, orderBy, after }: RelayPagingConfigArgs) {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.experiencePointsTransactionWithRelayForward(first, after)
+    }
     throw new Error('Method not implemented.')
   }
 
-  async experiencePointsTransactions (args: RelayPagingConfigArgs) {
-    throw new Error('Method not implemented.')
+  async experiencePointsTransactionWithRelayForward (first: number, after: string) {
+    const q1 = 'var(func: uid(transactions), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+        query v($after: string) {
+            transaction as var(func: type(ExperiencePointTransaction))
+            totalCount(func: uid(transaction)) { count(uid) }
+            ${after ? q1 : ''}
+            objs(func: uid(${after ? 'q' : 'transaction'}), orderdesc: createdAt, first: ${first}) {
+                id: uid
+                expand(_all_)
+            }
+            startO(func: uid(transaction), first: -1) { createdAt }
+            endO(func: uid(transaction), first: 1) { createdAt }
+        }
+    `
+    const res = await this.dbService.commitQuery <RelayfyArrayParam<Experience>>({
+      query,
+      vars: { $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
   }
 }
