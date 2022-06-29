@@ -1,11 +1,11 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
-import { DgraphClient } from 'dgraph-js'
+import dgraph, { DgraphClient, Mutation, Request } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
-import { PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, UniversityNotFoundException, UserNotAuthenException } from '../app.exception'
+import { PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
@@ -13,7 +13,7 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
 import { Subject } from '../subject/model/subject.model'
-import { atob, btoa, DeletePrivateValue, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
+import { atob, btoa, DeletePrivateValue, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, now, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { PagingConfigArgs, User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
@@ -451,9 +451,13 @@ export class PostsService {
     }
   }
 
-  async createPost (i: string, { content, images, subjectId, isAnonymous, universityId }: CreatePostArgs): Promise<Post> {
-    const now = new Date().toISOString()
+  async createPostTxn (id: string, args: CreatePostArgs, txn: dgraph.Txn): Promise<Post> {
+    const { content, images, isAnonymous } = args
 
+    // 审查帖子文本内容
+    const textCensor = await this.censorsService.textCensor(content)
+    // 获取帖子文本的情感信息
+    const _sentiment = await this.nlpService.sentimentAnalysis(content)
     // 处理帖子图片
     const imagesV2 = images?.map((image, index) => (
       {
@@ -463,20 +467,21 @@ export class PostsService {
         index
       }
     ))
-
-    // 审查帖子文本内容
-    const textCensor = await this.censorsService.textCensor(content)
-    // 获取帖子文本的情感信息
-    const _sentiment = await this.nlpService.sentimentAnalysis(content)
-
+    const query = `
+        query v($creatorId: string) {
+          # system 是否存在
+          s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
+          # creator 是否存在
+          v(func: uid($creatorId)) @filter(type(User) and not has(delete)) { v as uid }
+        }
+      `
     // 帖子的匿名信息
     const anonymous = {
       uid: '_:anonymous',
       'dgraph.type': 'Anonymous',
       creator: {
-        uid: i
+        uid: id
       },
-      createdAt: now,
       to: {
         uid: '_:post'
       }
@@ -491,22 +496,14 @@ export class PostsService {
       value: _sentiment.sentiment
     }
 
-    // 帖子的创建者
-    const creator = {
-      uid: 'uid(v)',
-      posts: {
-        uid: '_:post'
-      }
-    }
-
     /**
      * 含有违规内容的帖子
-     * 系统自动删除
+     * 自动添加删除标志
      */
-    const iDelete = {
+    const _delete = {
       uid: '_:delete',
       'dgraph.type': 'Delete',
-      createdAt: now,
+      createdAt: now(),
       to: {
         uid: '_:post',
         delete: {
@@ -521,116 +518,152 @@ export class PostsService {
         }
       }
     }
-
-    // TODO 检查该 University 是否包含相应的 Subject
-    const query = `
-      query v($creator: string, $subjectId: string, $universityId: string) {
-        # system 是否存在
-        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
-        # creator 是否存在
-        v(func: uid($creator)) @filter(type(User)) { v as uid }
-        # Subject 是否存在
-        ${subjectId ? 'u(func: uid($subjectId)) @filter(type(Subject)) { u as uid }' : ''}
-        # University 是否存在
-        k(func: uid($universityId)) @filter(type(University)) { k as uid }
-      }
-    `
-
-    const mutations = []
-
-    // 将 Post 添加到 Subject
-    const addToSubjectCond = `@if( 
-      eq(len(v), 1)
-      and eq(len(system), 1)
-      and eq(len(u), 1)
-    )`
-    const addToSubjectMut = {
-      uid: 'uid(u)',
-      posts: {
-        uid: '_:post'
-      }
-    }
-
-    if (subjectId) {
-      mutations.push({ mutation: addToSubjectMut, condition: addToSubjectCond })
-    }
-
-    const addToUniversityCond = '@if( eq(len(v), 1) and eq(len(system), 1) and eq(len(k), 1) )'
-    const addToUniversityMut = {
-      uid: 'uid(k)',
-      posts: {
-        uid: '_:post'
-      }
-    }
-
-    mutations.push({ mutation: addToUniversityMut, condition: addToUniversityCond })
-
-    // 创建帖子，无 Subject
-    const createPostCond = '@if( eq(len(v), 1) and eq(len(system), 1) )'
-    const createPostMut = {
+    const condition = '@if( eq(len(v), 1) and eq(len(system), 1) )'
+    const mutation = {
       uid: 'uid(v)',
       posts: {
         uid: '_:post',
         'dgraph.type': 'Post',
-        // 帖子的创建者
-        creator,
-        // 贴子内容的情感信息
+        creator: {
+          uid: 'uid(v)'
+        },
         sentiment,
         content,
-        createdAt: now
+        createdAt: now()
       }
     }
 
-    mutations.push({ mutation: createPostMut, condition: createPostCond })
-
-    // 发布匿名帖子
     if (isAnonymous) {
-      Object.assign(createPostMut, { anonymous })
+      Object.assign(mutation.posts, { anonymous })
     }
-    // 帖子的图片信息
     if ((imagesV2?.length ?? 0) !== 0) {
-      Object.assign(createPostMut, { imagesV2 })
+      Object.assign(mutation.posts, { imagesV2 })
     }
-    // 帖子实锤含有违规文本内容
     if ((textCensor?.suggestion ?? CENSOR_SUGGESTION.PASS) === CENSOR_SUGGESTION.BLOCK) {
-      Object.assign(createPostMut, { delete: iDelete })
+      Object.assign(mutation.posts, { delete: _delete })
     }
 
-    // TODO 帖子疑似含有违规内容，加入人工审查
-    // if (textCensor.suggestion === CENSOR_SUGGESTION.REVIEW) {}
-
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
+    // 创建新帖子
+    const mutate = new Mutation()
+    mutate.setSetJson(mutation)
+    mutate.setCond(condition)
+    const request = new Request()
+    const vars = request.getVarsMap()
+    request.setQuery(query)
+    request.addMutations(mutate)
+    vars.set('$creatorId', id)
+    const res = await txn.doRequest(request)
+    const json = res.getJson() as unknown as {
       s: Array<{uid: string}>
-      u: Array<{uid: string}>
-      k: Array<{uid: string}>
-    }>({
-      mutations,
-      query,
-      vars: {
-        $creator: i,
-        $subjectId: subjectId,
-        $universityId: universityId
-      }
-    })
+      v: Array<{uid: string}>
+    }
+    const uids = res.getUidsMap()
 
-    if (res.json.s.length !== 1) {
+    if (json.s.length !== 1) {
       throw new SystemAdminNotFoundException()
     }
-    if (res.json.v.length !== 1) {
-      throw new UserNotAuthenException(i)
-    }
-    if (subjectId && res.json.u.length !== 1) {
-      throw new SubjectNotFoundException(subjectId)
-    }
-    if (res.json.k.length !== 1) {
-      throw new UniversityNotFoundException(universityId)
+    if (json.v.length !== 1) {
+      throw new UserNotFoundException(id)
     }
 
     return {
-      id: res.uids.get('post'),
+      id: uids.get('post'),
       content,
-      createdAt: now
+      createdAt: now()
+    }
+  }
+
+  async addPostToSubjectTxn (postId: string, args: CreatePostArgs, txn: dgraph.Txn) {
+    const { subjectId } = args
+    if (!subjectId) { return }
+
+    const query = `
+      query v($subjectId: string, $postId: string) {
+        p(func: uid($postId)) @filter(type(Post)) { p as uid }
+        s(func: uid($subjectId)) @filter(type(Subject)) { s as uid }
+      }
+    `
+    const condition = '@if( eq(len(p), 1) and eq(len(s), 1) )'
+    const mutation = {
+      uid: 'uid(s)',
+      posts: {
+        uid: 'uid(p)'
+      }
+    }
+
+    const mutate = new Mutation()
+    mutate.setSetJson(mutation)
+    mutate.setCond(condition)
+    const request = new Request()
+    const vars = request.getVarsMap()
+    vars.set('$subjectId', subjectId)
+    vars.set('$postId', postId)
+
+    request.setQuery(query)
+    request.addMutations(mutate)
+    const res = await txn.doRequest(request)
+
+    const json = res.getJson() as unknown as {
+      p: Array<{uid: string}>
+      s: Array<{uid: string}>
+    }
+    if (json.p.length !== 1) {
+      throw new PostNotFoundException(postId)
+    }
+    if (json.s.length !== 1) {
+      throw new SubjectNotFoundException(subjectId)
+    }
+  }
+
+  async addPostToUniversityTxn (postId: string, args: CreatePostArgs, txn: dgraph.Txn) {
+    const { universityId } = args
+    const query = `
+      query v($postId: string, $universityId: string) {
+        p(func: uid($postId)) @filter(type(Post)) { p as uid }
+        u(func: uid($universityId)) @filter(type(University)) { u as uid }
+      }
+    `
+    const condition = '@if( eq(len(p), 1) and eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      posts: {
+        uid: 'uid(p)'
+      }
+    }
+
+    const mutate = new Mutation()
+    mutate.setSetJson(mutation)
+    mutate.setCond(condition)
+    const request = new Request()
+    const vars = request.getVarsMap()
+    vars.set('$universityId', universityId)
+    vars.set('$postId', postId)
+    request.setQuery(query)
+    request.addMutations(mutate)
+    const res = await txn.doRequest(request)
+
+    const json = res.getJson() as unknown as {
+      p: Array<{uid: string}>
+      u: Array<{uid: string}>
+    }
+    if (json.p.length !== 1) {
+      throw new PostNotFoundException(postId)
+    }
+    if (json.u.length !== 1) {
+      throw new UniversityNotFoundException(universityId)
+    }
+  }
+
+  async createPost (id: string, args: CreatePostArgs): Promise<Post> {
+    const txn = this.dbService.getDgraphIns().newTxn()
+    try {
+      const post = await this.createPostTxn(id, args, txn)
+      await this.addPostToSubjectTxn(post.id, args, txn)
+      await this.addPostToUniversityTxn(post.id, args, txn)
+      await txn.commit()
+      return post
+    } finally {
+      await txn.discard()
     }
   }
 
