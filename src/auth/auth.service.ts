@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
+import dgraph, { Mutation, Request } from 'dgraph-js'
 
 import { AuthenticationInfo, CheckUserResult, CODE2SESSION_GRANT_TYPE, LoginResult, User } from 'src/user/models/user.model'
 
@@ -313,134 +314,139 @@ export class AuthService {
    * @param id 用户id
    * @param info 认证信息
    */
-  async authenticateUser (actorId: string, id: string, info: AuthenticationInfo) {
-    const roleIds = info.roles
-    const roleIdsLen = info.roles?.length ?? 0
-    const roleIdsStr = ids2String(info.roles)
+  async authenticateUser (adminId: string, id: string, info: AuthenticationInfo): Promise<User> {
+    const txn = this.dbService.getDgraphIns().newTxn()
+    try {
+      const user = await this.updateUserBaseInfoTxn(id, info, txn)
+      await this.addCredentialToUserTxn(adminId, id, txn)
+      await this.removeUserAuthenInfoTxn(id, txn)
+      await this.addUniversitiesToUserTxn(id, info, txn)
+      await this.addInstitutesToUserTxn(id, info, txn)
+      await this.addSubCampusesToUserTxn(id, info, txn)
+      await this.addRolesToUserTxn(id, info, txn)
 
-    const universitiyIds = info.universities
-    const instituteIds = info.institutes
-    const subCampusIds = info.subCampuses
-    const universitiesLen = info.universities.length
-    const institutesLen = info.institutes.length
-    const subCampusesLen = info.subCampuses.length
-    const universitiesStr = ids2String(info.universities)
-    const institutesStr = ids2String(info.institutes)
-    const subCampusesStr = ids2String(info.subCampuses)
+      await txn.commit()
+      return user
+    } finally {
+      await txn.discard()
+    }
+  }
 
-    // 将info附加到用户画像并添加credential信息
+  async updateUserBaseInfoTxn (id: string, info: AuthenticationInfo, txn: dgraph.Txn): Promise<User> {
+    const { avatarImageUrl, gender, grade, name, studentId } = info
     const query = `
-      query v($actorId: string, $id: string) {
-        # 根据roleIds查询role信息
-        x(func: uid(${roleIdsStr})) @filter(type(Role)) { x as uid }
-        # 系统
-        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
-        # 管理员是否存在
-        v(func: uid($actorId)) @filter(type(Admin)) { v as uid }
-        # 用户是否存在
-        u(func: uid($id)) @filter(type(User)) { u as uid }
-        # 用户是否已经认证
-        n(func: uid($id)) @filter(type(User)) {
-          credential @filter(type(Credential)) {
-            n as uid
-          }
-        }
-        # User 申请的 Universities
-        universities(func: uid(${universitiesStr})) @filter(type(University)) {
-          universities as uid
-        }
-        # User 申请的 Institutes
-        institutes(func: uid(${institutesStr})) @filter(type(Institute)) {
-          institutes as uid
-          universitiesOfInstitutes as ~institutes @filter(type(University))
-        }
-        # User 申请的 SubCampuses
-        subCampuses(func: uid(${subCampusesStr})) @filter(type(SubCampus)) {
-          subCampuses as uid
-          universitiesOfSubCampuses as ~subCampuses @filter(type(University))
-        }
-        # Institutes 和 SubCampuses 对应的 University 的数组是否与申请的 Universities 相同
-        k(func: uid(universities)) @filter(not uid(universitiesOfInstitutes, universitiesOfSubCampuses)) {
-          k as uid
-        }
-        # 用户原信息
+      query v($userId: string) {
+        u(func: uid($userId)) @filter(type(User)) { u as uid }
         user(func: uid(u)) {
           id: uid
           expand(_all_)
         }
-        # 用户提交的认证信息
-        c(func: type(UserAuthenInfo)) @filter(uid_in(to, $id) and not has(delete)) { c as uid }
       }
     `
-
-    delete info.images
-    delete info.roles
-    delete info.universities
-    delete info.institutes
-    delete info.subCampuses
-
-    const condition = `@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) and eq(len(x), ${roleIdsLen}) )`
+    const condition = '@if( eq(len(u), 1) )'
     const mutation = {
-      uid: id,
-      'dgraph.type': 'User',
-      updatedAt: now(),
-      ...info,
+      uid: 'uid(u)',
+      avatarImageUrl,
+      gender,
+      grade,
+      name,
+      studentId,
+      updatedAt: now()
+    }
+
+    const mutate = new Mutation()
+    mutate.setSetJson(mutation)
+    mutate.setCond(condition)
+
+    const request = new Request()
+    const vars = request.getVarsMap()
+    vars.set('$userId', id)
+    request.setQuery(query)
+    request.addMutations(mutate)
+
+    const res = await txn.doRequest(request)
+
+    const json = res.getJson() as unknown as {
+      user: User[]
+    }
+
+    Object.assign(json.user[0], info)
+
+    return json.user[0]
+  }
+
+  async addCredentialToUserTxn (adminId: string, id: string, txn: dgraph.Txn) {
+    const query = `
+      query v($adminId: string, $userId: string) {
+        a(func: uid($adminId)) @filter(type(Admin)) { a as uid }
+        u(func: uid($userId)) @filter(type(User)) { 
+          u as uid
+          yy as credential
+        }
+        c(func: uid(yy)) @filter(type(Credential)) { c as uid }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) and eq(len(a), 1) and eq(len(c), 0) )'
+    const mutation = {
+      uid: 'uid(u)',
       credential: {
         uid: '_:credential',
         'dgraph.type': 'Credential',
         createdAt: now(),
         creator: {
-          uid: actorId,
+          uid: 'uid(a)',
           credentials: {
             uid: '_:credential'
           }
         },
         to: {
-          uid: id,
-          credential: {
-            uid: '_:credential'
-          }
+          uid: 'uid(u)'
         }
       }
     }
 
-    const addUniversityCond = `@if( eq(len(k), 0) and eq(len(universities), ${universitiesLen}) )`
-    const addUniversityMut = {
-      uid: 'uid(universities)',
-      users: {
-        uid: 'uid(u)'
-      }
-    }
-    const addInstituteCond = `@if( eq(len(k), 0) and eq(len(institutes), ${institutesLen}) )`
-    const addInstituteMut = {
-      uid: 'uid(institutes)',
-      users: {
-        uid: 'uid(u)'
-      }
-    }
-    const addSubCampusCond = `@if( eq(len(k), 0) and eq(len(subCampuses), ${subCampusesLen}) )`
-    const addSubCampusMut = {
-      uid: 'uid(subCampuses)',
-      users: {
-        uid: 'uid(u)'
-      }
+    const mutate = new Mutation()
+    mutate.setSetJson(mutation)
+    mutate.setCond(condition)
+
+    const request = new Request()
+    const vars = request.getVarsMap()
+    vars.set('$adminId', adminId)
+    vars.set('$userId', id)
+    request.setQuery(query)
+    request.addMutations(mutate)
+
+    const res = await txn.doRequest(request)
+    const json = res.getJson() as unknown as {
+      a: Array<{uid: string}>
+      u: Array<{uid: string}>
+      c: Array<{uid: string}>
     }
 
-    if (roleIdsLen !== 0) {
-      Object.assign(mutation, {
-        roles: roleIds.map(r => ({
-          uid: r,
-          users: {
-            uid: id
-          }
-        }))
-      })
+    if (json.a.length !== 1) {
+      throw new AdminNotFoundException(adminId)
     }
+    if (json.u.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+    if (json.c.length !== 0) {
+      throw new UserHadAuthenedException(id)
+    }
+  }
 
-    // 如果该用户存在提交的认证信息，标记删除它！
-    const deleteTheUserAuthenInfoCondi = `@if( eq(len(system), 1) and eq(len(v), 1) and eq(len(u), 1) and eq(len(n), 0) and eq(len(c), 1) and eq(len(x), ${roleIdsLen}) )`
-    const addDeleteOnTheUserAuthenInfoMutation = {
-      uid: 'uid(c)',
+  async removeUserAuthenInfoTxn (id: string, txn: dgraph.Txn) {
+    const query = `
+      query v($userId: string) {
+        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
+        u(func: uid($userId)) @filter(type(User)) { u as uid }
+        i(func: type(UserAuthenInfo)) @filter(uid_in(to, $userId) and not has(delete)) {
+          i as uid
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) and not eq(len(i), 0) )'
+    const mutation = {
+      uid: 'uid(i)',
       delete: {
         uid: '_:delete',
         'dgraph.type': 'Delete',
@@ -453,61 +459,208 @@ export class AuthService {
           }
         },
         to: {
-          uid: 'uid(c)'
+          uid: 'uid(i)'
         }
       }
     }
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string}>
-      n: Array<{uid: string}>
-      x: Array<{uid: string}>
+
+    const mutate = new Mutation()
+    mutate.setSetJson(mutation)
+    mutate.setCond(condition)
+
+    const request = new Request()
+    const vars = request.getVarsMap()
+    vars.set('$userId', id)
+    request.setQuery(query)
+    request.addMutations(mutate)
+
+    const res = await txn.doRequest(request)
+    const json = res.getJson() as unknown as {
+      s: Array<{uid: string}>
+    }
+
+    if (json.s.length !== 1) {
+      throw new SystemAdminNotFoundException()
+    }
+  }
+
+  async addUniversitiesToUserTxn (id: string, info: AuthenticationInfo, txn: dgraph.Txn) {
+    const { universities } = info
+    const len = universities.length
+    const str = ids2String(universities)
+
+    const query = `
+      query v($userId: string) {
+        u(func: uid($userId)) @filter(type(User)) { u as uid }
+        universities(func: uid(${str})) @filter(type(University)) {
+          universities as uid
+        }
+      }
+    `
+
+    const condition = `@if( eq(len(universities), ${len}) )`
+    const mutation = {
+      uid: 'uid(universities)',
+      users: {
+        uid: 'uid(u)'
+      }
+    }
+
+    const mutate = new Mutation()
+    mutate.setSetJson(mutation)
+    mutate.setCond(condition)
+
+    const request = new Request()
+    const vars = request.getVarsMap()
+    vars.set('$userId', id)
+    request.setQuery(query)
+    request.addMutations(mutate)
+
+    const res = await txn.doRequest(request)
+    const json = res.getJson() as unknown as {
       universities: Array<{uid: string}>
+    }
+
+    if (json.universities.length !== len) {
+      throw new UniversityNotAllExistException(universities)
+    }
+  }
+
+  async addInstitutesToUserTxn (id: string, info: AuthenticationInfo, txn: dgraph.Txn) {
+    const { institutes, universities } = info
+    const len = institutes.length
+    const str = ids2String(institutes)
+    const universitiesIds = ids2String(universities)
+
+    const query = `
+      query v($userId: string) {
+        u(func: uid($userId)) @filter(type(User)) { u as uid }
+        var(func: uid(${universitiesIds})) @filter(type(University)) {
+          ins as institutes @filter(type(Institute))
+        }
+        institutes(func: uid(${str})) @filter(uid(ins)) {
+          institutes as uid
+        }
+      }
+    `
+
+    const condition = `@if( eq(len(institutes), ${len}) )`
+    const mutation = {
+      uid: 'uid(institutes)',
+      users: {
+        uid: 'uid(u)'
+      }
+    }
+
+    const mutate = new Mutation()
+    mutate.setSetJson(mutation)
+    mutate.setCond(condition)
+
+    const request = new Request()
+    const vars = request.getVarsMap()
+    vars.set('$userId', id)
+    request.setQuery(query)
+    request.addMutations(mutate)
+
+    const res = await txn.doRequest(request)
+    const json = res.getJson() as unknown as {
       institutes: Array<{uid: string}>
+    }
+
+    if (json.institutes.length !== len) {
+      throw new InstituteNotAllExistException(institutes)
+    }
+  }
+
+  async addSubCampusesToUserTxn (id: string, info: AuthenticationInfo, txn: dgraph.Txn) {
+    const { subCampuses, universities } = info
+    const len = subCampuses.length
+    const str = ids2String(subCampuses)
+    const universitiesIds = ids2String(universities)
+
+    const query = `
+      query v($userId: string) {
+        u(func: uid($userId)) @filter(type(User)) { u as uid }
+        var(func: uid(${universitiesIds})) @filter(type(University)) {
+          sub as subCampuses @filter(type(SubCampus))
+        }
+        subCampuses(func: uid(${str})) @filter(uid(sub)) {
+          subCampuses as uid
+        }
+      }
+    `
+
+    const condition = `@if( eq(len(subCampuses), ${len}) )`
+    const mutation = {
+      uid: 'uid(subCampuses)',
+      users: {
+        uid: 'uid(u)'
+      }
+    }
+
+    const mutate = new Mutation()
+    mutate.setSetJson(mutation)
+    mutate.setCond(condition)
+
+    const request = new Request()
+    const vars = request.getVarsMap()
+    vars.set('$userId', id)
+    request.setQuery(query)
+    request.addMutations(mutate)
+
+    const res = await txn.doRequest(request)
+    const json = res.getJson() as unknown as {
       subCampuses: Array<{uid: string}>
-      k: Array<{uid: string}>
-      user: User[]
-    }>({
-      query,
-      mutations: [
-        { mutation, condition },
-        { mutation: addUniversityMut, condition: addUniversityCond },
-        { mutation: addInstituteMut, condition: addInstituteCond },
-        { mutation: addSubCampusMut, condition: addSubCampusCond },
-        { mutation: addDeleteOnTheUserAuthenInfoMutation, condition: deleteTheUserAuthenInfoCondi }
-      ],
-      vars: { $actorId: actorId, $id: id }
-    })
-
-    if (res.json.v.length !== 1) {
-      throw new AdminNotFoundException(actorId)
-    }
-    if (res.json.u.length !== 1) {
-      throw new UserNotFoundException(id)
-    }
-    if (res.json.n.length !== 0) {
-      throw new UserHadAuthenedException(id)
-    }
-    if (res.json.x.length !== roleIdsLen) {
-      throw new RolesNotAllExistException(roleIds)
-    }
-    if (res.json.universities.length !== universitiesLen) {
-      throw new UniversityNotAllExistException(universitiyIds)
-    }
-    if (res.json.institutes.length !== institutesLen) {
-      throw new InstituteNotAllExistException(instituteIds)
-    }
-    if (res.json.subCampuses.length !== subCampusesLen) {
-      throw new SubCampusNotAllExistException(subCampusIds)
-    }
-    if (res.json.k.length !== 0) {
-      throw new ForbiddenException('universities 没有完全包含 institutes 和 subCampuses 相应的 University')
     }
 
-    const user = res.json.user[0]
-    Object.assign(user, info)
+    if (json.subCampuses.length !== len) {
+      throw new SubCampusNotAllExistException(subCampuses)
+    }
+  }
 
-    return user
+  async addRolesToUserTxn (id: string, info: AuthenticationInfo, txn: dgraph.Txn) {
+    const { roles } = info
+    const len = roles?.length ?? 0
+    const str = ids2String(roles)
+
+    const _roles = roles?.map(r => ({
+      uid: r,
+      users: {
+        uid: 'uid(u)'
+      }
+    }))
+
+    const query = `
+      query v($userId: string) {
+        u(func: uid($userId)) @filter(type(User)) { u as uid }
+        roles(func: uid(${str})) @filter(type(Role)) { r as uid }
+      }
+    `
+
+    const condition = `@if( eq(len(u), 1) and eq(len(r), ${len}) )`
+    const mutation = {
+      uid: 'uid(u)',
+      roles: _roles
+    }
+
+    const mutate = new Mutation()
+    mutate.setSetJson(mutation)
+    mutate.setCond(condition)
+
+    const request = new Request()
+    const vars = request.getVarsMap()
+    vars.set('$userId', id)
+    request.setQuery(query)
+    request.addMutations(mutate)
+
+    const res = await txn.doRequest(request)
+    const json = res.getJson() as unknown as {
+      roles: Array<{uid: string}>
+    }
+
+    if (json.roles.length !== len) {
+      throw new RolesNotAllExistException(roles)
+    }
   }
 
   /**
