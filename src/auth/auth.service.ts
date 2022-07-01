@@ -318,7 +318,7 @@ export class AuthService {
     const txn = this.dbService.getDgraphIns().newTxn()
     try {
       const user = await this.updateUserBaseInfoTxn(id, info, txn)
-      await this.addCredentialToUserTxn(adminId, id, txn)
+      await this.addCredentialToUserTxn(id, txn, adminId)
       await this.removeUserAuthenInfoTxn(id, txn)
       await this.addUniversitiesToUserTxn(id, info, txn)
       await this.addInstitutesToUserTxn(id, info, txn)
@@ -332,6 +332,13 @@ export class AuthService {
     }
   }
 
+  /**
+   * 将 avatarImageUrl, gender, grade, name, studentId, updatedAt 更新到 User 对象
+   * @param id 待更新信息的用户的id
+   * @param info AuthenticationInfo
+   * @param txn Txn
+   * @returns {Promise<User>}
+   */
   async updateUserBaseInfoTxn (id: string, info: AuthenticationInfo, txn: dgraph.Txn): Promise<User> {
     const { avatarImageUrl, gender, grade, name, studentId } = info
     const query = `
@@ -375,10 +382,12 @@ export class AuthService {
     return json.user[0]
   }
 
-  async addCredentialToUserTxn (adminId: string, id: string, txn: dgraph.Txn) {
+  async addCredentialToUserTxn (id: string, txn: dgraph.Txn, adminId?: string) {
+    const q1 = `a(func: uid(${adminId})) @filter(type(Admin)) { a as uid }`
+    const q2 = 'a(func: eq(userId, "system")) @filter(type(Admin)) { a as uid }'
     const query = `
-      query v($adminId: string, $userId: string) {
-        a(func: uid($adminId)) @filter(type(Admin)) { a as uid }
+      query v($userId: string) {
+        ${adminId ? q1 : q2}
         u(func: uid($userId)) @filter(type(User)) { 
           u as uid
           yy as credential
@@ -411,7 +420,6 @@ export class AuthService {
 
     const request = new Request()
     const vars = request.getVarsMap()
-    vars.set('$adminId', adminId)
     vars.set('$userId', id)
     request.setQuery(query)
     request.addMutations(mutate)
@@ -816,184 +824,24 @@ export class AuthService {
    * @param id 用户id
    * @param token token
    */
-  async autoAuthenUserSelf (id: string, token: string) {
-    // 测试并解析token
+  async autoAuthenUserSelf (id: string, token: string): Promise<User> {
+    // 测试并解析 token
     const tokenRes = getAuthenticationInfo(token)
-    const roleIds = tokenRes.roles
-    const roleIdsLen = roleIds?.length ?? 0
-    const roleIdsStr = ids2String(roleIds)
+    const txn = this.dbService.getDgraphIns().newTxn()
+    try {
+      const user = await this.updateUserBaseInfoTxn(id, tokenRes, txn)
+      await this.addCredentialToUserTxn(id, txn)
+      await this.removeUserAuthenInfoTxn(id, txn)
+      await this.addUniversitiesToUserTxn(id, tokenRes, txn)
+      await this.addInstitutesToUserTxn(id, tokenRes, txn)
+      await this.addSubCampusesToUserTxn(id, tokenRes, txn)
+      await this.addRolesToUserTxn(id, tokenRes, txn)
 
-    const universitiyIds = tokenRes.universities
-    const instituteIds = tokenRes.institutes
-    const subCampusIds = tokenRes.subCampuses
-    const universitiesStr = ids2String(tokenRes.universities)
-    const institutesStr = ids2String(tokenRes.institutes)
-    const subCampusesStr = ids2String(tokenRes.subCampuses)
-    const universitiesLen = tokenRes.universities.length
-    const institutesLen = tokenRes.institutes.length
-    const subCampusesLen = tokenRes.subCampuses.length
-
-    const query = `
-      query v($id: string) {
-        # 根据 roleIds 查询 role 信息
-        x(func: uid(${roleIdsStr})) @filter(type(Role)) { x as uid }
-        # system 是否存在
-        s(func: eq(userId, "system")) @filter(type(Admin)) { system as uid }
-        u(func: uid($id)) @filter(type(User)) { u as uid }
-        # User 是否通过认证
-        v(func: uid($id)) @filter(type(User)) {
-          credential @filter(type(Credential)) {
-            v as uid
-          }
-        }
-        # User 申请的 Universities
-        universities(func: uid(${universitiesStr})) @filter(type(University)) {
-          universities as uid
-        }
-        # User 申请的 Institutes
-        institutes(func: uid(${institutesStr})) @filter(type(Institute)) {
-          institutes as uid
-          universitiesOfInstitutes as ~institutes @filter(type(University))
-        }
-        # User 申请的 SubCampuses 
-        subCampuses(func: uid(${subCampusesStr})) @filter(type(SubCampus)) {
-          subCampuses as uid
-          universitiesOfSubCampuses as ~subCampuses @filter(type(University))
-        }
-        # Institutes 和 SubCampuses 对应的 University 的数组是否与申请的 Universities 相同
-        k(func: uid(universities)) @filter(not uid(universitiesOfInstitutes, universitiesOfSubCampuses)) {
-          k as uid
-        }
-        user(func: uid(u)) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-
-    delete tokenRes.roles
-    delete tokenRes.universities
-    delete tokenRes.institutes
-    delete tokenRes.subCampuses
-
-    // 更新 User 信息
-    const condition = `@if( 
-      eq(len(u), 1)
-      and eq(len(v), 0) 
-      and eq(len(system), 1) 
-      and eq(len(x), ${roleIdsLen}) 
-      and eq(len(k), 0) 
-      and eq(len(universities), ${universitiesLen}) 
-      and eq(len(institutes), ${institutesLen}) 
-      and eq(len(subCampuses), ${subCampusesLen}) 
-    )`
-    // TODO school 属性已被弃用
-    // 需要使用新的对象（方式）存储（表示）用户私有数据
-    const mutation = {
-      uid: id,
-      ...tokenRes,
-      updatedAt: now(),
-      credential: {
-        uid: '_:credential',
-        'dgraph.type': 'Credential',
-        createdAt: now(),
-        creator: {
-          uid: 'uid(system)',
-          credentials: {
-            uid: '_:credential'
-          }
-        },
-        to: {
-          uid: id,
-          credential: {
-            uid: '_:credential'
-          }
-        }
-      }
+      await txn.commit()
+      return user
+    } finally {
+      await txn.discard()
     }
-
-    // 将 User 添加到相应的 Universities, Institutes, SubCampuses
-    const addUniversityMut = {
-      uid: 'uid(universities)',
-      users: {
-        uid: 'uid(u)'
-      }
-    }
-    const addInstituteMut = {
-      uid: 'uid(institutes)',
-      users: {
-        uid: 'uid(u)'
-      }
-    }
-    const addSubCampusMut = {
-      uid: 'uid(subCampuses)',
-      users: {
-        uid: 'uid(u)'
-      }
-    }
-
-    if (roleIdsLen !== 0) {
-      Object.assign(mutation, {
-        roles: roleIds.map(r => ({
-          uid: r,
-          users: {
-            uid: id
-          }
-        }))
-      })
-    }
-
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      s: Array<{uid: string}>
-      u: Array<{uid: string}>
-      v: Array<{uid: string}>
-      x: Array<{uid: string}>
-      universities: Array<{uid: string}>
-      institutes: Array<{uid: string}>
-      subCampuses: Array<{uid: string}>
-      k: Array<{uid: string}>
-      user: User[]
-    }>({
-      query,
-      mutations: [
-        { mutation, condition },
-        { mutation: addUniversityMut, condition },
-        { mutation: addInstituteMut, condition },
-        { mutation: addSubCampusMut, condition }
-      ],
-      vars: { $id: id }
-    })
-
-    if (res.json.x.length !== roleIdsLen) {
-      throw new RolesNotAllExistException(roleIds)
-    }
-    if (res.json.s.length !== 1) {
-      throw new SystemAdminNotFoundException()
-    }
-    if (res.json.u.length !== 1) {
-      throw new UserNotFoundException(id)
-    }
-    if (res.json.v.length !== 0) {
-      throw new UserHadAuthenedException(id)
-    }
-    if (res.json.universities.length !== universitiesLen) {
-      throw new UniversityNotAllExistException(universitiyIds)
-    }
-    if (res.json.institutes.length !== institutesLen) {
-      throw new InstituteNotAllExistException(instituteIds)
-    }
-    if (res.json.subCampuses.length !== subCampusesLen) {
-      throw new SubCampusNotAllExistException(subCampusIds)
-    }
-    if (res.json.k.length !== 0) {
-      throw new InstitutesOrSubCampusesNotAllInTheUniversityException(instituteIds, subCampusIds, universitiyIds)
-    }
-
-    const user = res.json.user[0]
-
-    Object.assign(user, tokenRes)
-
-    return user
   }
 
   async userAuthenInfos ({ orderBy, first, after, last, before }: RelayPagingConfigArgs) {
