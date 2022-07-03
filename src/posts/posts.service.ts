@@ -310,11 +310,11 @@ export class PostsService {
     const university = universityId
       ? `
       var(func: uid($universityId)) @filter(type(University)) {
-        pre as posts(orderdesc: createdAt) @filter(type(Post))
+        pre as posts(orderdesc: createdAt) @filter(type(Post) and has(createdAt))
       }
     `
       : `
-      var(func: type(Post)) {
+      var(func: type(Post)) @filter(has(createdAt)) {
         pre as uid
       }
     `
@@ -696,11 +696,11 @@ export class PostsService {
     const university = universityId
       ? `
       var(func: uid($universityId)) @filter(type(University)) {
-        posts as posts(orderdesc: createdAt) @filter(type(Post) and not has(delete) and not has(pin))
+        posts as posts(orderdesc: createdAt) @filter(type(Post) and not has(delete) and not has(pin) and has(createdAt))
       }
     `
       : `
-      var(func: type(Post), orderdesc: createdAt) @filter(not has(delete) and not has(pin)) { 
+      var(func: type(Post), orderdesc: createdAt) @filter(not has(delete) and not has(pin) and has(createdAt)) { 
         posts as uid
       }
     `
