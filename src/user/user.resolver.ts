@@ -88,7 +88,9 @@ export class UserResolver {
 
   @Mutation(of => User, { description: '更新用户画像' })
   async updateUser (@CurrentUser() user: User, @Args() args: UpdateUserArgs) {
-    args.sign && sign_calculus(args.sign)
+    if (args.sign) {
+      args.sign = sign_calculus(args.sign)
+    }
     return await this.userService.updateUser(user.id, args)
   }
 
