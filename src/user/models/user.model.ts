@@ -155,21 +155,6 @@ export class UpdateUserArgs {
 
   @Field({ nullable: true })
     sign?: string | null
-
-  @Field(of => Boolean, { nullable: true })
-    isCollegePrivate?: boolean | null
-
-  @Field(of => Boolean, { nullable: true })
-    isSchoolPrivate?: boolean | null
-
-  @Field(of => Boolean, { nullable: true })
-    isGradePrivate?: boolean | null
-
-  @Field(of => Boolean, { nullable: true })
-    isGenderPrivate?: boolean | null
-
-  @Field(of => Boolean, { nullable: true })
-    isSubCampusPrivate?: boolean | null
 }
 
 @ArgsType()

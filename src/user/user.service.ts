@@ -4,7 +4,7 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
-import { SystemAdminNotFoundException, UserIdExistException, UserNotAuthenException, UserNotFoundException } from '../app.exception'
+import { UserIdExistException, UserNotAuthenException, UserNotFoundException } from '../app.exception'
 import { UserAuthenInfo, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
@@ -1012,28 +1012,15 @@ export class UserService {
     if (Object.entries(args).length === 0) {
       throw new ForbiddenException('参数不能为空')
     }
+
     const _now = now()
     const query = `
       query v($id: string, $userId: string) {
-        system(func: eq(userId, "system")) {
-          system as uid
-        }
-        v(func: eq(userId, $userId)) @filter(type(Admin) or type(User)) { v as uid }
         u(func: uid($id)) @filter(type(User)) { 
           u as uid
-          school as school
-          grade as grade
-          gender as gender
-          subCampus as subCampus
-          college as college
         }
-        var(func: uid(u)) {
-          val(school)
-          val(grade)
-          val(gender)
-          val(subCampus)
-          val(college)
-        }
+        var(func: eq(userId, $userId)) @filter(not uid(u)) { temp as uid } 
+        v(func: uid(temp)) @filter(type(Admin) or type(User)) { v as uid }
         user(func: uid(u)) @filter(type(User)) {
           id: uid
           credential @filter(type(Credential)) {
@@ -1044,40 +1031,13 @@ export class UserService {
         c(func: uid(c)) { uid }
       }
     `
-    const updateCondition = '@if( eq(len(u), 1) and eq(len(c), 1) and eq(len(system), 1) and eq(len(v), 0) )'
+    const updateCondition = '@if( eq(len(u), 1) and eq(len(c), 1) and eq(len(v), 0) )'
     const updateMutation = {
-      uid: id,
+      uid: 'uid(u)',
       updatedAt: _now
     }
 
-    args.name && ((updateMutation as any).name = args.name)
-    args.sign && ((updateMutation as any).sign = args.sign)
-    args.userId && Object.assign(updateMutation, {
-      userId: args.userId
-    })
-    args.avatarImageUrl && Object.assign(updateMutation, {
-      avatarImageUrl: args.avatarImageUrl
-    })
-    'isCollegePrivate' in args && Object.assign(updateMutation, {
-      'college|private': args.isCollegePrivate,
-      college: 'val(college)'
-    })
-    'isGenderPrivate' in args && Object.assign(updateMutation, {
-      'gender|private': args.isGenderPrivate,
-      gender: 'val(gender)'
-    })
-    'isGradePrivate' in args && Object.assign(updateMutation, {
-      'grade|private': args.isGradePrivate,
-      grade: 'val(grade)'
-    })
-    'isSchoolPrivate' in args && Object.assign(updateMutation, {
-      'school|private': args.isSchoolPrivate,
-      school: 'val(school)'
-    })
-    'isSubCampusPrivate' in args && Object.assign(updateMutation, {
-      'subCampus|private': args.isSubCampusPrivate,
-      subCampus: 'val(subCampus)'
-    })
+    Object.assign(updateMutation, args)
 
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       v: Array<{uid: string}>
@@ -1097,18 +1057,17 @@ export class UserService {
     })
 
     Object.assign(res.json.user[0], args)
+
     if (res.json.v.length !== 0) {
       throw new UserIdExistException(args.userId)
     }
     if (res.json.u.length !== 1) {
       throw new UserNotFoundException(id)
     }
-    if (res.json.system.length !== 1) {
-      throw new SystemAdminNotFoundException()
-    }
     if (res.json.c.length !== 1) {
       throw new UserNotAuthenException(id)
     }
+
     return res.json.user[0]
   }
 }
