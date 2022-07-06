@@ -2,15 +2,15 @@ import { Field, ObjectType } from '@nestjs/graphql'
 
 @ObjectType()
 export class Anonymous {
-  @Field()
+  @Field(of => String)
     id: string
 
-  @Field()
+  @Field(of => String)
     createdAt: string
 
-  @Field({ description: '同一个用户的匿名信息在同一条帖子下面的 watermark 相同' })
+  @Field(of => String, { description: '同一个用户的匿名信息在同一条帖子下面的 watermark 相同' })
     watermark: string
 
-  @Field({ description: '匿名时的校区', nullable: true })
+  @Field(of => String, { description: '匿名时的校区', nullable: true })
     subCampus?: string | null
 }
