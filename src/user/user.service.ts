@@ -127,7 +127,16 @@ export class UserService {
         }
       }
     `
-    const condition = '@if( eq(len(u), 1) )'
+    const temp = {
+      isSubCampusPrivate: false,
+      isGradePrivate: false,
+      isUniversityPrivate: false,
+      isInstitutePrivate: false,
+      isGenderPrivate: false
+    }
+    Object.assign(temp, args)
+
+    const condition = '@if( eq(len(u), 1) and eq(len(settings), 1) )'
     const mutation = {
       uid: 'uid(u)',
       privateSettings: {
@@ -135,12 +144,25 @@ export class UserService {
         ...args
       }
     }
+    const createCond = '@if( eq(len(u), 1) and eq(len(settings), 0) )'
+    const createMut = {
+      uid: 'uid(u)',
+      privateSettings: {
+        uid: '_:private_settings',
+        'dgraph.type': 'PrivateSettings',
+        ...temp
+      }
+    }
+
     const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
       u: Array<{uid: string}>
       settings: PrivateSettings[]
     }>({
       query,
-      mutations: [{ mutation, condition }],
+      mutations: [
+        { mutation, condition },
+        { mutation: createMut, condition: createCond }
+      ],
       vars: { $id: user.id }
     })
 
@@ -148,8 +170,9 @@ export class UserService {
       throw new UserNotFoundException(user?.id)
     }
 
-    Object.assign(res.json.settings[0], args)
-
+    if (res.json.settings.length === 0) {
+      return temp
+    }
     return res.json.settings[0]
   }
 
