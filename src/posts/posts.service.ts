@@ -5,7 +5,7 @@ import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
-import { PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
+import { ParseCursorFailedException, PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
@@ -403,7 +403,7 @@ export class PostsService {
       try {
         after = JSON.parse(after).score
       } catch {
-        throw new ForbiddenException(`游标 ${after} 解析错误`)
+        throw new ParseCursorFailedException(after)
       }
     }
     if (first) {

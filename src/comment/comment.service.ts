@@ -4,7 +4,10 @@ import { DgraphClient } from 'dgraph-js'
 import { DbService } from 'src/db/db.service'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
-import { CannotCommentUser, CommentNotFoundException, PostNotFoundException, SystemAdminNotFoundException, UserNotFoundException } from '../app.exception'
+import {
+  CannotCommentUser, CommentNotFoundException, ParseCursorFailedException,
+  PostNotFoundException, SystemAdminNotFoundException, UserNotFoundException
+} from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { ORDER_BY } from '../connections/models/connections.model'
@@ -12,7 +15,10 @@ import { PUB_SUB_KEY } from '../constants'
 import { NlpService } from '../nlp/nlp.service'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
 import { IImage, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { atob, btoa, DeletePrivateValue, edgifyByCreatedAt, imagesV2fy, imagesV2ToImages, now, relayfyArrayForward, sha1 } from '../tool'
+import {
+  atob, btoa, DeletePrivateValue, edgifyByCreatedAt, handleRelayForwardAfter, imagesV2fy,
+  imagesV2ToImages, now, relayfyArrayForward, relayfyArrayForwardByScore, RelayfyArrayParamByScore, sha1
+} from '../tool'
 import { User, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
@@ -414,12 +420,67 @@ export class CommentService {
     })
   }
 
-  async commentsWithRelay (id: string, { first, after, last, before }: RelayPagingConfigArgs): Promise<CommentsConnectionWithRelay> {
-    after = btoa(after)
-    before = btoa(before)
-    if (first) {
+  async trendingCommentsWithRelay (id: string, first: number, after: string): Promise<CommentsConnectionWithRelay> {
+    const q1 = 'var(func: uid(comments), orderdesc: val(score), after: $after) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(Post) or type(Comment)) {
+          comments as comments @filter(type(Comment) and not has(delete)) {
+            c as count(comments @filter(type(Comment)))
+            voteCount as count(votes @filter(type(Vote)))
+            commentScore as math(c * 3)
+
+            score as math(voteCount + commentScore)
+          }
+        } 
+        ${after ? q1 : ''}
+        totalCount(func: uid(comments)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'comments'}), orderdesc: val(score), first: ${first}) {
+          id: uid
+          score: val(score)
+          expand(_all_)
+        }
+        startO(func: uid(comments), orderdesc: val(score), first: -1) { 
+          createdAt
+          score: val(score)
+          id: uid
+        }
+        endO(func: uid(comments), orderdesc: val(score), first: 1) { 
+          createdAt
+          score: val(score)
+          id: uid
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParamByScore<Comment>>({
+      query,
+      vars: { $id: id, $after: after }
+    })
+
+    return relayfyArrayForwardByScore({
+      ...res,
+      first,
+      after
+    })
+  }
+
+  async commentsWithRelay (id: string, { first, after, orderBy }: RelayPagingConfigArgs): Promise<CommentsConnectionWithRelay> {
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.commentsWithRelayForward(id, first, after)
     }
+    if (first && orderBy === ORDER_BY.TRENDING) {
+      if (after) {
+        try {
+          after = JSON.parse(after).id
+        } catch {
+          throw new ParseCursorFailedException(after)
+        }
+      }
+
+      return await this.trendingCommentsWithRelay(id, first, after)
+    }
+    throw new Error('Method not implemented.')
   }
 
   async anonymous (id: string) {

@@ -274,3 +274,9 @@ export class UserAlreadyCheckInException extends HttpException {
     super(`用户 ${id} 已经签到`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class ParseCursorFailedException extends HttpException {
+  constructor (cursor: string) {
+    super(`游标 ${cursor} 解析失败`, HttpStatus.FORBIDDEN)
+  }
+}

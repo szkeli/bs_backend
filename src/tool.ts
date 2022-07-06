@@ -176,14 +176,41 @@ export interface RelayfyArrayParam <T extends {createdAt: string}> {
   after: string | null
 }
 
-export const relayfyArrayForward = function<T extends {createdAt: string}> ({
-  totalCount,
-  objs,
-  startO,
-  endO,
-  first,
-  after
-}: RelayfyArrayParam<T>) {
+export interface RelayfyArrayParamByScore <T extends {score?: number, id: string}> {
+  totalCount: Array<{count: number}>
+  objs: T[]
+  startO: Array<{score?: number, id: string}>
+  endO: Array<{score?: number, id: string}>
+  first: number
+  after: string | null
+}
+
+export const relayfyArrayForwardByScore = function<T extends {score?: number, id: string}> (props: RelayfyArrayParamByScore<T>) {
+  const { totalCount, objs, startO, endO, first, after } = props
+
+  const _lastO = objs?.slice(-1)[0]
+  const _totalCount = totalCount[0]?.count ?? 0
+  const _startO = startO[0]
+  const _endO = endO[0]
+
+  const v = _totalCount !== 0
+  const hasNextPage = _endO?.score !== _lastO?.score && _endO?.score?.toString() !== after && objs?.length === first && _totalCount !== first
+  const hasPreviousPage = after !== _startO?.score?.toString() && !!after
+
+  return {
+    totalCount: _totalCount,
+    pageInfo: {
+      startCursor: getCurosrByScoreAndId(objs[0]?.id, objs[0]?.score),
+      endCursor: getCurosrByScoreAndId(_lastO?.id, _lastO?.score),
+      hasNextPage: hasNextPage && v,
+      hasPreviousPage: hasPreviousPage && v
+    },
+    edges: edgifyByKey(objs ?? [], 'score')
+  }
+}
+
+export const relayfyArrayForward = function<T extends {createdAt: string}> (props: RelayfyArrayParam<T>) {
+  const { totalCount, objs, startO, endO, first, after } = props
   const _lastO = objs?.slice(-1)[0]
   const _totalCount = totalCount[0]?.count ?? 0
   const _startO = startO[0]

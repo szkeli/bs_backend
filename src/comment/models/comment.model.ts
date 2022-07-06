@@ -14,13 +14,16 @@ export class Comment {
   }
 
   @Field()
-    id: CommentId
+    id: string
 
   @Field()
     content: string
 
   @Field()
     createdAt: string
+
+  @Field(of => Number, { nullable: true })
+    score?: number | null
 }
 
 @ObjectType()
