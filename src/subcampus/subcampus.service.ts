@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 
-import { SubCampusAlreadyAtTheUniversityExxception, SubCampusNotFoundException, UniversityHasBeenDeletedException, UniversityNotFoundException } from '../app.exception'
+import { SubCampusAlreadyAtTheUniversityExxception, SubCampusNotFoundException, SystemErrorException, UniversityHasBeenDeletedException, UniversityNotFoundException } from '../app.exception'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { now } from '../tool'
@@ -115,8 +115,11 @@ export class SubcampusService {
       throw new UniversityHasBeenDeletedException(id)
     }
 
+    const _id = res.uids.get('subcampuses')
+    if (!_id) throw new SystemErrorException()
+
     return {
-      id: res.uids.get('subcampuses'),
+      id: _id,
       name,
       createdAt: now()
     }

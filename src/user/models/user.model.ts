@@ -5,7 +5,6 @@ import {
   InputType,
   Int,
   InterfaceType,
-  IntersectionType,
   ObjectType,
   registerEnumType
 } from '@nestjs/graphql'
@@ -16,13 +15,16 @@ import { Admin } from '../../admin/models/admin.model'
 import { Role } from '../../auth/model/auth.model'
 import { Connection } from '../../connections/models/connections.model'
 import { Node } from '../../node/models/node.model'
-import { NOTIFICATION_ACTION, NOTIFICATION_TYPE } from '../../notifications/models/notifications.model'
+import {
+  NOTIFICATION_ACTION,
+  NOTIFICATION_TYPE
+} from '../../notifications/models/notifications.model'
 
 export enum CODE2SESSION_GRANT_TYPE {
   BLANK_SPACE = 'BLANK_SPACE',
   CURRICULUM = 'CURRICULUM',
   WXOPEN = 'WXOPEN',
-  UNKNOWN = 'UNKNOWN'
+  UNKNOWN = 'UNKNOWN',
 }
 
 registerEnumType(CODE2SESSION_GRANT_TYPE, {
@@ -50,7 +52,7 @@ export enum ORDERBY {
   // 随机排列
   SHUFFLE = 'SHUFFLE',
   // 时间戳从小到大
-  ASC = 'ASC'
+  ASC = 'ASC',
 }
 
 registerEnumType(ORDERBY, {
@@ -72,7 +74,11 @@ export class UserStringPropMap {
   @Field({ description: '属性的值' })
     value: string
 
-  @Field(type => Boolean, { description: '是否私有属性', nullable: true, defaultValue: false })
+  @Field(type => Boolean, {
+    description: '是否私有属性',
+    nullable: true,
+    defaultValue: false
+  })
     isPrivate: boolean
 }
 
@@ -81,31 +87,35 @@ export class UserGenderPropMap {
   @Field(of => GENDER, { description: '属性的值' })
     value: GENDER
 
-  @Field(type => Boolean, { description: '是否私有属性', nullable: true, defaultValue: false })
+  @Field(type => Boolean, {
+    description: '是否私有属性',
+    nullable: true,
+    defaultValue: false
+  })
     isPrivate: boolean
 }
 
 @ArgsType()
 export class PersonLoginArgs {
-  @Field({ description: '用户账号', nullable: true })
+  @Field(of => String, { description: '用户账号', nullable: true })
     userId?: string | null
 
-  @Field({ description: '用户id', nullable: true })
+  @Field(of => String, { description: '用户id', nullable: true })
     id?: string | null
 
-  @Field({ description: '用户密码' })
+  @Field(of => String, { description: '用户密码' })
     sign: string
 }
 
 @InputType()
 export class AuthenticationInfo {
-  @Field({ description: '用户头像' })
+  @Field(of => String, { description: '用户头像' })
     avatarImageUrl: string
 
-  @Field({ description: '用户昵称' })
+  @Field(of => String, { description: '用户昵称' })
     name: string
 
-  @Field({ description: '学号' })
+  @Field(of => Int, { description: '学号' })
     studentId: number | null
 
   @Field(of => [String], { description: '学院的id的数组' })
@@ -123,10 +133,15 @@ export class AuthenticationInfo {
   @Field(of => GENDER, { description: '性别' })
     gender: GENDER
 
-  @Field(of => [String], { description: '有效信息图片(e.g. 校园卡照片)的链接' })
+  @Field(of => [String], {
+    description: '有效信息图片(e.g. 校园卡照片)的链接'
+  })
     images?: string[]
 
-  @Field(of => [String], { description: '用户申请的角色的id的数组', nullable: true })
+  @Field(of => [String], {
+    description: '用户申请的角色的id的数组',
+    nullable: true
+  })
     roles?: string[]
 }
 
@@ -135,7 +150,10 @@ export class AuthenticateUserArgs {
   @Field({ description: '待认证的用户id' })
     id: string
 
-  @Field({ nullable: true, description: '自助认证时 szu 后端提供的token (保证不被篡改，用 jwt 实现)' })
+  @Field({
+    nullable: true,
+    description: '自助认证时 szu 后端提供的token (保证不被篡改，用 jwt 实现)'
+  })
     token?: string
 
   @Field({ nullable: true, description: '手动认证时的认证信息' })
@@ -144,35 +162,39 @@ export class AuthenticateUserArgs {
 
 @ArgsType()
 export class UpdateUserArgs {
-  @Field({ nullable: true })
+  @Field(of => String, { nullable: true })
     avatarImageUrl?: string | null
 
-  @Field({ nullable: true })
+  @Field(of => String, { nullable: true })
     userId?: string | null
 
-  @Field({ nullable: true })
+  @Field(of => String, { nullable: true })
     name?: string | null
 
-  @Field({ nullable: true })
+  @Field(of => String, { nullable: true })
     sign?: string | null
 }
 
 @ArgsType()
 export class RegisterUserArgs {
-  @Field({ description: '用户名', nullable: true })
+  @Field(of => String, { description: '用户名', nullable: true })
     userId?: string | null
 
-  @Field({ description: '用户昵称' })
+  @Field(of => String, { description: '用户昵称' })
     name: string
 
-  @Field({ description: '用户密码' })
+  @Field(of => String, { description: '用户密码' })
     sign: string
 
-  @Field({ description: 'code', nullable: true })
+  @Field(of => String, { description: 'code', nullable: true })
     code?: string | null
 
-  @Field(of => CODE2SESSION_GRANT_TYPE, { defaultValue: CODE2SESSION_GRANT_TYPE.BLANK_SPACE, nullable: true, description: '登录类型' })
-    grantType?: CODE2SESSION_GRANT_TYPE | null
+  @Field(of => CODE2SESSION_GRANT_TYPE, {
+    defaultValue: CODE2SESSION_GRANT_TYPE.BLANK_SPACE,
+    nullable: true,
+    description: '登录类型'
+  })
+    grantType: CODE2SESSION_GRANT_TYPE
 }
 
 export type RawSign = string
@@ -185,49 +207,66 @@ export class User implements Person, Node {
     Object.assign(this, user)
   }
 
-  @Field({ description: 'id 自动生成' })
+  @Field(of => String, { description: 'id 自动生成' })
     id: string
 
   @Field(of => Int, { description: '学号', nullable: true })
     studentId?: number | null
 
-  @Field({ description: '用户昵称' })
+  @Field(of => String, { description: '用户昵称' })
     name: string
 
-  @Field({ description: '用户账号' })
-    userId: UserId
+  @Field(of => String, { description: '用户账号' })
+    userId: string
 
-  @Field({ description: '微信openId,注册时传入微信code自动通过微信提供的接口获取获取' })
+  @Field(of => String, {
+    description: '微信openId,注册时传入微信code自动通过微信提供的接口获取获取'
+  })
     openId: string
 
-  @Field({ description: '微信unionId,注册时传入微信code自动通过微信提供的接口获取获取' })
+  @Field(of => String, {
+    description: '微信unionId,注册时传入微信code自动通过微信提供的接口获取获取'
+  })
     unionId: string
 
   @Field(of => GENDER, { nullable: true, description: '用户性别' })
     gender?: GENDER | null
 
-  @Field({ description: '学院', nullable: true, deprecationReason: 'feature/multiuniversity 后废弃，请使用 institutes 代替' })
+  @Field(of => String, {
+    description: '学院',
+    nullable: true,
+    deprecationReason: 'feature/multiuniversity 后废弃，请使用 institutes 代替'
+  })
     college?: string | null
 
-  @Field({ description: '校区', nullable: true, deprecationReason: 'feature/multiuniversity 后废弃，请使用 subCampuses 代替' })
+  @Field(of => String, {
+    description: '校区',
+    nullable: true,
+    deprecationReason:
+      'feature/multiuniversity 后废弃，请使用 subCampuses 代替'
+  })
     subCampus?: string | null
 
-  @Field({ description: '学校', nullable: true, deprecationReason: 'feature/multiuniversity 后废弃，请使用 university 代替' })
+  @Field(of => String, {
+    description: '学校',
+    nullable: true,
+    deprecationReason: 'feature/multiuniversity 后废弃，请使用 university 代替'
+  })
     school?: string | null
 
-  @Field({ description: '年级', nullable: true })
+  @Field(of => String, { description: '年级', nullable: true })
     grade?: string | null
 
-  @Field({ description: '用户创建时间' })
+  @Field(of => String, { description: '用户创建时间' })
     createdAt: string
 
-  @Field({ description: '用户信息的更新时间' })
+  @Field(of => String, { description: '用户信息的更新时间' })
     updatedAt: string
 
-  @Field({ description: '用户上一次调用login接口获取token的系统时间' })
+  @Field(of => String, { description: '用户上一次调用login接口获取token的系统时间' })
     lastLoginedAt: string
 
-  @Field({ description: '用户头像链接', nullable: true })
+  @Field(of => String, { description: '用户头像链接', nullable: true })
     avatarImageUrl?: string | null
 
   @Field(of => Int, { description: '当前用户的经验', nullable: true })
@@ -236,31 +275,40 @@ export class User implements Person, Node {
 
 @ObjectType()
 export class UserPrivateProps {
-  @Field(of => Boolean, { description: '学院属性是否私有', nullable: true, defaultValue: false })
+  @Field(of => Boolean, {
+    description: '学院属性是否私有',
+    nullable: true,
+    defaultValue: false
+  })
     isCollegePrivate: boolean
 
-  @Field(of => Boolean, { description: '校区属性是否私有', nullable: true, defaultValue: false })
+  @Field(of => Boolean, {
+    description: '校区属性是否私有',
+    nullable: true,
+    defaultValue: false
+  })
     isSubCampusPrivate: boolean
 
-  @Field(of => Boolean, { description: '性别属性是否私有', nullable: true, defaultValue: false })
+  @Field(of => Boolean, {
+    description: '性别属性是否私有',
+    nullable: true,
+    defaultValue: false
+  })
     isGenderPrivate: boolean
 
-  @Field(of => Boolean, { description: '学校属性是否私有', nullable: true, defaultValue: false })
+  @Field(of => Boolean, {
+    description: '学校属性是否私有',
+    nullable: true,
+    defaultValue: false
+  })
     isSchoolPrivate: boolean
 
-  @Field(of => Boolean, { description: '年级属性是否私有', nullable: true, defaultValue: false })
+  @Field(of => Boolean, {
+    description: '年级属性是否私有',
+    nullable: true,
+    defaultValue: false
+  })
     isGradePrivate: boolean
-}
-
-@ObjectType({
-  implements: () => [Person, Node],
-  description: '包含属性是否个人可见的用户对象'
-})
-export class UserWithPrivateProps extends IntersectionType(UserPrivateProps, User) implements Person, Node {
-  constructor (userWithPrivateProps: UserWithPrivateProps) {
-    super(userWithPrivateProps)
-    Object.assign(this, userWithPrivateProps)
-  }
 }
 
 export class UserWithFacets extends User {
@@ -342,12 +390,7 @@ export class PagingConfigArgs {
     offset: number
 }
 
-export type CheckUserResult = User & {success: boolean, roles: Role[]}
-export const AdminAndUserWithPrivatePropsUnion = createUnionType({
-  name: 'AdminAndUserWithPrivatePropsUnion',
-  description: '废弃，请使用 WhoAmIUnion 代替',
-  types: () => [UserWithPrivateProps, Admin]
-})
+export type CheckUserResult = User & { success: boolean, roles: Role[] }
 
 export const WhoAmIUnion = createUnionType({
   name: 'WhoAmIUnion',
@@ -373,10 +416,22 @@ export class DeadlinesPagingArgs {
 
 @ArgsType()
 export class NotificationArgs {
-  @Field(of => NOTIFICATION_TYPE, { description: '获取', nullable: true, defaultValue: NOTIFICATION_TYPE.ALL })
+  @Field(of => NOTIFICATION_TYPE, {
+    description: '获取',
+    nullable: true,
+    defaultValue: NOTIFICATION_TYPE.ALL
+  })
     type: NOTIFICATION_TYPE
 
-  @Field(of => [NOTIFICATION_ACTION], { description: '按action获取通知', nullable: true, defaultValue: [NOTIFICATION_ACTION.ADD_COMMENT_ON_POST, NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT, NOTIFICATION_ACTION.ADD_COMMENT_ON_USER] })
+  @Field(of => [NOTIFICATION_ACTION], {
+    description: '按action获取通知',
+    nullable: true,
+    defaultValue: [
+      NOTIFICATION_ACTION.ADD_COMMENT_ON_POST,
+      NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT,
+      NOTIFICATION_ACTION.ADD_COMMENT_ON_USER
+    ]
+  })
     actions: NOTIFICATION_ACTION[]
 }
 

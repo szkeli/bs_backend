@@ -45,7 +45,7 @@ export class UserService {
     throw new Error('Method not implemented.')
   }
 
-  async experiencePointTransactionsWithRelayForward (id: string, first: number, after: string) {
+  async experiencePointTransactionsWithRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(transactions), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -192,7 +192,7 @@ export class UserService {
     throw new Error('Method not implemented.')
   }
 
-  async usersWithRelayForward (first: number, after: string, { universityId }: UsersWithRelayFilter) {
+  async usersWithRelayForward (first: number, after: string | null, { universityId }: UsersWithRelayFilter) {
     const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const users = universityId
       ? `
@@ -238,7 +238,7 @@ export class UserService {
     throw new Error('Method not implemented.')
   }
 
-  async subCampusesRelayForward (currentUser: User, id: string, first: number, after: string) {
+  async subCampusesRelayForward (currentUser: User, id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(subCampuses)) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string) {
@@ -284,7 +284,7 @@ export class UserService {
     throw new Error('Method not implemented.')
   }
 
-  async institutesRelayForward (currentUser: User, id: string, first: number, after: string) {
+  async institutesRelayForward (currentUser: User, id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(institutes)) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string) {
@@ -365,7 +365,7 @@ export class UserService {
     throw new Error('Method not implemented.')
   }
 
-  async authenWithinRelayForward (startTime: string, endTime: string, first: number, after: string) {
+  async authenWithinRelayForward (startTime: string, endTime: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string, $startTime: string, $endTime: string) {
@@ -401,7 +401,7 @@ export class UserService {
     throw new Error('Method not implemented.')
   }
 
-  async lessonsRelayForward (id: string, first: number, after: string, { startYear, endYear, semester }: FilterLessonArgs) {
+  async lessonsRelayForward (id: string, first: number, after: string | null, { startYear, endYear, semester }: FilterLessonArgs) {
     const q1 = 'var(func: uid(lessons), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($id: string, $after: string) {
@@ -452,7 +452,7 @@ export class UserService {
     throw new Error('Method not implemented.')
   }
 
-  async deadlinesRelayForward (id: string, first: number, after: string) {
+  async deadlinesRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(deadlines), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -490,7 +490,7 @@ export class UserService {
     throw new Error('Method not implemented.')
   }
 
-  async votesWithRelayForward (id, first: number, after: string): Promise<VotesConnectionWithRelay> {
+  async votesWithRelayForward (id, first: number, after: string | null): Promise<VotesConnectionWithRelay> {
     const q1 = 'var(func: uid(votes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -537,7 +537,7 @@ export class UserService {
     throw new Error('Method not implemented.')
   }
 
-  async rolesWithRelayForword (id: string, first: number, after: string) {
+  async rolesWithRelayForword (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(roles), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -603,7 +603,7 @@ export class UserService {
     throw new Error('Method not implemented.')
   }
 
-  async privilegesWithRelayForward (id: string, first: number, after: string): Promise<PrivilegesConnection> {
+  async privilegesWithRelayForward (id: string, first: number, after: string | null): Promise<PrivilegesConnection> {
     const q1 = 'var(func: uid(privileges), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -753,8 +753,8 @@ export class UserService {
     const v = res.getJson() as unknown as { subjects?: Array<{subjects: [Subject]}>, totalCount?: Array<{subjects: Array<{count: number}>}>}
 
     const u: SubjectsConnection = {
-      totalCount: v.totalCount[0]?.subjects[0]?.count || 0,
-      nodes: v?.subjects[0]?.subjects || []
+      totalCount: v.totalCount?.[0]?.subjects[0]?.count ?? 0,
+      nodes: v?.subjects?.[0]?.subjects ?? []
     }
     return u
   }
@@ -776,8 +776,8 @@ export class UserService {
       .query(query)
     const v = res.getJson() as unknown as { users?: [User], totalCount?: Array<{count: number}>}
     const u: UsersConnection = {
-      nodes: v.users || [],
-      totalCount: v.totalCount[0].count || 0
+      nodes: v.users ?? [],
+      totalCount: v.totalCount?.[0].count ?? 0
     }
     return u
   }
@@ -904,9 +904,16 @@ export class UserService {
     }
   }
 
+  /**
+   * 获取随机的 userId
+   * 通过该方式获取的 userId 有一定概率冲突
+   * 应该修改为在一个事务内获取 userId 且完成注册
+   * @returns {Promise<string>}
+   */
   async getRandomUserId (): Promise<string> {
+    let userId: string = ''
     while (1) {
-      const userId = randomUUID()
+      userId = randomUUID()
       const query = `
         query c($userId: string) {
           v(func: eq(userId, $userId)) @filter(type(User) or type(Admin)) {
@@ -917,9 +924,10 @@ export class UserService {
       const res = await this.dbService.commitQuery<{v: Array<{count: number}>}>({ query, vars: { $userId: userId } })
 
       if ((res.v[0]?.count ?? 0) === 0) {
-        return userId
+        break
       }
     }
+    return userId
   }
 
   async getUserOrAdminWithRolesByUid (id: string): Promise<UserWithRolesAndPrivilegesAndCredential> {
@@ -1059,7 +1067,7 @@ export class UserService {
     Object.assign(res.json.user[0], args)
 
     if (res.json.v.length !== 0) {
-      throw new UserIdExistException(args.userId)
+      throw new UserIdExistException(args?.userId ?? '')
     }
     if (res.json.u.length !== 1) {
       throw new UserNotFoundException(id)

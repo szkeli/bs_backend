@@ -137,16 +137,16 @@ export class Lesson {
 
 @ArgsType()
 export class UpdateLessonArgs {
-  @Field({ description: '课程名称', nullable: true })
+  @Field(of => String, { description: '课程名称', nullable: true })
     name?: string | null
 
-  @Field({ description: '上课地点，对于未列出的课程，此项可为 null', nullable: true })
+  @Field(of => String, { description: '上课地点，对于未列出的课程，此项可为 null', nullable: true })
     destination?: string | null
 
-  @Field({ description: '课程id' })
+  @Field(of => String, { description: '课程id' })
     lessonId: string
 
-  @Field({ description: '授课教师的名字', nullable: true })
+  @Field(of => String, { description: '授课教师的名字', nullable: true })
     educatorName?: string | null
 
   @Field(of => String, { nullable: true, description: '自定义课程时的颜色' })
@@ -164,22 +164,22 @@ export class UpdateLessonArgsBase {
 
 @ArgsType()
 export class AddLessonArgs extends PartialType(UpdateLessonArgsBase) {
-  @Field({ description: '上课地点，对于未列出的课程，此项可为 null', nullable: true })
+  @Field(of => String, { description: '上课地点，对于未列出的课程，此项可为 null', nullable: true })
     destination: string
 
-  @Field({ description: '课程名称' })
+  @Field(of => String, { description: '课程名称' })
     name: string
 
   @Field(of => [Int], { description: '课程的周数的数组，例如[2, 3, 4, 8, 9]' })
     circle: number[]
 
-  @Field({ description: '课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
+  @Field(of => String, { description: '课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
     description: string
 
-  @Field({ description: '授课教师的名字' })
+  @Field(of => String, { description: '授课教师的名字' })
     educatorName: string
 
-  @Field({ description: '课程号' })
+  @Field(of => String, { description: '课程号' })
     lessonId: string
 
   @Field(of => Int, { description: '开始学年' })
@@ -197,7 +197,7 @@ export class AddLessonArgs extends PartialType(UpdateLessonArgsBase) {
 
 @ArgsType()
 export class AddLessonItemsArgs extends PartialType(UpdateLessonArgsBase) {
-  @Field()
+  @Field(of => String)
     lessonId: string
 }
 
@@ -214,7 +214,7 @@ export interface FilterLessonsArgs {
 
 @ArgsType()
 export class TriggerLessonNotificationArgs {
-  @Field({ description: '被通知的 User 的 id' })
+  @Field(of => String, { description: '被通知的 User 的 id' })
     to: string
 
   @Field(of => Int, { nullable: true, description: '星期几' })

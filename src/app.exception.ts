@@ -280,3 +280,9 @@ export class ParseCursorFailedException extends HttpException {
     super(`游标 ${cursor} 解析失败`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class SystemErrorException extends HttpException {
+  constructor () {
+    super('系统错误', HttpStatus.FORBIDDEN)
+  }
+}

@@ -156,7 +156,7 @@ export class ExperiencesService {
     throw new Error('Method not implemented.')
   }
 
-  async experiencePointsTransactionWithRelayForward (first: number, after: string) {
+  async experiencePointsTransactionWithRelayForward (first: number, after: string | null) {
     const q1 = 'var(func: uid(transactions), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($after: string) {

@@ -46,22 +46,22 @@ export class Deadline {
 
 @ArgsType()
 export class AddDealineArgs {
-  @Field({ description: 'deadline 对应的课程的 id', nullable: true })
+  @Field(of => String, { description: 'deadline 对应的课程的 id', nullable: true })
     lessonId?: string | null
 
-  @Field({ description: '唯一的 deadline id' })
+  @Field(of => String, { description: '唯一的 deadline id' })
     deadlineId: string
 
-  @Field({ description: 'deadline 对应的课程的名字' })
+  @Field(of => String, { description: 'deadline 对应的课程的名字' })
     courseName: string
 
-  @Field({ description: 'deadline 的开始时间' })
+  @Field(of => String, { description: 'deadline 的开始时间' })
     startDate: string
 
-  @Field({ description: 'deadline 的结束时间' })
+  @Field(of => String, { description: 'deadline 的结束时间' })
     endDate: string
 
-  @Field({ description: 'deadline 的标题' })
+  @Field(of => String, { description: 'deadline 的标题' })
     title: string
 
   @Field(of => DEADLINE_TYPE, { description: 'deadline 的类型' })

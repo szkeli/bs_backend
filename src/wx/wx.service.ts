@@ -17,12 +17,13 @@ import {
 export class WxService {
   private readonly logger = new Logger(WxService.name)
 
-  constructor (
-    private readonly cosService: CosService
-  ) {}
+  constructor (private readonly cosService: CosService) {}
 
-  async getWXSubscriptionInfo (id: string, { lang, openid, grantType }: GetWXSubscriptionInfoArgs) {
-    const { appId, secret } = this.findAppIdAndSecretByGrantType(grantType)
+  async getWXSubscriptionInfo (id: string, args: GetWXSubscriptionInfoArgs) {
+    const { lang, openid, grantType } = args
+    const { appId, secret } = this.findAppIdAndSecretByGrantType(
+      grantType as unknown as any
+    )
     const accessToken = await this.getAccessToken(appId, secret)
 
     const res = await axios({
@@ -38,8 +39,9 @@ export class WxService {
     throw new Error('Method not implemented.')
   }
 
-  async sendSubscribeMessage ({ grantType, ...config }: SendSubscribeMessageArgs) {
-    const { appId, secret } = this.findAppIdAndSecretByGrantType(grantType)
+  async sendSubscribeMessage (args: SendSubscribeMessageArgs) {
+    const { grantType, ...config } = args
+    const { appId, secret } = this.findAppIdAndSecretByGrantType(grantType as unknown as any)
     const accessToken = await this.getAccessToken(appId, secret)
     // config.data = JSON.parse(config.data)
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -56,20 +58,24 @@ export class WxService {
         access_token: accessToken
       },
       data: config
-    }).then(r => r.data as unknown as {
-      errcode: 40003 | 40037 | 43101 | 47003 | 41030
-      errmsg: string
-    })
+    }).then(
+      r =>
+        r.data as unknown as {
+          errcode: 40003 | 40037 | 43101 | 47003 | 41030
+          errmsg: string
+        }
+    )
   }
 
   async getAccessToken (appId: string, secret: string) {
-    const res = await axios({
+    const res = (await axios({
       method: 'POST',
       url: 'https://api.szlikeyou.com/allocator',
       data: {
-        appId, secret
+        appId,
+        secret
       }
-    }).then(r => r.data) as string
+    }).then(r => r.data)) as string
 
     if (!res) {
       throw new ForbiddenException('获取 access_token 失败')
@@ -77,7 +83,10 @@ export class WxService {
     return res
   }
 
-  async sendUniformMessage (config: SendUniformMessageArgs, grantType: CODE2SESSION_GRANT_TYPE) {
+  async sendUniformMessage (
+    config: SendUniformMessageArgs,
+    grantType: CODE2SESSION_GRANT_TYPE
+  ) {
     const { appId, secret } = this.findAppIdAndSecretByGrantType(grantType)
     const accessToken = await this.getAccessToken(appId, secret)
     return await axios({
@@ -90,7 +99,10 @@ export class WxService {
     }).then(r => r.data as unknown as WxSendUniformMessageRet)
   }
 
-  async mockSendUniformMessage (_config: SendUniformMessageArgs, grantType: CODE2SESSION_GRANT_TYPE) {
+  async mockSendUniformMessage (
+    _config: SendUniformMessageArgs,
+    grantType: CODE2SESSION_GRANT_TYPE
+  ) {
     this.logger.debug(`mockSendUniformMessage, grantType: ${grantType}`)
     return {
       errcode: 0,
@@ -99,24 +111,63 @@ export class WxService {
   }
 
   findAppIdAndSecretByGrantType (grantType: CODE2SESSION_GRANT_TYPE) {
-    let appId: string
-    let secret: string
+    let appId: string = ''
+    let secret: string = ''
     if (grantType === CODE2SESSION_GRANT_TYPE.BLANK_SPACE) {
-      appId = process.env.APP_ID
-      secret = process.env.APP_SECRET
+      const _appId = process.env.APP_ID
+      const _secret = process.env.APP_SECRET
+      if (!_appId) {
+        throw new ForbiddenException(
+          'SystemError: 必须提供 process.env.APP_ID'
+        )
+      }
+      if (!_secret) {
+        throw new ForbiddenException(
+          'SystemError: 必须提供 process.env.APP_SECRET'
+        )
+      }
+      appId = _appId
+      secret = _secret
     } else if (grantType === CODE2SESSION_GRANT_TYPE.CURRICULUM) {
-      appId = process.env.APP_ID_2
-      secret = process.env.APP_SECRET_2
+      const _appId = process.env.APP_ID_2
+      const _secret = process.env.APP_SECRET_2
+      if (!_appId) {
+        throw new ForbiddenException(
+          'SystemError: 必须提供 process.env.APP_ID_2'
+        )
+      }
+      if (!_secret) {
+        throw new ForbiddenException(
+          'SystemError: 必须提供 process.env.APP_SECRET_2'
+        )
+      }
+      appId = _appId
+      secret = _secret
     } else if (grantType === CODE2SESSION_GRANT_TYPE.WXOPEN) {
-      appId = process.env.WX_OPEN_APP_ID
-      secret = process.env.WX_OPEN_SECRET
+      const _appId = process.env.WX_OPEN_APP_ID
+      const _secret = process.env.WX_OPEN_SECRET
+      if (!_appId) {
+        throw new ForbiddenException(
+          'SystemError: 必须提供 process.env.WX_OPEN_APP_ID'
+        )
+      }
+      if (!_secret) {
+        throw new ForbiddenException(
+          'SystemError: 必须提供 process.env.WX_OPEN_SECRET'
+        )
+      }
+      appId = _appId
+      secret = _secret
     }
 
     return { appId, secret }
   }
 
-  async getWXMiniProgrameShortLink ({ grantType, ...config }: GetWXMiniProgrameShortLinkArgs) {
-    const { appId, secret } = this.findAppIdAndSecretByGrantType(grantType)
+  async getWXMiniProgrameShortLink (args: GetWXMiniProgrameShortLinkArgs) {
+    const { grantType, ...config } = args
+    const { appId, secret } = this.findAppIdAndSecretByGrantType(
+      grantType as unknown as any
+    )
     const accessToken = await this.getAccessToken(appId, secret)
     return await axios({
       method: 'POST',
@@ -125,7 +176,7 @@ export class WxService {
         access_token: accessToken
       },
       data: config
-    }).then((r: {data: string}) => {
+    }).then((r: { data: string }) => {
       if (typeof r.data === 'object') {
         throw new ForbiddenException(`获取短链失败：${JSON.stringify(r.data)}`)
       }
@@ -133,8 +184,12 @@ export class WxService {
     })
   }
 
-  async getUnlimitedWXacodeBuffer ({ grantType, ...config }: GetUnlimitedWXacodeArgs) {
-    const { appId, secret } = this.findAppIdAndSecretByGrantType(grantType)
+  async getUnlimitedWXacodeBuffer (args: GetUnlimitedWXacodeArgs) {
+    const { grantType, ...config } = args
+
+    const { appId, secret } = this.findAppIdAndSecretByGrantType(
+      grantType as unknown as any
+    )
     const accessToken = await this.getAccessToken(appId, secret)
 
     const res = await axios({
@@ -145,18 +200,17 @@ export class WxService {
       },
       data: config,
       responseType: 'arraybuffer'
-    })
-      .then(r => {
-        const rd = r.data.toString()
-        try {
-          return JSON.parse(rd) as unknown as {
-            errcode: 0 | 45009 | 41030 | 40097 | null
-            errmsg: string | null
-          }
-        } catch {
-          return r.data as Buffer
+    }).then(r => {
+      const rd = r.data.toString()
+      try {
+        return JSON.parse(rd) as unknown as {
+          errcode: 0 | 45009 | 41030 | 40097 | null
+          errmsg: string | null
         }
-      })
+      } catch {
+        return r.data as Buffer
+      }
+    })
     if (Buffer.isBuffer(res)) {
       return res
     } else {

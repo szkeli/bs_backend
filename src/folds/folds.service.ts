@@ -49,7 +49,7 @@ export class FoldsService {
     throw new Error('Method not implemented.')
   }
 
-  async foldsWithRelayForward (first: number, after: string) {
+  async foldsWithRelayForward (first: number, after: string | null) {
     const q1 = 'var(func: uid(folds), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {

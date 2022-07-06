@@ -147,8 +147,8 @@ export class TasksService {
   }
 
   async tagThem (res: NotificationTaskArgs, res2: Array<{status: string, value: any}>) {
-    const succeededIds = []
-    const failedIds = []
+    const succeededIds: string[] = []
+    const failedIds: string[] = []
 
     res2.forEach((i, index) => {
       if (i.status === 'fulfilled') {

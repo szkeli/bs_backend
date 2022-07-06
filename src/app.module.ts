@@ -27,6 +27,7 @@ import { DbModule } from './db/db.module'
 import { DbService } from './db/db.service'
 import { DeadlinesModule } from './deadlines/deadlines.module'
 import { DeletesModule } from './deletes/deletes.module'
+import { ExperiencesModule } from './experiences/experiences.module'
 import { FoldsModule } from './folds/folds.module'
 import { HashtagsModule } from './hashtags/hashtags.module'
 import { InstitutesModule } from './institutes/institutes.module'
@@ -55,7 +56,6 @@ import { UserService } from './user/user.service'
 import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
 import { WxModule } from './wx/wx.module'
-import { ExperiencesModule } from './experiences/experiences.module';
 
 @Module({
   imports: [
@@ -87,7 +87,7 @@ import { ExperiencesModule } from './experiences/experiences.module';
           const { connectionParams, extra } = ctx as Context<Record<string, any>, Extra>
           extra.request.headers = {
             ...extra.request.headers,
-            ...connectionParams.headers ?? {}
+            ...connectionParams?.headers ?? {}
           }
           return { req: extra.request }
         }

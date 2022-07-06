@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
+import { SystemErrorException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
@@ -30,7 +31,7 @@ export class AdminService {
     throw new Error('Method not implemented.')
   }
 
-  async credentialsWithRelayForward (id: string, first: number, after: string) {
+  async credentialsWithRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(credentials), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -74,7 +75,7 @@ export class AdminService {
     throw new Error('Method not implemented.')
   }
 
-  async foldsWithRelayForward (id: string, first: number, after: string) {
+  async foldsWithRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(folds), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -118,7 +119,7 @@ export class AdminService {
     throw new Error('Method not implemented.')
   }
 
-  async deletesWithRelayForward (id: string, first: number, after: string): Promise<DeletesConnection> {
+  async deletesWithRelayForward (id: string, first: number, after: string | null): Promise<DeletesConnection> {
     const q1 = 'var(func: uid(deletes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -162,7 +163,7 @@ export class AdminService {
     throw new Error('Method not implemented.')
   }
 
-  async privilegesWithRelayForward (id: string, first: number, after: string): Promise<PrivilegesConnection> {
+  async privilegesWithRelayForward (id: string, first: number, after: string | null): Promise<PrivilegesConnection> {
     const q1 = 'var(func: uid(privileges), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -249,7 +250,7 @@ export class AdminService {
     throw new Error('Method not implemented.')
   }
 
-  async adminsRelayForward (first: number, after: string): Promise<AdminsConnection> {
+  async adminsRelayForward (first: number, after: string | null): Promise<AdminsConnection> {
     const q1 = 'var(func: uid(admins)) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {
@@ -318,6 +319,8 @@ export class AdminService {
         throw new ForbiddenException(`userId ${args.userId} 已被使用`)
       }
       const uid = res.getUidsMap().get('admin')
+
+      if (!uid) throw new SystemErrorException()
 
       return {
         id: uid,

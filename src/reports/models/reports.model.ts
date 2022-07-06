@@ -70,7 +70,18 @@ export class AddReportToArgs {
 
 export const Report2Union = createUnionType({
   name: 'Report2Union',
-  types: () => [User, Post, Comment]
+  types: () => [User, Post, Comment],
+  resolveType (v: {'dgraph.type': string[]}) {
+    if (v['dgraph.type']?.includes('Post')) {
+      return Post
+    }
+    if (v['dgraph.type']?.includes('Comment')) {
+      return Comment
+    }
+    if (v['dgraph.type']?.includes('User')) {
+      return User
+    }
+  }
 })
 
 @ObjectType()

@@ -3,7 +3,7 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
-import { UniversityNotFoundException, UserNotFoundException } from '../app.exception'
+import { SystemErrorException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
@@ -33,7 +33,7 @@ export class SubjectService {
     throw new Error('Method not implemented.')
   }
 
-  async universitiesRelayForward (id: string, first: number, after: string) {
+  async universitiesRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(universities), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -71,7 +71,7 @@ export class SubjectService {
     throw new ForbiddenException('undefined')
   }
 
-  async subjectsWithRelayForward (first: number, after: string, { universityId }: QuerySubjectsFilter): Promise<SubjectsConnectionWithRelay> {
+  async subjectsWithRelayForward (first: number, after: string | null, { universityId }: QuerySubjectsFilter): Promise<SubjectsConnectionWithRelay> {
     const q1 = 'var(func: uid(subjects), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const university = universityId
       ? `
@@ -177,14 +177,14 @@ export class SubjectService {
         try {
           after = JSON.parse(after).score
         } catch {
-          throw new ForbiddenException(`解析游标失败 ${after}`)
+          throw new ForbiddenException(`解析游标失败 ${after ?? ''}`)
         }
       }
       return await this.trendingPostsWithRelayForward(id, first, after)
     }
   }
 
-  async trendingPostsWithRelayForward (subjectId: string, first: number, after: string) {
+  async trendingPostsWithRelayForward (subjectId: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
     const query = `
       query v($subjectId: string, $after: string) {
@@ -501,8 +501,11 @@ export class SubjectService {
       throw new UniversityNotFoundException(universityId)
     }
 
+    const _id = res.uids.get('subject')
+    if (!_id) throw new SystemErrorException()
+
     return {
-      id: res.uids.get('subject'),
+      id: _id,
       createdAt: now(),
       ...args
     }

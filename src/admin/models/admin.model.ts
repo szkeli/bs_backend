@@ -33,7 +33,7 @@ export class Admin {
   @Field()
     name: string
 
-  @Field({ nullable: true })
+  @Field(of => String, { nullable: true })
     avatarImageUrl?: string | null
 
   @Field()

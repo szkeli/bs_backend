@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 import { randomUUID } from 'crypto'
 import * as sts from 'qcloud-cos-sts'
 
@@ -85,9 +85,14 @@ export class StsService {
       throw new FileNameCannotBeNullException()
     }
 
+    const secretId = process.env.COS_SECRET_ID
+    const secretKey = process.env.COS_SECRET_KEY
+    if (!secretId) throw new ForbiddenException('SystemError: 必须提供 process.env.COS_SECRET_ID')
+    if (!secretKey) throw new ForbiddenException('SystemError: 必须提供 process.env.COS_SECRET_KEY')
+
     const res = await sts.getCredential({
-      secretId: process.env.COS_SECRET_ID,
-      secretKey: process.env.COS_SECRET_KEY,
+      secretId,
+      secretKey,
       proxy: '',
       durationSeconds: 60 * 30,
       policy: {
@@ -131,9 +136,14 @@ export class StsService {
   }
 
   async getImagesUploadCredentialInfo (resource: string[], keys: string[]): Promise<ImagesUploadCredentialInfo> {
+    const secretId = process.env.COS_SECRET_ID
+    const secretKey = process.env.COS_SECRET_KEY
+    if (!secretId) throw new ForbiddenException('SystemError: 必须提供 process.env.COS_SECRET_ID')
+    if (!secretKey) throw new ForbiddenException('SystemError: 必须提供 process.env.COS_SECRET_KEY')
+
     const res = await sts.getCredential({
-      secretId: process.env.COS_SECRET_ID,
-      secretKey: process.env.COS_SECRET_KEY,
+      secretId,
+      secretKey,
       proxy: '',
       durationSeconds: 60 * 30,
       policy: {

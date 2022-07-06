@@ -20,28 +20,28 @@ export abstract class Authenable {
   implements: [Authenable]
 })
 export class UserAuthenInfo implements Authenable {
-  @Field()
+  @Field(of => String)
     id: string
 
-  @Field()
+  @Field(of => String)
     createdAt: string
 
-  @Field({ description: '头像' })
+  @Field(of => String, { description: '头像' })
     avatarImageUrl: string
 
-  @Field({ description: '学号' })
+  @Field(of => String, { description: '学号' })
     studentId: number | null
 
-  @Field({ description: '学院', nullable: true, deprecationReason: 'feature/multiuniversity 中被弃用，请使用 institutes 代替' })
+  @Field(of => String, { description: '学院', nullable: true, deprecationReason: 'feature/multiuniversity 中被弃用，请使用 institutes 代替' })
     college: string
 
-  @Field({ description: '校区', nullable: true, deprecationReason: 'feature/multiuniversity 中被弃用，请使用 subCampuses 代替' })
+  @Field(of => String, { description: '校区', nullable: true, deprecationReason: 'feature/multiuniversity 中被弃用，请使用 subCampuses 代替' })
     subCampus: string
 
-  @Field({ description: '学校', nullable: true, deprecationReason: 'feature/multiuniversity 中被弃用，请使用 universities 代替' })
+  @Field(of => String, { description: '学校', nullable: true, deprecationReason: 'feature/multiuniversity 中被弃用，请使用 universities 代替' })
     school: string
 
-  @Field({ description: '年级' })
+  @Field(of => String, { description: '年级' })
     grade: string
 
   @Field(of => GENDER, { description: '性别' })
@@ -86,16 +86,16 @@ export type PolicyHandler = IPolicyHandler | PolicyHandlerCallback
 
 @ArgsType()
 export class LoginByCodeArgs {
-  @Field({ description: '从小程序获取的登录 code' })
+  @Field(of => String, { description: '从小程序获取的登录 code' })
     code: string
 
   @Field(of => CODE2SESSION_GRANT_TYPE, { defaultValue: CODE2SESSION_GRANT_TYPE.BLANK_SPACE, nullable: true, description: '登录类型' })
-    grantType?: CODE2SESSION_GRANT_TYPE
+    grantType: CODE2SESSION_GRANT_TYPE
 }
 
 @ArgsType()
 export class UpdatePasswordArgs {
-  @Field({ description: '新密码' })
+  @Field(of => String, { description: '新密码' })
     sign: string
 }
 

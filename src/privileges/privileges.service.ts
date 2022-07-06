@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
+import { SystemErrorException } from '../app.exception'
 import { Role } from '../auth/model/auth.model'
 import { DbService } from '../db/db.service'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
@@ -84,7 +85,7 @@ export class PrivilegesService {
     throw new Error('Method not implemented.')
   }
 
-  async privilegesWithRelayForward (first: number, after: string): Promise<PrivilegesConnection> {
+  async privilegesWithRelayForward (first: number, after: string | null): Promise<PrivilegesConnection> {
     const q1 = 'var(func: uid(privileges), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {
@@ -183,8 +184,12 @@ export class PrivilegesService {
       throw new ForbiddenException(`用户 ${to} 已拥有 ${privilege} 权限`)
     }
 
+    const _id = res.uids.get('privilege')
+
+    if (!_id) throw new SystemErrorException()
+
     return {
-      id: res.uids.get('privilege'),
+      id: _id,
       createdAt: _now,
       value: privilege
     }
@@ -316,8 +321,12 @@ export class PrivilegesService {
     if (res.json.y.length !== 0) {
       throw new ForbiddenException(`管理员 ${to} 已拥有 ${privilege} 权限`)
     }
+
+    const _id = res.uids.get('privilege')
+    if (!_id) throw new SystemErrorException()
+
     return {
-      id: res.uids.get('privilege'),
+      id: _id,
       createdAt: now(),
       value: privilege
     }

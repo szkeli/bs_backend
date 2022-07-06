@@ -66,19 +66,19 @@ export class PostsConnection {
 @ArgsType()
 export class RelayPagingConfigArgs {
   @Field(of => Int, { description: '最新的n个对象', nullable: true, defaultValue: 10 })
-    first?: number
+    first: number | null
 
   @Field(of => String, { description: '向前分页游标', nullable: true })
-    after?: string
+    after: string | null
 
   @Field(of => Int, { description: '最早的n个对象', nullable: true })
-    last?: number
+    last: number | null
 
   @Field(of => String, { description: '向后分页游标', nullable: true })
-    before?: string
+    before: string | null
 
   @Field(of => ORDER_BY, { description: '排序方式', nullable: true, defaultValue: ORDER_BY.CREATED_AT_DESC })
-    orderBy?: ORDER_BY
+    orderBy: ORDER_BY | null
 }
 
 @ArgsType()

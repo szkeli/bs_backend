@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 
-import { UserAlreadyHasTheDeadline, UserNotFoundException, UserNotHasTheLesson } from '../app.exception'
+import { SystemErrorException, UserAlreadyHasTheDeadline, UserNotFoundException, UserNotHasTheLesson } from '../app.exception'
 import { DbService } from '../db/db.service'
 import { Lesson } from '../lessons/models/lessons.model'
 import { now } from '../tool'
@@ -70,14 +70,17 @@ export class DeadlinesService {
       throw new UserNotFoundException(id)
     }
     if (res.json.v.length !== 1) {
-      throw new UserNotHasTheLesson(id, lessonId)
+      throw new UserNotHasTheLesson(id, lessonId ?? '')
     }
     if (res.json.c.length !== 0) {
       throw new UserAlreadyHasTheDeadline(id, deadlineId)
     }
 
+    const _id = res.uids.get('deadline')
+    if (!_id) throw new SystemErrorException()
+
     return {
-      id: res.uids.get('deadline'),
+      id: _id,
       courseName,
       startDate,
       endDate,
@@ -132,8 +135,11 @@ export class DeadlinesService {
       throw new UserAlreadyHasTheDeadline(id, deadlineId)
     }
 
+    const _id = res.uids.get('deadline')
+    if (!_id) throw new SystemErrorException()
+
     return {
-      id: res.uids.get('deadline'),
+      id: _id,
       courseName,
       startDate,
       endDate,

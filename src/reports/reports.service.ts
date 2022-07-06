@@ -3,11 +3,10 @@ import { DgraphClient } from 'dgraph-js'
 
 import { MESSAGE_TYPE } from 'src/messages/models/messages.model'
 
-import { Comment } from '../comment/models/comment.model'
+import { SystemErrorException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { Conversation, CONVERSATION_STATE } from '../conversations/models/conversations.model'
 import { DbService } from '../db/db.service'
-import { Post } from '../posts/models/post.model'
 import { relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { User } from '../user/models/user.model'
 import { Report, REPORT_STATE, REPORT_TYPE, Report2Union, ReportsConnection } from './models/reports.model'
@@ -26,7 +25,7 @@ export class ReportsService {
     throw new Error('Method not implemented.')
   }
 
-  async reportsWithRelayForward (first: number, after: string) {
+  async reportsWithRelayForward (first: number, after: string | null) {
     const q1 = 'var(func: uid(reports), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {
@@ -493,7 +492,7 @@ export class ReportsService {
    * @param {string} id 举报的id
    * @returns { Promise<User|Post|Comment> }
    */
-  async to (id: string): Promise<User|Post|Comment> {
+  async to (id: string): Promise<typeof Report2Union> {
     const query = `
       query v($uid: string) {
         report(func: uid($uid)) @filter(type(Report)) {
@@ -506,18 +505,10 @@ export class ReportsService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      report: Array<{to: (typeof Report2Union) & { 'dgraph.type': [string]}}>
+      report: Array<{to: (typeof Report2Union)}>
     }>({ query, vars: { $uid: id } })
 
-    if (res.report[0].to['dgraph.type']?.includes('User')) {
-      return new User(res.report[0].to as unknown as User)
-    }
-    if (res.report[0].to['dgraph.type']?.includes('Post')) {
-      return new Post(res.report[0].to as unknown as Post)
-    }
-    if (res.report[0].to['dgraph.type']?.includes('Comment')) {
-      return new Comment(res.report[0].to as unknown as Comment)
-    }
+    return res.report[0].to
   }
 
   /**
@@ -618,8 +609,12 @@ export class ReportsService {
     if (res.json.q.length !== 1) {
       throw new ForbiddenException(`被举报用户 ${uid} 已被管理员拉黑`)
     }
+
+    const _id = res.uids.get('report')
+    if (!_id) throw new SystemErrorException()
+
     return {
-      id: res.uids.get('report'),
+      id: _id,
       createdAt: now,
       type,
       description,
@@ -717,8 +712,10 @@ export class ReportsService {
     if (!res.json.x || res.json.x.length !== 0) {
       throw new ForbiddenException(`用户 ${id} 对帖子 ${postId} 的举报已经提交，待处理中`)
     }
+    const _id = res.uids.get('report')
+    if (!_id) throw new SystemErrorException()
     return {
-      id: res.uids.get('report'),
+      id: _id,
       createdAt: now,
       type,
       description,
@@ -808,8 +805,11 @@ export class ReportsService {
     if (!res.json.x || res.json.x.length !== 0) {
       throw new ForbiddenException(`用户 ${id} 对评论 ${commentId} 的举报已经提交，待处理中`)
     }
+    const _id = res.uids.get('report')
+    if (!_id) throw new SystemErrorException()
+
     return {
-      id: res.uids.get('report'),
+      id: _id,
       createdAt: now,
       type,
       description,

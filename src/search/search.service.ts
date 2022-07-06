@@ -49,7 +49,7 @@ export class SearchService {
     throw new Error('Method not implemented.')
   }
 
-  async searchSubCampus (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+  async searchSubCampus (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
     const q1 = 'var(func: uid(subCampuses), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($query: string, $after: string) {
@@ -79,7 +79,7 @@ export class SearchService {
     })
   }
 
-  async searchInstitute (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+  async searchInstitute (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
     const q1 = 'var(func: uid(institutes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($query: string, $after: string) {
@@ -109,7 +109,7 @@ export class SearchService {
     })
   }
 
-  async searchUniversity (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+  async searchUniversity (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
     const q1 = 'var(func: uid(universities), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($query: string, $after: string) {
@@ -139,7 +139,7 @@ export class SearchService {
     })
   }
 
-  async searchSubject (q: string, first: number, after: string) {
+  async searchSubject (q: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(subjects), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($query: string, $after: string) {
@@ -180,7 +180,7 @@ export class SearchService {
     })
   }
 
-  async searchComment (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+  async searchComment (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
     const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($query: string, $after: string) {
@@ -222,7 +222,7 @@ export class SearchService {
     })
   }
 
-  async searchUser (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+  async searchUser (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
     const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($query: string, $after: string) {
@@ -265,7 +265,7 @@ export class SearchService {
     })
   }
 
-  async searchPost (q: string, first: number, after: string): Promise<SearchResultItemConnection> {
+  async searchPost (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
     const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
     query v($query: string, $after: string) {

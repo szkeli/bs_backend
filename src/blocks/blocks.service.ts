@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
+import { SystemErrorException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
@@ -68,10 +69,14 @@ export class BlocksService {
     if (res.json.b.length !== 0) {
       throw new ForbiddenException(`用户 ${id} 已被拉黑`)
     }
+
+    const _id = res.uids.get('block')
+    if (!_id) throw new SystemErrorException()
+
     return {
       description,
       createdAt: now(),
-      id: res.uids.get('block')
+      id: _id
     }
   }
 
@@ -186,7 +191,7 @@ export class BlocksService {
     throw new Error('Method not implemented.')
   }
 
-  async blocksWithRelayForward (first: number, after: string): Promise<BlocksConnection> {
+  async blocksWithRelayForward (first: number, after: string | null): Promise<BlocksConnection> {
     const q1 = 'var(func: uid(blocks), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query {

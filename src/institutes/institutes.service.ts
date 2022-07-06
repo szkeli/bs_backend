@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 
-import { InstituteAlreadyAtTheUniversityException, InstituteNotFoundException, UniversityHasBeenDeletedException, UniversityNotFoundException } from '../app.exception'
+import { InstituteAlreadyAtTheUniversityException, InstituteNotFoundException, SystemErrorException, UniversityHasBeenDeletedException, UniversityNotFoundException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
@@ -112,8 +112,11 @@ export class InstitutesService {
       throw new UniversityHasBeenDeletedException(id)
     }
 
+    const _id = res.uids.get('institute')
+    if (!_id) throw new SystemErrorException()
+
     return {
-      id: res.uids.get('institute'),
+      id: _id,
       ...args,
       createdAt: now()
     }
@@ -142,7 +145,7 @@ export class InstitutesService {
     throw new Error('Method not implemented.')
   }
 
-  async institutesRelayForward (after: string, first: number) {
+  async institutesRelayForward (after: string | null, first: number) {
     const q1 = 'var(func: uid(institutes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {

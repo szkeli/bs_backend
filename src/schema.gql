@@ -1564,7 +1564,7 @@ type UserAuthenInfo implements Authenable {
   avatarImageUrl: String!
 
   """学号"""
-  studentId: Float!
+  studentId: String!
 
   """学院"""
   college: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 institutes 代替")
@@ -2382,6 +2382,44 @@ type DeadlinePageInfo {
   hasNextPage: Boolean!
 }
 
+type Experience {
+  id: String!
+  points: Int!
+  transactionType: ExperienceTransactionType!
+  createdAt: String!
+  to: User!
+  from: User
+}
+
+enum ExperienceTransactionType {
+  """无条件铸造"""
+  MINT
+
+  """无条件烧毁"""
+  BURN
+
+  """每日登录的奖励"""
+  DAILY_CHECK_IN
+}
+
+type ExperiencesConnection {
+  edges: [ExperienceEdge!]!
+  pageInfo: ExperiencePageInfo!
+  totalCount: Int!
+}
+
+type ExperienceEdge {
+  node: Experience
+  cursor: String
+}
+
+type ExperiencePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type Hashtag {
   id: String!
   createdAt: String!
@@ -2473,8 +2511,8 @@ enum NLP_SENTIMENT {
 }
 
 type KeywordsExtractionResult {
-  score: Float!
-  word: String!
+  score: Float
+  word: String
 }
 
 type TextClassificationResult {
@@ -2566,44 +2604,6 @@ type AvatarImageUploadCredentialInfo {
   bucket: String!
   region: String!
   key: String!
-}
-
-type Experience {
-  id: String!
-  points: Int!
-  transactionType: ExperienceTransactionType!
-  createdAt: String!
-  to: User!
-  from: User
-}
-
-enum ExperienceTransactionType {
-  """无条件铸造"""
-  MINT
-
-  """无条件烧毁"""
-  BURN
-
-  """每日登录的奖励"""
-  DAILY_CHECK_IN
-}
-
-type ExperiencesConnection {
-  edges: [ExperienceEdge!]!
-  pageInfo: ExperiencePageInfo!
-  totalCount: Int!
-}
-
-type ExperienceEdge {
-  node: Experience
-  cursor: String
-}
-
-type ExperiencePageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
 }
 
 type View {
@@ -4120,7 +4120,7 @@ input AuthenticationInfo {
   name: String!
 
   """学号"""
-  studentId: Float!
+  studentId: Int!
 
   """学院的id的数组"""
   institutes: [String!]!

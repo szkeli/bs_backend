@@ -7,19 +7,7 @@ import { Code2SessionErrorException, LackSomeOfPropsException, UnknownPropsExcep
 import { Lesson, LessonItem } from './lessons/models/lessons.model'
 import { IImage, Nullable } from './posts/models/post.model'
 import { TASK_TYPE } from './tasks/models/tasks.model'
-import { AuthenticationInfo, CODE2SESSION_GRANT_TYPE, UpdateUserArgs, User, UserWithFacets, UserWithPrivateProps } from './user/models/user.model'
-
-export async function exec<T, U> (l: string, bindings: object, aliases?: object) {
-  return await axios.post<T>('http://w3.onism.cc:8084/gremlin', {
-    gremlin: l,
-    bindings,
-    language: 'gremlin-groovy',
-    aliases: aliases || {
-      graph: 'hugegraph',
-      g: 'hugegraph'
-    }
-  }).then<U>(data => data.data as unknown as U)
-}
+import { AuthenticationInfo, CODE2SESSION_GRANT_TYPE, UpdateUserArgs, UserWithFacets } from './user/models/user.model'
 
 export function sha1 (content: string) {
   const h = crypto.createHash('sha1')
@@ -116,21 +104,6 @@ export const UpdateUserArgs2User = function <T>(updateUserArgs: UpdateUserArgs) 
   return Object.fromEntries(map.entries()) as unknown as T
 }
 
-export const RawUser2UserWithPrivateProps = function (user: User): UserWithPrivateProps {
-  const map = new Map(Object.entries(user))
-
-  const upper = (v: string) => v.slice(0, 1).toUpperCase() + v.slice(1)
-  for (const [key, value] of map.entries()) {
-    const lv = key.split('|')
-    if (typeof value === 'boolean' && lv.length === 2) {
-      map.delete(key)
-      map.set(`is${upper(lv[0])}${upper(lv[1])}`, value)
-    }
-  }
-
-  return Object.fromEntries(map.entries()) as unknown as UserWithPrivateProps
-}
-
 export const atob = function (content?: string | null): string | null {
   if (!content) return null
   return Buffer.from(content, 'utf-8').toString('base64')
@@ -141,7 +114,7 @@ export const btoa = function (content?: string | null): string | null {
   return Buffer.from(content, 'base64').toString('utf-8')
 }
 
-export const edgify = function <T>(vs: Array<T & {'createdAt': string}>): Array<{node: T, cursor: string}> {
+export const edgify = function <T>(vs: Array<T & {'createdAt': string}>): Array<{node: T, cursor: string | null}> {
   return vs.map(v => ({ node: v, cursor: atob(v.createdAt) }))
 }
 export const edgifyByCreatedAt = function <T extends {createdAt: string}>(vs: T[]) {
@@ -151,19 +124,19 @@ export const edgifyByCreatedAt = function <T extends {createdAt: string}>(vs: T[
 export const edgifyByXid = function <T>(vs: Array<T & {'id': string}>) {
   return vs.map(v => ({ node: v, cursor: v.id }))
 }
-export const edgifyByKey = function <T>(vs: T[], key: string): Array<{node: T, cursor: string}> {
+export const edgifyByKey = function <T>(vs: T[], key: string): Array<{node: T, cursor: string | null}> {
   return vs.map(v => ({ node: v, cursor: getCurosrByScoreAndId((v as any).id, v[key]) }))
 }
 
-export const getCurosrByScoreAndId = function (id: string, score: number): string {
+export const getCurosrByScoreAndId = function (id: string | null, score: number | null): string | null {
   if (score === null || score === undefined) return null
   return atob(JSON.stringify({ id, score: score.toString() }))
 }
 
-export const handleRelayForwardAfter = function (after: string) {
+export const handleRelayForwardAfter = function (after: string | null) {
   return btoa(after)
 }
-export const handleRelayBackwardBefore = function (before: string) {
+export const handleRelayBackwardBefore = function (before: string | null) {
   return btoa(before)
 }
 
@@ -176,7 +149,7 @@ export interface RelayfyArrayParam <T extends {createdAt: string}> {
   after: string | null
 }
 
-export interface RelayfyArrayParamByScore <T extends {score?: number, id: string}> {
+export interface RelayfyArrayParamByScore <T extends {score: number | null, id: string}> {
   totalCount: Array<{count: number}>
   objs: T[]
   startO: Array<{score?: number, id: string}>
@@ -185,7 +158,7 @@ export interface RelayfyArrayParamByScore <T extends {score?: number, id: string
   after: string | null
 }
 
-export const relayfyArrayForwardByScore = function<T extends {score?: number, id: string}> (props: RelayfyArrayParamByScore<T>) {
+export const relayfyArrayForwardByScore = function<T extends {score: number | null, id: string}> (props: RelayfyArrayParamByScore<T>) {
   const { totalCount, objs, startO, endO, first, after } = props
 
   const _lastO = objs?.slice(-1)[0]
@@ -200,8 +173,8 @@ export const relayfyArrayForwardByScore = function<T extends {score?: number, id
   return {
     totalCount: _totalCount,
     pageInfo: {
-      startCursor: getCurosrByScoreAndId(objs[0]?.id, objs[0]?.score),
-      endCursor: getCurosrByScoreAndId(_lastO?.id, _lastO?.score),
+      startCursor: getCurosrByScoreAndId(objs[0]?.id as unknown as any, objs[0]?.score as unknown as any),
+      endCursor: getCurosrByScoreAndId(_lastO?.id as unknown as any, _lastO?.score as unknown as any),
       hasNextPage: hasNextPage && v,
       hasPreviousPage: hasPreviousPage && v
     },
@@ -232,14 +205,18 @@ export const relayfyArrayForward = function<T extends {createdAt: string}> (prop
   }
 }
 
-export const ids2String = function (ids: string[]) {
+export const ids2String = function (ids: string[] | undefined | null) {
   ids = Array.from(new Set(ids))
   ids?.map(id => `"${id}"`)
   return ids?.toString()
 }
 
 export const getAuthenticationInfo = function (token: string): AuthenticationInfo {
-  const tokenRes = verify(token, process.env.USER_AUTHEN_JWT_SECRET) as AuthenticationInfo
+  const userAuthenJwtSecret = process.env.USER_AUTHEN_JWT_SECRET
+  if (!userAuthenJwtSecret) {
+    throw new ForbiddenException('env.USER_AUTHEN_JWT_SECRET 未提供')
+  }
+  const tokenRes = verify(token, userAuthenJwtSecret) as unknown as AuthenticationInfo
 
   const require = [
     'avatarImageUrl',
@@ -320,7 +297,7 @@ export type LessonNotificationTemplateItem = Array<LessonItem & { lesson: Lesson
 
 export const getLessonNotificationTemplate = (openId: string, items: LessonNotificationTemplateItem, taskType: TASK_TYPE) => {
   const a = taskType === TASK_TYPE.GM ? '今天' : '明天'
-  const b = process.env.BACKEND.includes('dev') ? '测试: ' : ''
+  const b = process.env.BACKEND?.includes('dev') ? '测试: ' : ''
 
   return {
     touser: openId,

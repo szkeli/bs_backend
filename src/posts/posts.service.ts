@@ -5,7 +5,7 @@ import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
-import { ParseCursorFailedException, PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
+import { ParseCursorFailedException, PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, SystemErrorException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
@@ -13,9 +13,9 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
 import { Subject } from '../subject/model/subject.model'
-import { atob, btoa, DeletePrivateValue, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, now, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
+import { atob, btoa, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, now, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
 import { University } from '../universities/models/universities.models'
-import { PagingConfigArgs, User, UserWithFacets } from '../user/models/user.model'
+import { PagingConfigArgs, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
@@ -123,7 +123,7 @@ export class PostsService {
     throw new Error('Method not implemented.')
   }
 
-  async foldedCommentsWithRelayForward (postId: string, first: number, after: string) {
+  async foldedCommentsWithRelayForward (postId: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($postId: string, $after: string) {
@@ -305,7 +305,7 @@ export class PostsService {
     }
   }
 
-  async trendingPostsWithRelayForward (first: number, after: string, { universityId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
+  async trendingPostsWithRelayForward (first: number, after: string | null, { universityId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
     const q1 = 'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
     const university = universityId
       ? `
@@ -403,7 +403,7 @@ export class PostsService {
       try {
         after = JSON.parse(after).score
       } catch {
-        throw new ParseCursorFailedException(after)
+        throw new ParseCursorFailedException(after ?? '')
       }
     }
     if (first) {
@@ -566,8 +566,11 @@ export class PostsService {
       throw new UserNotFoundException(id)
     }
 
+    const _id = uids.get('post')
+    if (!_id) throw new SystemErrorException()
+
     return {
-      id: uids.get('post'),
+      id: _id,
       content,
       createdAt: now()
     }
@@ -802,7 +805,7 @@ export class PostsService {
     before = handleRelayBackwardBefore(before)
 
     // TODO first 具有默认值，需要另外的判断逻辑
-    if ((before && after) || (first && last)) {
+    if ((before && after) ?? (first && last)) {
       throw new ForbiddenException('同一时间只能使用after作为向后分页、before作为向前分页的游标')
     }
     // TODO: fix: !first !last 对 last===0也生效
@@ -819,7 +822,7 @@ export class PostsService {
         try {
           after = JSON.parse(after).score
         } catch {
-          throw new ForbiddenException(`游标 ${after} 解析失败`)
+          throw new ForbiddenException(`游标 ${after ?? ''} 解析失败`)
         }
       }
       return await this.trendingPostsWithRelayForward(first, after, filter)
@@ -869,9 +872,9 @@ export class PostsService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{post: Array<Nullable<{creator: Nullable<UserWithFacets>}>>}>({ query, vars: { $postId: id } })
+    const res = await this.dbService.commitQuery<{post: Array<{creator: UserWithFacets}>}>({ query, vars: { $postId: id } })
     const creator = res.post[0]?.creator
-    return DeletePrivateValue<User>(creator)
+    return creator
   }
 
   async votes (viewerId: string, id: string, { first, after, orderBy }: RelayPagingConfigArgs): Promise<VotesConnectionWithRelay> {
@@ -887,7 +890,7 @@ export class PostsService {
     throw new Error('Method not implemented.')
   }
 
-  async votesWithRelayForward (id: string, first: number, after: string): Promise<VotesConnectionWithRelay> {
+  async votesWithRelayForward (id: string, first: number, after: string | null): Promise<VotesConnectionWithRelay> {
     const q1 = 'var(func: uid(votes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -931,7 +934,7 @@ export class PostsService {
     }
   }
 
-  async votesWithViewerIdWithRelayForward (viewerId: string, id: string, first: number, after: string): Promise<VotesConnectionWithRelay> {
+  async votesWithViewerIdWithRelayForward (viewerId: string, id: string, first: number, after: string | null): Promise<VotesConnectionWithRelay> {
     const q1 = 'var(func: uid(votes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $viewerId: string, $after: string) {
@@ -1044,7 +1047,7 @@ export class PostsService {
       v: Array<{votes?: Vote[]}>
     }
     const u: VotesConnection = {
-      nodes: res.v[0]?.votes || [],
+      nodes: res.v[0]?.votes ?? [],
       totalCount: res.q[0].totalCount,
       viewerHasUpvoted: res.q[0].v !== undefined,
       viewerCanUpvote: res.q[0].v === undefined

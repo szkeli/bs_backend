@@ -99,5 +99,5 @@ export interface CommitQueryWithVarsProps {
 }
 
 export interface Vars {
-  [key: string]: string
+  [key: string]: string | undefined | null
 }

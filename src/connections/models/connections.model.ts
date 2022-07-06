@@ -23,13 +23,13 @@ export class ValueRef {
 }
 
 interface IEdgeType<T> {
-  cursor: string
+  cursor: string | null
   node: T
 }
 
 interface IPageInfoType {
-  startCursor: string
-  endCursor: string
+  startCursor: string | null
+  endCursor: string | null
   hasPreviousPage: boolean
   hasNextPage: boolean
 }
@@ -44,10 +44,10 @@ export function Connection<GraphQLObject> (Ref: Type<GraphQLObject> | ValueRef) 
   @ObjectType(`${Ref.name}PageInfo`, { isAbstract: true })
   abstract class PageInfo implements RelayPageInfo {
     @Field(of => String, { nullable: true })
-      startCursor: string
+      startCursor: string | null
 
     @Field(of => String, { nullable: true })
-      endCursor: string
+      endCursor: string | null
 
     @Field(of => Boolean, { nullable: false })
       hasPreviousPage: boolean
@@ -83,17 +83,17 @@ export function Connection<GraphQLObject> (Ref: Type<GraphQLObject> | ValueRef) 
 @ArgsType()
 export class RelayPagingConfigArgs {
   @Field(of => Int, { description: '最新的n个对象', nullable: true, defaultValue: 10 })
-    first?: number
+    first: number | null
 
   @Field(of => String, { description: '向前分页游标', nullable: true })
-    after?: string
+    after: string | null
 
   @Field(of => Int, { description: '最早的n个对象', nullable: true })
-    last?: number
+    last: number | null
 
   @Field(of => String, { description: '向后分页游标', nullable: true })
-    before?: string
+    before: string | null
 
   @Field(of => ORDER_BY, { description: '排序方式', nullable: true, defaultValue: ORDER_BY.CREATED_AT_DESC })
-    orderBy?: ORDER_BY
+    orderBy: ORDER_BY | null
 }

@@ -6,7 +6,7 @@ import { DbService } from 'src/db/db.service'
 import { Anonymous } from '../anonymous/models/anonymous.model'
 import {
   CannotCommentUser, CommentNotFoundException, ParseCursorFailedException,
-  PostNotFoundException, SystemAdminNotFoundException, UserNotFoundException
+  PostNotFoundException, SystemAdminNotFoundException, SystemErrorException, UserNotFoundException
 } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
@@ -265,12 +265,15 @@ export class CommentService {
       throw new CannotCommentUser()
     }
 
+    const _id = res.uids.get('comment')
+    if (!_id) throw new SystemErrorException()
+
     return {
+      id: _id,
       content,
       createdAt: now(),
-      id: res.uids.get('comment'),
       to
-    }
+    } as unknown as any
   }
 
   async addMentionOnUser (id: string, args: AddCommentArgs, toUser: string) {
@@ -420,7 +423,7 @@ export class CommentService {
     })
   }
 
-  async trendingCommentsWithRelay (id: string, first: number, after: string): Promise<CommentsConnectionWithRelay> {
+  async trendingCommentsWithRelay (id: string, first: number, after: string | null): Promise<CommentsConnectionWithRelay> {
     const q1 = 'var(func: uid(comments), orderdesc: val(score), after: $after) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -474,7 +477,7 @@ export class CommentService {
         try {
           after = JSON.parse(after).id
         } catch {
-          throw new ParseCursorFailedException(after)
+          throw new ParseCursorFailedException(after ?? '')
         }
       }
 
@@ -932,12 +935,15 @@ export class CommentService {
       throw new CommentNotFoundException(commentId)
     }
 
+    const _id = res.uids.get('comment')
+    if (!_id) throw new SystemErrorException()
+
     return {
       content,
       createdAt: _now,
-      id: res.uids.get('comment'),
+      id: _id,
       to: commentId
-    }
+    } as unknown as any
   }
 
   async addCommentOnPost (creator: string, { content, to: postId, isAnonymous, images }: AddCommentArgs): Promise<CommentWithTo> {
@@ -1112,12 +1118,15 @@ export class CommentService {
       throw new PostNotFoundException(postId)
     }
 
+    const _id = res.uids.get('comment')
+    if (!_id) throw new SystemErrorException()
+
     return {
       content,
       createdAt: _now,
-      id: res.uids.get('comment'),
+      id: _id,
       to: postId
-    }
+    } as unknown as any
   }
 
   async comment (id: CommentId) {

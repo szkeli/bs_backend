@@ -1,6 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { Admin } from '../admin/models/admin.model'
+import { SystemErrorException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
@@ -106,7 +107,7 @@ export class DeletesService {
     throw new Error('Method not implemented.')
   }
 
-  async deletesWithRelayForward (first: number, after: string): Promise<DeletesConnection> {
+  async deletesWithRelayForward (first: number, after: string | null): Promise<DeletesConnection> {
     const q1 = 'var(func: uid(deletes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {
@@ -206,9 +207,13 @@ export class DeletesService {
     if (res.json.u.length !== 1) {
       throw new ForbiddenException(`评论 ${commentId} 不存在`)
     }
+
+    const _id = res.uids.get('delete')
+
+    if (!_id) throw new SystemErrorException()
     return {
       createdAt: _now,
-      id: res.uids.get('delete')
+      id: _id
     }
   }
 
@@ -277,9 +282,12 @@ export class DeletesService {
     if (res.json.u.length !== 1) {
       throw new ForbiddenException(`帖子 ${postId} 不存在`)
     }
+    const _id = res.uids.get('delete')
+    if (!_id) throw new SystemErrorException()
+
     return {
       createdAt: _now,
-      id: res.uids.get('delete')
+      id: _id
     }
   }
 }

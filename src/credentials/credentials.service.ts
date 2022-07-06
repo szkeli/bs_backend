@@ -51,7 +51,7 @@ export class CredentialsService {
     throw new Error('Method not implemented.')
   }
 
-  async credentialsWithRelayForward (first: number, after: string): Promise<ICredentialsConnection> {
+  async credentialsWithRelayForward (first: number, after: string | null): Promise<ICredentialsConnection> {
     const q1 = 'var(func: uid(credentials), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {

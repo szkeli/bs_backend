@@ -66,7 +66,7 @@ export class SubjectResolver {
   @CheckPolicies(new MustWithCredentialPolicyHandler())
   async updateSubject (@CurrentUser() user: User, @Args() args: UpdateSubjectArgs) {
     const subjectId = args.id
-    delete args.id
+    delete (args as unknown as any).id
     return await this.subjectService.updateSubject(user.id, subjectId, args)
   }
 

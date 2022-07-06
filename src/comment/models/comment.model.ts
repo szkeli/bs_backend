@@ -23,7 +23,7 @@ export class Comment {
     createdAt: string
 
   @Field(of => Number, { nullable: true })
-    score?: number | null
+    score: number | null
 }
 
 @ObjectType()

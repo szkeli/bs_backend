@@ -55,7 +55,7 @@ export class RolesService {
     throw new Error('Method not implemented.')
   }
 
-  async usersWithRelayForward (id: string, first: number, after: string) {
+  async usersWithRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -103,7 +103,7 @@ export class RolesService {
     throw new Error('Method not implemented.')
   }
 
-  async rolesWithRelayForward (first: number, after: string) {
+  async rolesWithRelayForward (first: number, after: string | null) {
     const q1 = 'var(func: uid(roles), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 
-import { UniversityAlreadyExsistException, UniversityNotFoundException } from '../app.exception'
+import { SystemErrorException, UniversityAlreadyExsistException, UniversityNotFoundException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { Institute } from '../institutes/models/institutes.model'
@@ -172,7 +172,7 @@ export class UniversitiesService {
     throw new Error('Method not implemented.')
   }
 
-  async postsRelayForward (id: string, first: number, after: string) {
+  async postsRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($id: string, $after: string) {
@@ -209,7 +209,7 @@ export class UniversitiesService {
     throw new Error('Method not implemented.')
   }
 
-  async subjectsRelayForward (id: string, first: number, after: string) {
+  async subjectsRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(subjects), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($id: string, $after: string) {
@@ -246,7 +246,7 @@ export class UniversitiesService {
     throw new Error('Method not implemented.')
   }
 
-  async usersRelayForward (id: string, first: number, after: string) {
+  async usersRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($id: string, $after: string) {
@@ -283,7 +283,7 @@ export class UniversitiesService {
     throw new Error('Method not implemented.')
   }
 
-  async subcampusesRelayForward (id: string, first: number, after: string) {
+  async subcampusesRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(subcampuses), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($id: string, $after: string) {
@@ -320,7 +320,7 @@ export class UniversitiesService {
     throw new Error('Method not implemented.')
   }
 
-  async institutesRelayForward (id: string, first: number, after: string) {
+  async institutesRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(institutes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($id: string, $after: string) {
@@ -377,8 +377,13 @@ export class UniversitiesService {
       throw new UniversityAlreadyExsistException(name)
     }
 
+    const id = res.uids.get('university')
+    if (!id) {
+      throw new SystemErrorException()
+    }
+
     return {
-      id: res.uids.get('university'),
+      id,
       name,
       logoUrl,
       createdAt: now()
@@ -416,7 +421,7 @@ export class UniversitiesService {
     throw new Error('Method not implemented.')
   }
 
-  async universitiesRelayForward (after: string, first: number) {
+  async universitiesRelayForward (after: string | null, first: number) {
     const q1 = 'var(func: uid(universities), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($after: string) {

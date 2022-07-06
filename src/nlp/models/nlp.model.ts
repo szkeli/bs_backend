@@ -27,11 +27,11 @@ export class SentimentAnalysisResult {
 
 @ObjectType()
 export class KeywordsExtractionResult {
-  @Field(of => Number)
-    score: number
+  @Field(of => Number, { nullable: true })
+    score: number | undefined
 
-  @Field(of => String)
-    word: string
+  @Field(of => String, { nullable: true })
+    word: string | undefined
 }
 
 @ObjectType()

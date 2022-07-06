@@ -14,10 +14,10 @@ import { CENSOR_SUGGESTION } from './models/censors.model'
 export class CensorsService {
   private readonly client: ModerationClient
   constructor () {
-    const ak = process.env.ACCESS_KEY
-    const sk = process.env.SECRET_KEY
-    const endpoint = process.env.ENDPOINT
-    const projectId = process.env.PROJECT_ID
+    const ak = process.env.ACCESS_KEY ?? ''
+    const sk = process.env.SECRET_KEY ?? ''
+    const endpoint = process.env.ENDPOINT ?? ''
+    const projectId = process.env.PROJECT_ID ?? ''
 
     const credentials = new BasicCredentials()
       .withAk(ak)
@@ -45,8 +45,8 @@ export class CensorsService {
       .then(r => r.result)
 
     return {
-      detail: res.detail ?? {},
-      suggestion: res.suggestion ?? CENSOR_SUGGESTION.PASS
+      detail: res?.detail ?? {},
+      suggestion: res?.suggestion ?? CENSOR_SUGGESTION.PASS
     }
   }
 }

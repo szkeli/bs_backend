@@ -1,5 +1,6 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
+import { SystemErrorException } from '../app.exception'
 import { Comment } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
@@ -20,7 +21,7 @@ export class PinsService {
     throw new Error('Method not implemented.')
   }
 
-  async findPinsByAdminIdWithRelayForward (adminId: string, first: number, after: string) {
+  async findPinsByAdminIdWithRelayForward (adminId: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(pins), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($adminId: string) {
@@ -131,7 +132,7 @@ export class PinsService {
     throw new Error('Method not implemented.')
   }
 
-  async pinsWithRelayForward (first: number, after: string): Promise<PinsConnection> {
+  async pinsWithRelayForward (first: number, after: string | null): Promise<PinsConnection> {
     const q1 = 'var(func: uid(pins), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {
@@ -312,8 +313,13 @@ export class PinsService {
       throw new ForbiddenException(`帖子 ${postId} 已被置顶`)
     }
 
+    const id = res.uids.get('pin')
+    if (!id) {
+      throw new SystemErrorException()
+    }
+
     return {
-      id: res.uids.get('pin'),
+      id,
       createdAt: _now
     }
   }

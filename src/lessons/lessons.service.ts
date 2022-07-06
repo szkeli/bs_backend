@@ -384,7 +384,7 @@ export class LessonsService {
     throw new Error('Method not implemented.')
   }
 
-  async deadlinesRelayForward (id: string, first: number, after: string) {
+  async deadlinesRelayForward (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(deadlines), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
@@ -436,7 +436,7 @@ export class LessonsService {
     throw new Error('Method not implemented.')
   }
 
-  async lessonsRelayForward (first: number, after: string) {
+  async lessonsRelayForward (first: number, after: string | null) {
     const q1 = 'var(func: uid(lessons), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($after: string) {
@@ -688,7 +688,7 @@ export class LessonsService {
 
     return {
       openId: '',
-      granType: CODE2SESSION_GRANT_TYPE.UNKNOWN
+      grantType: CODE2SESSION_GRANT_TYPE.UNKNOWN
     }
   }
 

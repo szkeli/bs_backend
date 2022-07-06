@@ -5,7 +5,7 @@ import dgraph, { Mutation, Request } from 'dgraph-js'
 import { AuthenticationInfo, CheckUserResult, CODE2SESSION_GRANT_TYPE, LoginResult, User } from 'src/user/models/user.model'
 
 import { AdminService } from '../admin/admin.service'
-import { AdminNotFoundException, InstituteNotAllExistException, InstitutesOrSubCampusesNotAllInTheUniversityException, RolesNotAllExistException, SubCampusNotAllExistException, SystemAdminNotFoundException, UnionIdBeNullException, UniversityNotAllExistException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
+import { AdminNotFoundException, InstituteNotAllExistException, InstitutesOrSubCampusesNotAllInTheUniversityException, RolesNotAllExistException, SubCampusNotAllExistException, SystemAdminNotFoundException, SystemErrorException, UnionIdBeNullException, UniversityNotAllExistException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
@@ -65,7 +65,7 @@ export class AuthService {
     throw new Error('Method not implemented.')
   }
 
-  async rolesWithRelayForword (id: string, first: number, after: string) {
+  async rolesWithRelayForword (id: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(roles), orderdesc: createdAt) @filter(lt(creaedtAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: after) {
@@ -302,9 +302,14 @@ export class AuthService {
       throw new ForbiddenException(`授权者 ${i} 未认证`)
     }
 
+    const id = res.uids.get('credential')
+    if (!id) {
+      throw new SystemErrorException()
+    }
+
     return {
-      createdAt: now,
-      id: res.uids.get('credential')
+      id,
+      createdAt: now
     }
   }
 
@@ -383,7 +388,7 @@ export class AuthService {
   }
 
   async addCredentialToUserTxn (id: string, txn: dgraph.Txn, adminId?: string) {
-    const q1 = `a(func: uid(${adminId})) @filter(type(Admin)) { a as uid }`
+    const q1 = `a(func: uid(${adminId ?? ''})) @filter(type(Admin)) { a as uid }`
     const q2 = 'a(func: eq(userId, "system")) @filter(type(Admin)) { a as uid }'
     const query = `
       query v($userId: string) {
@@ -432,7 +437,7 @@ export class AuthService {
     }
 
     if (json.a.length !== 1) {
-      throw new AdminNotFoundException(adminId)
+      throw new AdminNotFoundException(adminId ?? '')
     }
     if (json.u.length !== 1) {
       throw new UserNotFoundException(id)
@@ -667,7 +672,7 @@ export class AuthService {
     }
 
     if (json.roles.length !== len) {
-      throw new RolesNotAllExistException(roles)
+      throw new RolesNotAllExistException(roles ?? [])
     }
   }
 
@@ -731,9 +736,9 @@ export class AuthService {
     `
 
     delete info.roles
-    delete info.universities
-    delete info.institutes
-    delete info.subCampuses
+    delete (info as any).universities
+    delete (info as any).institutes
+    delete (info as any).subCampuses
 
     const condition = `@if( eq(len(v), 1) and eq(len(u), 0) and eq(len(i), 0) and eq(len(x), ${roleIdsLen}) )`
     const mutation = {
@@ -798,7 +803,7 @@ export class AuthService {
       throw new UserHadSubmitAuthenInfoException(id)
     }
     if (res.json.x.length !== roleIdsLen) {
-      throw new RolesNotAllExistException(roleIds)
+      throw new RolesNotAllExistException(roleIds ?? [])
     }
     if (res.json.i.length !== 0) {
       throw new UserHadAuthenedException(id)
@@ -853,7 +858,7 @@ export class AuthService {
     throw new Error('Method not implemented.')
   }
 
-  async userAuthenInfosRelayForward (first: number, after: string) {
+  async userAuthenInfosRelayForward (first: number, after: string | null) {
     const q1 = 'var(func: uid(infos), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid } '
     const query = `
       query v($after: string) {
@@ -894,7 +899,7 @@ export class AuthService {
     })
   }
 
-  async login (userId: string, id: string, sign: string): Promise<LoginResult> {
+  async login (userId: string | undefined | null, id: string | undefined | null, sign: string): Promise<LoginResult> {
     const user = await this.checkUserPasswordAndGetUser(userId, id, sign)
     const payload: Payload = { id: user.id, roles: user.roles }
     return {
@@ -903,7 +908,7 @@ export class AuthService {
     }
   }
 
-  async checkUserPasswordAndGetUser (userId: string, id: string, sign: string) {
+  async checkUserPasswordAndGetUser (userId: string | undefined | null, id: string | undefined | null, sign: string) {
     if (userId && userId.length <= 2) {
       throw new ForbiddenException('userId 不能少于3个字符')
     }
