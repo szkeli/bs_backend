@@ -15,7 +15,7 @@ import { ConversationsConnection } from '../conversations/models/conversations.m
 import { ICredential } from '../credentials/models/credentials.model'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { ExperiencesConnection } from '../experiences/models/experiences.model'
-import { InstitutesConnection } from '../institutes/models/institutes.model'
+import { Institute } from '../institutes/models/institutes.model'
 import { LessonsService } from '../lessons/lessons.service'
 import { FilterLessonArgs, LessonNotificationSettings, LessonsConnection } from '../lessons/models/lessons.model'
 import { WithinArgs } from '../node/models/node.model'
@@ -215,9 +215,9 @@ export class UserResolver {
     return await this.userService.university(currentUser, user.id)
   }
 
-  @ResolveField(of => InstitutesConnection, { nullable: true, description: '当前用户所属的学院' })
-  async institutes (@CurrentUser() currentUser: User, @Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.institutes(currentUser, user.id, args)
+  @ResolveField(of => [Institute], { nullable: true, description: '当前用户所属的学院' })
+  async institutes (@CurrentUser() currentUser: User, @Parent() user: User) {
+    return await this.userService.institutes(currentUser, user.id)
   }
 
   @ResolveField(of => [SubCampus], { nullable: true, description: '当前用户所属的校区' })
