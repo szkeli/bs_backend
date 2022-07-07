@@ -2504,18 +2504,6 @@ type ImagesUploadCredentialInfo {
   keys: [String!]!
 }
 
-type AvatarImageUploadCredentialInfo {
-  startTime: Int!
-  expiredTime: Int!
-  expiration: String!
-  sessionToken: String!
-  tmpSecretId: String!
-  tmpSecretKey: String!
-  bucket: String!
-  region: String!
-  key: String!
-}
-
 type View {
   id: String!
   createdAt: String!
@@ -2986,20 +2974,12 @@ type Query {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): DeletesConnection!
 
-  """用户上传头像时，先根据文件名获取临时上传凭证信息"""
-  getAvatarImageUploadCredentialInfo(fileName: String!): AvatarImageUploadCredentialInfo!
-
-  """用户上传帖子图片时，先根据文件名获取临时上传凭证信息"""
-  getPostImagesUploadCredentialInfo(fileNames: [String!]!): ImagesUploadCredentialInfo!
-
-  """用户上传评论图片时，先根据文件名获取临时上传凭证信息"""
-  getCommentImagesUploadCredentialInfo(fileNames: [String!]!): ImagesUploadCredentialInfo!
-
-  """用户创建主题时，先根据文件名获取临时上传凭证"""
-  getSubjectImagesUploadCredentialInfo(fileNames: [String!]!): ImagesUploadCredentialInfo!
-
-  """用户上传验证图片时，先过根据文件名获取临时上传凭证信息"""
-  getAuthenUserImagesUploadCredentialInfo(fileNames: [String!]!): ImagesUploadCredentialInfo!
+  """上传图片到 COS 前，必须通过相应的接口获取上传凭证"""
+  getImagesUploadCredentialInfo(
+    """获取的凭证类型"""
+    grantType: FILEUPLOAD_GRANT_TYPE!
+    fileNames: [String!]!
+  ): ImagesUploadCredentialInfo!
 
   """以id获取权限"""
   privilege(id: String!): Privilege!
@@ -3381,6 +3361,23 @@ enum SEARCHTYPE {
 
   """校区"""
   SUBCAMPUS
+}
+
+enum FILEUPLOAD_GRANT_TYPE {
+  """请求将图片上传到帖子相关文件夹下的凭证"""
+  POST_IMAGES
+
+  """请求将图片上传到评论相关文件夹下的凭证"""
+  COMMENT_IMAGES
+
+  """请求将图片上传到主题相关文件夹下的凭证"""
+  SUBJECT_IMAGES
+
+  """请求将图片上传到认证信息相关文件夹下的凭证"""
+  AUTHENUSERINFO_IMAEGS
+
+  """请求将图片上传到头像相关文件夹下的凭证"""
+  AVATAR_IMAGES
 }
 
 """登录类型"""

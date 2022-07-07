@@ -282,7 +282,7 @@ export class ParseCursorFailedException extends HttpException {
 }
 
 export class SystemErrorException extends HttpException {
-  constructor () {
-    super('系统错误', HttpStatus.FORBIDDEN)
+  constructor (m?: string) {
+    super(`SystemError: ${m ?? '未知错误'}`, HttpStatus.FORBIDDEN)
   }
 }
