@@ -138,12 +138,10 @@ export class UserService {
 
     const condition = '@if( eq(len(u), 1) and eq(len(settings), 1) )'
     const mutation = {
-      uid: 'uid(u)',
-      privateSettings: {
-        'dgraph.type': 'PrivateSettings',
-        ...args
-      }
+      uid: 'uid(settings)',
+      ...args
     }
+
     const createCond = '@if( eq(len(u), 1) and eq(len(settings), 0) )'
     const createMut = {
       uid: 'uid(u)',
@@ -173,7 +171,10 @@ export class UserService {
     if (res.json.settings.length === 0) {
       return temp
     }
-    return res.json.settings[0]
+
+    const _res = res.json.settings[0]
+    Object.assign(_res, args)
+    return _res
   }
 
   /**
