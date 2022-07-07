@@ -25,7 +25,7 @@ import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { RolesConnection } from '../roles/models/roles.model'
-import { SubCampusesConnection } from '../subcampus/models/subcampus.model'
+import { SubCampus } from '../subcampus/models/subcampus.model'
 import { University } from '../universities/models/universities.models'
 import { VotesConnection, VotesConnectionWithRelay, VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
 import { VotesService } from '../votes/votes.service'
@@ -220,9 +220,9 @@ export class UserResolver {
     return await this.userService.institutes(currentUser, user.id, args)
   }
 
-  @ResolveField(of => SubCampusesConnection, { nullable: true, description: '当前用户所属的校区' })
-  async subCampuses (@CurrentUser() currentUser: User, @Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.subCampuses(currentUser, user.id, args)
+  @ResolveField(of => [SubCampus], { nullable: true, description: '当前用户所属的校区' })
+  async subCampuses (@CurrentUser() currentUser: User, @Parent() user: User) {
+    return await this.userService.subCampuses(currentUser, user.id)
   }
 
   @Query(of => NotificationsConnection, { description: '测试接口，某用户的所有回复通知，非当前用户获取到null', nullable: true })

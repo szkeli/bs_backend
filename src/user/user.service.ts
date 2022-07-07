@@ -253,16 +253,13 @@ export class UserService {
     })
   }
 
-  async subCampuses (currentUser: User, id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
-    after = handleRelayForwardAfter(after)
-    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.subCampusesRelayForward(currentUser, id, first, after)
-    }
-    throw new Error('Method not implemented.')
-  }
-
-  async subCampusesRelayForward (currentUser: User, id: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(subCampuses)) @filter(lt(createdAt, $after)) { q as uid }'
+  /**
+   * 返回指定 User 的 subCampuses
+   * @param currentUser 发起请求的 User; 对于匿名 User currentUser == null
+   * @param id 被获取 subCampuses 的 User
+   * @returns {Promise<SubCampus[]>}
+   */
+  async subCampuses (currentUser: User, id: string): Promise<SubCampus[] | null> {
     const query = `
       query v($id: string) {
         var(func: uid($id)) @filter(type(User)) {
@@ -273,17 +270,16 @@ export class UserService {
           id: uid
           expand(_all_)
         }
-        ${after ? q1 : ''}
-        totalCount(func: uid(subCampuses)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'subCampuses'}), orderdesc: createdAt, first: ${first}) {
+        subCampuses(func: uid(subCampuses)) {
           id: uid
           expand(_all_)
         }
-        startO(func: uid(subCampuses), first: -1) { createdAt }
-        endO(func: uid(subCampuses), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<{settings: PrivateSettings[]} & RelayfyArrayParam<SubCampus>>({
+    const res = await this.dbService.commitQuery<{
+      settings: PrivateSettings[]
+      subCampuses: SubCampus[]
+    }>({
       query,
       vars: { $id: id }
     })
@@ -292,11 +288,7 @@ export class UserService {
       return null
     }
 
-    return relayfyArrayForward({
-      ...res,
-      first,
-      after
-    })
+    return res.subCampuses
   }
 
   async institutes (currentUser: User, id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
