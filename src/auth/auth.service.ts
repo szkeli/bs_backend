@@ -383,7 +383,7 @@ export class AuthService {
   }
 
   async addCredentialToUserTxn (id: string, txn: dgraph.Txn, adminId?: string) {
-    const q1 = `a(func: uid(${adminId})) @filter(type(Admin)) { a as uid }`
+    const q1 = `a(func: uid(${adminId ?? ''})) @filter(type(Admin)) { a as uid }`
     const q2 = 'a(func: eq(userId, "system")) @filter(type(Admin)) { a as uid }'
     const query = `
       query v($userId: string) {

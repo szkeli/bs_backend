@@ -39,9 +39,9 @@ export interface CommitMutationProps {
 }
 
 export interface CommitMutationsType {
-  del: object
-  set: object
-  cond: string | null
+  del?: object | null
+  set?: object | null
+  cond?: string | null
 }
 
 export interface CommitProps {
