@@ -1,19 +1,19 @@
-import { ForbiddenException, Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common'
 import dgraph, { DgraphClient, Mutation, Request } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
-import { ParseCursorFailedException, PostNotFoundException, SubjectNotFoundException, SystemAdminNotFoundException, SystemErrorException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
+import { ParseCursorFailedException, PostNotFoundException, RelayPagingConfigErrorException, SubjectNotFoundException, SubjectNotInTheUniversityException, SystemAdminNotFoundException, SystemErrorException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
 import { Comment, CommentsConnection } from '../comment/models/comment.model'
-import { ORDER_BY } from '../connections/models/connections.model'
+import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
 import { Subject } from '../subject/model/subject.model'
-import { atob, btoa, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, now, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
+import { atob, btoa, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, NotNull, now, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { PagingConfigArgs, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
@@ -24,8 +24,7 @@ import {
   Post,
   PostsConnection,
   PostsConnectionWithRelay,
-  QueryPostsFilter,
-  RelayPagingConfigArgs
+  QueryPostsFilter
 } from './models/post.model'
 
 @Injectable()
@@ -305,22 +304,51 @@ export class PostsService {
     }
   }
 
-  async trendingPostsWithRelayForward (first: number, after: string | null, { universityId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
+  async trendingPostsWithRelayForward (first: number, after: string | null, { universityId, subjectId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
     const q1 = 'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
-    const university = universityId
-      ? `
-      var(func: uid($universityId)) @filter(type(University)) {
-        pre as posts(orderdesc: createdAt) @filter(type(Post) and has(createdAt))
+
+    // 没有提供 UniversityId 也没有提供 SubjectId
+    const a = `
+      var(func: type(Post), orderdesc: createdAt) { 
+        temp as uid
       }
     `
-      : `
-      var(func: type(Post)) @filter(has(createdAt)) {
-        pre as uid
+    // 提供了 UniversityId 但没有提供 SubjectId
+    const b = `
+      var(func: uid($universityId)) @filter(type(University) and not has(delete)) {
+        temp as posts(orderdesc: createdAt)
       }
     `
+    // 没有提供 UniversityId 提供了 SubjectId
+    const c = `
+      var(func: uid($subjectId)) @filter(type(Subject) and not has(delete)) {
+        temp as posts(orderdesc: createdAt)
+      }
+    `
+    // 提供了 UniversityId 和 SubjectId
+    // 该 Subject 必须在该 University 内
+    const d = `
+      var(func: uid($universityId)) @filter(type(University) and not has(delete)) {
+        subjects as subjects @filter(uid($subjectId) and type(Subject) and not has(delete))
+      }
+      subjects(func: uid(subjects)) {
+        uid
+      }
+      var(func: uid(subjects)) {
+        temp as posts(orderdesc: createdAt)
+      }
+    `
+
     const query = `
-      query v($after: string, $universityId: string) {
-        ${university}
+      query v($after: string, $universityId: string, $subjectId: string) {
+        ${!NotNull(universityId) && !NotNull(subjectId) ? a : ''}
+        ${NotNull(universityId) && !NotNull(subjectId) ? b : ''}
+        ${!NotNull(universityId) && NotNull(subjectId) ? c : ''}
+        ${NotNull(universityId) && NotNull(subjectId) ? d : ''}
+
+        var(func: uid(temp)) @filter(type(Post) and not has(delete) and not has(pin) and has(createdAt)) {
+          pre as uid
+        }
         v as var(func: uid(pre)) @filter(not has(delete) and not has(pin)) {
           vc as count(votes @filter(type(Vote)))
           votesCount as math(sqrt(vc * 2))
@@ -367,10 +395,19 @@ export class PostsService {
       posts: Array<Post & {score: number}>
       startPost: Array<{score: number}>
       endPost: Array<{score: number}>
+      subjects: Array<{uid: string}>
     }>({
       query,
-      vars: { $after: after, $universityId: universityId }
+      vars: {
+        $after: after,
+        $universityId: universityId,
+        $subjectId: subjectId
+      }
     })
+
+    if (NotNull(universityId, subjectId) && res.subjects.length === 0) {
+      throw new SubjectNotInTheUniversityException(universityId, subjectId)
+    }
 
     const totalCount = res.totalCount[0]?.count ?? 0
     const v = totalCount !== 0
@@ -694,22 +731,50 @@ export class PostsService {
     return res.post[0]
   }
 
-  async postsWithRelayForward (first: number, after: string | null, { universityId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
+  async postsWithRelayForward (first: number, after: string | null, { universityId, subjectId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
     const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    const university = universityId
-      ? `
-      var(func: uid($universityId)) @filter(type(University)) {
-        posts as posts(orderdesc: createdAt) @filter(type(Post) and not has(delete) and not has(pin) and has(createdAt))
+    // 没有提供 UniversityId 也没有提供 SubjectId
+    const a = `
+      var(func: type(Post), orderdesc: createdAt) { 
+        temp as uid
       }
     `
-      : `
-      var(func: type(Post), orderdesc: createdAt) @filter(not has(delete) and not has(pin) and has(createdAt)) { 
-        posts as uid
+    // 提供了 UniversityId 但没有提供 SubjectId
+    const b = `
+      var(func: uid($universityId)) @filter(type(University) and not has(delete)) {
+        temp as posts(orderdesc: createdAt)
       }
     `
+    // 没有提供 UniversityId 提供了 SubjectId
+    const c = `
+      var(func: uid($subjectId)) @filter(type(Subject) and not has(delete)) {
+        temp as posts(orderdesc: createdAt)
+      }
+    `
+    // 提供了 UniversityId 和 SubjectId
+    // 该 Subject 必须在该 University 内
+    const d = `
+      var(func: uid($universityId)) @filter(type(University) and not has(delete)) {
+        subjects as subjects @filter(uid($subjectId) and type(Subject) and not has(delete))
+      }
+      subjects(func: uid(subjects)) {
+        uid
+      }
+      var(func: uid(subjects)) {
+        temp as posts(orderdesc: createdAt)
+      }
+    `
+
     const query = `
-      query v($after: string, $universityId: string) {
-        ${university}
+      query v($after: string, $universityId: string, $subjectId: string) {
+        ${!NotNull(universityId) && !NotNull(subjectId) ? a : ''}
+        ${NotNull(universityId) && !NotNull(subjectId) ? b : ''}
+        ${!NotNull(universityId) && NotNull(subjectId) ? c : ''}
+        ${NotNull(universityId) && NotNull(subjectId) ? d : ''}
+
+        var(func: uid(temp)) @filter(type(Post) and not has(delete) and not has(pin) and has(createdAt)) {
+          posts as uid
+        }
         ${after ? q1 : ''}
         totalCount(func: uid(posts)) { count(uid) }
         objs(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
@@ -720,10 +785,20 @@ export class PostsService {
         endO(func: uid(posts), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<Post>>({
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Post> & {
+      subjects: Array<{uid: string}>
+    }>({
       query,
-      vars: { $after: after, $universityId: universityId }
+      vars: {
+        $after: after,
+        $universityId: universityId,
+        $subjectId: subjectId
+      }
     })
+
+    if (NotNull(universityId, subjectId) && res.subjects.length === 0) {
+      throw new SubjectNotInTheUniversityException(universityId, subjectId)
+    }
 
     return relayfyArrayForward({
       ...res,
@@ -800,17 +875,14 @@ export class PostsService {
     }
   }
 
-  async postsWithRelay ({ first, last, before, after, orderBy }: RelayPagingConfigArgs, filter: QueryPostsFilter): Promise<Nullable<PostsConnectionWithRelay>> {
+  async postsWithRelay (pagingConfig: RelayPagingConfigArgs, filter: QueryPostsFilter): Promise<Nullable<PostsConnectionWithRelay>> {
+    let { first, last, before, after, orderBy } = pagingConfig
+
     after = handleRelayForwardAfter(after)
     before = handleRelayBackwardBefore(before)
 
-    // TODO first 具有默认值，需要另外的判断逻辑
-    if ((before && after) ?? (first && last)) {
-      throw new ForbiddenException('同一时间只能使用after作为向后分页、before作为向前分页的游标')
-    }
-    // TODO: fix: !first !last 对 last===0也生效
-    if (!before && !after && !first && !last) {
-      throw new ForbiddenException('必须指定向前分页或者向后分页')
+    if (NotNull(first, last) || NotNull(before, after)) {
+      throw new RelayPagingConfigErrorException('同一时间只能使用after作为向后分页、before作为向前分页的游标')
     }
 
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
@@ -822,7 +894,7 @@ export class PostsService {
         try {
           after = JSON.parse(after).score
         } catch {
-          throw new ForbiddenException(`游标 ${after ?? ''} 解析失败`)
+          throw new ParseCursorFailedException(after ?? '')
         }
       }
       return await this.trendingPostsWithRelayForward(first, after, filter)
@@ -832,7 +904,7 @@ export class PostsService {
       return await this.postsWithRelayBackward(last, before, filter)
     }
 
-    return null
+    throw new NotImplementedException()
   }
 
   async posts (first: number, offset: number) {

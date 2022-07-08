@@ -286,3 +286,21 @@ export class SystemErrorException extends HttpException {
     super(`SystemError: ${m ?? '未知错误'}`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class NotImplementedException extends HttpException {
+  constructor () {
+    super('Method not implemented', HttpStatus.FORBIDDEN)
+  }
+}
+
+export class RelayPagingConfigErrorException extends HttpException {
+  constructor (error: string) {
+    super(`RelayPagingConfigError: ${error}`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class SubjectNotInTheUniversityException extends HttpException {
+  constructor (universityId: string | null, subjectId: string | null) {
+    super(`University ${universityId ?? 'N/A'} 不存在 ${subjectId ?? 'N/A'} Subject`, HttpStatus.FORBIDDEN)
+  }
+}

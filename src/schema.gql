@@ -2588,7 +2588,11 @@ type Query {
 
   """Relay分页版的posts接口"""
   postsWithRelay(
+    """指定 University 下的 Post"""
     universityId: String
+
+    """指定 Subject 下的 Post"""
+    subjectId: String
 
     """最新的n个对象"""
     first: Int = 10

@@ -83,8 +83,11 @@ export class RelayPagingConfigArgs {
 
 @ArgsType()
 export class QueryPostsFilter {
-  @Field(of => String, { nullable: true })
-    universityId: string
+  @Field(of => String, { nullable: true, description: '指定 University 下的 Post' })
+    universityId: string | null
+
+  @Field(of => String, { nullable: true, description: '指定 Subject 下的 Post' })
+    subjectId: string | null
 }
 
 @ObjectType()

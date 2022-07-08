@@ -80,6 +80,10 @@ export function Connection<GraphQLObject> (Ref: Type<GraphQLObject> | ValueRef) 
   return IConnection as Type<IPainatedType<GraphQLObject>>
 }
 
+/**
+ * @param first 和 after 搭配使用;
+ * @param last 和 before 搭配使用
+ */
 @ArgsType()
 export class RelayPagingConfigArgs {
   @Field(of => Int, { description: '最新的n个对象', nullable: true, defaultValue: 10 })

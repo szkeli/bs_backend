@@ -366,3 +366,19 @@ export const imagesV2fy = (images: string[]) => (
 export const imagesV2ToImages = (images: IImage[]) => (
   images?.map(i => (i.value))
 )
+
+export const NotNull = (...args: any[]) => {
+  if (args === undefined || args === null) {
+    return false
+  }
+
+  let temp = true
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] === undefined || args[i] === null) {
+      temp = false
+      break
+    }
+  }
+
+  return temp
+}
