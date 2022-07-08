@@ -97,7 +97,7 @@ export class DbService {
     const req = new Request()
     if (vars && Object.entries(vars).length !== 0) {
       const _vars = req.getVarsMap()
-      Object.entries(vars).forEach(r => _vars.set(r[0], r[1]))
+      Object.entries(vars).forEach(r => _vars.set(r[0], r?.[1] ?? ''))
     }
 
     req.setQuery(query)

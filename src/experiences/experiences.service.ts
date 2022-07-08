@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import dgraph from 'dgraph-js'
 
-import { UserAlreadyCheckInException, UserNotFoundException } from '../app.exception'
+import { SystemErrorException, UserAlreadyCheckInException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
@@ -121,8 +121,12 @@ export class ExperiencesService {
       throw new UserNotFoundException(id)
     }
 
+    const _id = res.uids.get('experience_points_transaction')
+    if (!_id) {
+      throw new SystemErrorException()
+    }
     return {
-      id: res.uids.get('experience_points_transaction'),
+      id: _id,
       points: dailCheckInPoints,
       createdAt: now(),
       transactionType: ExperienceTransactionType.DAILY_CHECK_IN
