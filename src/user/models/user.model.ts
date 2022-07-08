@@ -271,6 +271,9 @@ export class User implements Person, Node {
 
   @Field(of => Int, { description: '当前用户的经验', nullable: true })
     experiencePoints?: number | null
+
+  @Field(of => Int, { description: '当前用户的连续签到天数', nullable: true })
+    dailyCheckInSum?: number | null
 }
 
 @ObjectType()

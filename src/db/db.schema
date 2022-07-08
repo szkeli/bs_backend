@@ -107,6 +107,7 @@ week: int .
 index: int .
 points: int @index(int) .
 experiencePoints: int @index(int) .
+dailyCheckInSum: int @index(int) .
 
 positive: float .
 negative: float .
@@ -241,6 +242,8 @@ type User {
   privateSettings
   # 当前用户的经验值
   experiencePoints
+  # 当前用户连续签到的天数
+  dailyCheckInSum
 }
 
 # 帖子

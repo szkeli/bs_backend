@@ -497,6 +497,9 @@ type User implements Person & Node {
 
   """当前用户的经验"""
   experiencePoints: Int
+
+  """当前用户的连续签到天数"""
+  dailyCheckInSum: Int
 }
 
 interface Person implements Node {
@@ -1029,6 +1032,9 @@ type LoginResult implements Node & Person {
 
   """当前用户的经验"""
   experiencePoints: Int
+
+  """当前用户的连续签到天数"""
+  dailyCheckInSum: Int
 
   """token"""
   token: String!

@@ -1,5 +1,5 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
-import {
+import dgraph, {
   DgraphClient,
   DgraphClientStub,
   Mutation,
@@ -77,6 +77,37 @@ export class DbService {
       }
     } finally {
       await txn.discard()
+    }
+  }
+
+  async handleTransaction<U, V> (txn: dgraph.Txn, props: CommitMutationProps) {
+    const { mutations, query, vars } = props
+    if (mutations.length === 0) {
+      throw new ForbiddenException('变更不能为空')
+    }
+
+    const mus = mutations.map(({ del, set, cond }) => {
+      const mu = new Mutation()
+      cond && mu.setCond(cond)
+      set && mu.setSetJson(set)
+      del && mu.setDeleteJson(del)
+      return mu
+    })
+
+    const req = new Request()
+    if (vars && Object.entries(vars).length !== 0) {
+      const _vars = req.getVarsMap()
+      Object.entries(vars).forEach(r => _vars.set(r[0], r[1]))
+    }
+
+    req.setQuery(query)
+    req.setMutationsList(mus)
+
+    const res = await txn.doRequest(req)
+
+    return {
+      uids: res.getUidsMap() as unknown as U,
+      json: res.getJson() as unknown as V
     }
   }
 
