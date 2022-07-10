@@ -461,6 +461,22 @@ type User implements Person & Node {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): ExperiencesConnection!
+  favorites(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): FavoritesConnection!
 
   """学号"""
   studentId: Int
@@ -738,6 +754,22 @@ interface Person implements Node {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): ExperiencesConnection!
+  favorites(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): FavoritesConnection!
 }
 
 interface Node {
@@ -996,6 +1028,22 @@ type LoginResult implements Node & Person {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): ExperiencesConnection!
+  favorites(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): FavoritesConnection!
 
   """学号"""
   studentId: Int
@@ -2508,6 +2556,33 @@ type ImagesUploadCredentialInfo {
 
   """key"""
   keys: [String!]!
+}
+
+type Favorite {
+  id: String!
+  createdAt: String!
+  creator: User!
+  to: FavoriteToUnion!
+}
+
+union FavoriteToUnion = Post | Comment
+
+type FavoritesConnection {
+  edges: [FavoriteEdge!]!
+  pageInfo: FavoritePageInfo!
+  totalCount: Int!
+}
+
+type FavoriteEdge {
+  node: Favorite
+  cursor: String
+}
+
+type FavoritePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
 }
 
 type View {
@@ -4025,6 +4100,14 @@ type Mutation {
 
   """每日签到"""
   dailyCheckIn: Experience!
+  createFavorite(
+    """将一个 Post 添加到收藏"""
+    postId: String
+
+    """将一个 Comment 添加到收藏"""
+    commentId: String
+  ): Favorite!
+  removeFavorite(favoriteId: String!): Boolean!
 }
 
 union UpdatePasswordResultUnion = Admin | User

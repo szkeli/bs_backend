@@ -304,3 +304,21 @@ export class SubjectNotInTheUniversityException extends HttpException {
     super(`University ${universityId ?? 'N/A'} 不存在 ${subjectId ?? 'N/A'} Subject`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class AlreadyInFavoritesException extends HttpException {
+  constructor (userId: string, toId: string) {
+    super(`User ${userId} 已经收藏 ${toId}`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class UserNotHasTheFavoriteException extends HttpException {
+  constructor (userId: string, favoriteId: string) {
+    super(`User ${userId} not has the favorite ${favoriteId}`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class FavoriteNotExistException extends HttpException {
+  constructor (favoriteId: string) {
+    super(`favorite ${favoriteId} not exist`, HttpStatus.FORBIDDEN)
+  }
+}

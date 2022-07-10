@@ -1,7 +1,7 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { CheckPolicies, CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
-import { PostsConnection, PostsConnectionWithRelay, RelayPagingConfigArgs } from 'src/posts/models/post.model'
+import { PostsConnection, PostsConnectionWithRelay } from 'src/posts/models/post.model'
 import { SubjectsConnection } from 'src/subject/model/subject.model'
 import { sign as sign_calculus } from 'src/tool'
 
@@ -10,11 +10,13 @@ import { Role, UserAuthenInfo, UserWithRoles } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { CommentService } from '../comment/comment.service'
 import { CommentsConnection, CommentsConnectionWithRelay } from '../comment/models/comment.model'
+import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { ConversationsService } from '../conversations/conversations.service'
 import { ConversationsConnection } from '../conversations/models/conversations.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
 import { ExperiencesConnection } from '../experiences/models/experiences.model'
+import { FavoritesConnection } from '../favorites/models/favorite.model'
 import { Institute } from '../institutes/models/institutes.model'
 import { LessonsService } from '../lessons/lessons.service'
 import { FilterLessonArgs, LessonNotificationSettings, LessonsConnection } from '../lessons/models/lessons.model'
@@ -288,5 +290,10 @@ export class UserResolver {
   @ResolveField(of => ExperiencesConnection)
   async experiencePointTransactions (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
     return await this.userService.experiencePointTransaction(user.id, args)
+  }
+
+  @ResolveField(of => FavoritesConnection)
+  async favorites (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return this.userService.favorites(user, args)
   }
 }

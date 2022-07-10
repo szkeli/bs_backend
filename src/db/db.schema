@@ -737,3 +737,12 @@ type ExperiencePointTransaction {
   # 操作类型(mint,burn,daily check-in)
   transactionType
 }
+
+type Favorite {
+  # 创建者
+  creator
+  # 被收藏的对象
+  to
+  # 创建时间
+  createdAt
+}

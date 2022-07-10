@@ -1,4 +1,4 @@
-import { ForbiddenException, Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common'
 import { randomUUID } from 'crypto'
 import { DgraphClient } from 'dgraph-js'
 
@@ -6,18 +6,19 @@ import { DbService } from 'src/db/db.service'
 
 import { UserIdExistException, UserNotAuthenException, UserNotFoundException } from '../app.exception'
 import { UserAuthenInfo, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
-import { ORDER_BY } from '../connections/models/connections.model'
+import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { Deadline } from '../deadlines/models/deadlines.model'
 import { Experience } from '../experiences/models/experiences.model'
+import { Favorite } from '../favorites/models/favorite.model'
 import { Institute } from '../institutes/models/institutes.model'
 import { FilterLessonArgs, Lesson } from '../lessons/models/lessons.model'
-import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { Post, PostsConnection } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Role } from '../roles/models/roles.model'
 import { SubCampus } from '../subcampus/models/subcampus.model'
 import { Subject, SubjectsConnection } from '../subject/model/subject.model'
-import { atob, btoa, code2Session, edgifyByCreatedAt, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { atob, btoa, code2Session, edgifyByCreatedAt, handleRelayForwardAfter, NotNull, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
@@ -38,11 +39,44 @@ export class UserService {
     this.dgraph = dbService.getDgraphIns()
   }
 
+  async favorites (user: User, args: RelayPagingConfigArgs) {
+    const { first, after, orderBy } = args
+    if (NotNull(first) && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.favoritesRelayFarword(user.id, first, after)
+    }
+    throw new NotImplementedException()
+  }
+
+  async favoritesRelayFarword (id: string, first: number | null, after: string | null) {
+    const q1 = 'var(func: uid(favorites), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(User)) {
+          favorites as ~creator @filter(type(Favorite))
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(favorites)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'favorites'}), orderdesc: createdAt, first: ${first ?? 0}) {
+          id: uid
+          expand(_all_)
+        }
+        startO(func: uid(favorites), first: -1) { createdAt }
+        endO(func: uid(favorites), first: 1) { createdAt }
+      }
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Favorite>>({ query, vars: { $id: id, $after: after } })
+    return relayfyArrayForward({
+      ...res,
+      first: first ?? 0,
+      after
+    })
+  }
+
   async experiencePointTransaction (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
     if (orderBy === ORDER_BY.CREATED_AT_DESC && first) {
       return await this.experiencePointTransactionsWithRelayForward(id, first, after)
     }
-    throw new Error('Method not implemented.')
+    throw new NotImplementedException()
   }
 
   async experiencePointTransactionsWithRelayForward (id: string, first: number, after: string | null) {
