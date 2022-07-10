@@ -1,6 +1,6 @@
 import { ArgsType, createUnionType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
-import { Connection } from '../../connections/models/connections.model'
+import { Connection, ValueRef } from '../../connections/models/connections.model'
 import { Message } from '../../messages/models/messages.model'
 import { Node } from '../../node/models/node.model'
 import { Report } from '../../reports/models/reports.model'
@@ -49,15 +49,6 @@ export class CreateConversationArgs {
     participants: string[]
 }
 
-@ObjectType()
-export class MessageItemConnection {
-  @Field(type => [MessageItem])
-    nodes: Array<typeof MessageItem>
-
-  @Field(type => Int)
-    totalCount: number
-}
-
 export const MessageItem = createUnionType({
   name: 'MessageItem',
   types: () => [Message, Report],
@@ -70,6 +61,12 @@ export const MessageItem = createUnionType({
     }
   }
 })
+
+@ObjectType()
+export class MessageItemsConnection extends Connection(new ValueRef({
+  value: MessageItem,
+  name: 'MessageItem'
+})) {}
 
 @ObjectType()
 export class ParticipantsConnection {

@@ -2174,10 +2174,25 @@ type Conversation implements Node {
   state: CONVERSATION_STATE!
 
   """会话中的所有消息"""
-  messages(first: Int = 10, offset: Int = 0): MessageItemConnection!
+  messages(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): MessageItemsConnection!
 
   """会话的所有参与者"""
-  participants(first: Int = 10, offset: Int = 0): ParticipantsConnection!
+  participants: [User!]!
 }
 
 enum CONVERSATION_STATE {
@@ -2185,16 +2200,24 @@ enum CONVERSATION_STATE {
   CLOSE
 }
 
-type MessageItemConnection {
-  nodes: [MessageItem!]!
+type MessageItemsConnection {
+  edges: [MessageItemEdge!]!
+  pageInfo: MessageItemPageInfo!
   totalCount: Int!
+}
+
+type MessageItemEdge {
+  node: MessageItem
+  cursor: String
 }
 
 union MessageItem = Message | Report
 
-type ParticipantsConnection {
-  nodes: [User!]!
-  totalCount: Int!
+type MessageItemPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
 }
 
 type ConversationsConnection {
@@ -3870,9 +3893,6 @@ type Mutation {
     """The content of current message"""
     content: String!
   ): Message!
-
-  """向指定的会话中添加一条消息"""
-  addMessageOnConversation(content: String!, id: String!): Message!
 
   """创建一个会话"""
   createConversation(title: String!, description: String!, participants: [String!]!): Conversation!

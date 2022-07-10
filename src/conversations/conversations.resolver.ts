@@ -5,14 +5,13 @@ import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { MessagesService } from '../messages/messages.service'
-import { PagingConfigArgs, User } from '../user/models/user.model'
+import { User } from '../user/models/user.model'
 import { ConversationsService } from './conversations.service'
 import {
   Conversation,
   ConversationsConnection,
   CreateConversationArgs,
-  MessageItemConnection,
-  ParticipantsConnection
+  MessageItemsConnection
 } from './models/conversations.model'
 
 // message 和 report 的负载
@@ -47,13 +46,13 @@ export class ConversationsResolver {
     return await this.conversationsService.closeConversation(user.id, conversationId)
   }
 
-  @ResolveField(of => MessageItemConnection, { description: '会话中的所有消息' })
-  async messages (@Parent() conversation: Conversation, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.messagesService.findMessagesByConversationId(conversation.id, first, offset)
+  @ResolveField(of => MessageItemsConnection, { description: '会话中的所有消息' })
+  async messages (@Parent() conversation: Conversation, @Args() args: RelayPagingConfigArgs) {
+    return await this.messagesService.messages(conversation.id, args)
   }
 
-  @ResolveField(of => ParticipantsConnection, { description: '会话的所有参与者' })
-  async participants (@Parent() conversation: Conversation, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.messagesService.findParticipantsByConversationId(conversation.id, first, offset)
+  @ResolveField(of => [User], { description: '会话的所有参与者' })
+  async participants (@Parent() conversation: Conversation) {
+    return await this.conversationsService.participants(conversation.id)
   }
 }

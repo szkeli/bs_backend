@@ -5,6 +5,7 @@ import { ParticipantsNotAllExistException, SystemErrorException, UserNotFoundExc
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { ids2String, NotNull, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { User } from '../user/models/user.model'
 import { Conversation, CONVERSATION_STATE, ConversationsConnection, CreateConversationArgs } from './models/conversations.model'
 
 @Injectable()
@@ -12,6 +13,23 @@ export class ConversationsService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async participants (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Conversation)) {
+          p as participants @filter(type(User))
+        }
+        p(func: uid(p)) {
+          id: uid
+          expand(_all_)
+        }
+      } 
+    `
+    const res = await this.dbService.commitQuery<{p: User[]}>({ query, vars: { $id: id } })
+
+    return res.p
   }
 
   async closeConversation (creator: string, conversationId: string) {
