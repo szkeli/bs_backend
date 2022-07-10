@@ -1,4 +1,4 @@
-import { Field, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { createUnionType, Field, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 export enum TAKEAWAY_ORDER_TYPE {
   EXPRESS_DELIVERY = 'EXPRESS_DELIVERY',
@@ -173,3 +173,19 @@ export class TeamUpOrder {
   @Field(of => Int, { description: '订单的可接单次数' })
     redeemCounts: number
 }
+
+export const OrderUnion = createUnionType({
+  name: 'OrderUnion',
+  types: () => [TakeAwayOrder, IdleItemOrder, TeamUpOrder],
+  resolveType: (v: {'dgraph.type': ['TakeAwayOrder', 'IdleItemOrder', 'TeamUpOrder']}) => {
+    if (v['dgraph.type']?.includes('TakeAwayOrder')) {
+      return TakeAwayOrder
+    }
+    if (v['dgraph.type']?.includes('IdleItemOrder')) {
+      return IdleItemOrder
+    }
+    if (v['dgraph.type']?.includes('TeamUpOrder')) {
+      return TeamUpOrder
+    }
+  }
+})

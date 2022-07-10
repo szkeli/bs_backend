@@ -24,6 +24,7 @@ import { DeletesService } from '../deletes/deletes.service'
 import { Delete } from '../deletes/models/deletes.model'
 import { HashtagsConnection } from '../hashtags/models/hashtags.model'
 import { WithinArgs } from '../node/models/node.model'
+import { OrderUnion } from '../orders/models/orders.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { University } from '../universities/models/universities.models'
@@ -178,5 +179,10 @@ export class PostsResolver {
   @ResolveField(of => University, { description: '该帖子所在的大学', nullable: true })
   async university (@Parent() post: Post): Promise<University> {
     return await this.postsService.university(post.id)
+  }
+
+  @ResolveField(of => OrderUnion, { description: '当前帖子携带的订单', nullable: true })
+  async order (@Parent() post: Post): Promise<typeof OrderUnion> {
+    return await this.postsService.order(post.id)
   }
 }

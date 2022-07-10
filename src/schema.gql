@@ -1421,6 +1421,119 @@ type Post {
 
   """该帖子所在的大学"""
   university: University
+
+  """当前帖子携带的订单"""
+  order: OrderUnion
+}
+
+union OrderUnion = TakeAwayOrder | IdleItemOrder | TeamUpOrder
+
+"""有偿代拿的订单"""
+type TakeAwayOrder {
+  id: String!
+
+  """代拿类型"""
+  type: TAKEAWAY_ORDER_TYPE!
+
+  """所在地（起点）"""
+  orderStartingPoint: String
+
+  """目的地（终点）"""
+  orderDestination: String
+
+  """联系方式"""
+  contactInfo: String
+
+  """最晚送达时间"""
+  endTime: String
+
+  """金额，以分为单位"""
+  reserveAmounts: Int!
+
+  """订单结束时间"""
+  expiredAt: String!
+
+  """订单创建时间"""
+  createdAt: String!
+
+  """订单的可接单次数"""
+  redeemCounts: Int!
+}
+
+enum TAKEAWAY_ORDER_TYPE {
+  """快递"""
+  EXPRESS_DELIVERY
+
+  """外卖"""
+  TAKEOUT
+
+  """其它"""
+  OTHER
+}
+
+"""二手闲置的订单"""
+type IdleItemOrder {
+  id: String!
+
+  """目的地（终点）"""
+  orderDestination: String!
+
+  """闲置类别"""
+  idleItemType: IDLEITEM_TYPE!
+
+  """金额，以分为单位"""
+  reserveAmounts: Int!
+
+  """订单结束时间"""
+  expiredAt: String!
+
+  """订单创建时间"""
+  createdAt: String!
+
+  """订单的可接单次数"""
+  redeemCounts: Int!
+}
+
+enum IDLEITEM_TYPE {
+  """电子产品"""
+  ELECTRONIC_PRODUCT
+
+  """生活用品"""
+  DAILY_NECESSITIES
+}
+
+"""拼车组队订单"""
+type TeamUpOrder {
+  id: String!
+
+  """组队类型"""
+  type: TEAM_UP_TYPE!
+
+  """所在地（起点）"""
+  orderStartingPoint: String
+
+  """目的地（终点）"""
+  orderDestination: String
+
+  """金额，以分为单位"""
+  reserveAmounts: Int
+
+  """订单结束时间"""
+  expiredAt: String!
+
+  """订单创建时间"""
+  createdAt: String!
+
+  """订单的可接单次数"""
+  redeemCounts: Int!
+}
+
+enum TEAM_UP_TYPE {
+  """拼车"""
+  CARPOOL
+
+  """拼团"""
+  GROUP
 }
 
 type PostsConnection {
@@ -4263,17 +4376,6 @@ input CreateTakeAwayOrderArgs {
 
   """订单的可接单次数"""
   redeemCounts: Int!
-}
-
-enum TAKEAWAY_ORDER_TYPE {
-  """快递"""
-  EXPRESS_DELIVERY
-
-  """外卖"""
-  TAKEOUT
-
-  """其它"""
-  OTHER
 }
 
 union UpdatePasswordResultUnion = Admin | User

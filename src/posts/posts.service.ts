@@ -12,6 +12,7 @@ import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
+import { OrderUnion } from '../orders/models/orders.model'
 import { Subject } from '../subject/model/subject.model'
 import { atob, btoa, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, NotNull, now, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
 import { University } from '../universities/models/universities.models'
@@ -29,6 +30,32 @@ import {
 
 @Injectable()
 export class PostsService {
+  private readonly dgraph: DgraphClient
+  constructor (
+    private readonly dbService: DbService,
+    private readonly censorsService: CensorsService,
+    private readonly nlpService: NlpService
+  ) {
+    this.dgraph = dbService.getDgraphIns()
+  }
+
+  async order (id: string): Promise<typeof OrderUnion> {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Post)) {
+          o as ~post @filter(type(TakeAwayOrder) or type(IdleItemOrder) or type(TeamUpOrder))
+        }
+        o(func: uid(o)) {
+          id: uid
+          expand(_all_)
+          dgraph.type
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{o: Array<typeof OrderUnion>}>({ query, vars: { $id: id } })
+    return res.o[0]
+  }
+
   async subject (id: string): Promise<Subject | null> {
     const query = `
       query v($id: string) {
@@ -49,15 +76,6 @@ export class PostsService {
     })
 
     return res.subject[0]
-  }
-
-  private readonly dgraph: DgraphClient
-  constructor (
-    private readonly dbService: DbService,
-    private readonly censorsService: CensorsService,
-    private readonly nlpService: NlpService
-  ) {
-    this.dgraph = dbService.getDgraphIns()
   }
 
   async university (id: string): Promise<University> {
