@@ -311,7 +311,22 @@ type User implements Person & Node {
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
 
   """当前用户创建的所有会话"""
-  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
+  conversations(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): ConversationsConnection!
 
   """当前用户收到的所有举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
@@ -604,7 +619,22 @@ interface Person implements Node {
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
 
   """当前用户创建的所有会话"""
-  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
+  conversations(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): ConversationsConnection!
 
   """当前用户收到的所有举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
@@ -878,7 +908,22 @@ type LoginResult implements Node & Person {
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
 
   """当前用户创建的所有会话"""
-  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
+  conversations(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): ConversationsConnection!
 
   """当前用户收到的所有举报"""
   reports(first: Int = 10, offset: Int = 0): ReportsConnection!
@@ -2153,8 +2198,21 @@ type ParticipantsConnection {
 }
 
 type ConversationsConnection {
-  nodes: [Conversation!]!
+  edges: [ConversationEdge!]!
+  pageInfo: ConversationPageInfo!
   totalCount: Int!
+}
+
+type ConversationEdge {
+  node: Conversation
+  cursor: String
+}
+
+type ConversationPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
 }
 
 type Message implements Node {
@@ -3036,7 +3094,22 @@ type Query {
   conversation(id: String!): Conversation!
 
   """获取所有会话"""
-  conversations(first: Int = 10, offset: Int = 0): ConversationsConnection!
+  conversations(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): ConversationsConnection!
 
   """以id获取删除"""
   delete(deleteId: String!): Delete!

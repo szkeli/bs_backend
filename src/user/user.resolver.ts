@@ -178,8 +178,8 @@ export class UserResolver {
   }
 
   @ResolveField(of => ConversationsConnection, { description: '当前用户创建的所有会话' })
-  async conversations (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.conversationsService.findConversationsByUid(user.id, first, offset)
+  async conversations (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.conversations(user, args)
   }
 
   @ResolveField(of => ReportsConnection, { description: '当前用户收到的所有举报' })
@@ -294,6 +294,6 @@ export class UserResolver {
 
   @ResolveField(of => FavoritesConnection)
   async favorites (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return this.userService.favorites(user, args)
+    return await this.userService.favorites(user, args)
   }
 }

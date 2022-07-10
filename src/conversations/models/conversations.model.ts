@@ -1,5 +1,6 @@
 import { ArgsType, createUnionType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
+import { Connection } from '../../connections/models/connections.model'
 import { Message } from '../../messages/models/messages.model'
 import { Node } from '../../node/models/node.model'
 import { Report } from '../../reports/models/reports.model'
@@ -59,7 +60,15 @@ export class MessageItemConnection {
 
 export const MessageItem = createUnionType({
   name: 'MessageItem',
-  types: () => [Message, Report]
+  types: () => [Message, Report],
+  resolveType: (v: {'dgraph.type': ['Message', 'Report']}) => {
+    if (v['dgraph.type']?.includes('Message')) {
+      return Message
+    }
+    if (v['dgraph.type']?.includes('Report')) {
+      return Report
+    }
+  }
 })
 
 @ObjectType()
@@ -72,10 +81,4 @@ export class ParticipantsConnection {
 }
 
 @ObjectType()
-export class ConversationsConnection {
-  @Field(type => [Conversation])
-    nodes: Conversation[]
-
-  @Field(type => Int)
-    totalCount: number
-}
+export class ConversationsConnection extends Connection<Conversation>(Conversation) {}

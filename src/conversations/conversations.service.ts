@@ -1,9 +1,10 @@
-import { ForbiddenException, Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common'
 import { DgraphClient } from 'dgraph-js'
 
 import { ParticipantsNotAllExistException, SystemErrorException, UserNotFoundException } from '../app.exception'
+import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
-import { ids2String, now } from '../tool'
+import { ids2String, NotNull, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { Conversation, CONVERSATION_STATE, ConversationsConnection, CreateConversationArgs } from './models/conversations.model'
 
 @Injectable()
@@ -137,21 +138,37 @@ export class ConversationsService {
     }
   }
 
-  async conversations (first: number, offset: number): Promise<ConversationsConnection> {
+  async conversations (args: RelayPagingConfigArgs): Promise<ConversationsConnection> {
+    const { first, after, orderBy } = args
+    if (NotNull(first) && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.conversationsRelayFarword(first, after)
+    }
+    throw new NotImplementedException()
+  }
+
+  async conversationsRelayFarword (first: number | null, after: string | null): Promise<ConversationsConnection> {
+    const q1 = 'var(func: uid(conversations), orderdesc: createdAt) @filter(lt(createdAt, #after)) { q as uid }'
     const query = `
-      query {
-        totalCount(func: type(Conversation)) { count: count(uid) }
-        conversations(func: type(Conversation), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
+      query v($after: string) {
+        var(func: type(Conversation), orderdesc: createdAt) {
+          conversations as uid
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(conversations)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'conversations'}), orderdesc: createdAt, first: ${first ?? 0}) {
           id: uid
           expand(_all_)
         }
+        startO(func: uid(conversations), first: -1) { createdAt }
+        endO(func: uid(conversations), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<{conversations: Conversation[], totalCount: Array<{count: number}>}>({ query })
-    return {
-      nodes: res.conversations || [],
-      totalCount: res.totalCount[0].count
-    }
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Conversation>>({ query, vars: { $after: after } })
+    return relayfyArrayForward({
+      ...res,
+      first: first ?? 0,
+      after
+    })
   }
 
   async conversation (id: string) {
@@ -173,33 +190,5 @@ export class ConversationsService {
       throw new ForbiddenException(`会话 ${id} 不存在`)
     }
     return res.conversation[0]
-  }
-
-  async findConversationsByUid (id: string, first: number, offset: number) {
-    const query = `
-      query v($uid: string) {
-        totalCount(func: uid($uid)) @filter(type(User)) {
-          count: count(conversations)
-        }
-        user(func: uid($uid)) @filter(type(User)) {
-          conversations (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Conversation)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $uid: id }))
-      .getJson() as unknown as {
-      user: Array<{conversations: Conversation[]}>
-      totalCount: Array<{count: number}>
-    }
-    const u: ConversationsConnection = {
-      totalCount: res.totalCount[0].count,
-      nodes: res.user[0]?.conversations || []
-    }
-    return u
   }
 }
