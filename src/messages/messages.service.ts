@@ -2,17 +2,63 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient, Mutation, Request } from 'dgraph-js'
 
 import { Admin } from '../admin/models/admin.model'
+import { SystemErrorException } from '../app.exception'
 import { Conversation, MessageItem, MessageItemConnection, ParticipantsConnection } from '../conversations/models/conversations.model'
 import { DbService } from '../db/db.service'
 import { Report } from '../reports/models/reports.model'
+import { now } from '../tool'
 import { User } from '../user/models/user.model'
-import { Message } from './models/messages.model'
+import { AddMessageArgs, Message } from './models/messages.model'
 
 @Injectable()
 export class MessagesService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async addMessage (user: User, args: AddMessageArgs): Promise<Message> {
+    const { content, conversationId } = args
+    const query = `
+      query v($id: string, $cId: string) {
+        u(func: uid($id)) @filter(type(User)) { u as uid }
+        c(func: uid($cId)) @filter(type(Conversation)) { c as uid }
+        # 发送消息的 User 是否在指定的 Conversation 中
+        in(func: uid(c)) @filter(uid_in(participants, uid(u))) { in as uid } 
+      }
+    `
+    const condition = '@if( eq(len(u), 1) and eq(len(c), 1) and eq(len(in), 1) )'
+    const mutation = {
+      uid: 'uid(c)',
+      messages: {
+        uid: '_:message',
+        'dgraph.type': 'Message',
+        creator: {
+          uid: 'uid(u)'
+        },
+        createdAt: now(),
+        content
+      }
+    }
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+      c: Array<{uid: string}>
+      in: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: user.id, $cId: conversationId }
+    })
+
+    const _id = res.uids.get('message')
+    if (!_id) {
+      throw new SystemErrorException()
+    }
+    return {
+      id: _id,
+      createdAt: now(),
+      content
+    }
   }
 
   async findCreatorByMessageId (id: string) {

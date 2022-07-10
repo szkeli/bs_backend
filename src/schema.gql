@@ -3789,6 +3789,15 @@ type Mutation {
   """管理员接口：认为举报有效"""
   acceptReport(content: String!, reportId: String!): Boolean!
 
+  """向指定 Conversation 添加一条消息"""
+  addMessage(
+    """Conversation ID"""
+    conversationId: String!
+
+    """The content of current message"""
+    content: String!
+  ): Message!
+
   """向指定的会话中添加一条消息"""
   addMessageOnConversation(content: String!, id: String!): Message!
 

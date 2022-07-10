@@ -1,8 +1,10 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
-import { DgraphClient, Mutation, Request } from 'dgraph-js'
+import { DgraphClient } from 'dgraph-js'
 
+import { ParticipantsNotAllExistException, SystemErrorException, UserNotFoundException } from '../app.exception'
 import { DbService } from '../db/db.service'
-import { Conversation, CONVERSATION_STATE, ConversationsConnection } from './models/conversations.model'
+import { ids2String, now } from '../tool'
+import { Conversation, CONVERSATION_STATE, ConversationsConnection, CreateConversationArgs } from './models/conversations.model'
 
 @Injectable()
 export class ConversationsService {
@@ -62,82 +64,76 @@ export class ConversationsService {
     return res.json.u[0]
   }
 
-  async createConversation (creator: string, title: string, description: string, participants: string[]) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const now = new Date().toISOString()
-      const participantsLength = participants.length
-      const participantsString = `[${participants.toString()}]`
-      const conditions = `@if( eq(len(v), 1) AND eq(len(u), ${participantsLength}) )`
-      const query = `
-        query v($participants: string){
-          v(func: uid(${creator})) @filter(type(User)) { v as uid }
-          u(func: uid($participants)) @filter(type(User)) { u as uid }
+  // TODO: 私聊时对于同一个用户使用同一个会话
+  async createConversation (id: string, args: CreateConversationArgs): Promise<Conversation> {
+    const { participants, title, description } = args
+    // Conversation 的创建者也是 Conversation 的参与者
+    participants.push(id)
+    if (participants.length < 2) {
+      throw new SystemErrorException('The length of participants should not less than 2')
+    }
+    const participantStr = ids2String(participants)
+    // 预先处理 Conversation 的 participants
+    const _pa = participants.map(p => (
+      {
+        uid: p,
+        conversations: {
+          uid: '_:conversation'
         }
-      `
+      }
+    ))
 
-      participants.push(creator)
-      const _participants = participants.map(p => {
-        return {
-          uid: p,
-          conversations: {
-            uid: '_:conversation'
-          }
+    const query = `
+      query v($id: string) {
+        u(func: uid($id)) @filter(type(User)) { u as uid }
+        p(func: uid(${participantStr})) @filter(type(User)) { p as uid }
+      }
+    `
+
+    const condition = `@if( eq(len(u), 1) and eq(len(p), ${participants.length}) )`
+    const mutation = {
+      uid: '_:conversation',
+      'dgraph.type': 'Conversation',
+      description,
+      title,
+      createdAt: now(),
+      state: CONVERSATION_STATE.RUNNING,
+      participants: _pa,
+      creator: {
+        uid: 'uid(u)',
+        conversations: {
+          uid: '_:conversation'
         }
-      })
-      const mutation = {
-        uid: '_:conversation',
-        'dgraph.type': 'Conversation',
-        description,
-        title,
-        createdAt: now,
-        creator: {
-          uid: creator,
-          conversations: {
-            uid: '_:conversation'
-          }
-        },
-        state: CONVERSATION_STATE.RUNNING,
-        participants: _participants
       }
+    }
 
-      const mu = new Mutation()
-      mu.setSetJson(mutation)
-      mu.setCond(conditions)
+    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+      u: Array<{uid: string}>
+      p: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [{ mutation, condition }],
+      vars: { $id: id }
+    })
 
-      const req = new Request()
-      const vars = req.getVarsMap()
-      vars.set('$participants', participantsString)
-      req.setQuery(query)
-      req.addMutations(mu)
-      req.setCommitNow(true)
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+    if (res.json.p.length !== participants.length) {
+      throw new ParticipantsNotAllExistException(participants)
+    }
 
-      const res = await txn.doRequest(req)
-      const json = res.getJson() as unknown as {
-        v: any[]
-        u: Array<{uid: string}>
-      }
-      const v = res.getUidsMap().get('conversation') as unknown as string
+    const _id = res.uids.get('conversation')
+    if (!_id) {
+      throw new SystemErrorException()
+    }
 
-      if (!v) {
-        if (json.v.length !== 1) {
-          throw new ForbiddenException(`用户 ${creator} 不存在`)
-        }
-        if (json.u.length !== participantsLength) {
-          throw new ForbiddenException(`只存在 ${(json.u.map(x => x.uid)).toString()} 用户`)
-        }
-        throw new ForbiddenException('会话创建失败，未知错误')
-      }
-      const c: Conversation = {
-        id: v,
-        title,
-        description,
-        createdAt: now,
-        state: CONVERSATION_STATE.RUNNING
-      }
-      return c
-    } finally {
-      await txn.discard()
+    return {
+      id: _id,
+      title,
+      description,
+      state: CONVERSATION_STATE.RUNNING,
+      createdAt: now()
     }
   }
 

@@ -4,7 +4,7 @@ import { CurrentUser } from '../auth/decorator'
 import { Conversation, ConversationId } from '../conversations/models/conversations.model'
 import { User } from '../user/models/user.model'
 import { MessagesService } from './messages.service'
-import { Message, MessageCreatorUnion } from './models/messages.model'
+import { AddMessageArgs, Message, MessageCreatorUnion } from './models/messages.model'
 
 @Resolver(() => Message)
 export class MessagesResolver {
@@ -13,6 +13,11 @@ export class MessagesResolver {
   @Query(of => Message, { description: '以id获取消息' })
   async message (@Args('id') id: string) {
     return await this.messagesService.message(id)
+  }
+
+  @Mutation(of => Message, { description: '向指定 Conversation 添加一条消息' })
+  async addMessage (@CurrentUser() user: User, @Args() args: AddMessageArgs) {
+    return await this.messagesService.addMessage(user, args)
   }
 
   @Mutation(of => Message, { description: '向指定的会话中添加一条消息' })

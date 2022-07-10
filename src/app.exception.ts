@@ -322,3 +322,9 @@ export class FavoriteNotExistException extends HttpException {
     super(`favorite ${favoriteId} not exist`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class ParticipantsNotAllExistException extends HttpException {
+  constructor (participants: string[]) {
+    super(`Participants  ${participants.toString()} not all exist.`, HttpStatus.FORBIDDEN)
+  }
+}

@@ -1,4 +1,4 @@
-import { createUnionType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { ArgsType, createUnionType, Field, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 
 import { Admin } from '../../admin/models/admin.model'
 import { Conversation } from '../../conversations/models/conversations.model'
@@ -52,3 +52,12 @@ export const MessageCreatorUnion = createUnionType({
   name: 'MessageCreatorUnion',
   types: () => [User, Admin]
 })
+
+@ArgsType()
+export class AddMessageArgs {
+  @Field(of => String, { description: 'Conversation ID' })
+    conversationId: string
+
+  @Field(of => String, { description: 'The content of current message' })
+    content: string
+}

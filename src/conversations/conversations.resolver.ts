@@ -15,7 +15,7 @@ import {
 } from './models/conversations.model'
 
 // message 和 report 的负载
-@Resolver((_of: Conversation) => Conversation)
+@Resolver(of => Conversation)
 export class ConversationsResolver {
   constructor (
     private readonly conversationsService: ConversationsService,
@@ -38,7 +38,7 @@ export class ConversationsResolver {
 
   @Mutation(of => Conversation, { description: '创建一个会话' })
   async createConversation (@CurrentUser() user: User, @Args() args: CreateConversationArgs) {
-    return await this.conversationsService.createConversation(user.id, args.title, args.description, args.participants)
+    return await this.conversationsService.createConversation(user.id, args)
   }
 
   @Mutation(of => Conversation, { description: '关闭一个会话' })
@@ -51,7 +51,7 @@ export class ConversationsResolver {
     return await this.messagesService.findMessagesByConversationId(conversation.id, first, offset)
   }
 
-  @ResolveField(returns => ParticipantsConnection, { description: '会话的所有参与者' })
+  @ResolveField(of => ParticipantsConnection, { description: '会话的所有参与者' })
   async participants (@Parent() conversation: Conversation, @Args() { first, offset }: PagingConfigArgs) {
     return await this.messagesService.findParticipantsByConversationId(conversation.id, first, offset)
   }
