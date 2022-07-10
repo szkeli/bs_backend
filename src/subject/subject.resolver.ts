@@ -14,6 +14,7 @@ import { PagingConfigArgs, User } from 'src/user/models/user.model'
 import { Role } from '../auth/model/auth.model'
 import { CreateSubjectPolicyHandler, DeleteSubjectPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { Delete } from '../deletes/models/deletes.model'
+import { SubField } from '../subfields/models/subfields.model'
 import { UniversitiesConnection } from '../universities/models/universities.models'
 import {
   CreateSubjectArgs,
@@ -94,5 +95,10 @@ export class SubjectResolver {
   @ResolveField(of => UniversitiesConnection, { description: '具有该 Subject 的所有大学' })
   async universities (@Parent() subject: Subject, @Args() args: RelayPagingConfigArgs) {
     return await this.subjectService.universities(subject.id, args)
+  }
+
+  @ResolveField(of => [SubField], { description: 'Subject 的所有 SubField' })
+  async subFields (@Parent() subject: Subject) {
+    return await this.subjectService.subFields(subject.id)
   }
 }

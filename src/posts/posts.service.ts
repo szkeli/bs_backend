@@ -695,15 +695,68 @@ export class PostsService {
   }
 
   async createPost (id: string, args: CreatePostArgs): Promise<Post> {
+    const { takeAwayOrder } = args
     const txn = this.dbService.getDgraphIns().newTxn()
     try {
       const post = await this.createPostTxn(id, args, txn)
+      takeAwayOrder && await this.createTakeAwayOrderTxn(args, post, txn)
       await this.addPostToSubjectTxn(post.id, args, txn)
       await this.addPostToUniversityTxn(post.id, args, txn)
       await txn.commit()
       return post
     } finally {
       await txn.discard()
+    }
+  }
+
+  /**
+   * 在事务中创建一个新的 TakeAway 订单并附加到相应的 Post
+   * @param args
+   * @param post
+   * @param txn
+   */
+  async createTakeAwayOrderTxn (args: CreatePostArgs, post: Post, txn: dgraph.Txn) {
+    const { takeAwayOrder } = args
+    // TODO: 测试 expiredAt, endTime, createdAt 有效性
+    // TODO: 根据 type 清除部分属性
+    const {
+      type, orderStartingPoint, orderDestination, reserveAmounts,
+      contactInfo, redeemCounts, expiredAt, endTime
+    } = takeAwayOrder
+
+    const query = `
+      query v($postId: string) {
+        p(func: uid($postId)) @filter(type(Post)) { p as uid }
+      }
+    `
+    const condition = '@if( eq(len(p), 1) )'
+    const mutation = {
+      uid: '_:takeawayorder',
+      'dgraph.type': 'TakeAwayOrder',
+      contactInfo,
+      orderStartingPoint,
+      type,
+      orderDestination,
+      reserveAmounts,
+      redeemCounts,
+      expiredAt,
+      endTime,
+      createdAt: now(),
+      post: {
+        uid: 'uid(p)'
+      }
+    }
+
+    const res = await this.dbService.handleTransaction<{}, {
+      p: Array<{uid: string}>
+    }>(txn, {
+      query,
+      mutations: [{ set: mutation, cond: condition }],
+      vars: { $postId: post.id }
+    })
+
+    if (res.json.p.length !== 1) {
+      throw new PostNotFoundException(post.id)
     }
   }
 

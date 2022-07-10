@@ -1,6 +1,7 @@
 import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
 import { Connection, ORDER_BY } from '../../connections/models/connections.model'
+import { CreateTakeAwayOrderArgs } from '../../orders/models/orders.model'
 
 @ObjectType()
 export class IImage {
@@ -32,6 +33,9 @@ export class CreatePostArgs {
 
   @Field(type => Boolean, { nullable: true, description: '是否匿名帖子', defaultValue: false })
     isAnonymous: boolean
+
+  @Field(of => CreateTakeAwayOrderArgs, { description: '创建带有 有偿订单 的帖子', nullable: true })
+    takeAwayOrder: CreateTakeAwayOrderArgs
 }
 
 @ObjectType()

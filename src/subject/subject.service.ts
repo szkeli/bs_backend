@@ -6,6 +6,7 @@ import { DbService } from 'src/db/db.service'
 import { SystemErrorException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { SubField } from '../subfields/models/subfields.model'
 import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { User } from '../user/models/user.model'
@@ -24,6 +25,22 @@ export class SubjectService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async subFields (id: string) {
+    const query = `
+      query v($id: string) {
+        s(func: type(SubField)) @filter(uid_in(subject, uid(subject))) {
+          id: uid
+          expand(_all_)
+        }
+        var(func: uid($id)) @filter(type(Subject)) {
+          subject as uid
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{s: SubField[]}>({ query, vars: { $id: id } })
+    return res.s
   }
 
   async universities (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {

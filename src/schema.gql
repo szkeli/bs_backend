@@ -1838,6 +1838,9 @@ type Subject {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): UniversitiesConnection!
+
+  """Subject 的所有 SubField"""
+  subFields: [SubField!]!
 }
 
 type SubjectsConnection {
@@ -2637,6 +2640,18 @@ type ImagesUploadCredentialInfo {
 
   """key"""
   keys: [String!]!
+}
+
+type SubField {
+  id: String!
+  title: String!
+  avatarImageUrl: String!
+
+  """SubField 的创建者"""
+  creator: Admin!
+
+  """SubField 所在的 Subject"""
+  subject: Subject!
 }
 
 type Favorite {
@@ -3656,6 +3671,9 @@ type Mutation {
 
     """是否匿名帖子"""
     isAnonymous: Boolean = false
+
+    """创建带有 有偿订单 的帖子"""
+    takeAwayOrder: CreateTakeAwayOrderArgs
   ): Post!
 
   """注册"""
@@ -4210,6 +4228,52 @@ type Mutation {
     commentId: String
   ): Favorite!
   removeFavorite(favoriteId: String!): Boolean!
+
+  """在指定的 Subject 上添加一个 SubField"""
+  createSubField(
+    """指定 Subject"""
+    subjectId: String!
+    title: String!
+    avatarImageUrl: String!
+  ): SubField!
+}
+
+"""创建 有偿代拿 的订单，对于 type === TAKEAWAY_ORDER_TYPE.OTHER 的订单，相关字段会被忽略"""
+input CreateTakeAwayOrderArgs {
+  """代拿类型"""
+  type: TAKEAWAY_ORDER_TYPE!
+
+  """所在地（起点）"""
+  orderStartingPoint: String
+
+  """目的地（终点）"""
+  orderDestination: String
+
+  """联系方式"""
+  contactInfo: String
+
+  """最晚送达时间"""
+  endTime: String
+
+  """金额，以分为单位"""
+  reserveAmounts: Int!
+
+  """订单结束时间"""
+  expiredAt: String!
+
+  """订单的可接单次数"""
+  redeemCounts: Int!
+}
+
+enum TAKEAWAY_ORDER_TYPE {
+  """快递"""
+  EXPRESS_DELIVERY
+
+  """外卖"""
+  TAKEOUT
+
+  """其它"""
+  OTHER
 }
 
 union UpdatePasswordResultUnion = Admin | User

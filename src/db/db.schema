@@ -44,6 +44,7 @@ lessonNotificationSettings: uid @reverse .
 lessonNotificationStatus: uid @reverse .
 privateSettings: uid @reverse .
 from: uid @reverse .
+post: uid @reverse .
 
 images: [string] .
 
@@ -57,6 +58,7 @@ content: string @index(fulltext) .
 description: string @index(fulltext) .
 destination: string @index(fulltext) .
 type: string @index(term) .
+idleItemType: string @index(term) .
 transactionType: string @index(term) .
 gender: string @index(term) .
 college: string @index(term) .
@@ -84,6 +86,9 @@ action: string @index(term) .
 educatorName: string @index(hash) .
 deadlineId: string @index(hash) .
 color: string .
+orderStartingPoint: string @index(fulltext) .
+orderDestination: string @index(fulltext) .
+contactInfo: string @index(fulltext) .
 
 circle: [int] .
 notificationIds: [int] .
@@ -108,6 +113,8 @@ index: int .
 points: int @index(int) .
 experiencePoints: int @index(int) .
 dailyCheckInSum: int @index(int) .
+reserveAmounts: int @index(int) .
+redeemCounts: int @index(int) .
 
 positive: float .
 negative: float .
@@ -131,7 +138,10 @@ dueDate: dateTime @index(hour) .
 lastLoginedAt: dateTime @index(hour) .
 createdAt: dateTime @index(hour) .
 updatedAt: dateTime @index(hour) .
+expiredAt: dateTime @index(hour) .
 lastNotifiedAt: dateTime @index(hour) .
+departureTime: dateTime @index(hour) .
+endTime: dateTime @index(hour) .
 
 location: geo .
 sign: password .
@@ -353,6 +363,8 @@ type Subject {
   # 主题的删除信息
   delete
 }
+
+
 
 type Image {
   # 图片的链接
@@ -745,4 +757,82 @@ type Favorite {
   to
   # 创建时间
   createdAt
+}
+
+# Subject 的子域
+type SubField {
+  subject
+  creator
+  title
+  avatarImageUrl
+}
+
+# 有偿代拿的订单
+type TakeAwayOrder {
+  # 起点
+  orderStartingPoint
+  # 关联的 Post
+  post
+  # 代拿类型 快递、外卖、其它
+  type
+  # 终点
+  orderDestination
+  # 金额 以分为单位
+  reserveAmounts
+
+  # 联系方式
+  contactInfo
+  # 接单的有效次数
+  redeemCounts
+  # 当前订单的创建时间
+  createdAt
+  # 当前订单的过期时间
+  expiredAt
+  # 最晚送达时间
+  endTime
+}
+
+# 二手闲置的订单 
+type IdleItemOrder {
+  # 关联的 Post
+  post
+  orderDestination
+  # 闲置类型 电子产品、生活用品
+  idleItemType
+  # 金额 以分为单位
+  reserveAmounts
+
+  # 联系方式
+  contactInfo
+  # 接单的有效次数
+  redeemCounts
+  # 当前订单的创建时间
+  createdAt
+  # 当前订单的过期时间
+  expiredAt
+}
+
+# 组队的订单
+type TeamUpOrder {
+  # 关联的 Post
+  post
+  # 组队类型 拼车、拼团、其它
+  type
+  # 起点
+  orderOutset
+  # 终点
+  orderDestination
+  # 出发时间
+  departureTime
+  # 金额 以分为单位
+  reserveAmounts
+
+  # 联系方式
+  contactInfo
+  # 接单的有效次数
+  redeemCounts
+  # 当前订单的创建时间
+  createdAt
+  # 当前订单的过期时间
+  expiredAt
 }

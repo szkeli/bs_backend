@@ -57,6 +57,8 @@ import { ViewsModule } from './views/views.module'
 import { VotesModule } from './votes/votes.module'
 import { WxModule } from './wx/wx.module'
 import { FavoritesModule } from './favorites/favorites.module';
+import { SubfieldsModule } from './subfields/subfields.module';
+import { OrdersModule } from './orders/orders.module';
 
 @Module({
   imports: [
@@ -142,7 +144,9 @@ import { FavoritesModule } from './favorites/favorites.module';
     InstitutesModule,
     SubcampusModule,
     ExperiencesModule,
-    FavoritesModule
+    FavoritesModule,
+    SubfieldsModule,
+    OrdersModule
   ],
   controllers: [AppController],
   providers: [
