@@ -713,17 +713,110 @@ export class PostsService {
   }
 
   async createPost (id: string, args: CreatePostArgs): Promise<Post> {
-    const { takeAwayOrder } = args
+    const { takeAwayOrder, idleItemOrder, teamUpOrder } = args
     const txn = this.dbService.getDgraphIns().newTxn()
     try {
       const post = await this.createPostTxn(id, args, txn)
       takeAwayOrder && await this.createTakeAwayOrderTxn(args, post, txn)
+      idleItemOrder && await this.createIdleItemOrderTxn(args, post, txn)
+      teamUpOrder && await this.createTeamUpOrderTxn(args, post, txn)
       await this.addPostToSubjectTxn(post.id, args, txn)
       await this.addPostToUniversityTxn(post.id, args, txn)
       await txn.commit()
       return post
     } finally {
       await txn.discard()
+    }
+  }
+
+  async createTeamUpOrderTxn (args: CreatePostArgs, post: Post, txn: dgraph.Txn) {
+    const { teamUpOrder } = args
+    const {
+      type,
+      orderStartingPoint,
+      orderDestination,
+      departureTime,
+      reserveAmounts,
+      contactInfo,
+      redeemCounts,
+      expiredAt
+    } = teamUpOrder
+    const query = `
+      query v($id: string) {
+        p(func: uid($id)) @filter(type(Post)) { p as uid }
+      }
+    `
+    const condition = '@if( eq(len(p), 1) )'
+    const mutation = {
+      uid: '_:teamuporder',
+      'dgraph.type': 'TeamUpOrder',
+      type,
+      orderStartingPoint,
+      orderDestination,
+      departureTime,
+      reserveAmounts,
+      contactInfo,
+      redeemCounts,
+      createdAt: now(),
+      expiredAt,
+      post: {
+        uid: 'uid(p)'
+      }
+    }
+    await this.dbService.handleTransaction(txn, {
+      query,
+      mutations: [{ set: mutation, cond: condition }],
+      vars: { $id: post.id }
+    })
+  }
+
+  /**
+   * 在事務中創建一個 IdleItemOrder 並附加到相應的 post
+   * @param args
+   * @param post
+   * @param txn
+   */
+  async createIdleItemOrderTxn (args: CreatePostArgs, post: Post, txn: dgraph.Txn) {
+    const { idleItemOrder } = args
+    // TODO: 测试 expiredAt, endTime, createdAt 有效性
+    // TODO: 根据 type 清除部分属性
+    const {
+      orderDestination,
+      reserveAmounts,
+      redeemCounts,
+      contactInfo,
+      idleItemType,
+      expiredAt
+    } = idleItemOrder
+    const query = `
+      query v($postId: string) {
+        p(func: uid($postId)) @filter(type(Post)) { p as uid }
+      }
+    `
+    const condition = '@if( eq(len(p), 1) )'
+    const mutation = {
+      uid: '_:idleitemorder',
+      'dgraph.type': 'IdleItemOrder',
+      orderDestination,
+      idleItemType,
+      reserveAmounts,
+      contactInfo,
+      redeemCounts,
+      createdAt: now(),
+      expiredAt,
+      post: {
+        uid: 'uid(p)'
+      }
+    }
+    const res = await this.dbService.handleTransaction<{}, {
+      p: Array<{uid: string}>
+    }>(txn, {
+      query,
+      mutations: [{ set: mutation, cond: condition }],
+      vars: { $id: post.id }
+    })
+    if (res.json.p.length !== 1) {
+      throw new PostNotFoundException(post.id)
     }
   }
 

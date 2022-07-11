@@ -819,7 +819,7 @@ type TeamUpOrder {
   # 组队类型 拼车、拼团、其它
   type
   # 起点
-  orderOutset
+  orderStartingPoint
   # 终点
   orderDestination
   # 出发时间

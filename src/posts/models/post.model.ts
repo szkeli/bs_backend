@@ -1,7 +1,7 @@
 import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
 import { Connection, ORDER_BY } from '../../connections/models/connections.model'
-import { CreateTakeAwayOrderArgs } from '../../orders/models/orders.model'
+import { CreateIdleItemOrderArgs, CreateTakeAwayOrderArgs, CreateTeamUpOrderArgs } from '../../orders/models/orders.model'
 
 @ObjectType()
 export class IImage {
@@ -36,6 +36,12 @@ export class CreatePostArgs {
 
   @Field(of => CreateTakeAwayOrderArgs, { description: '创建带有 有偿订单 的帖子', nullable: true })
     takeAwayOrder: CreateTakeAwayOrderArgs
+
+  @Field(of => CreateIdleItemOrderArgs, { description: '創建帶有 閑置訂單 的帖子', nullable: true })
+    idleItemOrder: CreateIdleItemOrderArgs
+
+  @Field(of => CreateTeamUpOrderArgs, { description: '創建帶有 組隊 訂單的帖子', nullable: true })
+    teamUpOrder: CreateTeamUpOrderArgs
 }
 
 @ObjectType()

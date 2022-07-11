@@ -3787,6 +3787,12 @@ type Mutation {
 
     """创建带有 有偿订单 的帖子"""
     takeAwayOrder: CreateTakeAwayOrderArgs
+
+    """創建帶有 閑置訂單 的帖子"""
+    idleItemOrder: CreateIdleItemOrderArgs
+
+    """創建帶有 組隊 訂單的帖子"""
+    teamUpOrder: CreateTeamUpOrderArgs
   ): Post!
 
   """注册"""
@@ -4376,6 +4382,54 @@ input CreateTakeAwayOrderArgs {
 
   """订单的可接单次数"""
   redeemCounts: Int!
+}
+
+"""創建 閑置 的訂單"""
+input CreateIdleItemOrderArgs {
+  """閑置類型"""
+  idleItemType: IDLEITEM_TYPE!
+
+  """目的地（终点）"""
+  orderDestination: String!
+
+  """金额，以分为单位"""
+  reserveAmounts: Int!
+
+  """联系方式"""
+  contactInfo: String
+
+  """订单的可接单次数"""
+  redeemCounts: Int!
+
+  """订单结束时间"""
+  expiredAt: String!
+}
+
+"""創建 組隊 訂單"""
+input CreateTeamUpOrderArgs {
+  """組隊類型"""
+  type: TEAM_UP_TYPE!
+
+  """所在地（起点）"""
+  orderStartingPoint: String
+
+  """目的地（终点）"""
+  orderDestination: String
+
+  """出發時間"""
+  departureTime: String!
+
+  """金额，以分为单位"""
+  reserveAmounts: Int!
+
+  """联系方式"""
+  contactInfo: String
+
+  """订单的可接单次数"""
+  redeemCounts: Int!
+
+  """订单结束时间"""
+  expiredAt: String!
 }
 
 union UpdatePasswordResultUnion = Admin | User
