@@ -12,7 +12,7 @@ import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
-import { OrderUnion, TakeAwayOrder } from '../orders/models/orders.model'
+import { OrderUnion } from '../orders/models/orders.model'
 import { Subject } from '../subject/model/subject.model'
 import { atMostOne, atob, btoa, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, NotNull, now, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
 import { University } from '../universities/models/universities.models'
@@ -714,10 +714,6 @@ export class PostsService {
 
   async createPost (id: string, args: CreatePostArgs): Promise<Post> {
     const { takeAwayOrder, idleItemOrder, teamUpOrder } = args
-    console.error({
-      ty: typeof takeAwayOrder,
-      ins: takeAwayOrder instanceof TakeAwayOrder
-    })
     if (!atMostOne(takeAwayOrder, idleItemOrder, teamUpOrder)) {
       throw new ForbiddenException('单个帖子最多只能携带 takeAwayOrder, idleItemOrder, teamUpOrder 中的一种订单')
     }
@@ -796,8 +792,8 @@ export class PostsService {
       expiredAt
     } = idleItemOrder
     const query = `
-      query v($postId: string) {
-        p(func: uid($postId)) @filter(type(Post)) { p as uid }
+      query v($id: string) {
+        p(func: uid($id)) @filter(type(Post)) { p as uid }
       }
     `
     const condition = '@if( eq(len(p), 1) )'
@@ -822,6 +818,9 @@ export class PostsService {
       mutations: [{ set: mutation, cond: condition }],
       vars: { $id: post.id }
     })
+
+    console.error(res)
+
     if (res.json.p.length !== 1) {
       throw new PostNotFoundException(post.id)
     }
