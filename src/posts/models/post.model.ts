@@ -1,4 +1,6 @@
 import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
+import { Type } from 'class-transformer'
+import { ValidateNested } from 'class-validator'
 
 import { Connection, ORDER_BY } from '../../connections/models/connections.model'
 import { CreateIdleItemOrderArgs, CreateTakeAwayOrderArgs, CreateTeamUpOrderArgs } from '../../orders/models/orders.model'
@@ -22,23 +24,30 @@ export class CreatePostArgs {
   @Field({ description: '帖子内容' })
     content: string
 
-  @Field(type => [String], { description: '帖子图片', nullable: true })
+  @Field(of => [String], { description: '帖子图片', nullable: true })
     images: string[]
 
-  @Field({ nullable: true, description: '帖子所属的 Subject' })
+  @Field(of => String, { nullable: true, description: '帖子所属的 Subject' })
     subjectId: string
 
-  @Field({ description: '帖子所在的 University' })
+  @Field(of => String, { description: '帖子所在的 University' })
     universityId: string
 
-  @Field(type => Boolean, { nullable: true, description: '是否匿名帖子', defaultValue: false })
+  @Field(of => Boolean, { nullable: true, description: '是否匿名帖子', defaultValue: false })
     isAnonymous: boolean
 
+  @ValidateNested()
+  @Type(of => CreateTakeAwayOrderArgs)
   @Field(of => CreateTakeAwayOrderArgs, { description: '创建带有 有偿订单 的帖子', nullable: true })
     takeAwayOrder: CreateTakeAwayOrderArgs
 
+  @ValidateNested()
+  @Type(of => CreateIdleItemOrderArgs)
   @Field(of => CreateIdleItemOrderArgs, { description: '創建帶有 閑置訂單 的帖子', nullable: true })
     idleItemOrder: CreateIdleItemOrderArgs
+
+  @ValidateNested()
+  @Type(of => CreateTeamUpOrderArgs)
 
   @Field(of => CreateTeamUpOrderArgs, { description: '創建帶有 組隊 訂單的帖子', nullable: true })
     teamUpOrder: CreateTeamUpOrderArgs
@@ -58,10 +67,6 @@ export class Post {
 
   @Field()
     createdAt: string
-}
-
-export class PostWithCreatorId extends Post {
-  creatorId: string
 }
 
 @ObjectType()

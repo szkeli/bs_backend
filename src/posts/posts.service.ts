@@ -12,9 +12,9 @@ import { Comment, CommentsConnection } from '../comment/models/comment.model'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
-import { OrderUnion } from '../orders/models/orders.model'
+import { OrderUnion, TakeAwayOrder } from '../orders/models/orders.model'
 import { Subject } from '../subject/model/subject.model'
-import { atob, btoa, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, NotNull, now, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
+import { atMostOne, atob, btoa, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, NotNull, now, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { PagingConfigArgs, UserWithFacets } from '../user/models/user.model'
 import { Vote, VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
@@ -714,6 +714,13 @@ export class PostsService {
 
   async createPost (id: string, args: CreatePostArgs): Promise<Post> {
     const { takeAwayOrder, idleItemOrder, teamUpOrder } = args
+    console.error({
+      ty: typeof takeAwayOrder,
+      ins: takeAwayOrder instanceof TakeAwayOrder
+    })
+    if (!atMostOne(takeAwayOrder, idleItemOrder, teamUpOrder)) {
+      throw new ForbiddenException('单个帖子最多只能携带 takeAwayOrder, idleItemOrder, teamUpOrder 中的一种订单')
+    }
     const txn = this.dbService.getDgraphIns().newTxn()
     try {
       const post = await this.createPostTxn(id, args, txn)

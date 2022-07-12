@@ -382,3 +382,22 @@ export const NotNull = (...args: any[]) => {
 
   return temp
 }
+
+/**
+ * 最多一个对象非空
+ * @param args args
+ * @returns boolean
+ */
+export const atMostOne = (...args: any[]) => {
+  let times = 1
+  if (!args || args.length === 0) {
+    return true
+  }
+
+  for (let i = 0; i < args.length; i++) {
+    if (args[i] !== undefined && args[i] !== null) {
+      times--
+    }
+  }
+  return times >= 0
+}

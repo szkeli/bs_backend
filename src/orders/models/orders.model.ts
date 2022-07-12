@@ -1,4 +1,5 @@
 import { createUnionType, Field, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { IsISO8601, Min, MinLength, ValidateIf } from 'class-validator'
 
 export enum TAKEAWAY_ORDER_TYPE {
   EXPRESS_DELIVERY = 'EXPRESS_DELIVERY',
@@ -90,81 +91,6 @@ export class TakeAwayOrder {
     redeemCounts: number
 }
 
-@InputType({ description: '创建 有偿代拿 的订单，对于 type === TAKEAWAY_ORDER_TYPE.OTHER 的订单，相关字段会被忽略' })
-export class CreateTakeAwayOrderArgs {
-  @Field(of => TAKEAWAY_ORDER_TYPE, { description: '代拿类型' })
-    type: TAKEAWAY_ORDER_TYPE
-
-  @Field(of => String, { description: '所在地（起点）', nullable: true })
-    orderStartingPoint: string | null
-
-  @Field(of => String, { description: '目的地（终点）', nullable: true })
-    orderDestination: string | null
-
-  @Field(of => String, { description: '联系方式', nullable: true })
-    contactInfo: string | null
-
-  @Field(of => String, { description: '最晚送达时间', nullable: true })
-    endTime: string | null
-
-  @Field(of => Int, { description: '金额，以分为单位' })
-    reserveAmounts: number
-
-  @Field(of => String, { description: '订单结束时间' })
-    expiredAt: string
-
-  @Field(of => Int, { description: '订单的可接单次数' })
-    redeemCounts: number
-}
-
-@InputType({ description: '創建 閑置 的訂單' })
-export class CreateIdleItemOrderArgs {
-  @Field(of => IDLEITEM_TYPE, { description: '閑置類型' })
-    idleItemType: IDLEITEM_TYPE
-
-  @Field(of => String, { description: '目的地（终点）' })
-    orderDestination: string
-
-  @Field(of => Int, { description: '金额，以分为单位' })
-    reserveAmounts: number
-
-  @Field(of => String, { description: '联系方式', nullable: true })
-    contactInfo: string | null
-
-  @Field(of => Int, { description: '订单的可接单次数' })
-    redeemCounts: number
-
-  @Field(of => String, { description: '订单结束时间' })
-    expiredAt: string
-}
-
-@InputType({ description: '創建 組隊 訂單' })
-export class CreateTeamUpOrderArgs {
-  @Field(of => TEAM_UP_TYPE, { description: '組隊類型' })
-    type: TEAM_UP_TYPE
-
-  @Field(of => String, { description: '所在地（起点）', nullable: true })
-    orderStartingPoint: string | null
-
-  @Field(of => String, { description: '目的地（终点）', nullable: true })
-    orderDestination: string | null
-
-  @Field(of => String, { description: '出發時間' })
-    departureTime: string
-
-  @Field(of => Int, { description: '金额，以分为单位' })
-    reserveAmounts: number
-
-  @Field(of => String, { description: '联系方式', nullable: true })
-    contactInfo: string | null
-
-  @Field(of => Int, { description: '订单的可接单次数' })
-    redeemCounts: number
-
-  @Field(of => String, { description: '订单结束时间' })
-    expiredAt: string
-}
-
 @ObjectType({
   description: '二手闲置的订单'
 })
@@ -220,6 +146,112 @@ export class TeamUpOrder {
 
   @Field(of => Int, { description: '订单的可接单次数' })
     redeemCounts: number
+}
+
+@InputType({ description: '创建 有偿代拿 的订单，对于 type === TAKEAWAY_ORDER_TYPE.OTHER 的订单，相关字段会被忽略' })
+export class CreateTakeAwayOrderArgs {
+  @Field(of => TAKEAWAY_ORDER_TYPE, { description: '代拿类型' })
+    type: TAKEAWAY_ORDER_TYPE
+
+  @ValidateIf((o, value) => value !== undefined && value !== null)
+  @MinLength(2)
+  @Field(of => String, { description: '所在地（起点）', nullable: true })
+    orderStartingPoint: string | null
+
+  @ValidateIf((o, value) => value !== undefined && value !== null)
+  @MinLength(2)
+
+  @Field(of => String, { description: '目的地（终点）', nullable: true })
+    orderDestination: string | null
+
+  @ValidateIf((o, value) => value !== undefined && value !== null)
+  @MinLength(2)
+
+  @Field(of => String, { description: '联系方式', nullable: true })
+    contactInfo: string | null
+
+  @ValidateIf((o, value) => value !== undefined && value !== null)
+  @IsISO8601()
+  @Field(of => String, { description: '最晚送达时间', nullable: true })
+    endTime: string | null
+
+  @Min(0)
+  @Field(of => Int, { description: '金额，以分为单位' })
+    reserveAmounts: number
+
+  @ValidateIf((o, value) => value !== undefined && value !== null)
+  @IsISO8601()
+  @Field(of => String, { description: '订单结束时间' })
+    expiredAt: string
+
+  @Min(1)
+  @Field(of => Int, { description: '订单的可接单次数' })
+    redeemCounts: number
+}
+
+@InputType({ description: '創建 閑置 的訂單' })
+export class CreateIdleItemOrderArgs {
+  @Field(of => IDLEITEM_TYPE, { description: '閑置類型' })
+    idleItemType: IDLEITEM_TYPE
+
+  @MinLength(2)
+
+  @Field(of => String, { description: '目的地（终点）' })
+    orderDestination: string
+
+  @Min(0)
+  @Field(of => Int, { description: '金额，以分为单位' })
+    reserveAmounts: number
+
+  @ValidateIf((o, value) => value !== undefined && value !== null)
+  @MinLength(2)
+  @Field(of => String, { description: '联系方式', nullable: true })
+    contactInfo: string | null
+
+  @Min(1)
+  @Field(of => Int, { description: '订单的可接单次数' })
+    redeemCounts: number
+
+  @IsISO8601()
+  @Field(of => String, { description: '订单结束时间' })
+    expiredAt: string
+}
+
+@InputType({ description: '創建 組隊 訂單' })
+export class CreateTeamUpOrderArgs {
+  @Field(of => TEAM_UP_TYPE, { description: '組隊類型' })
+    type: TEAM_UP_TYPE
+
+  @ValidateIf((o, value) => value !== undefined && value !== null)
+  @MinLength(2)
+  @Field(of => String, { description: '所在地（起点）', nullable: true })
+    orderStartingPoint: string | null
+
+  @ValidateIf((o, value) => value !== undefined && value !== null)
+  @MinLength(2)
+  @Field(of => String, { description: '目的地（终点）', nullable: true })
+    orderDestination: string | null
+
+  @IsISO8601()
+  @Field(of => String, { description: '出發時間' })
+    departureTime: string
+
+  @Min(0)
+  @Field(of => Int, { description: '金额，以分为单位' })
+    reserveAmounts: number
+
+  @ValidateIf((o, value) => value !== undefined && value !== null)
+  @MinLength(2)
+  @Field(of => String, { description: '联系方式', nullable: true })
+    contactInfo: string | null
+
+  @Min(1)
+  @Field(of => Int, { description: '订单的可接单次数' })
+    redeemCounts: number
+
+  @IsISO8601()
+  @Field(of => String, { description: '订单结束时间' })
+    expiredAt: string
 }
 
 export const OrderUnion = createUnionType({
