@@ -4,7 +4,7 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
-import { UserIdExistException, UserNotAuthenException, UserNotFoundException } from '../app.exception'
+import { SystemErrorException, UserIdExistException, UserNotAuthenException, UserNotFoundException } from '../app.exception'
 import { UserAuthenInfo, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { Conversation, ConversationsConnection } from '../conversations/models/conversations.model'
@@ -14,6 +14,7 @@ import { Experience } from '../experiences/models/experiences.model'
 import { Favorite } from '../favorites/models/favorite.model'
 import { Institute } from '../institutes/models/institutes.model'
 import { FilterLessonArgs, Lesson } from '../lessons/models/lessons.model'
+import { OrderUnion } from '../orders/models/orders.model'
 import { Post, PostsConnection } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Role } from '../roles/models/roles.model'
@@ -38,6 +39,52 @@ export class UserService {
   private readonly dgraph: DgraphClient
   constructor (private readonly dbService: DbService) {
     this.dgraph = dbService.getDgraphIns()
+  }
+
+  async orders (user: User, args: RelayPagingConfigArgs) {
+    const { first, after, orderBy } = args
+    const _after = handleRelayForwardAfter(after)
+    if (NotNull(first) && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.ordersRelayForward(user, first, _after)
+    }
+    throw new SystemErrorException()
+  }
+
+  async ordersRelayForward (user: User, first: number | null, after: string | null) {
+    const q1 = 'var(func: uid(orders), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($id: string, $after: string) {
+        var(func: uid($id)) @filter(type(User)) { u as uid }
+        var(func: has(post)) @filter(type(TakeAwayOrder) or type(IdleItemOrder) or type(TeamUpOrder)) {
+          posts as post @filter(type(Post))
+        }
+        var(func: uid(posts)) @filter(uid_in(creator, uid(u))) {
+          orders as ~post
+        }
+        ${after ? q1 : ''}
+        totalCount(func: uid(orders)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'orders'}), orderdesc: createdAt, first: ${first ?? 0}) {
+          id: uid
+          expand(_all_)
+          dgraph.type
+        }
+        startO(func: uid(orders), first: -1) { createdAt }
+        endO(func: uid(orders), first: 1) { createdAt }
+      }
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<typeof OrderUnion>>({
+      query,
+      vars: {
+        $id: user.id,
+        $after: after
+      }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first: first ?? 0,
+      after
+    })
   }
 
   async conversations (user: User, args: RelayPagingConfigArgs): Promise<ConversationsConnection> {

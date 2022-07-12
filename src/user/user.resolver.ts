@@ -23,6 +23,7 @@ import { FilterLessonArgs, LessonNotificationSettings, LessonsConnection } from 
 import { WithinArgs } from '../node/models/node.model'
 import { NOTIFICATION_TYPE, NotificationsConnection } from '../notifications/models/notifications.model'
 import { NotificationsService } from '../notifications/notifications.service'
+import { OrdersConnection } from '../orders/models/orders.model'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
 import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
@@ -295,5 +296,10 @@ export class UserResolver {
   @ResolveField(of => FavoritesConnection)
   async favorites (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
     return await this.userService.favorites(user, args)
+  }
+
+  @ResolveField(of => OrdersConnection, { description: '当前用户的所有订单' })
+  async orders (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
+    return await this.userService.orders(user, args)
   }
 }

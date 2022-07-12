@@ -1,6 +1,8 @@
 import { createUnionType, Field, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
 import { IsISO8601, Min, MinLength, ValidateIf } from 'class-validator'
 
+import { Connection, ValueRef } from '../../connections/models/connections.model'
+
 export enum TAKEAWAY_ORDER_TYPE {
   EXPRESS_DELIVERY = 'EXPRESS_DELIVERY',
   TAKEOUT = 'TAKEOUT',
@@ -269,3 +271,9 @@ export const OrderUnion = createUnionType({
     }
   }
 })
+
+@ObjectType()
+export class OrdersConnection extends Connection(new ValueRef({
+  value: OrderUnion,
+  name: 'OredrUnion'
+})) {}
