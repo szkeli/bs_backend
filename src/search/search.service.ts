@@ -1,30 +1,28 @@
 import { Injectable } from '@nestjs/common'
-import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
+import { SystemErrorException } from '../app.exception'
 import { Comment } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { Institute } from '../institutes/models/institutes.model'
 import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import { SubCampus } from '../subcampus/models/subcampus.model'
 import { Subject } from '../subject/model/subject.model'
-import { btoa, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { handleRelayForwardAfter, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { User } from '../user/models/user.model'
 import { SearchArgs, SearchResultItemConnection, SEARCHTYPE } from './model/search.model'
 
 @Injectable()
 export class SearchService {
-  private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
-    this.dgraph = dbService.getDgraphIns()
-  }
+  constructor (private readonly dbService: DbService) {}
 
-  async search ({ type, query }: SearchArgs, { after, orderBy, first, before }: RelayPagingConfigArgs): Promise<SearchResultItemConnection> {
-    after = btoa(after)
-    before = btoa(before)
+  async search (searchArgs: SearchArgs, pagingArgs: RelayPagingConfigArgs): Promise<SearchResultItemConnection> {
+    const { type, query } = searchArgs
+    let { after, orderBy, first } = pagingArgs
 
+    after = handleRelayForwardAfter(after)
     if (type === SEARCHTYPE.POST && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.searchPost(query, first, after)
     }
@@ -46,10 +44,10 @@ export class SearchService {
     if (type === SEARCHTYPE.SUBCAMPUS && first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.searchSubCampus(query, first, after)
     }
-    throw new Error('Method not implemented.')
+    throw new SystemErrorException()
   }
 
-  async searchSubCampus (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
+  async searchSubCampus (q: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(subCampuses), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($query: string, $after: string) {
@@ -79,7 +77,7 @@ export class SearchService {
     })
   }
 
-  async searchInstitute (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
+  async searchInstitute (q: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(institutes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($query: string, $after: string) {
@@ -109,7 +107,7 @@ export class SearchService {
     })
   }
 
-  async searchUniversity (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
+  async searchUniversity (q: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(universities), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($query: string, $after: string) {
@@ -180,7 +178,7 @@ export class SearchService {
     })
   }
 
-  async searchComment (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
+  async searchComment (q: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($query: string, $after: string) {
@@ -222,7 +220,7 @@ export class SearchService {
     })
   }
 
-  async searchUser (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
+  async searchUser (q: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
         query v($query: string, $after: string) {
@@ -265,7 +263,7 @@ export class SearchService {
     })
   }
 
-  async searchPost (q: string, first: number, after: string | null): Promise<SearchResultItemConnection> {
+  async searchPost (q: string, first: number, after: string | null) {
     const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
     query v($query: string, $after: string) {
