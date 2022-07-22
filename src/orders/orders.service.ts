@@ -1,16 +1,116 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { ExceedRedeenCountException, OrderHasBeenTakenException, OrderNotFoundException, OrderPickUpErrorException, UserNotFoundException } from '../app.exception'
-import { DbService } from '../db/db.service'
+import { DbService, Txn } from '../db/db.service'
 import { Post } from '../posts/models/post.model'
 import { now } from '../tool'
 import { User } from '../user/models/user.model'
 import { OrderPickUp } from './models/order-pick-up.model'
-import { OrderUnion, PickUpOrderArgs } from './models/orders.model'
+import { CancelPickUpArgs, OrderUnion, PickUpOrderArgs } from './models/orders.model'
 
 @Injectable()
 export class OrdersService {
   constructor (private readonly dbService: DbService) {}
+
+  /**
+   * 取消一个接单
+   * 1. 被取消的订单有接单
+   * 2. 被取消的订单的接单者是取消者
+   * 3. 被去取消的订单的可接单次数加一
+   * @param user 操作者
+   * @param args 被操作的订单
+   */
+  async cancelPickUpOrder (user: User, args: CancelPickUpArgs) {
+    await this.dbService.withTxn(async txn => {
+      await this.cancelPickUpTxn(txn, user, args)
+      await this.addRedeemCountTxn(txn, args)
+    })
+
+    return true
+  }
+
+  // 订单可接单次数加一
+  async addRedeemCountTxn (txn: Txn, args: CancelPickUpArgs) {
+    const { orderId } = args
+    const query = `
+      query v($orderId: string) {
+        o(func: uid($orderId)) {
+          o as uid
+          redeemCounts as redeemCounts
+          newRedeemCounts as math(redeemCounts + 1)
+        }
+      }
+    `
+    const mut = {
+      uid: 'uid(o)',
+      redeemCounts: 'val(newRedeemCounts)'
+    }
+    await this.dbService.handleTransaction(txn, {
+      query,
+      mutations: [{ set: mut }],
+      vars: { $orderId: orderId }
+    })
+  }
+
+  // 取消一个订单
+  async cancelPickUpTxn (txn: Txn, user: User, args: CancelPickUpArgs) {
+    const { id } = user
+    const { orderId } = args
+    const query = `
+      query v($id: string, $orderId: string) {
+        u(func: uid($id)) @filter(type(User)) { u as uid }
+        o(func: uid($orderId)) @filter(type(TakeAwayOrder) or type(IdleItemOrder) or type(TeamUpOrder)) { 
+          o as uid 
+        }
+        # 订单是否有接单
+        up(func: uid(o)) @filter(has(pickUp)) { 
+          up as uid
+          p as pickUp @filter(type(OrderPickUp))
+        }
+        # 订单的接单者是否操作者
+        is(func: uid(p)) @filter(uid_in(creator, uid(u))) { is as uid }
+      }
+    `
+    const condition = `
+      @if(
+        eq(len(u), 1) and 
+        eq(len(o), 1) and 
+        eq(len(up), 1) and
+        eq(len(is), 1)
+      )
+    `
+    // 删除相应的 OrderPickUp
+    const del = {
+      uid: 'uid(o)',
+      pickUp: {
+        uid: 'uid(p)'
+      }
+    }
+    const res = await this.dbService.handleTransaction<{}, {
+      u: Array<{uid: string}>
+      o: Array<{uid: string}>
+      up: Array<{uid: string}>
+      is: Array<{uid: string}>
+    }>(txn, {
+      query,
+      mutations: [
+        { del, cond: condition }
+      ],
+      vars: { $id: id, $orderId: orderId }
+    })
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+    if (res.json.o.length !== 1) {
+      throw new OrderNotFoundException(orderId)
+    }
+    if (res.json.up.length !== 1) {
+      throw new OrderHasBeenTakenException(orderId)
+    }
+    if (res.json.is.length !== 1) {
+      throw new ForbiddenException('订单的接单者不是当前用户')
+    }
+  }
 
   async post (order: typeof OrderUnion) {
     const { id } = order
@@ -78,7 +178,11 @@ export class OrdersService {
         p(func: uid(postCreator)) { n as uid }
         g(func: uid(o)) @filter(gt(redeemCounts, 0)) { g as uid }
         # 订单是否已被接单
-        up(func: uid(o)) @filter(has(pickUp)) { up as uid }
+        up(func: uid(o)) {
+          pickUp @filter(type(OrderPickUp)) {
+            up as uid
+          }
+        }
         order(func:uid(o)) {
           id: uid
           expand(_all_)

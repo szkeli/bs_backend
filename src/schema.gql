@@ -4475,6 +4475,9 @@ type Mutation {
 
   """接单"""
   pickUpOrder(orderId: String!): OrderUnion!
+
+  """取消一个接单"""
+  cancelPickUpOrder(orderId: String!): Boolean!
 }
 
 """创建 有偿代拿 的订单，对于 type === TAKEAWAY_ORDER_TYPE.OTHER 的订单，相关字段会被忽略"""

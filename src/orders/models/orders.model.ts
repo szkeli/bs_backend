@@ -307,3 +307,9 @@ export class PickUpOrderArgs {
   @Field(of => String)
     orderId: string
 }
+
+@ArgsType()
+export class CancelPickUpArgs {
+  @Field(of => String)
+    orderId: string
+}

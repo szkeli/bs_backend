@@ -9,6 +9,9 @@ import dgraph, {
 import { readFileSync } from 'fs'
 
 import { CommitConditionalUpertsProps, CommitConditionalUpsertWithVarsProps, CommitMutationProps, CommitQueryWithVarsProps } from './model/db.model'
+
+export type Txn = dgraph.Txn
+
 @Injectable()
 export class DbService {
   private readonly dgraphStub: DgraphClientStub
@@ -18,11 +21,20 @@ export class DbService {
     this.dgraph = new DgraphClient(this.dgraphStub)
   }
 
+  async withTxn<T> (func: (txn: Txn) => Promise<T>): Promise<T> {
+    const txn = this.dgraph.newTxn()
+    try {
+      const res = await func(txn)
+      await txn.commit()
+      return res
+    } finally {
+      await txn.discard()
+    }
+  }
+
   getDgraphIns () {
     return this.dgraph
   }
-
-  async init () {}
 
   async dropAll () {
     const op = new Operation()
