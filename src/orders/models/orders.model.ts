@@ -1,4 +1,4 @@
-import { createUnionType, Field, InputType, Int, ObjectType, registerEnumType } from '@nestjs/graphql'
+import { ArgsType, createUnionType, Field, InputType, Int, InterfaceType, ObjectType, registerEnumType } from '@nestjs/graphql'
 import { IsISO8601, Min, MinLength, ValidateIf } from 'class-validator'
 
 import { Connection, ValueRef } from '../../connections/models/connections.model'
@@ -58,10 +58,26 @@ registerEnumType(TEAM_UP_TYPE, {
   }
 })
 
+@InterfaceType()
+export abstract class Order {
+  @Field(of => String)
+    id: string
+
+  @Field(of => String)
+    expiredAt: string
+
+  @Field(of => String)
+    createdAt: string
+
+  @Field(of => String, { description: '联系方式', nullable: true })
+    contactInfo: string | null
+}
+
 @ObjectType({
-  description: '有偿代拿的订单'
+  description: '有偿代拿的订单',
+  implements: () => [Order]
 })
-export class TakeAwayOrder {
+export class TakeAwayOrder implements Order {
   @Field(of => String)
     id: string
 
@@ -94,9 +110,10 @@ export class TakeAwayOrder {
 }
 
 @ObjectType({
-  description: '二手闲置的订单'
+  description: '二手闲置的订单',
+  implements: () => [Order]
 })
-export class IdleItemOrder {
+export class IdleItemOrder implements Order {
   @Field(of => String)
     id: string
 
@@ -117,12 +134,16 @@ export class IdleItemOrder {
 
   @Field(of => Int, { description: '订单的可接单次数' })
     redeemCounts: number
+
+  @Field(of => String, { description: '联系方式', nullable: true })
+    contactInfo: string | null
 }
 
 @ObjectType({
-  description: '拼车组队订单'
+  description: '拼车组队订单',
+  implements: () => [Order]
 })
-export class TeamUpOrder {
+export class TeamUpOrder implements Order {
   @Field(of => String)
     id: string
 
@@ -148,6 +169,9 @@ export class TeamUpOrder {
 
   @Field(of => Int, { description: '订单的可接单次数' })
     redeemCounts: number
+
+  @Field(of => String, { description: '联系方式', nullable: true })
+    contactInfo: string | null
 }
 
 @InputType({ description: '创建 有偿代拿 的订单，对于 type === TAKEAWAY_ORDER_TYPE.OTHER 的订单，相关字段会被忽略' })
@@ -277,3 +301,9 @@ export class OrdersConnection extends Connection(new ValueRef({
   value: OrderUnion,
   name: 'OredrUnion'
 })) {}
+
+@ArgsType()
+export class PickUpOrderArgs {
+  @Field(of => String)
+    orderId: string
+}

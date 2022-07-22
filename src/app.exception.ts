@@ -328,3 +328,27 @@ export class ParticipantsNotAllExistException extends HttpException {
     super(`Participants  ${participants.toString()} not all exist.`, HttpStatus.FORBIDDEN)
   }
 }
+
+export class OrderNotFoundException extends HttpException {
+  constructor (orderId: string) {
+    super(`Order ${orderId} not found`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class OrderHasBeenTakenException extends HttpException {
+  constructor (orderId: string) {
+    super(`订单 ${orderId} 已被领取`, HttpStatus.FORBIDDEN)
+  }
+}
+
+export class OrderPickUpErrorException extends HttpException {
+  constructor () {
+    super('接单者不能是订单的创建者', HttpStatus.FORBIDDEN)
+  }
+}
+
+export class ExceedRedeenCountException extends HttpException {
+  constructor () {
+    super('超过该订单的可接单次数', HttpStatus.FORBIDDEN)
+  }
+}

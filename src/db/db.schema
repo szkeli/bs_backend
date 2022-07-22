@@ -45,6 +45,8 @@ lessonNotificationStatus: uid @reverse .
 privateSettings: uid @reverse .
 from: uid @reverse .
 post: uid @reverse .
+pickUp: uid @reverse .
+order: uid @reverse .
 
 images: [string] .
 
@@ -790,6 +792,8 @@ type TakeAwayOrder {
   expiredAt
   # 最晚送达时间
   endTime
+  # 当前订单的接单人
+  pickUp
 }
 
 # 二手闲置的订单 
@@ -810,6 +814,8 @@ type IdleItemOrder {
   createdAt
   # 当前订单的过期时间
   expiredAt
+  # 当前订单的接单人
+  pickUp
 }
 
 # 组队的订单
@@ -835,4 +841,13 @@ type TeamUpOrder {
   createdAt
   # 当前订单的过期时间
   expiredAt
+  # 当前订单的接单人
+  pickUp
+}
+
+# 接单
+type OrderPickUp {
+  creator 
+  order 
+  createdAt
 }

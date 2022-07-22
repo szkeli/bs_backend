@@ -1380,8 +1380,23 @@ type OredrUnionEdge {
 union OrderUnion = TakeAwayOrder | IdleItemOrder | TeamUpOrder
 
 """有偿代拿的订单"""
-type TakeAwayOrder {
+type TakeAwayOrder implements Order {
   id: String!
+
+  """订单结束时间"""
+  expiredAt: String!
+
+  """订单创建时间"""
+  createdAt: String!
+
+  """联系方式"""
+  contactInfo: String
+
+  """当前订单的接单情况"""
+  pickUp: OrderPickUp
+
+  """携带该订单的 Post"""
+  post: Post!
 
   """代拿类型"""
   type: TAKEAWAY_ORDER_TYPE!
@@ -1392,23 +1407,29 @@ type TakeAwayOrder {
   """目的地（终点）"""
   orderDestination: String
 
-  """联系方式"""
-  contactInfo: String
-
   """最晚送达时间"""
   endTime: String
 
   """金额，以分为单位"""
   reserveAmounts: Int!
 
-  """订单结束时间"""
-  expiredAt: String!
-
-  """订单创建时间"""
-  createdAt: String!
-
   """订单的可接单次数"""
   redeemCounts: Int!
+}
+
+interface Order {
+  id: String!
+  expiredAt: String!
+  createdAt: String!
+
+  """联系方式"""
+  contactInfo: String
+
+  """当前订单的接单情况"""
+  pickUp: OrderPickUp
+
+  """携带该订单的 Post"""
+  post: Post!
 }
 
 enum TAKEAWAY_ORDER_TYPE {
@@ -1423,8 +1444,23 @@ enum TAKEAWAY_ORDER_TYPE {
 }
 
 """二手闲置的订单"""
-type IdleItemOrder {
+type IdleItemOrder implements Order {
   id: String!
+
+  """订单结束时间"""
+  expiredAt: String!
+
+  """订单创建时间"""
+  createdAt: String!
+
+  """联系方式"""
+  contactInfo: String
+
+  """当前订单的接单情况"""
+  pickUp: OrderPickUp
+
+  """携带该订单的 Post"""
+  post: Post!
 
   """目的地（终点）"""
   orderDestination: String!
@@ -1434,12 +1470,6 @@ type IdleItemOrder {
 
   """金额，以分为单位"""
   reserveAmounts: Int!
-
-  """订单结束时间"""
-  expiredAt: String!
-
-  """订单创建时间"""
-  createdAt: String!
 
   """订单的可接单次数"""
   redeemCounts: Int!
@@ -1454,8 +1484,23 @@ enum IDLEITEM_TYPE {
 }
 
 """拼车组队订单"""
-type TeamUpOrder {
+type TeamUpOrder implements Order {
   id: String!
+
+  """订单结束时间"""
+  expiredAt: String!
+
+  """订单创建时间"""
+  createdAt: String!
+
+  """联系方式"""
+  contactInfo: String
+
+  """当前订单的接单情况"""
+  pickUp: OrderPickUp
+
+  """携带该订单的 Post"""
+  post: Post!
 
   """组队类型"""
   type: TEAM_UP_TYPE!
@@ -1468,12 +1513,6 @@ type TeamUpOrder {
 
   """金额，以分为单位"""
   reserveAmounts: Int
-
-  """订单结束时间"""
-  expiredAt: String!
-
-  """订单创建时间"""
-  createdAt: String!
 
   """订单的可接单次数"""
   redeemCounts: Int!
@@ -2936,6 +2975,11 @@ enum WX_SUBSCRIBE_SCENE {
 
   """其他"""
   ADD_SCENE_OTHERS
+}
+
+type OrderPickUp {
+  id: String!
+  createdAt: String!
 }
 
 type Query {
@@ -4427,6 +4471,9 @@ type Mutation {
     title: String!
     avatarImageUrl: String!
   ): SubField!
+
+  """接单"""
+  pickUpOrder(orderId: String!): OrderUnion!
 }
 
 """创建 有偿代拿 的订单，对于 type === TAKEAWAY_ORDER_TYPE.OTHER 的订单，相关字段会被忽略"""
