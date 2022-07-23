@@ -1,7 +1,6 @@
 import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { CurrentUser } from '../auth/decorator'
-import { Post } from '../posts/models/post.model'
 import { User } from '../user/models/user.model'
 import { OrderPickUp } from './models/order-pick-up.model'
 import { CancelPickUpArgs, Order, OrderUnion, PickUpOrderArgs } from './models/orders.model'
@@ -25,10 +24,5 @@ export class OrdersResolver {
   @ResolveField(of => OrderPickUp, { description: '当前订单的接单情况', nullable: true })
   async pickUp (@Parent() order: typeof OrderUnion) {
     return await this.ordersService.pickUp(order)
-  }
-
-  @ResolveField(of => Post, { description: '携带该订单的 Post' })
-  async post (@Parent() order: typeof OrderUnion) {
-    return await this.ordersService.post(order)
   }
 }

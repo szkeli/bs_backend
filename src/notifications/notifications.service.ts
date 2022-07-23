@@ -5,7 +5,7 @@ import { DbService } from '../db/db.service'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { btoa, ids2String, now, relayfyArrayForward } from '../tool'
-import { NotificationArgs, User } from '../user/models/user.model'
+import { NotificationArgs } from '../user/models/user.model'
 import { VoteWithUnreadCount, VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
 import { Notification, NOTIFICATION_ACTION, NOTIFICATION_TYPE, NotificationsConnection } from './models/notifications.model'
 
@@ -190,38 +190,6 @@ export class NotificationsService {
     }
 
     return true
-  }
-
-  async to (id: string) {
-    const query = `
-        query v($notificationId: string) {
-            var(func: uid($notificationId)) @filter(type(Notification)) {
-                to as to @filter(type(User))
-            }
-            to(func: uid(to)) {
-                id: uid
-                expand(_all_)
-            }
-        }
-      `
-    const res = await this.dbService.commitQuery<{to: User[]}>({ query, vars: { $notificationId: id } })
-    return res.to[0]
-  }
-
-  async creator (id: string) {
-    const query = `
-    query v($notificationId: string) {
-        var(func: uid($notificationId)) @filter(type(Notification)) {
-            creator as creator @filter(type(User))
-        }
-        creator(func: uid(creator)) {
-            id: uid
-            expand(_all_)
-        }
-    }
-  `
-    const res = await this.dbService.commitQuery<{creator: User[]}>({ query, vars: { $notificationId: id } })
-    return res.creator[0]
   }
 
   async about (id: string) {

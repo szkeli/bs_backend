@@ -4,10 +4,9 @@ import { MESSAGE_TYPE } from 'src/messages/models/messages.model'
 
 import { SystemErrorException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
-import { Conversation, CONVERSATION_STATE } from '../conversations/models/conversations.model'
+import { CONVERSATION_STATE } from '../conversations/models/conversations.model'
 import { DbService } from '../db/db.service'
 import { relayfyArrayForward, RelayfyArrayParam } from '../tool'
-import { User } from '../user/models/user.model'
 import { Report, REPORT_STATE, REPORT_TYPE, Report2Union, ReportsConnection } from './models/reports.model'
 
 @Injectable()

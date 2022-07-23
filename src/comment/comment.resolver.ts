@@ -13,17 +13,12 @@ import { PubSub } from 'graphql-subscriptions'
 import { CheckPolicies, CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
-import { Anonymous } from '../anonymous/models/anonymous.model'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { PUB_SUB_KEY } from '../constants'
-import { DeletesService } from '../deletes/deletes.service'
-import { Delete } from '../deletes/models/deletes.model'
 import { Mention, MentionsConnection } from '../mentions/models/mentions.model'
 import { WithinArgs } from '../node/models/node.model'
 import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { ReportsService } from '../reports/reports.service'
-import { VotesConnection } from '../votes/model/votes.model'
 import { CommentService } from './comment.service'
 import {
   AddCommentArgs,
@@ -39,8 +34,6 @@ import {
 export class CommentResolver {
   constructor (
     private readonly commentService: CommentService,
-    private readonly reportsService: ReportsService,
-    private readonly deletesService: DeletesService,
     @Inject(PUB_SUB_KEY)private readonly pubSub: PubSub
   ) {}
 
@@ -127,11 +120,6 @@ export class CommentResolver {
     return await this.commentService.trendingComments(comment.id, first, offset)
   }
 
-  @ResolveField(of => VotesConnection, { description: '获取该评论下的点赞信息' })
-  async votes (@CurrentUser() user: User, @Parent() comment: Comment, @Args() args: PagingConfigArgs) {
-    return await this.commentService.getVotesByCommentId(user?.id, comment.id, args.first, args.offset)
-  }
-
   // @ResolveField(() => ReportsConnection, { description: '获取该评论的举报信息' })
   // async reports (@Parent() comment: Comment, @Args() { first, offset }: PagingConfigArgs) {
   //   return await this.reportsService.findReportsByCommentId(comment.id, first, offset)
@@ -140,21 +128,6 @@ export class CommentResolver {
   @ResolveField(of => CommentToUnion, { description: '获取被评论的对象' })
   async to (@Parent() comment: Comment) {
     return await this.commentService.to(comment.id)
-  }
-
-  @ResolveField(() => User, { nullable: true, description: '评论的创建者，评论是匿名评论时，creator为null' })
-  async creator (@Parent() comment: Comment) {
-    return await this.commentService.creator(comment.id)
-  }
-
-  @ResolveField(of => Delete, { description: '评论未被删除时，此项为null', nullable: true })
-  async delete (@Parent() comment: Comment) {
-    return await this.deletesService.findDeleteByCommentId(comment.id)
-  }
-
-  @ResolveField(of => Anonymous, { description: '评论的匿名信息，非匿名评论，此项为null', nullable: true })
-  async anonymous (@Parent() comment: Comment) {
-    return await this.commentService.anonymous(comment.id)
   }
 
   @ResolveField(of => MentionsConnection, { description: 'User 回复 User' })

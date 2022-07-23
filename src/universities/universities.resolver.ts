@@ -5,8 +5,6 @@ import { CheckPolicies, CurrentAdmin, NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
-import { InstitutesConnection } from '../institutes/models/institutes.model'
-import { PostsConnectionWithRelay } from '../posts/models/post.model'
 import { SubCampusesConnection } from '../subcampus/models/subcampus.model'
 import { SubjectsConnectionWithRelay } from '../subject/model/subject.model'
 import { UsersConnectionWithRelay } from '../user/models/user.model'
@@ -51,11 +49,6 @@ export class UniversitiesResolver {
     return await this.universitiesService.deleteUniversity(admin.id, args)
   }
 
-  @ResolveField(of => InstitutesConnection, { description: '该大学的所有学院' })
-  async institutes (@Parent() university: University, @Args() args: RelayPagingConfigArgs) {
-    return await this.universitiesService.institutes(university.id, args)
-  }
-
   @ResolveField(of => SubCampusesConnection, { description: '该大学的所有校区' })
   async subcampuses (@Parent() university: University, @Args() args: RelayPagingConfigArgs) {
     return await this.universitiesService.subcampuses(university.id, args)
@@ -69,11 +62,6 @@ export class UniversitiesResolver {
   @ResolveField(of => SubjectsConnectionWithRelay, { description: '该大学拥有的所有 Subject' })
   async subjects (@Parent() university: University, @Args() args: RelayPagingConfigArgs) {
     return await this.universitiesService.subjects(university.id, args)
-  }
-
-  @ResolveField(of => PostsConnectionWithRelay, { description: '该大学拥有的所有 Post' })
-  async posts (@Parent() university: University, @Args() args: RelayPagingConfigArgs) {
-    return await this.universitiesService.posts(university.id, args)
   }
 
   @Mutation(of => Boolean, { description: '测试接口，将当前所有用户添加到某个学校' })

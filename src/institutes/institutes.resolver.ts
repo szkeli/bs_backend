@@ -1,8 +1,7 @@
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 
 import { Role, Roles } from '../auth/decorator'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
-import { University } from '../universities/models/universities.models'
 import { InstitutesService } from './institutes.service'
 import { CreateInstituteArgs, DeleteInstituteArgs, Institute, InstitutesConnection } from './models/institutes.model'
 
@@ -32,10 +31,5 @@ export class InstitutesResolver {
   @Roles(Role.Admin)
   async deleteInstitute (@Args() args: DeleteInstituteArgs) {
     return await this.institutesService.deleteInstitute(args)
-  }
-
-  @ResolveField(of => University, { description: '当前学院所在的大学' })
-  async university (@Parent() university: University) {
-    return await this.institutesService.university(university.id)
   }
 }

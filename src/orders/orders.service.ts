@@ -2,7 +2,6 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { ExceedRedeenCountException, OrderHasBeenTakenException, OrderNotFoundException, OrderPickUpErrorException, UserNotFoundException } from '../app.exception'
 import { DbService, Txn } from '../db/db.service'
-import { Post } from '../posts/models/post.model'
 import { now } from '../tool'
 import { User } from '../user/models/user.model'
 import { OrderPickUp } from './models/order-pick-up.model'
@@ -10,6 +9,23 @@ import { CancelPickUpArgs, OrderUnion, PickUpOrderArgs } from './models/orders.m
 
 @Injectable()
 export class OrdersService {
+  async findOrderByPostId (id: string): Promise<typeof OrderUnion> {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Post)) {
+          o as ~post @filter(type(TakeAwayOrder) or type(IdleItemOrder) or type(TeamUpOrder))
+        }
+        o(func: uid(o)) {
+          id: uid
+          expand(_all_)
+          dgraph.type
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{o: Array<typeof OrderUnion>}>({ query, vars: { $id: id } })
+    return res.o[0]
+  }
+
   constructor (private readonly dbService: DbService) {}
 
   /**
@@ -110,26 +126,6 @@ export class OrdersService {
     if (res.json.is.length !== 1) {
       throw new ForbiddenException('订单的接单者不是当前用户')
     }
-  }
-
-  async post (order: typeof OrderUnion) {
-    const { id } = order
-    const query = `
-      query v($id: string) {
-        var(func: uid($id)) {
-          p as post @filter(type(Post)) 
-        }
-        post(func: uid(p)) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{post: Post[]}>({
-      query,
-      vars: { $id: id }
-    })
-    return res.post[0]
   }
 
   async pickUp (order: typeof OrderUnion): Promise<OrderPickUp> {

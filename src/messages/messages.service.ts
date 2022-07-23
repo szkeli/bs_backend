@@ -1,9 +1,8 @@
 import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common'
 
-import { Admin } from '../admin/models/admin.model'
 import { SystemErrorException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
-import { Conversation, MessageItemsConnection } from '../conversations/models/conversations.model'
+import { MessageItemsConnection } from '../conversations/models/conversations.model'
 import { DbService } from '../db/db.service'
 import { NotNull, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { User } from '../user/models/user.model'
@@ -90,67 +89,6 @@ export class MessagesService {
       createdAt: now(),
       content
     }
-  }
-
-  async findCreatorByMessageId (id: string) {
-    const query = `
-      query v($messageId: string) {
-        message(func: uid($messageId)) @filter(type(Message)) {
-          id: uid
-          creator {
-            id: uid
-            expand(_all_)
-            dgraph.type
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{message: Array<{creator: ((User | Admin) & {'dgraph.type': string[]})}>}>({
-      query,
-      vars: {
-        $messageId: id
-      }
-    })
-    if (res.message.length !== 1) {
-      throw new ForbiddenException(`消息 ${id} 不存在`)
-    }
-    if (!res.message[0].creator) {
-      throw new ForbiddenException(`消息 ${id} 没有创建者`)
-    }
-    const { creator } = res.message[0]
-    if (creator['dgraph.type'].includes('User')) {
-      return new User(creator as unknown as User)
-    }
-    if (creator['dgraph.type'].includes('Admin')) {
-      return new Admin(creator as unknown as Admin)
-    }
-  }
-
-  async findConversationByMessageId (id: string) {
-    const query = `
-      query v($messageId: string) {
-        message(func: uid($messageId)) @filter(type(Message)) {
-          id: uid
-          conversation @filter(type(Conversation)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{message: Array<{conversation: Conversation}>}>({
-      query,
-      vars: {
-        $messageId: id
-      }
-    })
-    if (res.message.length !== 1) {
-      throw new ForbiddenException(`消息 ${id} 不存在`)
-    }
-    if (!res.message[0].conversation) {
-      throw new ForbiddenException(`消息 ${id} 没有会话`)
-    }
-    return res.message[0].conversation
   }
 
   async message (id: string): Promise<Message> {

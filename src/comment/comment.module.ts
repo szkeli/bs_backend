@@ -9,6 +9,8 @@ import { ReportsModule } from '../reports/reports.module'
 import { SharedModule } from '../shared/shared.module'
 import { CommentResolver } from './comment.resolver'
 import { CommentService } from './comment.service'
+import { PostResolver } from './post.resolver'
+import { UserResolver } from './user.resolver'
 
 @Module({
   imports: [
@@ -22,7 +24,9 @@ import { CommentService } from './comment.service'
   ],
   providers: [
     CommentResolver,
-    CommentService
+    CommentService,
+    PostResolver,
+    UserResolver
   ],
   exports: [CommentService]
 })

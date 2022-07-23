@@ -1,10 +1,9 @@
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 
 import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { AddFoldOnCommentPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
-import { Comment } from '../comment/models/comment.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { FoldsService } from './folds.service'
 import { Fold, FoldsConnection } from './models/folds.model'
@@ -25,15 +24,5 @@ export class FoldsResolver {
   @CheckPolicies(new MustWithCredentialPolicyHandler())
   async folds (@Args() args: RelayPagingConfigArgs) {
     return await this.foldsService.folds(args)
-  }
-
-  @ResolveField(of => Admin, { description: '折叠的创建者' })
-  async creator (@Parent() fold: Fold) {
-    return await this.foldsService.creator(fold.id)
-  }
-
-  @ResolveField(of => Comment, { description: '被折叠的对象' })
-  async to (@Parent() fold: Fold) {
-    return await this.foldsService.to(fold.id)
   }
 }

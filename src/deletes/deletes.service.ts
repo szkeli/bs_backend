@@ -1,12 +1,10 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
-import { Admin } from '../admin/models/admin.model'
 import { SystemErrorException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { btoa, now, relayfyArrayForward } from '../tool'
-import { AdminAndUserUnion, User } from '../user/models/user.model'
 import { Delete, DeletedUnion, DeletesConnection } from './models/deletes.model'
 
 @Injectable()
@@ -58,29 +56,6 @@ export class DeletesService {
     const res = await this.dbService.commitQuery<{delete: Array<{to: typeof DeletedUnion }>}>({ query, vars: { $deleteId: deleteId } })
 
     return res.delete[0]?.to
-  }
-
-  async creator (deleteId: string) {
-    const query = `
-      query v($deleteId: string) {
-        delete(func: uid($deleteId)) @filter(type(Delete)) {
-          creator @filter(type(Admin) or type(User)) {
-            id: uid
-            expand(_all_)
-            dgraph.type
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{delete: Array<{creator: (typeof AdminAndUserUnion) & {'dgraph.type': string[]}}>}>({ query, vars: { $deleteId: deleteId } })
-    const v = res.delete[0]?.creator
-
-    if (v['dgraph.type']?.includes('User')) {
-      return new User(v as unknown as User)
-    }
-    if (v['dgraph.type']?.includes('Admin')) {
-      return new Admin(v as unknown as Admin)
-    }
   }
 
   async delete (deleteId: string) {

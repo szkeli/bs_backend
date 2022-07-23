@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 
 import { CensorsModule } from '../censors/censors.module'
 import { CommentModule } from '../comment/comment.module'
@@ -9,14 +9,16 @@ import { ReportsModule } from '../reports/reports.module'
 import { SharedModule } from '../shared/shared.module'
 import { SubjectModule } from '../subject/subject.module'
 import { UserModule } from '../user/user.module'
+import { OrderResolver } from './order.resolver'
 import { PostsResolver } from './posts.resolver'
 import { PostsService } from './posts.service'
+import { UniversityResolver } from './university.resolver'
 import { UserResolver } from './user.resolver'
 
 @Module({
   imports: [
     PubsubsModule,
-    SharedModule,
+    forwardRef(() => SharedModule),
     UserModule,
     SubjectModule,
     ReportsModule,
@@ -28,7 +30,9 @@ import { UserResolver } from './user.resolver'
   providers: [
     PostsResolver,
     PostsService,
-    UserResolver
+    UserResolver,
+    OrderResolver,
+    UniversityResolver
   ],
   exports: [PostsService]
 })

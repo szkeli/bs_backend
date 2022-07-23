@@ -4,7 +4,6 @@ import { InstituteAlreadyAtTheUniversityException, InstituteNotFoundException, S
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
-import { University } from '../universities/models/universities.models'
 import { CreateInstituteArgs, DeleteInstituteArgs, Institute } from './models/institutes.model'
 
 @Injectable()
@@ -44,25 +43,6 @@ export class InstitutesService {
     }
 
     return true
-  }
-
-  async university (id: string) {
-    const query = `
-      query v($id: string) {
-        var(func: uid($id)) @filter(type(Institute)) {
-          i as ~institutes @filter(type(University))
-        }
-        i(func: uid(i)) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{i: University[]}>({
-      query, vars: { $id: id }
-    })
-
-    return res.i[0]
   }
 
   async createInstitute ({ id, ...args }: CreateInstituteArgs): Promise<Institute> {

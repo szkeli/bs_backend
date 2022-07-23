@@ -1,6 +1,5 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
-import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
@@ -39,11 +38,6 @@ export class DeletesResolver {
   @CheckPolicies(new MustWithCredentialPolicyHandler())
   async deletes (@Args() args: RelayPagingConfigArgs) {
     return await this.deletesService.deletes(args)
-  }
-
-  @ResolveField(of => Admin, { description: '删除的创建者' })
-  async creator (@Parent() d: Delete) {
-    return await this.deletesService.creator(d.id)
   }
 
   @ResolveField(of => DeletedUnion, { description: '被删除的对象' })

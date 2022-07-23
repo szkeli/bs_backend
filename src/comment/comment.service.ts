@@ -15,11 +15,9 @@ import { NlpService } from '../nlp/nlp.service'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
 import { IImage, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
 import {
-  atob, btoa, DeletePrivateValue, edgifyByCreatedAt, handleRelayForwardAfter, imagesV2fy,
+  atob, btoa, edgifyByCreatedAt, handleRelayForwardAfter, imagesV2fy,
   imagesV2ToImages, now, relayfyArrayForward, relayfyArrayForwardByScore, RelayfyArrayParamByScore, sha1
 } from '../tool'
-import { User, UserWithFacets } from '../user/models/user.model'
-import { Vote, VotesConnection } from '../votes/model/votes.model'
 import {
   AddCommentArgs,
   Comment,
@@ -38,6 +36,49 @@ export class CommentService {
     private readonly nlpService: NlpService,
     @Inject(PUB_SUB_KEY) private readonly pubSub
   ) {}
+
+  /**
+   * 返回对应帖子id下的评论
+   * @param id 帖子id
+   * @param first 前first条帖子
+   * @param offset 偏移量
+   * @returns {Promise<CommentsConnection>} CommentsConnection
+   */
+  async findCommentsByPostId (id: string, first: number, offset: number): Promise<CommentsConnection> {
+    const query = `
+      query v($uid: string) {
+        # 包含已经被折叠的帖子
+        var(func: uid($uid)) @recurse(loop: false) {
+          A as uid
+          comments
+        }
+
+        totalCount(func: uid(A)) @filter(type(Comment) and not uid($uid) and not has(delete)) {
+          count(uid)
+        }
+
+        post(func: uid($uid)) @filter(type(Post)) {
+          comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Comment) and not has(delete) and not has(fold)) {
+            id: uid
+            expand(_all_)
+          }
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      post: Array<{ comments?: Comment[]}>
+      totalCount: Array<{count: number}>
+    }>({ query, vars: { $uid: id } })
+
+    if (!res.post) {
+      throw new ForbiddenException(`帖子 ${id} 不存在`)
+    }
+
+    return {
+      nodes: res.post[0]?.comments ?? [],
+      totalCount: res.totalCount[0]?.count ?? 0
+    }
+  }
 
   async images (id: string): Promise<string[]> {
     const query = `
@@ -482,50 +523,6 @@ export class CommentService {
     throw new Error('Method not implemented.')
   }
 
-  async anonymous (id: string) {
-    const query = `
-      query v($commentId: string) {
-        # 原帖子 id
-        var(func: uid($commentId)) @recurse(depth: 100, loop: false) {
-          p as ~comments
-        }
-        originPost(func: uid(p)) @filter(type(Post)) {
-          id: uid
-        }
-        comment(func: uid($commentId)) @filter(type(Comment)) {
-          creator @filter(type(User)) {
-            id: uid
-            subCampus
-          }
-          # 被评论的对象的id
-          to @filter(type(Post) or type(Comment)) {
-            id: uid
-          }
-          anonymous @filter(type(Anonymous)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      originPost: Array<{id: string}>
-      comment: Array<{to: {id: string}, creator: {id: string, subCampus: string}, anonymous: Anonymous}>
-    }>({ query, vars: { $commentId: id } })
-
-    const anonymous = res.comment[0]?.anonymous
-    const creatorId = res.comment[0]?.creator?.id
-    const originPostId = res.originPost[0]?.id
-    const subCampus = res.comment[0]?.creator?.subCampus
-
-    if (anonymous) {
-      anonymous.watermark = sha1(`${originPostId}${creatorId}`)
-      anonymous.subCampus = subCampus
-    }
-
-    return anonymous
-  }
-
   async commentsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<CommentsConnection> {
     const query = `
       query v($startTime: string, $endTime: string) {
@@ -552,40 +549,6 @@ export class CommentService {
       totalCount: Array<{count: number}>
       comments: Comment[]
     }>({ query, vars: { $startTime: startTime, $endTime: endTime } })
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.comments ?? []
-    }
-  }
-
-  async findCommentsByUid (viewerId: string, id: string, first: number, offset: number): Promise<CommentsConnection> {
-    const q1 = `
-      totalCount(func: type(Comment)) @filter(uid_in(creator, $uid)) {
-        uids as uid
-        count(uid)
-      }
-      `
-    // 非本人不能查看被删除和匿名评论
-    const q2 = `
-      totalCount(func: type(Comment)) @filter(uid_in(creator, $uid) and not has(delete) and not has(anonymous)) {
-        uids as uid
-        count(uid)
-      }
-      `
-    const query = `
-        query v($uid: string) {
-          ${viewerId === id ? q1 : q2}
-          comments(func: uid(uids), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      comments: Comment[]
-    }>({ query, vars: { $uid: id } })
 
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
@@ -695,37 +658,6 @@ export class CommentService {
       totalCount: res.totalCount[0]?.count ?? 0,
       nodes: res.comments ?? []
     }
-  }
-
-  async creator (id: string) {
-    const query = `
-      query v($commentId: string) {
-        comment (func: uid($commentId)) @filter(type(Comment) and not has(anonymous)) {
-          creator @filter(type(User)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{comment: Array<{creator: UserWithFacets}>}>({ query, vars: { $commentId: id } })
-    const creator = res.comment[0]?.creator
-    return DeletePrivateValue<User>(creator)
-  }
-
-  async findPostByCommentId (id: string) {
-    const query = `
-      query v($commentId: string) {
-        comment (func: uid($commentId)) @filter(type(Comment)) {
-          post @filter(type(Post)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{comment: Array<{post: object}>}>({ query, vars: { $commentId: id } })
-    return res.comment[0]?.post
   }
 
   async getCommentsByCommentId (id: CommentId, first: number, offset: number): Promise<CommentsConnection> {
@@ -1140,65 +1072,5 @@ export class CommentService {
     })
 
     return res.comment[0]
-  }
-
-  async getVotesByCommentId (viewerId: string, id: string, first: number, offset: number): Promise<VotesConnection> {
-    if (!viewerId) {
-      // 未登录时
-      const query = `
-        query v($commentId: string) {
-          v(func: uid($commentId)) @filter(type(Comment)) {
-            totalCount: count(votes @filter(type(Vote)))
-          }
-          u(func: uid($commentId)) @filter(type(Comment)) {
-            votes (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Vote)) {
-              id: uid
-              expand(_all_)
-            }
-          }
-        }
-      `
-      const res = await this.dbService.commitQuery<{
-        v: Array<{totalCount: number}>
-        u: Array<{votes: Vote[]}>
-      }>({ query, vars: { $commentId: id } })
-      return {
-        totalCount: res.v[0]?.totalCount ?? 0,
-        nodes: res.u[0]?.votes ?? [],
-        viewerCanUpvote: true,
-        viewerHasUpvoted: false
-      }
-    }
-    const query = `
-      query v($commentId: string, $viewerId: string) {
-        v(func: uid($commentId)) @filter(type(Comment)) {
-          totalCount: count(votes @filter(type(Vote)))
-          canVote: votes @filter(uid_in(creator, $viewerId)) {
-            uid
-          }
-        }
-        u(func: uid($commentId)) @filter(type(Comment)) {
-          votes (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Vote)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      v: Array<{totalCount: number, canVote: Vote[]}>
-      u: Array<{votes: Vote[]}>
-    }>({
-      query,
-      vars: { $commentId: id, $viewerId: viewerId }
-    })
-
-    const u: VotesConnection = {
-      nodes: res.u[0]?.votes || [],
-      totalCount: res.v[0]?.totalCount,
-      viewerCanUpvote: res.v[0]?.canVote === undefined,
-      viewerHasUpvoted: res.v[0]?.canVote !== undefined
-    }
-    return u
   }
 }

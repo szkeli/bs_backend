@@ -27,7 +27,7 @@ import {
 } from './model/subject.model'
 import { SubjectService } from './subject.service'
 
-@Resolver((_of: Subject) => Subject)
+@Resolver(of => Subject)
 export class SubjectResolver {
   constructor (private readonly subjectService: SubjectService) {}
 

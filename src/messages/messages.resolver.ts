@@ -1,10 +1,9 @@
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 
 import { CurrentUser } from '../auth/decorator'
-import { Conversation } from '../conversations/models/conversations.model'
 import { User } from '../user/models/user.model'
 import { MessagesService } from './messages.service'
-import { AddMessageArgs, Message, MessageCreatorUnion } from './models/messages.model'
+import { AddMessageArgs, Message } from './models/messages.model'
 
 @Resolver(() => Message)
 export class MessagesResolver {
@@ -18,15 +17,5 @@ export class MessagesResolver {
   @Mutation(of => Message, { description: '向指定 Conversation 添加一条消息' })
   async addMessage (@CurrentUser() user: User, @Args() args: AddMessageArgs) {
     return await this.messagesService.addMessage(user, args)
-  }
-
-  @ResolveField(of => Conversation, { description: '消息所属的会话' })
-  async conversation (@Parent() message: Message) {
-    return await this.messagesService.findConversationByMessageId(message.id)
-  }
-
-  @ResolveField(of => MessageCreatorUnion, { description: '消息的创建者' })
-  async creator (@Parent() message: Message) {
-    return await this.messagesService.findCreatorByMessageId(message.id)
   }
 }

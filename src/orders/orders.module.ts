@@ -6,6 +6,7 @@ import { OrderPickUpResolver } from './order-pick-up.resolver'
 import { OrderPickUpService } from './order-pick-up.service'
 import { OrdersResolver } from './orders.resolver'
 import { OrdersService } from './orders.service'
+import { PostResolver } from './post.resolver'
 import { UserResolver } from './user.resolver'
 
 @Module({
@@ -15,7 +16,8 @@ import { UserResolver } from './user.resolver'
     OrdersResolver,
     OrderPickUpService,
     OrderPickUpResolver,
-    UserResolver
+    UserResolver,
+    PostResolver
   ]
 })
 export class OrdersModule {}

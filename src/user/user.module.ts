@@ -7,8 +7,17 @@ import { NotificationsModule } from '../notifications/notifications.module'
 import { PubsubsModule } from '../pubsubs/pubsubs.module'
 import { SharedModule } from '../shared/shared.module'
 import { VotesModule } from '../votes/votes.module'
+import { CredentialResolver } from './credential.resolver'
+import { ExperienceResolver } from './experience.resolver'
+import { FoldResolver } from './fole.resolver'
+import { MessageResovler } from './message.resolver'
+import { NotificationResolver } from './notification.resolver'
+import { PinResolver } from './pin.resolver'
+import { PostResolver } from './post.resolver'
+import { SubFieldResolver } from './subfield.resolver'
 import { UserResolver } from './user.resolver'
 import { UserService } from './user.service'
+import { VoteResolver } from './vote.resolver'
 
 @Module({
   imports: [
@@ -25,7 +34,16 @@ import { UserService } from './user.service'
   ],
   providers: [
     UserResolver,
-    UserService
+    UserService,
+    PostResolver,
+    MessageResovler,
+    NotificationResolver,
+    VoteResolver,
+    ExperienceResolver,
+    SubFieldResolver,
+    PinResolver,
+    FoldResolver,
+    CredentialResolver
   ]
 })
 export class UserModule {}

@@ -1,4 +1,4 @@
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 
 import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
@@ -10,8 +10,7 @@ import { ConversationsService } from './conversations.service'
 import {
   Conversation,
   ConversationsConnection,
-  CreateConversationArgs,
-  MessageItemsConnection
+  CreateConversationArgs
 } from './models/conversations.model'
 
 // message 和 report 的负载
@@ -44,15 +43,5 @@ export class ConversationsResolver {
   @Mutation(of => Conversation, { description: '关闭一个会话' })
   async closeConversation (@CurrentUser() user: User, @Args('conversationId') conversationId: string) {
     return await this.conversationsService.closeConversation(user.id, conversationId)
-  }
-
-  @ResolveField(of => MessageItemsConnection, { description: '会话中的所有消息' })
-  async messages (@Parent() conversation: Conversation, @Args() args: RelayPagingConfigArgs) {
-    return await this.messagesService.messages(conversation.id, args)
-  }
-
-  @ResolveField(of => [User], { description: '会话的所有参与者' })
-  async participants (@Parent() conversation: Conversation) {
-    return await this.conversationsService.participants(conversation.id)
   }
 }

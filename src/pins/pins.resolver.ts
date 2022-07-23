@@ -1,10 +1,9 @@
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 
 import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, MaybeAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { CreatePinPolicyHandler, DeletePinPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
-import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { Pin, PinsConnection } from './models/pins.model'
 import { PinsService } from './pins.service'
@@ -37,15 +36,5 @@ export class PinsResolver {
   @MaybeAuth()
   async pins (@Args() paging: RelayPagingConfigArgs) {
     return await this.pinsService.pins(paging)
-  }
-
-  @ResolveField(of => Admin, { description: '置顶的创建者' })
-  async creator (@Parent() pin: Pin) {
-    return await this.pinsService.creator(pin.id)
-  }
-
-  @ResolveField(of => PostAndCommentUnion, { description: '被置顶的对象，被置顶对象被删除时，返回null', nullable: true })
-  async to (@Parent() pin: Pin) {
-    return await this.pinsService.to(pin.id)
   }
 }

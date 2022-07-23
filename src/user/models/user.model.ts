@@ -69,32 +69,6 @@ registerEnumType(GENDER, {
   name: 'GENDER'
 })
 
-@InputType()
-export class UserStringPropMap {
-  @Field({ description: '属性的值' })
-    value: string
-
-  @Field(type => Boolean, {
-    description: '是否私有属性',
-    nullable: true,
-    defaultValue: false
-  })
-    isPrivate: boolean
-}
-
-@InputType()
-export class UserGenderPropMap {
-  @Field(of => GENDER, { description: '属性的值' })
-    value: GENDER
-
-  @Field(type => Boolean, {
-    description: '是否私有属性',
-    nullable: true,
-    defaultValue: false
-  })
-    isPrivate: boolean
-}
-
 @ArgsType()
 export class PersonLoginArgs {
   @Field(of => String, { description: '用户账号', nullable: true })
@@ -276,44 +250,6 @@ export class User implements Person, Node {
     dailyCheckInSum?: number | null
 }
 
-@ObjectType()
-export class UserPrivateProps {
-  @Field(of => Boolean, {
-    description: '学院属性是否私有',
-    nullable: true,
-    defaultValue: false
-  })
-    isCollegePrivate: boolean
-
-  @Field(of => Boolean, {
-    description: '校区属性是否私有',
-    nullable: true,
-    defaultValue: false
-  })
-    isSubCampusPrivate: boolean
-
-  @Field(of => Boolean, {
-    description: '性别属性是否私有',
-    nullable: true,
-    defaultValue: false
-  })
-    isGenderPrivate: boolean
-
-  @Field(of => Boolean, {
-    description: '学校属性是否私有',
-    nullable: true,
-    defaultValue: false
-  })
-    isSchoolPrivate: boolean
-
-  @Field(of => Boolean, {
-    description: '年级属性是否私有',
-    nullable: true,
-    defaultValue: false
-  })
-    isGradePrivate: boolean
-}
-
 export class UserWithFacets extends User {
   /**
    * 学院属性是否私有
@@ -402,7 +338,15 @@ export const WhoAmIUnion = createUnionType({
 
 export const AdminAndUserUnion = createUnionType({
   name: 'AdminAndUserUnion',
-  types: () => [User, Admin]
+  types: () => [User, Admin],
+  resolveType: (v: {'dgraph.type': Array<'User'| 'Admin'>}) => {
+    if (v['dgraph.type']?.includes('Admin')) {
+      return Admin
+    }
+    if (v['dgraph.type']?.includes('User')) {
+      return User
+    }
+  }
 })
 
 @ArgsType()

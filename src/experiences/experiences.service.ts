@@ -5,55 +5,11 @@ import { SystemErrorException, UserAlreadyCheckInException, UserNotFoundExceptio
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
-import { User } from '../user/models/user.model'
 import { Experience, ExperienceTransactionType } from './models/experiences.model'
 
 @Injectable()
 export class ExperiencesService {
   constructor (private readonly dbService: DbService) {}
-  async from (id: string) {
-    const query = `
-        query v($id: string) {
-            var(func: uid($id)) @filter(type(ExperiencePointsTransaction)) {
-                from as from @filter(type(User))
-            }
-            from(func: uid(from)) {
-                id: uid
-                expand(_all_)
-            }
-        }
-    `
-    const res = await this.dbService.commitQuery<{
-      from: User[]
-    }>({
-      query,
-      vars: { $id: id }
-    })
-
-    return res.from[0]
-  }
-
-  async to (id: string) {
-    const query = `
-        query v($id: string) {
-            var(func: uid($id)) @filter(type(ExperiencePointTransaction)) {
-                to as to @filter(type(User))
-            }
-            to(func: uid(to)) {
-                id: uid
-                expand(_all_)
-            }
-        }
-    `
-    const res = await this.dbService.commitQuery<{
-      to: User[]
-    }>({
-      query,
-      vars: { $id: id }
-    })
-
-    return res.to[0]
-  }
 
   async addDailyCheckInExperiencePointsTxn (id: string, txn: dgraph.Txn): Promise<Experience> {
     // 今日零点时间戳

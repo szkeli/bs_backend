@@ -13,26 +13,17 @@ import {
   CommentsConnection, CommentsConnectionWithRelay
 } from 'src/comment/models/comment.model'
 import { PostId } from 'src/db/model/db.model'
-import { Subject } from 'src/subject/model/subject.model'
-import { SubjectService } from 'src/subject/subject.service'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { CommentService } from '../comment/comment.service'
-import { DeletesService } from '../deletes/deletes.service'
-import { Delete } from '../deletes/models/deletes.model'
 import { HashtagsConnection } from '../hashtags/models/hashtags.model'
 import { WithinArgs } from '../node/models/node.model'
-import { OrderUnion } from '../orders/models/orders.model'
-import { ReportsConnection } from '../reports/models/reports.model'
-import { ReportsService } from '../reports/reports.service'
 import { University } from '../universities/models/universities.models'
-import { VotesConnection, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   CreatePostArgs,
-  Nullable,
   Post,
   PostsConnection,
   PostsConnectionWithRelay,
@@ -45,10 +36,7 @@ import { PostsService } from './posts.service'
 export class PostsResolver {
   constructor (
     private readonly postsService: PostsService,
-    private readonly subjectService: SubjectService,
-    private readonly reportsService: ReportsService,
-    private readonly commentService: CommentService,
-    private readonly deletesService: DeletesService
+    private readonly commentService: CommentService
   ) {}
 
   @Query(of => Post, { description: '以postId获取一个帖子' })
@@ -107,36 +95,6 @@ export class PostsResolver {
     return await this.postsService.createPost(user.id, args)
   }
 
-  @ResolveField(of => User, { nullable: true, description: '帖子的创建者，当帖子是匿名帖子时，返回null' })
-  async creator (@Parent() post: Post): Promise<Nullable<User>> {
-    return await this.postsService.creator(post.id.toString())
-  }
-
-  @ResolveField(of => CommentsConnection, { description: '帖子的所有评论', deprecationReason: '请使用commentsWithRelay' })
-  async comments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.postsService.comments(post.id.toString(), first, offset)
-  }
-
-  @ResolveField(of => CommentsConnectionWithRelay, { description: '获取所有评论 relay分页版' })
-  async commentsWithRelay (@Parent() post: Post, @Args() paging: RelayPagingConfigArgs) {
-    return await this.commentService.commentsWithRelay(post.id, paging)
-  }
-
-  @ResolveField(of => Subject, { nullable: true, description: '帖子所属的主题' })
-  async subject (@Parent() post: Post): Promise<Subject | null> {
-    return await this.postsService.subject(post.id)
-  }
-
-  @ResolveField(of => VotesConnection, { description: '帖子的点赞' })
-  async votes (@CurrentUser() user: User, @Parent() post: Post, @Args() args: PagingConfigArgs) {
-    return await this.postsService.getVotesByPostId(user?.id, post.id, args)
-  }
-
-  @ResolveField(of => VotesConnectionWithRelay, { description: '帖子的点赞' })
-  async votesWithRelay (@CurrentUser() user: User, @Parent() post: Post, @Args() args: RelayPagingConfigArgs) {
-    return await this.postsService.votes(user?.id, post.id, args)
-  }
-
   // @ResolveField(of => ReportsConnection, { description: '帖子收到的举报' })
   // async reports (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
   //   return await this.reportsService.findReportsByPostId(post.id.toString(), first, offset)
@@ -157,11 +115,6 @@ export class PostsResolver {
     return await this.postsService.trendingComments(post.id.toString(), first, offset)
   }
 
-  @ResolveField(of => Delete, { description: '帖子未被删除时，此项为空', nullable: true })
-  async delete (@Parent() post: Post) {
-    return await this.deletesService.findDeleteByPostId(post.id.toString())
-  }
-
   @ResolveField(of => Anonymous, { description: '帖子的匿名信息，非匿名帖子此项为空', nullable: true })
   async anonymous (@Parent() post: Post) {
     return await this.postsService.anonymous(post.id)
@@ -180,10 +133,5 @@ export class PostsResolver {
   @ResolveField(of => University, { description: '该帖子所在的大学', nullable: true })
   async university (@Parent() post: Post): Promise<University> {
     return await this.postsService.university(post.id)
-  }
-
-  @ResolveField(of => OrderUnion, { description: '当前帖子携带的订单', nullable: true })
-  async order (@Parent() post: Post): Promise<typeof OrderUnion> {
-    return await this.postsService.order(post.id)
   }
 }

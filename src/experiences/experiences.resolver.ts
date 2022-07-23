@@ -1,4 +1,4 @@
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 
 import { CurrentUser, Role, Roles } from '../auth/decorator'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
@@ -24,15 +24,5 @@ export class ExperiencesResolver {
   @Roles(Role.User)
   async dailyCheckIn (@CurrentUser() user: User) {
     return await this.experiencesService.dailyCheckIn(user.id)
-  }
-
-  @ResolveField(of => User)
-  async to (@Parent() experience: Experience) {
-    return await this.experiencesService.to(experience.id)
-  }
-
-  @ResolveField(of => User, { nullable: true })
-  async from (@Parent() experience: Experience) {
-    return await this.experiencesService.from(experience.id)
   }
 }

@@ -74,11 +74,6 @@ export class VotesResolver {
     return post
   }
 
-  @ResolveField(_of => User, { description: '点赞的创建者' })
-  async creator (@Parent() vote: Vote) {
-    return await this.votesService.creator(vote.id)
-  }
-
   @ResolveField(_of => PostAndCommentUnion, { description: '被点赞的对象' })
   async to (@Parent() vote: Vote) {
     return await this.votesService.to(vote.id)

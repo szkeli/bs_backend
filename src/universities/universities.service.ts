@@ -3,8 +3,6 @@ import { Injectable } from '@nestjs/common'
 import { SystemErrorException, UniversityAlreadyExsistException, UniversityNotFoundException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
-import { Institute } from '../institutes/models/institutes.model'
-import { Post } from '../posts/models/post.model'
 import { SubCampus } from '../subcampus/models/subcampus.model'
 import { Subject } from '../subject/model/subject.model'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
@@ -164,43 +162,6 @@ export class UniversitiesService {
     return res.json.u[0]
   }
 
-  async posts (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
-    after = handleRelayForwardAfter(after)
-    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.postsRelayForward(id, first, after)
-    }
-    throw new Error('Method not implemented.')
-  }
-
-  async postsRelayForward (id: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    const query = `
-        query v($id: string, $after: string) {
-            var(func: uid($id)) @filter(type(University)) {
-                posts as posts @filter(type(Post) and not has(delete) and has(createdAt))
-            }
-            ${after ? q1 : ''}
-            totalCount(func: uid(posts)) { count(uid) }
-            objs(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
-                id: uid
-                expand(_all_)
-            }
-            startO(func: uid(posts), first: -1) { createdAt }
-            endO(func: uid(posts), first: 1) { createdAt }
-        }
-    `
-    const res = await this.dbService.commitQuery <RelayfyArrayParam<Post>>({
-      query,
-      vars: { $id: id, $after: after }
-    })
-
-    return relayfyArrayForward({
-      ...res,
-      first,
-      after
-    })
-  }
-
   async subjects (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
@@ -301,43 +262,6 @@ export class UniversitiesService {
         }
     `
     const res = await this.dbService.commitQuery <RelayfyArrayParam<SubCampus>>({
-      query,
-      vars: { $id: id, $after: after }
-    })
-
-    return relayfyArrayForward({
-      ...res,
-      first,
-      after
-    })
-  }
-
-  async institutes (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
-    after = handleRelayForwardAfter(after)
-    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.institutesRelayForward(id, first, after)
-    }
-    throw new Error('Method not implemented.')
-  }
-
-  async institutesRelayForward (id: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(institutes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    const query = `
-        query v($id: string, $after: string) {
-            var(func: uid($id)) @filter(type(University)) {
-                institutes as institutes @filter(type(Institute))
-            }
-            ${after ? q1 : ''}
-            totalCount(func: uid(institutes)) { count(uid) }
-            objs(func: uid(${after ? 'q' : 'institutes'}), orderdesc: createdAt, first: ${first}) {
-                id: uid
-                expand(_all_)
-            }
-            startO(func: uid(institutes), first: -1) { createdAt }
-            endO(func: uid(institutes), first: 1) { createdAt }
-        }
-    `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<Institute>>({
       query,
       vars: { $id: id, $after: after }
     })

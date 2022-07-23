@@ -1,13 +1,10 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { SystemErrorException } from '../app.exception'
-import { Comment } from '../comment/models/comment.model'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
-import { PostAndCommentUnion } from '../deletes/models/deletes.model'
-import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { btoa, now, relayfyArrayForward } from '../tool'
-import { User } from '../user/models/user.model'
 import { Pin, PinsConnection } from './models/pins.model'
 
 @Injectable()
@@ -191,48 +188,6 @@ export class PinsService {
     `
     const res = await this.dbService.commitQuery<{pin: Pin[]}>({ query, vars: { $pinId: pinId } })
     return res.pin[0]
-  }
-
-  async to (pinId: string) {
-    const query = `
-      query v($pinId: string) {
-          pin(func: uid($pinId)) @filter(type(Pin)) {
-              to @filter(type(Post) or type(Comment) and not has(delete)) {
-                  id: uid
-                  dgraph.type
-                  expand(_all_)
-              }
-          }
-      }
-    `
-    const res = await this.dbService.commitQuery<{pin: Array<{to: (typeof PostAndCommentUnion) & { 'dgraph.type': string}}>}>({ query, vars: { $pinId: pinId } })
-    if (res.pin[0].to['dgraph.type'].includes('Post')) {
-      return new Post(res.pin[0].to as unknown as Post)
-    }
-
-    if (res.pin[0].to['dgraph.type'].includes('Comment')) {
-      return new Comment(res.pin[0].to as unknown as Comment)
-    }
-  }
-
-  async creator (id: string) {
-    const query = `
-      query v($pinId: string) {
-          pin(func: uid($pinId)) @filter(type(Pin)) {
-              creator @filter(type(Admin)) {
-                  id: uid
-                  expand(_all_)
-              }
-          }
-      }
-    `
-    const res = await this.dbService.commitQuery<{ pin: Array<{creator: User}>}>({
-      query,
-      vars: {
-        $pinId: id
-      }
-    })
-    return res.pin[0]?.creator
   }
 
   //   /**

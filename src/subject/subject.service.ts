@@ -555,28 +555,26 @@ export class SubjectService {
     }
   }
 
-  async findASubjectByPostId (id: SubjectId) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
-        query v($uid: string) {
-          post(func: uid($uid)) @filter(has(subject)) {
-            uid
-            title
-            subject @filter(type(Subject)) {
-              id: uid
-              expand(_all_)
-            }
-          }
+  async findSubjectByPostId (id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(Post)) {
+          subject as ~posts @filter(type(Subject))
         }
-      `
-      const res = await this.dgraph
-        .newTxn({ readOnly: true })
-        .queryWithVars(query, { $uid: id })
-      return res.getJson().post[0]?.subject as unknown as Subject
-    } finally {
-      await txn.discard()
-    }
+        subject(func: uid(subject)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{
+      subject: Subject[]
+    }>({
+      query,
+      vars: { $id: id }
+    })
+
+    return res.subject[0]
   }
 
   async findPostsBySubjectId (id: string, first: number, offset: number): Promise<PostsConnection> {

@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common'
 
 import { SystemErrorException, UserAlreadyHasTheDeadline, UserNotFoundException, UserNotHasTheLesson } from '../app.exception'
 import { DbService } from '../db/db.service'
-import { Lesson } from '../lessons/models/lessons.model'
 import { now } from '../tool'
 import { AddDealineArgs, Deadline, DEADLINE_TYPE } from './models/deadlines.model'
 
@@ -147,23 +146,6 @@ export class DeadlinesService {
       type,
       createdAt: now()
     }
-  }
-
-  async lesson (id: string) {
-    const query = `
-    query v($id: string) {
-      var(func: uid($id)) @filter(type(Deadline)) {
-        lesson as lesson @filter(type(Lesson))
-      }
-      lesson(func: uid(lesson)) {
-        id: uid
-        expand(_all_)
-      }
-    }
-  `
-    const res = await this.dbService.commitQuery<{lesson: Lesson[]}>({ query, vars: { $id: id } })
-
-    return res.lesson[0]
   }
 
   async deadline (id: string) {

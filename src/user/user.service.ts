@@ -5,20 +5,14 @@ import { SystemErrorException, UserIdExistException, UserNotAuthenException, Use
 import { UserAuthenInfo, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { Conversation, ConversationsConnection } from '../conversations/models/conversations.model'
-import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
 import { Experience } from '../experiences/models/experiences.model'
 import { Favorite } from '../favorites/models/favorite.model'
-import { Institute } from '../institutes/models/institutes.model'
-import { FilterLessonArgs, Lesson } from '../lessons/models/lessons.model'
 import { OrderUnion } from '../orders/models/orders.model'
 import { Post, PostsConnection } from '../posts/models/post.model'
-import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Role } from '../roles/models/roles.model'
-import { SubCampus } from '../subcampus/models/subcampus.model'
 import { atob, btoa, code2Session, edgifyByCreatedAt, handleRelayForwardAfter, NotNull, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
-import { University } from '../universities/models/universities.models'
 import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
 import {
   GENDER,
@@ -34,6 +28,22 @@ import {
 @Injectable()
 export class UserService {
   constructor (private readonly dbService: DbService) {}
+
+  async findCreatorByPostId (id: string) {
+    const query = `
+      query v($postId: string) {
+        var(func: uid($postId)) @filter(type(Post) and not has(anonymous)) {
+          c as creator @filter(type(User))
+        }
+        creator(func: uid(c)) {
+          id: uid
+          expand(_all_)
+        }
+      }
+    `
+    const res = await this.dbService.commitQuery<{creator: User[]}>({ query, vars: { $postId: id } })
+    return res.creator[0]
+  }
 
   async orders (user: User, args: RelayPagingConfigArgs) {
     const { first, after, orderBy } = args
@@ -363,149 +373,6 @@ export class UserService {
     })
   }
 
-  /**
-   * 返回指定 User 的 subCampuses
-   * @param currentUser 发起请求的 User; 对于匿名 User currentUser == null
-   * @param id 被获取 subCampuses 的 User
-   * @returns {Promise<SubCampus[]>}
-   */
-  async subCampuses (currentUser: User, id: string): Promise<SubCampus[] | null> {
-    const query = `
-      query v($id: string) {
-        var(func: uid($id)) @filter(type(User)) {
-          settings as privateSettings @filter(type(PrivateSettings))
-          subCampuses as ~users @filter(type(SubCampus))
-        }
-        settings(func: uid(settings)) {
-          id: uid
-          expand(_all_)
-        }
-        subCampuses(func: uid(subCampuses)) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      settings: PrivateSettings[]
-      subCampuses: SubCampus[]
-    }>({
-      query,
-      vars: { $id: id }
-    })
-
-    if (currentUser?.id !== id && res.settings[0]?.isSubCampusPrivate) {
-      return null
-    }
-
-    return res.subCampuses
-  }
-
-  async institutes (currentUser: User, id: string): Promise<Institute[] | null> {
-    const query = `
-      query v($id: string) {
-        var(func: uid($id)) @filter(type(User)) {
-          settings as privateSettings @filter(type(PrivateSettings))
-          institutes as ~users @filter(type(Institute))
-        }
-        settings(func: uid(settings)) {
-          id: uid
-          expand(_all_)
-        }
-        institutes(func: uid(institutes)) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      settings: PrivateSettings[]
-      institutes: Institute[]
-    }>({
-      query,
-      vars: { $id: id }
-    })
-
-    if (res.settings[0]?.isInstitutePrivate && currentUser?.id !== id) {
-      return null
-    }
-
-    return res.institutes
-  }
-
-  async institutesRelayForward (currentUser: User, id: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(institutes)) @filter(lt(createdAt, $after)) { q as uid }'
-    const query = `
-      query v($id: string) {
-        var(func: uid($id)) @filter(type(User)) {
-          settings as privateSettings @filter(type(PrivateSettings))
-          institutes as ~users @filter(type(Institute))
-        }
-        settings(func: uid(settings)) {
-          id: uid
-          expand(_all_)
-        }
-        ${after ? q1 : ''}
-        totalCount(func: uid(institutes)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'institutes'}), orderdesc: createdAt, first: ${first}) {
-          id: uid
-          expand(_all_)
-        }
-        startO(func: uid(institutes), first: -1) { createdAt }
-        endO(func: uid(institutes), first: 1) { createdAt }
-      }
-    `
-    const res = await this.dbService.commitQuery<{settings: PrivateSettings[]} & RelayfyArrayParam<Institute>>({
-      query,
-      vars: { $id: id }
-    })
-
-    if (res.settings[0]?.isInstitutePrivate && currentUser?.id !== id) {
-      return null
-    }
-
-    return relayfyArrayForward({
-      ...res,
-      first,
-      after
-    })
-  }
-
-  async university (currentUser: User, id: string) {
-    const query = `
-      query v($id: string) {
-        var(func: uid($id)) @filter(type(User)) {
-          settings as privateSettings @filter(type(PrivateSettings))
-          ~users @filter(type(University)) {
-            university as uid
-          }
-        }
-        settings(func: uid(settings)) {
-          id: uid
-          expand(_all_)
-        }
-        university(func: uid(university)) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      university: University[]
-      settings: PrivateSettings[]
-    }>({
-      query,
-      vars: { $id: id }
-    })
-
-    // 当前用户不是自己时，根据设定判断是否返回 null
-    if (currentUser?.id !== id && res.settings[0]?.isUniversityPrivate) {
-      return null
-    }
-
-    return res.university[0]
-  }
-
   async authenWithin (startTime: string, endTime: string, { after, first, orderBy }: RelayPagingConfigArgs) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
@@ -534,44 +401,6 @@ export class UserService {
       }
     `
     const res = await this.dbService.commitQuery<RelayfyArrayParam<User>>({ query, vars: { $startTime: startTime, $endTime: endTime, $after: after } })
-
-    return relayfyArrayForward({
-      ...res,
-      first,
-      after
-    })
-  }
-
-  async lessons (id: string, { after, first, orderBy }: RelayPagingConfigArgs, filter: FilterLessonArgs) {
-    after = handleRelayForwardAfter(after)
-    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.lessonsRelayForward(id, first, after, filter)
-    }
-    throw new Error('Method not implemented.')
-  }
-
-  async lessonsRelayForward (id: string, first: number, after: string | null, { startYear, endYear, semester }: FilterLessonArgs) {
-    const q1 = 'var(func: uid(lessons), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    const query = `
-        query v($id: string, $after: string) {
-          var(func: uid($id)) @filter(type(User)) {
-            lessons (orderdesc: createdAt) @filter(type(Lesson) and eq(startYear, ${startYear}) and eq(endYear, ${endYear}) and eq(semester, ${semester}) ) {
-              lessons as uid
-            }
-          }
-          ${after ? q1 : ''}
-          totalCount(func: uid(lessons)) { count(uid) }
-          objs(func: uid(${after ? 'q' : 'lessons'}), orderdesc: createdAt, first: ${first}) {
-            id: uid
-            expand(_all_)
-          }
-          # 开始游标
-          startO(func: uid(lessons), first: -1) { createdAt }
-          # 结束游标
-          endO(func: uid(lessons), first: 1) { createdAt } 
-        }
-      `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<Lesson>>({ query, vars: { $id: id, $after: after } })
 
     return relayfyArrayForward({
       ...res,
@@ -721,68 +550,6 @@ export class UserService {
       startO: res.startRole,
       endO: res.endRole,
       objs: res.roles,
-      first,
-      after
-    })
-  }
-
-  async credential (id: string) {
-    const query = `
-      query v($xid: string) {
-        var(func: uid($xid)) @filter(type(User)) {
-          c as credential @filter(type(Credential))
-        }
-        credential(func: uid(c)) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{credential: ICredential[]}>({ query, vars: { $xid: id } })
-
-    return res.credential[0]
-  }
-
-  async privileges (id: string, { first, after, orderBy }: RelayPagingConfigArgs): Promise<PrivilegesConnection> {
-    after = btoa(after)
-    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.privilegesWithRelayForward(id, first, after)
-    }
-
-    throw new Error('Method not implemented.')
-  }
-
-  async privilegesWithRelayForward (id: string, first: number, after: string | null): Promise<PrivilegesConnection> {
-    const q1 = 'var(func: uid(privileges), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    const query = `
-      query v($id: string, $after: string) {
-        var(func: uid($id)) @filter(type(User)) {
-          privileges as privileges @filter(type(Privilege))
-        }
-
-        ${after ? q1 : ''}
-        totalCount (func: uid(privileges)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'privileges'}), orderdesc: createdAt, first: ${first}) {
-          id: uid
-          expand(_all_)
-        }
-        startO(func: uid(privileges), first: -1) {
-          createdAt
-        }
-        endO(func: uid(privileges), first: 1) {
-          createdAt
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      startO: Array<{createdAt: string}>
-      endO: Array<{createdAt: string}>
-      objs: Privilege[]
-    }>({ query, vars: { $id: id, $after: after } })
-
-    return relayfyArrayForward({
-      ...res,
       first,
       after
     })

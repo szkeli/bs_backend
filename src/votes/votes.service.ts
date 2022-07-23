@@ -9,7 +9,6 @@ import { PUB_SUB_KEY } from '../constants'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
 import { Post } from '../posts/models/post.model'
-import { User } from '../user/models/user.model'
 import { Vote, VotesConnection } from './model/votes.model'
 
 @Injectable()
@@ -68,21 +67,6 @@ export class VotesService {
       viewerCanUpvote: false,
       viewerHasUpvoted: true
     }
-  }
-
-  async creator (id: string) {
-    const query = `
-      query v($voteId: string) {
-        vote(func: uid($voteId)) @filter(type(Vote)) {
-          creator @filter(type(User)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{ vote: Array<{creator: User}>}>({ query, vars: { $voteId: id } })
-    return res.vote[0]?.creator
   }
 
   async to (id: string) {

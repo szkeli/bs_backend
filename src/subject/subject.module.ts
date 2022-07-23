@@ -1,18 +1,26 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 
 import { DbModule } from '../db/db.module'
 import { SharedModule } from '../shared/shared.module'
 import { UserModule } from '../user/user.module'
+import { PostResolver } from './post.resolver'
+import { SubFieldResolver } from './subfield.resolver'
 import { SubjectResolver } from './subject.resolver'
 import { SubjectService } from './subject.service'
 import { UserResolver } from './user.resolver'
 
 @Module({
-  imports: [SharedModule, UserModule, DbModule],
+  imports: [
+    forwardRef(() => SharedModule),
+    UserModule,
+    DbModule
+  ],
   providers: [
     SubjectService,
     SubjectResolver,
-    UserResolver
+    UserResolver,
+    PostResolver,
+    SubFieldResolver
   ],
   exports: [SubjectService]
 })
