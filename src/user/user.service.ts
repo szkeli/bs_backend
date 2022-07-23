@@ -1,14 +1,12 @@
 import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common'
 import { randomUUID } from 'crypto'
-import { DgraphClient } from 'dgraph-js'
-
-import { DbService } from 'src/db/db.service'
 
 import { SystemErrorException, UserIdExistException, UserNotAuthenException, UserNotFoundException } from '../app.exception'
 import { UserAuthenInfo, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { Conversation, ConversationsConnection } from '../conversations/models/conversations.model'
 import { ICredential } from '../credentials/models/credentials.model'
+import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
 import { Experience } from '../experiences/models/experiences.model'
 import { Favorite } from '../favorites/models/favorite.model'
@@ -19,7 +17,6 @@ import { Post, PostsConnection } from '../posts/models/post.model'
 import { Privilege, PrivilegesConnection } from '../privileges/models/privileges.model'
 import { Role } from '../roles/models/roles.model'
 import { SubCampus } from '../subcampus/models/subcampus.model'
-import { Subject, SubjectsConnection } from '../subject/model/subject.model'
 import { atob, btoa, code2Session, edgifyByCreatedAt, handleRelayForwardAfter, NotNull, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
@@ -36,10 +33,7 @@ import {
 
 @Injectable()
 export class UserService {
-  private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
-    this.dgraph = dbService.getDgraphIns()
-  }
+  constructor (private readonly dbService: DbService) {}
 
   async orders (user: User, args: RelayPagingConfigArgs) {
     const { first, after, orderBy } = args
@@ -901,17 +895,13 @@ export class UserService {
           }
         }
       `
-    const res = await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $uid: id })
-
-    const v = res.getJson() as unknown as { subjects?: Array<{subjects: [Subject]}>, totalCount?: Array<{subjects: Array<{count: number}>}>}
-
-    const u: SubjectsConnection = {
-      totalCount: v.totalCount?.[0]?.subjects[0]?.count ?? 0,
-      nodes: v?.subjects?.[0]?.subjects ?? []
-    }
-    return u
+    // TODO: fix this
+    return await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+    }>({
+      query,
+      vars: { $uid: id }
+    })
   }
 
   async users (first: number, offset: number) {
@@ -926,15 +916,13 @@ export class UserService {
           }
         }
       `
-    const res = await this.dgraph
-      .newTxn({ readOnly: true })
-      .query(query)
-    const v = res.getJson() as unknown as { users?: [User], totalCount?: Array<{count: number}>}
-    const u: UsersConnection = {
-      nodes: v.users ?? [],
-      totalCount: v.totalCount?.[0].count ?? 0
-    }
-    return u
+    // TODO: fix this
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{count: number}>
+      users: User[]
+    }>({ query })
+
+    return res
   }
 
   async findPostsByXidWithRelayForward (viewerId: string, xid: string, first: number, after: string | null) {

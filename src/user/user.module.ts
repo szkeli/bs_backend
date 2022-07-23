@@ -1,12 +1,11 @@
 import { forwardRef, Module } from '@nestjs/common'
 
-import { SharedModule } from 'src/shared/shared.module'
-
 import { CommentModule } from '../comment/comment.module'
 import { LessonsModule } from '../lessons/lessons.module'
 import { NlpModule } from '../nlp/nlp.module'
 import { NotificationsModule } from '../notifications/notifications.module'
 import { PubsubsModule } from '../pubsubs/pubsubs.module'
+import { SharedModule } from '../shared/shared.module'
 import { VotesModule } from '../votes/votes.module'
 import { UserResolver } from './user.resolver'
 import { UserService } from './user.service'

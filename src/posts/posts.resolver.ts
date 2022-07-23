@@ -137,10 +137,10 @@ export class PostsResolver {
     return await this.postsService.votes(user?.id, post.id, args)
   }
 
-  @ResolveField(of => ReportsConnection, { description: '帖子收到的举报' })
-  async reports (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.reportsService.findReportsByPostId(post.id.toString(), first, offset)
-  }
+  // @ResolveField(of => ReportsConnection, { description: '帖子收到的举报' })
+  // async reports (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
+  //   return await this.reportsService.findReportsByPostId(post.id.toString(), first, offset)
+  // }
 
   @ResolveField(of => CommentsConnection, { description: '帖子的折叠评论' })
   async foldedComments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {

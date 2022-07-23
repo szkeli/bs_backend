@@ -1,5 +1,4 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
-import { DgraphClient } from 'dgraph-js'
 
 import { MESSAGE_TYPE } from 'src/messages/models/messages.model'
 
@@ -13,10 +12,7 @@ import { Report, REPORT_STATE, REPORT_TYPE, Report2Union, ReportsConnection } fr
 
 @Injectable()
 export class ReportsService {
-  private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
-    this.dgraph = dbService.getDgraphIns()
-  }
+  constructor (private readonly dbService: DbService) {}
 
   async reportsWithRelay ({ first, after, orderBy }: RelayPagingConfigArgs) {
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
@@ -360,132 +356,132 @@ export class ReportsService {
     return !!res.uids.get('message')
   }
 
-  async findReportsByCommentId (id: string, first: number, offset: number): Promise<ReportsConnection> {
-    const query = `
-      query v($commentId: string) {
-        totalCount(func: uid($commentId)) @filter(type(Comment)) {
-          count: count(reports)
-        }
-        comment(func: uid($commentId)) @filter(type(Comment)) {
-          reports (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Report)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $commentId: id }))
-      .getJson() as unknown as {
-      totalCount: Array<{ count: number}>
-      comment: Array<{reports: Report[]}>
-    }
-    return {
-      nodes: res.comment[0]?.reports || [],
-      totalCount: res.totalCount[0].count
-    }
-  }
+  // async findReportsByCommentId (id: string, first: number, offset: number): Promise<ReportsConnection> {
+  //   const query = `
+  //     query v($commentId: string) {
+  //       totalCount(func: uid($commentId)) @filter(type(Comment)) {
+  //         count: count(reports)
+  //       }
+  //       comment(func: uid($commentId)) @filter(type(Comment)) {
+  //         reports (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Report)) {
+  //           id: uid
+  //           expand(_all_)
+  //         }
+  //       }
+  //     }
+  //   `
+  //   const res = (await this.dgraph
+  //     .newTxn({ readOnly: true })
+  //     .queryWithVars(query, { $commentId: id }))
+  //     .getJson() as unknown as {
+  //     totalCount: Array<{ count: number}>
+  //     comment: Array<{reports: Report[]}>
+  //   }
+  //   return {
+  //     nodes: res.comment[0]?.reports || [],
+  //     totalCount: res.totalCount[0].count
+  //   }
+  // }
 
-  async findReportsByPostId (id: string, first: number, offset: number): Promise<ReportsConnection> {
-    const query = `
-      query v($postId: string) {
-        totalCount(func: uid($postId)) @filter(type(Post)) {
-          count: count(reports)
-        }
-        post(func: uid($postId)) @filter(type(Post)) {
-          reports (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Report)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $postId: id }))
-      .getJson() as unknown as {
-      totalCount: Array<{ count: number}>
-      post: Array<{reports: Report[]}>
-    }
-    return {
-      nodes: res.post[0]?.reports || [],
-      totalCount: res.totalCount[0].count
-    }
-  }
+  // async findReportsByPostId (id: string, first: number, offset: number): Promise<ReportsConnection> {
+  //   const query = `
+  //     query v($postId: string) {
+  //       totalCount(func: uid($postId)) @filter(type(Post)) {
+  //         count: count(reports)
+  //       }
+  //       post(func: uid($postId)) @filter(type(Post)) {
+  //         reports (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Report)) {
+  //           id: uid
+  //           expand(_all_)
+  //         }
+  //       }
+  //     }
+  //   `
+  //   const res = (await this.dgraph
+  //     .newTxn({ readOnly: true })
+  //     .queryWithVars(query, { $postId: id }))
+  //     .getJson() as unknown as {
+  //     totalCount: Array<{ count: number}>
+  //     post: Array<{reports: Report[]}>
+  //   }
+  //   return {
+  //     nodes: res.post[0]?.reports || [],
+  //     totalCount: res.totalCount[0].count
+  //   }
+  // }
 
-  async findCreatorOfReport (id: string) {
-    const query = `
-      query v($reportId: string) {
-        report(func: uid($reportId)) @filter(type(Report)) {
-          creator @filter(type(User)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $reportId: id }))
-      .getJson() as unknown as {
-      report: Array<{creator: User}>
-    }
+  // async findCreatorOfReport (id: string) {
+  //   const query = `
+  //     query v($reportId: string) {
+  //       report(func: uid($reportId)) @filter(type(Report)) {
+  //         creator @filter(type(User)) {
+  //           id: uid
+  //           expand(_all_)
+  //         }
+  //       }
+  //     }
+  //   `
+  //   const res = (await this.dgraph
+  //     .newTxn({ readOnly: true })
+  //     .queryWithVars(query, { $reportId: id }))
+  //     .getJson() as unknown as {
+  //     report: Array<{creator: User}>
+  //   }
 
-    return res.report[0]?.creator
-  }
+  //   return res.report[0]?.creator
+  // }
 
-  async findReportsByUid (id: string, first: number, offset: number): Promise<ReportsConnection> {
-    const query = `
-      query v($uid: string) {
-        totalCount(func: uid($uid)) {
-          count: count(reports)
-        }
-        user(func: uid($uid)){
-          reports (orderdesc: createdAt, first: ${first}, offset: ${offset})  {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $uid: id }))
-      .getJson() as unknown as {
-      totalCount: Array<{count: number}>
-      user: Array<{reports: Report[]}>
-    }
-    return {
-      nodes: res.user[0]?.reports || [],
-      totalCount: res.totalCount[0].count
-    }
-  }
+  // async findReportsByUid (id: string, first: number, offset: number): Promise<ReportsConnection> {
+  //   const query = `
+  //     query v($uid: string) {
+  //       totalCount(func: uid($uid)) {
+  //         count: count(reports)
+  //       }
+  //       user(func: uid($uid)){
+  //         reports (orderdesc: createdAt, first: ${first}, offset: ${offset})  {
+  //           id: uid
+  //           expand(_all_)
+  //         }
+  //       }
+  //     }
+  //   `
+  //   const res = (await this.dgraph
+  //     .newTxn({ readOnly: true })
+  //     .queryWithVars(query, { $uid: id }))
+  //     .getJson() as unknown as {
+  //     totalCount: Array<{count: number}>
+  //     user: Array<{reports: Report[]}>
+  //   }
+  //   return {
+  //     nodes: res.user[0]?.reports || [],
+  //     totalCount: res.totalCount[0].count
+  //   }
+  // }
 
   /**
    * 通过举报id获取举报所属的会话
    * @param id 举报id
    * @returns { Promise<Conversation }
    */
-  async findConversationByReportId (id: string): Promise<Conversation> {
-    const query = `
-      query v($uid: string) {
-        report(func: uid($uid)) @filter(type(Report)) {
-          conversation @filter(type(Conversation)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $uid: id }))
-      .getJson() as unknown as {
-      report: Array<{conversation: Conversation}>
-    }
-    return res.report[0]?.conversation
-  }
+  // async findConversationByReportId (id: string): Promise<Conversation> {
+  //   const query = `
+  //     query v($uid: string) {
+  //       report(func: uid($uid)) @filter(type(Report)) {
+  //         conversation @filter(type(Conversation)) {
+  //           id: uid
+  //           expand(_all_)
+  //         }
+  //       }
+  //     }
+  //   `
+  //   const res = (await this.dgraph
+  //     .newTxn({ readOnly: true })
+  //     .queryWithVars(query, { $uid: id }))
+  //     .getJson() as unknown as {
+  //     report: Array<{conversation: Conversation}>
+  //   }
+  //   return res.report[0]?.conversation
+  // }
 
   /**
    * 通过举报的id获取被举报的对象

@@ -1,5 +1,4 @@
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common'
-import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
@@ -33,15 +32,12 @@ import {
 
 @Injectable()
 export class CommentService {
-  private readonly dgraph: DgraphClient
   constructor (
     private readonly dbService: DbService,
     private readonly censorsService: CensorsService,
     private readonly nlpService: NlpService,
     @Inject(PUB_SUB_KEY) private readonly pubSub
-  ) {
-    this.dgraph = dbService.getDgraphIns()
-  }
+  ) {}
 
   async images (id: string): Promise<string[]> {
     const query = `
@@ -1134,21 +1130,15 @@ export class CommentService {
         query v($uid: string) {
           comment(func: uid($uid)) @filter(type(Comment)) {
             id: uid
-            content
-            createdAt
+            expand(_all_)
           }
         }
       `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $uid: id }))
-      .getJson() as unknown as {
-      comment: Comment[]
-    }
+    const res = await this.dbService.commitQuery<{comment: Comment[]}>({
+      query,
+      vars: { $uid: id }
+    })
 
-    if (!res || !res.comment || res.comment.length !== 1) {
-      throw new ForbiddenException(`评论 ${id} 不存在`)
-    }
     return res.comment[0]
   }
 
@@ -1195,13 +1185,14 @@ export class CommentService {
         }
       }
     `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $commentId: id, $viewerId: viewerId }))
-      .getJson() as unknown as {
-      v: Array<{totalCount: number, canVote?: any[]}>
+    const res = await this.dbService.commitQuery<{
+      v: Array<{totalCount: number, canVote: Vote[]}>
       u: Array<{votes: Vote[]}>
-    }
+    }>({
+      query,
+      vars: { $commentId: id, $viewerId: viewerId }
+    })
+
     const u: VotesConnection = {
       nodes: res.u[0]?.votes || [],
       totalCount: res.v[0]?.totalCount,

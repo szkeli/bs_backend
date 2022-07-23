@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common'
 
-import { SharedModule } from 'src/shared/shared.module'
-import { UserService } from 'src/user/user.service'
-
 import { AdminModule } from '../admin/admin.module'
 import { DbModule } from '../db/db.module'
+import { SharedModule } from '../shared/shared.module'
+import { UserService } from '../user/user.service'
 import { AuthResolver } from './auth.resolver'
 import { AuthService } from './auth.service'
 

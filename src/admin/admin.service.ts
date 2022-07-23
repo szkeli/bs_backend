@@ -1,7 +1,6 @@
-import { ForbiddenException, Injectable } from '@nestjs/common'
-import { DgraphClient, Mutation, Request } from 'dgraph-js'
+import { Injectable } from '@nestjs/common'
 
-import { SystemErrorException } from '../app.exception'
+import { SystemErrorException, UserIdExistException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
@@ -18,10 +17,7 @@ import {
 
 @Injectable()
 export class AdminService {
-  private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
-    this.dgraph = dbService.getDgraphIns()
-  }
+  constructor (private readonly dbService: DbService) {}
 
   async credentials (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
     after = btoa(after)
@@ -202,21 +198,21 @@ export class AdminService {
   async findCredentialByAdminId (id: string) {
     const query = `
       query v($id: string) {
-        admin(func: uid($id)) {
-          credential {
-            id: uid
-            expand(_all_)
-          }
+        var(func: uid($id)) {
+          c as credential @filter(type(Credential))
+        }
+        credential(func: uid(c)) {
+          id: uid
+          expand(_all_)
         }
       }
     `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .queryWithVars(query, { $id: id }))
-      .getJson() as unknown as {
-      admin: Array<{credential: Credential}>
-    }
-    return res.admin[0]?.credential
+    const res = await this.dbService.commitQuery<{credential: ICredential[]}>({
+      query,
+      vars: { $id: id }
+    })
+
+    return res.credential[0]
   }
 
   async admin (id: string): Promise<Admin> {
@@ -278,61 +274,50 @@ export class AdminService {
   }
 
   async registerAdmin (args: RegisterAdminArgs): Promise<Admin> {
-    const txn = this.dgraph.newTxn()
-    try {
-      const now = new Date().toISOString()
-      const conditions = '@if( eq(len(v), 0) )'
-      const query = `
-        query v($userId: string){
-          v(func: eq(userId, $userId)) @filter(type(User) OR type(Admin)) {
-            v as uid
-          }
+    const now = new Date().toISOString()
+
+    const conditions = '@if( eq(len(v), 0) )'
+    const query = `
+      query v($userId: string){
+        v(func: eq(userId, $userId)) @filter(type(User) OR type(Admin)) {
+          v as uid
         }
-      `
-      const mutation = {
-        uid: '_:admin',
-        'dgraph.type': 'Admin',
-        userId: args.userId,
-        sign: args.sign,
-        name: args.name,
-        createdAt: now,
-        updatedAt: now,
-        lastLoginedAt: now,
-        avatarImageUrl: args.avatarImageUrl
       }
-      const mu = new Mutation()
-      mu.setSetJson(mutation)
-      mu.setCond(conditions)
+    `
+    const mutation = {
+      uid: '_:admin',
+      'dgraph.type': 'Admin',
+      userId: args.userId,
+      sign: args.sign,
+      name: args.name,
+      createdAt: now,
+      updatedAt: now,
+      lastLoginedAt: now,
+      avatarImageUrl: args.avatarImageUrl
+    }
+    const res = await this.dbService.commitMutation<Map<string, string>, {
+      v: Array<{uid: string}>
+    }>({
+      query,
+      mutations: [{ set: mutation, cond: conditions }],
+      vars: { $userId: args.userId }
+    })
 
-      const req = new Request()
-      const vars = req.getVarsMap()
-      vars.set('$userId', args.userId)
-      req.setQuery(query)
-      req.addMutations(mu)
-      req.setCommitNow(true)
+    if (res.json.v.length !== 0) {
+      throw new UserIdExistException(args.userId)
+    }
+    const uid = res.uids.get('admin')
 
-      const res = await txn.doRequest(req)
-      const json = res.getJson() as unknown as {
-        v: Array<{uid: string}>
-      }
-      if (!json || !json.v || json.v.length !== 0) {
-        throw new ForbiddenException(`userId ${args.userId} 已被使用`)
-      }
-      const uid = res.getUidsMap().get('admin')
+    if (!uid) throw new SystemErrorException()
 
-      if (!uid) throw new SystemErrorException()
-
-      return {
-        id: uid,
-        userId: args.userId,
-        name: args.name,
-        avatarImageUrl: args.avatarImageUrl,
-        createdAt: now,
-        updatedAt: now,
-        lastLoginedAt: now
-      }
-    } finally {
-      await txn.discard()
+    return {
+      id: uid,
+      userId: args.userId,
+      name: args.name,
+      avatarImageUrl: args.avatarImageUrl,
+      createdAt: now,
+      updatedAt: now,
+      lastLoginedAt: now
     }
   }
 }

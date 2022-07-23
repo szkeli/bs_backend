@@ -1,5 +1,4 @@
 import { ForbiddenException, Inject, Injectable } from '@nestjs/common'
-import { DgraphClient } from 'dgraph-js'
 import { PubSub } from 'graphql-subscriptions'
 
 import { DbService } from 'src/db/db.service'
@@ -15,13 +14,10 @@ import { Vote, VotesConnection } from './model/votes.model'
 
 @Injectable()
 export class VotesService {
-  private readonly dgraph: DgraphClient
   constructor (
     @Inject(PUB_SUB_KEY) private readonly pubSub: PubSub,
     private readonly dbService: DbService
-  ) {
-    this.dgraph = dbService.getDgraphIns()
-  }
+  ) {}
 
   async votesCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<VotesConnection> {
     const query = `

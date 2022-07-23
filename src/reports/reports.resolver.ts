@@ -4,7 +4,6 @@ import { CheckPolicies, CurrentUser, NoAuth, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
-import { Conversation } from '../conversations/models/conversations.model'
 import { PagingConfigArgs, User } from '../user/models/user.model'
 import { AddReportToArgs, Report, Report2Union, ReportsConnection, ReportsConnectionWithRelay } from './models/reports.model'
 import { ReportsService } from './reports.service'
@@ -69,13 +68,13 @@ export class ReportsResolver {
     return await this.reportsService.to(report.id)
   }
 
-  @ResolveField(of => User, { description: '举报的创建者' })
-  async creator (@Parent() report: Report) {
-    return await this.reportsService.findCreatorOfReport(report.id)
-  }
+  // @ResolveField(of => User, { description: '举报的创建者' })
+  // async creator (@Parent() report: Report) {
+  //   return await this.reportsService.findCreatorOfReport(report.id)
+  // }
 
-  @ResolveField(of => Conversation, { description: '举报所在的会话' })
-  async conversation (@Parent() report: Report) {
-    return await this.reportsService.findConversationByReportId(report.id)
-  }
+  // @ResolveField(of => Conversation, { description: '举报所在的会话' })
+  // async conversation (@Parent() report: Report) {
+  //   return await this.reportsService.findConversationByReportId(report.id)
+  // }
 }

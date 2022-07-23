@@ -22,7 +22,6 @@ import { Delete } from '../deletes/models/deletes.model'
 import { Mention, MentionsConnection } from '../mentions/models/mentions.model'
 import { WithinArgs } from '../node/models/node.model'
 import { Post, RelayPagingConfigArgs } from '../posts/models/post.model'
-import { ReportsConnection } from '../reports/models/reports.model'
 import { ReportsService } from '../reports/reports.service'
 import { VotesConnection } from '../votes/model/votes.model'
 import { CommentService } from './comment.service'
@@ -133,10 +132,10 @@ export class CommentResolver {
     return await this.commentService.getVotesByCommentId(user?.id, comment.id, args.first, args.offset)
   }
 
-  @ResolveField(() => ReportsConnection, { description: '获取该评论的举报信息' })
-  async reports (@Parent() comment: Comment, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.reportsService.findReportsByCommentId(comment.id, first, offset)
-  }
+  // @ResolveField(() => ReportsConnection, { description: '获取该评论的举报信息' })
+  // async reports (@Parent() comment: Comment, @Args() { first, offset }: PagingConfigArgs) {
+  //   return await this.reportsService.findReportsByCommentId(comment.id, first, offset)
+  // }
 
   @ResolveField(of => CommentToUnion, { description: '获取被评论的对象' })
   async to (@Parent() comment: Comment) {
