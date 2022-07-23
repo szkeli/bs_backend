@@ -1,37 +1,26 @@
 import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { CheckPolicies, CurrentUser, MaybeAuth, NoAuth, Roles } from 'src/auth/decorator'
-import { PostsConnection, PostsConnectionWithRelay } from 'src/posts/models/post.model'
-import { SubjectsConnection } from 'src/subject/model/subject.model'
+import { PostsConnectionWithRelay } from 'src/posts/models/post.model'
 import { sign as sign_calculus } from 'src/tool'
 
 import { Admin } from '../admin/models/admin.model'
-import { Role, UserAuthenInfo, UserWithRoles } from '../auth/model/auth.model'
+import { Role, UserWithRoles } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { CommentService } from '../comment/comment.service'
 import { CommentsConnection, CommentsConnectionWithRelay } from '../comment/models/comment.model'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
-import { ConversationsService } from '../conversations/conversations.service'
-import { ConversationsConnection } from '../conversations/models/conversations.model'
 import { ICredential } from '../credentials/models/credentials.model'
-import { DeadlinesConnection } from '../deadlines/models/deadlines.model'
-import { ExperiencesConnection } from '../experiences/models/experiences.model'
-import { FavoritesConnection } from '../favorites/models/favorite.model'
 import { Institute } from '../institutes/models/institutes.model'
 import { LessonsService } from '../lessons/lessons.service'
 import { FilterLessonArgs, LessonNotificationSettings, LessonsConnection } from '../lessons/models/lessons.model'
 import { WithinArgs } from '../node/models/node.model'
 import { NOTIFICATION_TYPE, NotificationsConnection } from '../notifications/models/notifications.model'
 import { NotificationsService } from '../notifications/notifications.service'
-import { OrdersConnection } from '../orders/models/orders.model'
 import { PrivilegesConnection } from '../privileges/models/privileges.model'
-import { ReportsConnection } from '../reports/models/reports.model'
-import { ReportsService } from '../reports/reports.service'
-import { RolesConnection } from '../roles/models/roles.model'
 import { SubCampus } from '../subcampus/models/subcampus.model'
 import { University } from '../universities/models/universities.models'
-import { VotesConnection, VotesConnectionWithRelay, VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
-import { VotesService } from '../votes/votes.service'
+import { VoteWithUnreadCountsConnection } from '../votes/model/votes.model'
 import {
   GENDER,
   NotificationArgs,
@@ -53,9 +42,6 @@ import { UserService } from './user.service'
 export class UserResolver {
   constructor (
     private readonly userService: UserService,
-    private readonly conversationsService: ConversationsService,
-    private readonly reportsService: ReportsService,
-    private readonly votesService: VotesService,
     private readonly commentsService: CommentService,
     private readonly notificationsService: NotificationsService,
     private readonly lessonsService: LessonsService
@@ -132,31 +118,6 @@ export class UserResolver {
     return await this.userService.findPostsByXidWithRelay(viewer?.id, id, paging)
   }
 
-  @ResolveField(of => PostsConnection, { description: '当前用户创建的所有帖子' })
-  async posts (@CurrentUser() viewer: User, @Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.userService.findPostsByUid(viewer?.id, user.id, first, offset)
-  }
-
-  @ResolveField(of => PostsConnectionWithRelay)
-  async postsWithRelay (@CurrentUser() viewer: User, @Parent() user: User, @Args() paging: RelayPagingConfigArgs) {
-    return await this.userService.findPostsByXidWithRelay(viewer?.id, user.id, paging)
-  }
-
-  @ResolveField(of => VotesConnection, { description: '当前用户的所有点赞' })
-  async votes (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.votesService.findVotesByUid(user.id, first, offset)
-  }
-
-  @ResolveField(of => VotesConnectionWithRelay, { description: '当前用户的所有点赞' })
-  async votesWithRelay (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.votesWithRelay(user.id, args)
-  }
-
-  @ResolveField(of => RolesConnection, { description: '当前用户的所有角色' })
-  async roles (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.roles(user.id, args)
-  }
-
   @ResolveField(of => CommentsConnection, { description: '当前用户发布的评论' })
   async comments (@CurrentUser() viewer: User, @Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
     return await this.commentsService.findCommentsByUid(viewer?.id, user.id, first, offset)
@@ -171,26 +132,6 @@ export class UserResolver {
   @MaybeAuth()
   async userCommentsWithRelay (@CurrentUser() viewer: User, @Args('id') id: string, @Args() paging: RelayPagingConfigArgs) {
     return await this.commentsService.findCommentsByXidWithRelay(viewer?.id, id, paging)
-  }
-
-  @ResolveField(of => SubjectsConnection, { description: '当前用户创建的所有主题' })
-  async subjects (@Parent() user: User, @Args() args: PagingConfigArgs) {
-    return await this.userService.findSubjectsByUid(user.id, args.first, args.offset)
-  }
-
-  @ResolveField(of => ConversationsConnection, { description: '当前用户创建的所有会话' })
-  async conversations (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.conversations(user, args)
-  }
-
-  @ResolveField(of => ReportsConnection, { description: '当前用户收到的所有举报' })
-  async reports (@Parent() user: User, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.reportsService.findReportsByUid(user.id, first, offset)
-  }
-
-  @ResolveField(of => DeadlinesConnection, { description: '当前用户的deadlines' })
-  async deadlines (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.deadlines(user.id, args)
   }
 
   @ResolveField(of => LessonsConnection, { description: '当前用户的所有课程' })
@@ -245,33 +186,6 @@ export class UserResolver {
     return await this.notificationsService.findUpvoteNotificationsByXid(id, paging, type)
   }
 
-  @ResolveField(of => NotificationsConnection, { description: '回复的通知', nullable: true })
-  async replyNotifications (
-  @CurrentUser() currentUser: User,
-    @Parent() user: User,
-    @Args() config: NotificationArgs,
-    @Args() paging: RelayPagingConfigArgs
-  ) {
-    if (currentUser?.id !== user.id) return null
-    return await this.notificationsService.findReplyNotificationsByXid(user.id, config, paging)
-  }
-
-  @ResolveField(of => VoteWithUnreadCountsConnection, { description: '点赞的通知', nullable: true })
-  async upvoteNotifications (
-  @CurrentUser() currentUser: User,
-    @Parent() user: User,
-    @Args('type', { type: () => NOTIFICATION_TYPE, defaultValue: NOTIFICATION_TYPE.ALL, nullable: true }) type: NOTIFICATION_TYPE,
-    @Args() paging: RelayPagingConfigArgs
-  ) {
-    if (currentUser?.id !== user.id) return null
-    return await this.notificationsService.findUpvoteNotificationsByXid(user.id, paging, type)
-  }
-
-  @ResolveField(of => UserAuthenInfo, { description: '当前用户提交的认证信息', nullable: true })
-  async authenInfo (@Parent() user: User) {
-    return await this.userService.authenInfo(user.id)
-  }
-
   @ResolveField(of => PrivateSettings, { nullable: true, description: '当前用户的隐私设定' })
   async privateSettings (@Parent() user: User) {
     return await this.userService.privateSettings(user)
@@ -286,20 +200,5 @@ export class UserResolver {
   @Roles(Role.User)
   async updatePrivateSettings (@CurrentUser() user: User, @Args() args: UpdatePrivateSettingsArgs) {
     return await this.userService.updatePrivateSettings(user, args)
-  }
-
-  @ResolveField(of => ExperiencesConnection)
-  async experiencePointTransactions (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.experiencePointTransaction(user.id, args)
-  }
-
-  @ResolveField(of => FavoritesConnection)
-  async favorites (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.favorites(user, args)
-  }
-
-  @ResolveField(of => OrdersConnection, { description: '当前用户的所有订单' })
-  async orders (@Parent() user: User, @Args() args: RelayPagingConfigArgs) {
-    return await this.userService.orders(user, args)
   }
 }

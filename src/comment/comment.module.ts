@@ -1,10 +1,11 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 
-import { CensorsService } from '../censors/censors.service'
-import { DeletesService } from '../deletes/deletes.service'
-import { NlpService } from '../nlp/nlp.service'
+import { CensorsModule } from '../censors/censors.module'
+import { DbModule } from '../db/db.module'
+import { DeletesModule } from '../deletes/deletes.module'
+import { NlpModule } from '../nlp/nlp.module'
 import { PubsubsModule } from '../pubsubs/pubsubs.module'
-import { ReportsService } from '../reports/reports.service'
+import { ReportsModule } from '../reports/reports.module'
 import { SharedModule } from '../shared/shared.module'
 import { CommentResolver } from './comment.resolver'
 import { CommentService } from './comment.service'
@@ -12,15 +13,17 @@ import { CommentService } from './comment.service'
 @Module({
   imports: [
     PubsubsModule,
-    SharedModule
+    forwardRef(() => SharedModule),
+    DbModule,
+    ReportsModule,
+    DeletesModule,
+    CensorsModule,
+    NlpModule
   ],
   providers: [
     CommentResolver,
-    CommentService,
-    ReportsService,
-    DeletesService,
-    CensorsService,
-    NlpService
-  ]
+    CommentService
+  ],
+  exports: [CommentService]
 })
 export class CommentModule {}

@@ -4,11 +4,9 @@ import { JwtModule } from '@nestjs/jwt'
 import { PassportModule } from '@nestjs/passport'
 
 import { JwtStrategy } from 'src/auth/jwt.strategy'
-import { DbService } from 'src/db/db.service'
-import { UserService } from 'src/user/user.service'
 
 import { DbModule } from '../db/db.module'
-import { NlpService } from '../nlp/nlp.service'
+import { UserModule } from '../user/user.module'
 
 @Module({
   imports: [
@@ -27,19 +25,16 @@ import { NlpService } from '../nlp/nlp.service'
       },
       inject: [ConfigService]
     }),
-    DbModule
+    DbModule,
+    UserModule
   ],
   providers: [
-    JwtStrategy,
-    UserService,
-    DbService,
-    NlpService
+    JwtStrategy
   ],
   exports: [
     JwtStrategy,
     PassportModule,
     JwtModule,
-    NlpService,
     DbModule
   ]
 })

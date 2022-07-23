@@ -4,6 +4,7 @@ import { NlpResolver } from './nlp.resolver'
 import { NlpService } from './nlp.service'
 
 @Module({
-  providers: [NlpResolver, NlpService]
+  providers: [NlpResolver, NlpService],
+  exports: [NlpService]
 })
 export class NlpModule {}

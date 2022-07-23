@@ -249,45 +249,6 @@ type User implements Person & Node {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): PostsConnectionWithRelay!
 
-  """当前用户的所有点赞"""
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
-
-  """当前用户的所有点赞"""
-  votesWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): VotesConnectionWithRelay!
-
-  """当前用户的所有角色"""
-  roles(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): RolesConnection!
-
   """当前用户发布的评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
   commentsWithRelay(
@@ -306,48 +267,6 @@ type User implements Person & Node {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): CommentsConnectionWithRelay!
-
-  """当前用户创建的所有主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-
-  """当前用户创建的所有会话"""
-  conversations(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): ConversationsConnection!
-
-  """当前用户收到的所有举报"""
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-
-  """当前用户的deadlines"""
-  deadlines(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): DeadlinesConnection!
 
   """当前用户的所有课程"""
   lessons(
@@ -409,57 +328,53 @@ type User implements Person & Node {
   """当前用户所属的校区"""
   subCampuses: [SubCampus!]
 
-  """回复的通知"""
-  replyNotifications(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-
-    """获取"""
-    type: NOTIFICATION_TYPE = ALL
-
-    """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
-  ): NotificationsConnection
-
-  """点赞的通知"""
-  upvoteNotifications(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-    type: NOTIFICATION_TYPE = ALL
-  ): VoteWithUnreadCountsConnection
-
-  """当前用户提交的认证信息"""
-  authenInfo: UserAuthenInfo
-
   """当前用户的隐私设定"""
   privateSettings: PrivateSettings
 
   """获取当前用户上课通知的设置"""
   lessonNotificationSettings: LessonNotificationSettings!
+
+  """当前用户收到的所有举报"""
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """当前用户创建的所有主题"""
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+
+  """当前用户的deadlines"""
+  deadlines(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): DeadlinesConnection!
+
+  """当前用户的所有角色"""
+  roles(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): RolesConnection!
   experiencePointTransactions(
     """最新的n个对象"""
     first: Int = 10
@@ -575,45 +490,6 @@ interface Person implements Node {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): PostsConnectionWithRelay!
 
-  """当前用户的所有点赞"""
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
-
-  """当前用户的所有点赞"""
-  votesWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): VotesConnectionWithRelay!
-
-  """当前用户的所有角色"""
-  roles(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): RolesConnection!
-
   """当前用户发布的评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
   commentsWithRelay(
@@ -632,48 +508,6 @@ interface Person implements Node {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): CommentsConnectionWithRelay!
-
-  """当前用户创建的所有主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-
-  """当前用户创建的所有会话"""
-  conversations(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): ConversationsConnection!
-
-  """当前用户收到的所有举报"""
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-
-  """当前用户的deadlines"""
-  deadlines(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): DeadlinesConnection!
 
   """当前用户的所有课程"""
   lessons(
@@ -735,57 +569,53 @@ interface Person implements Node {
   """当前用户所属的校区"""
   subCampuses: [SubCampus!]
 
-  """回复的通知"""
-  replyNotifications(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-
-    """获取"""
-    type: NOTIFICATION_TYPE = ALL
-
-    """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
-  ): NotificationsConnection
-
-  """点赞的通知"""
-  upvoteNotifications(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-    type: NOTIFICATION_TYPE = ALL
-  ): VoteWithUnreadCountsConnection
-
-  """当前用户提交的认证信息"""
-  authenInfo: UserAuthenInfo
-
   """当前用户的隐私设定"""
   privateSettings: PrivateSettings
 
   """获取当前用户上课通知的设置"""
   lessonNotificationSettings: LessonNotificationSettings!
+
+  """当前用户收到的所有举报"""
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """当前用户创建的所有主题"""
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+
+  """当前用户的deadlines"""
+  deadlines(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): DeadlinesConnection!
+
+  """当前用户的所有角色"""
+  roles(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): RolesConnection!
   experiencePointTransactions(
     """最新的n个对象"""
     first: Int = 10
@@ -848,12 +678,6 @@ enum GENDER {
   FEMALE
 }
 
-enum NOTIFICATION_TYPE {
-  ALL
-  READ
-  UN_READ
-}
-
 type LoginResult implements Node & Person {
   id: String!
 
@@ -882,45 +706,6 @@ type LoginResult implements Node & Person {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): PostsConnectionWithRelay!
 
-  """当前用户的所有点赞"""
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
-
-  """当前用户的所有点赞"""
-  votesWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): VotesConnectionWithRelay!
-
-  """当前用户的所有角色"""
-  roles(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): RolesConnection!
-
   """当前用户发布的评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
   commentsWithRelay(
@@ -939,48 +724,6 @@ type LoginResult implements Node & Person {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): CommentsConnectionWithRelay!
-
-  """当前用户创建的所有主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-
-  """当前用户创建的所有会话"""
-  conversations(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): ConversationsConnection!
-
-  """当前用户收到的所有举报"""
-  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
-
-  """当前用户的deadlines"""
-  deadlines(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): DeadlinesConnection!
 
   """当前用户的所有课程"""
   lessons(
@@ -1042,57 +785,53 @@ type LoginResult implements Node & Person {
   """当前用户所属的校区"""
   subCampuses: [SubCampus!]
 
-  """回复的通知"""
-  replyNotifications(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-
-    """获取"""
-    type: NOTIFICATION_TYPE = ALL
-
-    """按action获取通知"""
-    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
-  ): NotificationsConnection
-
-  """点赞的通知"""
-  upvoteNotifications(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-    type: NOTIFICATION_TYPE = ALL
-  ): VoteWithUnreadCountsConnection
-
-  """当前用户提交的认证信息"""
-  authenInfo: UserAuthenInfo
-
   """当前用户的隐私设定"""
   privateSettings: PrivateSettings
 
   """获取当前用户上课通知的设置"""
   lessonNotificationSettings: LessonNotificationSettings!
+
+  """当前用户收到的所有举报"""
+  reports(first: Int = 10, offset: Int = 0): ReportsConnection!
+
+  """当前用户创建的所有主题"""
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+
+  """当前用户的deadlines"""
+  deadlines(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): DeadlinesConnection!
+
+  """当前用户的所有角色"""
+  roles(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): RolesConnection!
   experiencePointTransactions(
     """最新的n个对象"""
     first: Int = 10
@@ -1225,128 +964,6 @@ type PrivateSettings {
 
   """性别是否公开"""
   isGenderPrivate: Boolean
-}
-
-type LessonNotificationSettings {
-  """是否订阅通知"""
-  needNotifications: Boolean!
-}
-
-type LessonMetaData {
-  """当前开始学年"""
-  startYear: Int!
-
-  """当前结束学年"""
-  endYear: Int!
-
-  """当前学期"""
-  semester: Int!
-
-  """当前周数"""
-  week: Int!
-
-  """该节课位于一星期中的第几天"""
-  dayInWeek: Int
-}
-
-type LessonItem {
-  id: String!
-
-  """第几节课开始"""
-  start: Int!
-
-  """第几节课结束"""
-  end: Int!
-
-  """该节课位于一星期中的第几天"""
-  dayInWeek: Int
-
-  """TODO, 该课程要上课的周数的数组"""
-  circle: [Int!]
-
-  """TODO, 课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
-  description: String
-
-  """TODO, 上课地点"""
-  destination: String
-}
-
-"""课程对象"""
-type Lesson {
-  """课程内部唯一 id"""
-  id: String!
-
-  """上课地点"""
-  destination: String
-
-  """课程名称"""
-  name: String!
-
-  """TODO, 该课程要上课的周数的数组"""
-  circle: [Int!]
-
-  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
-  description: String!
-
-  """课程的创建时间"""
-  createdAt: String!
-
-  """课程对应的唯一课程号"""
-  lessonId: String!
-
-  """TODO, 授课教师的名字"""
-  educatorName: String
-
-  """TODO, 开始学年"""
-  startYear: Int
-
-  """TODO, 结束学年"""
-  endYear: Int
-
-  """TODO, 学期"""
-  semester: Int
-
-  """自定义课程时的颜色"""
-  color: String
-
-  """获取该课程的所有 deadline"""
-  deadlines(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): DeadlinesConnection!
-
-  """该课程下的所有课程实例"""
-  lessonItems: [LessonItem]!
-}
-
-type LessonsConnection {
-  edges: [LessonEdge!]!
-  pageInfo: LessonPageInfo!
-  totalCount: Int!
-}
-
-type LessonEdge {
-  node: Lesson
-  cursor: String
-}
-
-type LessonPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
 }
 
 type UserAuthenInfo implements Authenable {
@@ -1683,21 +1300,29 @@ type SetDbSchema {
   convertedPrimitiveFields_: String!
 }
 
-type Anonymous {
-  id: String!
-  createdAt: String!
+type CensorDetail {
+  """违禁品"""
+  contraband: [String!]
 
-  """同一个用户的匿名信息在同一条帖子下面的 watermark 相同"""
-  watermark: String!
+  """广告"""
+  ad: [String!]
 
-  """匿名时的校区"""
-  subCampus: String
+  """辱骂"""
+  abuse: [String!]
 
-  """匿名的创建者，只有创建者自己可见"""
-  creator: User
+  """涉黄"""
+  porn: [String!]
 
-  """被匿名发布的对象"""
-  to: PostAndCommentUnion!
+  """涉政"""
+  politics: [String!]
+}
+
+type CensorResponse {
+  """block: 建议直接拉黑; review: 建议人工复查; pass: 建议直接发布;"""
+  suggestion: String!
+
+  """详情"""
+  detail: CensorDetail!
 }
 
 type OrdersConnection {
@@ -2004,6 +1629,23 @@ type PostPageInfo {
   hasNextPage: Boolean!
 }
 
+type Anonymous {
+  id: String!
+  createdAt: String!
+
+  """同一个用户的匿名信息在同一条帖子下面的 watermark 相同"""
+  watermark: String!
+
+  """匿名时的校区"""
+  subCampus: String
+
+  """匿名的创建者，只有创建者自己可见"""
+  creator: User
+
+  """被匿名发布的对象"""
+  to: PostAndCommentUnion!
+}
+
 type Comment {
   id: String!
   content: String!
@@ -2093,34 +1735,6 @@ type CommentEdge {
 }
 
 type CommentPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-"""凭证是成为管理员的前提"""
-type ICredential {
-  id: String!
-  createdAt: String!
-  creator: Admin!
-  to: CredentialToUnion
-}
-
-union CredentialToUnion = Admin | User
-
-type ICredentialsConnection {
-  edges: [ICredentialEdge!]!
-  pageInfo: ICredentialPageInfo!
-  totalCount: Int!
-}
-
-type ICredentialEdge {
-  node: ICredential
-  cursor: String
-}
-
-type ICredentialPageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!
@@ -2278,75 +1892,57 @@ type DeletePageInfo {
   hasNextPage: Boolean!
 }
 
-type Role {
-  title: String!
-  createdAt: String!
+type SentimentAnalysisResult {
+  """正面分数"""
+  positive: Float!
+
+  """中性分数"""
+  neutral: Float!
+
+  """负面分数"""
+  negative: Float!
+
+  """文本情感"""
+  sentiment: NLP_SENTIMENT!
+}
+
+enum NLP_SENTIMENT {
+  POSITIVE
+  NEGATIVE
+  NEUTRAL
+}
+
+type KeywordsExtractionResult {
+  score: Float
+  word: String
+}
+
+type TextClassificationResult {
+  firstClassName: String
+  firstClassProbability: Float
+  secondClassName: String
+  secondClassProbability: Float
+  thirdClassName: String
+  thirdClassProbability: Float
+  fourthClassName: String
+  fourthClassProbability: Float
+  fifthClassName: String
+  fifthClassProbability: Float
+}
+
+type Message implements Node {
   id: String!
+  createdAt: String!
+  content: String!
 
-  """具有该角色的所有用户"""
-  users(
-    """最新的n个对象"""
-    first: Int = 10
+  """消息所属的会话"""
+  conversation: Conversation!
 
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): UsersConnectionWithRelay!
-
-  """角色的创建者"""
-  creator: Admin!
+  """消息的创建者"""
+  creator: MessageCreatorUnion!
 }
 
-type RolesConnection {
-  edges: [RoleEdge!]!
-  pageInfo: RolePageInfo!
-  totalCount: Int!
-}
-
-type RoleEdge {
-  node: Role
-  cursor: String
-}
-
-type RolePageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type CensorDetail {
-  """违禁品"""
-  contraband: [String!]
-
-  """广告"""
-  ad: [String!]
-
-  """辱骂"""
-  abuse: [String!]
-
-  """涉黄"""
-  porn: [String!]
-
-  """涉政"""
-  politics: [String!]
-}
-
-type CensorResponse {
-  """block: 建议直接拉黑; review: 建议人工复查; pass: 建议直接发布;"""
-  suggestion: String!
-
-  """详情"""
-  detail: CensorDetail!
-}
+union MessageCreatorUnion = User | Admin
 
 type Report implements Node {
   id: String!
@@ -2474,20 +2070,6 @@ type ConversationPageInfo {
   hasNextPage: Boolean!
 }
 
-type Message implements Node {
-  id: String!
-  createdAt: String!
-  content: String!
-
-  """消息所属的会话"""
-  conversation: Conversation!
-
-  """消息的创建者"""
-  creator: MessageCreatorUnion!
-}
-
-union MessageCreatorUnion = User | Admin
-
 type Mention {
   id: String!
 
@@ -2600,6 +2182,73 @@ type VotesConnection {
   nodes: [Vote!]!
 }
 
+type WxSubscriptionInfo {
+  """用户是否订阅该公众号标识，值为0时，代表此用户没有关注该公众号，拉取不到其余信息。"""
+  subscribe: Int!
+
+  """用户的标识，对当前公众号唯一"""
+  openid: String!
+
+  """用户的语言，简体中文为zh_CN"""
+  language: String!
+
+  """用户关注时间，为时间戳。如果用户曾多次关注，则取最后关注时间"""
+  subscribe_time: Int!
+
+  """只有在用户将公众号绑定到微信开放平台帐号后，才会出现该字段。"""
+  unionid: String!
+
+  """公众号运营者对粉丝的备注，公众号运营者可在微信公众平台用户管理界面对粉丝添加备注"""
+  remark: String!
+
+  """用户所在的分组ID（兼容旧的用户分组接口）"""
+  groupid: String!
+
+  """用户被打上的标签ID列表"""
+  tagid_list: [Int!]!
+
+  """返回用户关注的渠道来源"""
+  subscribe_scene: WX_SUBSCRIBE_SCENE!
+}
+
+enum WX_SUBSCRIBE_SCENE {
+  """公众号搜索"""
+  ADD_SCENE_SEARCH
+
+  """公众号迁移"""
+  ADD_SCENE_ACCOUNT_MIGRATION
+
+  """名片分享"""
+  ADD_SCENE_PROFILE_CARD
+
+  """扫描二维码"""
+  ADD_SCENE_QR_CODE
+
+  """图文页内名称点击"""
+  ADD_SCENE_PROFILE_LINK
+
+  """图文页右上角菜单"""
+  ADD_SCENE_PROFILE_ITEM
+
+  """支付后关注"""
+  ADD_SCENE_PAID
+
+  """微信广告"""
+  ADD_SCENE_WECHAT_ADVERTISEMENT
+
+  """他人转载"""
+  ADD_SCENE_REPRINT
+
+  """视频号直播"""
+  ADD_SCENE_LIVESTREAM
+
+  """视频号"""
+  ADD_SCENE_CHANNELS
+
+  """其他"""
+  ADD_SCENE_OTHERS
+}
+
 """Deadline对象"""
 type Deadline {
   """deadline 的唯一id"""
@@ -2648,6 +2297,254 @@ type DeadlineEdge {
 }
 
 type DeadlinePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type LessonNotificationSettings {
+  """是否订阅通知"""
+  needNotifications: Boolean!
+}
+
+type LessonMetaData {
+  """当前开始学年"""
+  startYear: Int!
+
+  """当前结束学年"""
+  endYear: Int!
+
+  """当前学期"""
+  semester: Int!
+
+  """当前周数"""
+  week: Int!
+
+  """该节课位于一星期中的第几天"""
+  dayInWeek: Int
+}
+
+type LessonItem {
+  id: String!
+
+  """第几节课开始"""
+  start: Int!
+
+  """第几节课结束"""
+  end: Int!
+
+  """该节课位于一星期中的第几天"""
+  dayInWeek: Int
+
+  """TODO, 该课程要上课的周数的数组"""
+  circle: [Int!]
+
+  """TODO, 课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
+  description: String
+
+  """TODO, 上课地点"""
+  destination: String
+}
+
+"""课程对象"""
+type Lesson {
+  """课程内部唯一 id"""
+  id: String!
+
+  """上课地点"""
+  destination: String
+
+  """课程名称"""
+  name: String!
+
+  """TODO, 该课程要上课的周数的数组"""
+  circle: [Int!]
+
+  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
+  description: String!
+
+  """课程的创建时间"""
+  createdAt: String!
+
+  """课程对应的唯一课程号"""
+  lessonId: String!
+
+  """TODO, 授课教师的名字"""
+  educatorName: String
+
+  """TODO, 开始学年"""
+  startYear: Int
+
+  """TODO, 结束学年"""
+  endYear: Int
+
+  """TODO, 学期"""
+  semester: Int
+
+  """自定义课程时的颜色"""
+  color: String
+
+  """获取该课程的所有 deadline"""
+  deadlines(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): DeadlinesConnection!
+
+  """该课程下的所有课程实例"""
+  lessonItems: [LessonItem]!
+}
+
+type LessonsConnection {
+  edges: [LessonEdge!]!
+  pageInfo: LessonPageInfo!
+  totalCount: Int!
+}
+
+type LessonEdge {
+  node: Lesson
+  cursor: String
+}
+
+type LessonPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+"""凭证是成为管理员的前提"""
+type ICredential {
+  id: String!
+  createdAt: String!
+  creator: Admin!
+  to: CredentialToUnion
+}
+
+union CredentialToUnion = Admin | User
+
+type ICredentialsConnection {
+  edges: [ICredentialEdge!]!
+  pageInfo: ICredentialPageInfo!
+  totalCount: Int!
+}
+
+type ICredentialEdge {
+  node: ICredential
+  cursor: String
+}
+
+type ICredentialPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type Institute {
+  id: String!
+  logoUrl: String!
+  name: String!
+  createdAt: String!
+
+  """当前学院所在的大学"""
+  university: University!
+}
+
+type InstitutesConnection {
+  edges: [InstituteEdge!]!
+  pageInfo: InstitutePageInfo!
+  totalCount: Int!
+}
+
+type InstituteEdge {
+  node: Institute
+  cursor: String
+}
+
+type InstitutePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type SubCampus {
+  id: String!
+  name: String!
+  createdAt: String!
+  university: University!
+}
+
+type SubCampusesConnection {
+  edges: [SubCampusEdge!]!
+  pageInfo: SubCampusPageInfo!
+  totalCount: Int!
+}
+
+type SubCampusEdge {
+  node: SubCampus
+  cursor: String
+}
+
+type SubCampusPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type Role {
+  title: String!
+  createdAt: String!
+  id: String!
+
+  """具有该角色的所有用户"""
+  users(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UsersConnectionWithRelay!
+
+  """角色的创建者"""
+  creator: Admin!
+}
+
+type RolesConnection {
+  edges: [RoleEdge!]!
+  pageInfo: RolePageInfo!
+  totalCount: Int!
+}
+
+type RoleEdge {
+  node: Role
+  cursor: String
+}
+
+type RolePageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!
@@ -2734,95 +2631,16 @@ type HashtagPageInfo {
   hasNextPage: Boolean!
 }
 
-type Institute {
+type SubField {
   id: String!
-  logoUrl: String!
-  name: String!
-  createdAt: String!
+  title: String!
+  avatarImageUrl: String!
 
-  """当前学院所在的大学"""
-  university: University!
-}
+  """SubField 的创建者"""
+  creator: Admin!
 
-type InstitutesConnection {
-  edges: [InstituteEdge!]!
-  pageInfo: InstitutePageInfo!
-  totalCount: Int!
-}
-
-type InstituteEdge {
-  node: Institute
-  cursor: String
-}
-
-type InstitutePageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type SentimentAnalysisResult {
-  """正面分数"""
-  positive: Float!
-
-  """中性分数"""
-  neutral: Float!
-
-  """负面分数"""
-  negative: Float!
-
-  """文本情感"""
-  sentiment: NLP_SENTIMENT!
-}
-
-enum NLP_SENTIMENT {
-  POSITIVE
-  NEGATIVE
-  NEUTRAL
-}
-
-type KeywordsExtractionResult {
-  score: Float
-  word: String
-}
-
-type TextClassificationResult {
-  firstClassName: String
-  firstClassProbability: Float
-  secondClassName: String
-  secondClassProbability: Float
-  thirdClassName: String
-  thirdClassProbability: Float
-  fourthClassName: String
-  fourthClassProbability: Float
-  fifthClassName: String
-  fifthClassProbability: Float
-}
-
-type SubCampus {
-  id: String!
-  name: String!
-  createdAt: String!
-  university: University!
-}
-
-type SubCampusesConnection {
-  edges: [SubCampusEdge!]!
-  pageInfo: SubCampusPageInfo!
-  totalCount: Int!
-}
-
-type SubCampusEdge {
-  node: SubCampus
-  cursor: String
-}
-
-type SubCampusPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
+  """SubField 所在的 Subject"""
+  subject: Subject!
 }
 
 type SearchResultItemConnection {
@@ -2866,16 +2684,9 @@ type ImagesUploadCredentialInfo {
   keys: [String!]!
 }
 
-type SubField {
+type View {
   id: String!
-  title: String!
-  avatarImageUrl: String!
-
-  """SubField 的创建者"""
-  creator: Admin!
-
-  """SubField 所在的 Subject"""
-  subject: Subject!
+  createdAt: String!
 }
 
 type Favorite {
@@ -2903,78 +2714,6 @@ type FavoritePageInfo {
   endCursor: String
   hasPreviousPage: Boolean!
   hasNextPage: Boolean!
-}
-
-type View {
-  id: String!
-  createdAt: String!
-}
-
-type WxSubscriptionInfo {
-  """用户是否订阅该公众号标识，值为0时，代表此用户没有关注该公众号，拉取不到其余信息。"""
-  subscribe: Int!
-
-  """用户的标识，对当前公众号唯一"""
-  openid: String!
-
-  """用户的语言，简体中文为zh_CN"""
-  language: String!
-
-  """用户关注时间，为时间戳。如果用户曾多次关注，则取最后关注时间"""
-  subscribe_time: Int!
-
-  """只有在用户将公众号绑定到微信开放平台帐号后，才会出现该字段。"""
-  unionid: String!
-
-  """公众号运营者对粉丝的备注，公众号运营者可在微信公众平台用户管理界面对粉丝添加备注"""
-  remark: String!
-
-  """用户所在的分组ID（兼容旧的用户分组接口）"""
-  groupid: String!
-
-  """用户被打上的标签ID列表"""
-  tagid_list: [Int!]!
-
-  """返回用户关注的渠道来源"""
-  subscribe_scene: WX_SUBSCRIBE_SCENE!
-}
-
-enum WX_SUBSCRIBE_SCENE {
-  """公众号搜索"""
-  ADD_SCENE_SEARCH
-
-  """公众号迁移"""
-  ADD_SCENE_ACCOUNT_MIGRATION
-
-  """名片分享"""
-  ADD_SCENE_PROFILE_CARD
-
-  """扫描二维码"""
-  ADD_SCENE_QR_CODE
-
-  """图文页内名称点击"""
-  ADD_SCENE_PROFILE_LINK
-
-  """图文页右上角菜单"""
-  ADD_SCENE_PROFILE_ITEM
-
-  """支付后关注"""
-  ADD_SCENE_PAID
-
-  """微信广告"""
-  ADD_SCENE_WECHAT_ADVERTISEMENT
-
-  """他人转载"""
-  ADD_SCENE_REPRINT
-
-  """视频号直播"""
-  ADD_SCENE_LIVESTREAM
-
-  """视频号"""
-  ADD_SCENE_CHANNELS
-
-  """其他"""
-  ADD_SCENE_OTHERS
 }
 
 type OrderPickUp {
@@ -3192,6 +2931,12 @@ type Query {
   """某段时间内的所有点赞"""
   votesCreatedWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): VotesConnection!
 
+  """分析一段文本的情感"""
+  sentimentAnalysis(content: String!): SentimentAnalysisResult!
+  keywordsExtraction(keywordNum: Int = 5, content: String!): [KeywordsExtractionResult!]!
+  textClassification(content: String!): TextClassificationResult!
+  autoSummarization(length: Int = 200, content: String!): String!
+
   """查询某时间段内发布的所有评论"""
   commentsCreatedWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): CommentsConnection!
 
@@ -3223,114 +2968,6 @@ type Query {
   """获取所有被删除的评论"""
   deletedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
 
-  """以id获取管理员"""
-  admin(id: String!): Admin!
-
-  """获取所有管理员"""
-  admins(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): AdminsConnection!
-
-  """待通过审核的用户信息"""
-  userAuthenInfos(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): UserAuthenInfosConnection!
-
-  """以id获取主题"""
-  subject(id: String!): Subject!
-
-  """获取所有主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection! @deprecated(reason: "请使用 subjectsWithRelay")
-
-  """获取所有主题"""
-  subjectsWithRelay(
-    universityId: String
-
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubjectsConnectionWithRelay!
-
-  """Relay版 以id获取某主题下所有帖子"""
-  subjectPostsWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-    id: String!
-  ): PostsConnectionWithRelay! @deprecated(reason: "请使用 subjects.postsWithRelay")
-
-  """简单的搜索"""
-  search(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-
-    """检索的类型"""
-    type: SEARCHTYPE!
-
-    """待检索的关键字"""
-    query: String!
-  ): SearchResultItemConnection!
-
   """以id获取举报"""
   report(id: String!): Report!
 
@@ -3355,30 +2992,6 @@ type Query {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): ReportsConnectionWithRelay!
 
-  """以id获取消息"""
-  message(id: String!): Message!
-
-  """以id获取会话"""
-  conversation(id: String!): Conversation!
-
-  """获取所有会话"""
-  conversations(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): ConversationsConnection!
-
   """以id获取删除"""
   delete(deleteId: String!): Delete!
 
@@ -3400,117 +3013,35 @@ type Query {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): DeletesConnection!
 
-  """上传图片到 COS 前，必须通过相应的接口获取上传凭证"""
-  getImagesUploadCredentialInfo(
-    """获取的凭证类型"""
-    grantType: FILEUPLOAD_GRANT_TYPE!
-    fileNames: [String!]!
-  ): ImagesUploadCredentialInfo!
-
-  """以id获取权限"""
-  privilege(id: String!): Privilege!
-
-  """获取所有权限"""
-  privileges(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): PrivilegesConnection!
-
-  """以 id 获取指定 deadline"""
-  deadline(id: String!): Deadline!
-
-  """获取所有的折叠"""
-  folds(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): FoldsConnection!
-
-  """所有的拉黑"""
-  blocks(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): BlocksConnection!
-
-  """获取一个凭证"""
-  credential(credentialId: String!): ICredential!
-
-  """获取所有凭证"""
-  credentials(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): ICredentialsConnection!
-
-  """获取一个置顶信息"""
-  pin(id: String!): Pin!
-
-  """获取全部置顶信息"""
-  pins(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): PinsConnection!
-
   """文本审查的测试接口，测试一段文本是否违规"""
   censorText(content: String!): CensorResponse!
+
+  """获取当前用户上课通知的设置"""
+  lessonNotificationSettings: LessonNotificationSettings!
+
+  """获取最新的课程表元信息"""
+  lessonMetaData: LessonMetaData!
+
+  """获取所有的课程"""
+  lessons(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): LessonsConnection!
+
+  """以 id 获取指定课程"""
+  lesson(id: String!): Lesson!
   getUnlimitedWXacode(
     """对应的小程序"""
     grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
@@ -3612,11 +3143,246 @@ type Query {
     openid: String!
   ): WxSubscriptionInfo!
 
-  """分析一段文本的情感"""
-  sentimentAnalysis(content: String!): SentimentAnalysisResult!
-  keywordsExtraction(keywordNum: Int = 5, content: String!): [KeywordsExtractionResult!]!
-  textClassification(content: String!): TextClassificationResult!
-  autoSummarization(length: Int = 200, content: String!): String!
+  """以id获取主题"""
+  subject(id: String!): Subject!
+
+  """获取所有主题"""
+  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection! @deprecated(reason: "请使用 subjectsWithRelay")
+
+  """获取所有主题"""
+  subjectsWithRelay(
+    universityId: String
+
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubjectsConnectionWithRelay!
+
+  """Relay版 以id获取某主题下所有帖子"""
+  subjectPostsWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+    id: String!
+  ): PostsConnectionWithRelay! @deprecated(reason: "请使用 subjects.postsWithRelay")
+
+  """以id获取管理员"""
+  admin(id: String!): Admin!
+
+  """获取所有管理员"""
+  admins(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): AdminsConnection!
+
+  """获取所有的折叠"""
+  folds(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): FoldsConnection!
+
+  """所有的拉黑"""
+  blocks(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): BlocksConnection!
+
+  """获取一个置顶信息"""
+  pin(id: String!): Pin!
+
+  """获取全部置顶信息"""
+  pins(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PinsConnection!
+
+  """待通过审核的用户信息"""
+  userAuthenInfos(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UserAuthenInfosConnection!
+
+  """简单的搜索"""
+  search(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+
+    """检索的类型"""
+    type: SEARCHTYPE!
+
+    """待检索的关键字"""
+    query: String!
+  ): SearchResultItemConnection!
+
+  """以id获取消息"""
+  message(id: String!): Message!
+
+  """以id获取会话"""
+  conversation(id: String!): Conversation!
+
+  """获取所有会话"""
+  conversations(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): ConversationsConnection!
+
+  """上传图片到 COS 前，必须通过相应的接口获取上传凭证"""
+  getImagesUploadCredentialInfo(
+    """获取的凭证类型"""
+    grantType: FILEUPLOAD_GRANT_TYPE!
+    fileNames: [String!]!
+  ): ImagesUploadCredentialInfo!
+
+  """以id获取权限"""
+  privilege(id: String!): Privilege!
+
+  """获取所有权限"""
+  privileges(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PrivilegesConnection!
+
+  """以 id 获取指定 deadline"""
+  deadline(id: String!): Deadline!
+
+  """获取一个凭证"""
+  credential(credentialId: String!): ICredential!
+
+  """获取所有凭证"""
+  credentials(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): ICredentialsConnection!
 
   """所有的角色"""
   roles(
@@ -3635,33 +3401,6 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): RolesConnection!
-
-  """获取当前用户上课通知的设置"""
-  lessonNotificationSettings: LessonNotificationSettings!
-
-  """获取最新的课程表元信息"""
-  lessonMetaData: LessonMetaData!
-
-  """获取所有的课程"""
-  lessons(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): LessonsConnection!
-
-  """以 id 获取指定课程"""
-  lesson(id: String!): Lesson!
   mention(id: String!): Mention!
   mentions(
     """最新的n个对象"""
@@ -3768,42 +3507,10 @@ type Query {
 
 union WhoAmIUnion = User | Admin
 
-enum SEARCHTYPE {
-  """用户"""
-  USER
-  COMMENT
-
-  """评论"""
-  POST
-
-  """主题"""
-  SUBJECT
-
-  """大学"""
-  UNIVERSITY
-
-  """学院"""
-  INSTITUTE
-
-  """校区"""
-  SUBCAMPUS
-}
-
-enum FILEUPLOAD_GRANT_TYPE {
-  """请求将图片上传到帖子相关文件夹下的凭证"""
-  POST_IMAGES
-
-  """请求将图片上传到评论相关文件夹下的凭证"""
-  COMMENT_IMAGES
-
-  """请求将图片上传到主题相关文件夹下的凭证"""
-  SUBJECT_IMAGES
-
-  """请求将图片上传到认证信息相关文件夹下的凭证"""
-  AUTHENUSERINFO_IMAEGS
-
-  """请求将图片上传到头像相关文件夹下的凭证"""
-  AVATAR_IMAGES
+enum NOTIFICATION_TYPE {
+  ALL
+  READ
+  UN_READ
 }
 
 """登录类型"""
@@ -3882,6 +3589,44 @@ enum WX_SUBSCRIBE_INFO_LANG {
   ZH_CN
   ZH_TW
   EN
+}
+
+enum SEARCHTYPE {
+  """用户"""
+  USER
+  COMMENT
+
+  """评论"""
+  POST
+
+  """主题"""
+  SUBJECT
+
+  """大学"""
+  UNIVERSITY
+
+  """学院"""
+  INSTITUTE
+
+  """校区"""
+  SUBCAMPUS
+}
+
+enum FILEUPLOAD_GRANT_TYPE {
+  """请求将图片上传到帖子相关文件夹下的凭证"""
+  POST_IMAGES
+
+  """请求将图片上传到评论相关文件夹下的凭证"""
+  COMMENT_IMAGES
+
+  """请求将图片上传到主题相关文件夹下的凭证"""
+  SUBJECT_IMAGES
+
+  """请求将图片上传到认证信息相关文件夹下的凭证"""
+  AUTHENUSERINFO_IMAEGS
+
+  """请求将图片上传到头像相关文件夹下的凭证"""
+  AVATAR_IMAGES
 }
 
 type Mutation {
@@ -4037,75 +3782,6 @@ type Mutation {
     images: [String!]
   ): Mention!
 
-  """注册一个管理员，需要使用authen认证新注册的管理员"""
-  registerAdmin(
-    userId: String!
-    name: String!
-    avatarImageUrl: String!
-
-    """管理员密码"""
-    sign: String!
-  ): Admin!
-
-  """登录"""
-  login(
-    """用户账号"""
-    userId: String
-
-    """用户id"""
-    id: String
-
-    """用户密码"""
-    sign: String!
-  ): LoginResult!
-
-  """通过小程序的code进行登录"""
-  loginByCode(
-    """从小程序获取的登录 code"""
-    code: String!
-
-    """登录类型"""
-    grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
-  ): LoginResult!
-
-  """更改密码"""
-  updatePassword(
-    """新密码"""
-    sign: String!
-  ): UpdatePasswordResultUnion!
-
-  """认证用户"""
-  authenUser(
-    """待认证的用户id"""
-    id: String!
-
-    """自助认证时 szu 后端提供的token (保证不被篡改，用 jwt 实现)"""
-    token: String
-
-    """手动认证时的认证信息"""
-    info: AuthenticationInfo
-  ): User!
-
-  """已存在的管理员认证一个新注册的管理员"""
-  authenAdmin(to: String!): ICredential!
-
-  """以id删除一个主题"""
-  deleteSubject(id: String!): Delete!
-
-  """以id更新一个主题"""
-  updateSubject(id: String!, title: String, description: String, avatarImageUrl: String, backgroundImageUrl: String): Subject!
-
-  """创建一个主题"""
-  createSubject(
-    title: String!
-    description: String!
-    avatarImageUrl: String!
-    backgroundImageUrl: String!
-
-    """Subject 所在的大学的 id"""
-    universityId: String!
-  ): Subject!
-
   """举报一条评论"""
   addReportOnComment(
     """举报的类型，枚举值"""
@@ -4148,89 +3824,11 @@ type Mutation {
   """管理员接口：认为举报有效"""
   acceptReport(content: String!, reportId: String!): Boolean!
 
-  """向指定 Conversation 添加一条消息"""
-  addMessage(
-    """Conversation ID"""
-    conversationId: String!
-
-    """The content of current message"""
-    content: String!
-  ): Message!
-
-  """创建一个会话"""
-  createConversation(title: String!, description: String!, participants: [String!]!): Conversation!
-
-  """关闭一个会话"""
-  closeConversation(conversationId: String!): Conversation!
-
   """管理员或用户删除一个帖子"""
   deletePost(postId: String!): Delete!
 
   """管理员或用户删除一个评论"""
   deleteComment(commentId: String!): Delete!
-
-  """添加一个权限到某管理员"""
-  addPrivilegeOnAdmin(privilege: IPRIVILEGE!, adminId: String!): Privilege!
-
-  """添加一个权限到某用户"""
-  addPrivilegeOnUser(privilege: IPRIVILEGE!, id: String!): Privilege!
-
-  """从某用户移除一个权限"""
-  removePrivilegeOnUser(privilege: IPRIVILEGE!, from: String!): Boolean!
-
-  """从某管理员移除一个权限"""
-  removePrivilegeOnAdmin(privilege: IPRIVILEGE!, from: String!): Boolean!
-
-  """用户添加一个 deadline"""
-  addDeadline(
-    """deadline 对应的课程的 id"""
-    lessonId: String
-
-    """唯一的 deadline id"""
-    deadlineId: String!
-
-    """deadline 对应的课程的名字"""
-    courseName: String!
-
-    """deadline 的开始时间"""
-    startDate: String!
-
-    """deadline 的结束时间"""
-    endDate: String!
-
-    """deadline 的标题"""
-    title: String!
-
-    """deadline 的类型"""
-    type: DEADLINE_TYPE!
-  ): Deadline!
-
-  """增加帖子的浏览量"""
-  addViewOnPost(postId: String!): View!
-
-  """增加评论的浏览量"""
-  addViewOnComment(commentId: String!): View!
-
-  """折叠一条评论"""
-  addFoldOnComment(commentId: String!): Fold!
-
-  """解除拉黑一个用户"""
-  removeBlockOnUser(
-    """被拉黑的用户的id"""
-    from: String!
-  ): Boolean!
-
-  """拉黑一个用户"""
-  addBlockOnUser(id: String!, description: String!): Block!
-
-  """置顶一个帖子"""
-  addPinOnPost(postId: String!): Pin!
-
-  """对一个帖子取消置顶"""
-  removePinOnPost(
-    """被置顶的帖子的id"""
-    from: String!
-  ): Boolean!
 
   """批量已读回复通知"""
   setReadReplyNotifications(
@@ -4246,12 +3844,6 @@ type Mutation {
 
   """设置创建时间小于当前系统时间的所有通知为已读"""
   setReadAllNotifications: Boolean!
-
-  """添加一个角色到某用户"""
-  addRoleOnUser(roleId: String!, to: String!): User!
-
-  """创建角色"""
-  createRole(title: String!): Role!
 
   """更新用户上课通知设置"""
   updateLessonNotificationSettings(
@@ -4410,6 +4002,159 @@ type Mutation {
   """测试方法"""
   setLessonNotificationStatus: String!
 
+  """以id删除一个主题"""
+  deleteSubject(id: String!): Delete!
+
+  """以id更新一个主题"""
+  updateSubject(id: String!, title: String, description: String, avatarImageUrl: String, backgroundImageUrl: String): Subject!
+
+  """创建一个主题"""
+  createSubject(
+    title: String!
+    description: String!
+    avatarImageUrl: String!
+    backgroundImageUrl: String!
+
+    """Subject 所在的大学的 id"""
+    universityId: String!
+  ): Subject!
+
+  """注册一个管理员，需要使用authen认证新注册的管理员"""
+  registerAdmin(
+    userId: String!
+    name: String!
+    avatarImageUrl: String!
+
+    """管理员密码"""
+    sign: String!
+  ): Admin!
+
+  """折叠一条评论"""
+  addFoldOnComment(commentId: String!): Fold!
+
+  """解除拉黑一个用户"""
+  removeBlockOnUser(
+    """被拉黑的用户的id"""
+    from: String!
+  ): Boolean!
+
+  """拉黑一个用户"""
+  addBlockOnUser(id: String!, description: String!): Block!
+
+  """置顶一个帖子"""
+  addPinOnPost(postId: String!): Pin!
+
+  """对一个帖子取消置顶"""
+  removePinOnPost(
+    """被置顶的帖子的id"""
+    from: String!
+  ): Boolean!
+
+  """登录"""
+  login(
+    """用户账号"""
+    userId: String
+
+    """用户id"""
+    id: String
+
+    """用户密码"""
+    sign: String!
+  ): LoginResult!
+
+  """通过小程序的code进行登录"""
+  loginByCode(
+    """从小程序获取的登录 code"""
+    code: String!
+
+    """登录类型"""
+    grantType: CODE2SESSION_GRANT_TYPE = BLANK_SPACE
+  ): LoginResult!
+
+  """更改密码"""
+  updatePassword(
+    """新密码"""
+    sign: String!
+  ): UpdatePasswordResultUnion!
+
+  """认证用户"""
+  authenUser(
+    """待认证的用户id"""
+    id: String!
+
+    """自助认证时 szu 后端提供的token (保证不被篡改，用 jwt 实现)"""
+    token: String
+
+    """手动认证时的认证信息"""
+    info: AuthenticationInfo
+  ): User!
+
+  """已存在的管理员认证一个新注册的管理员"""
+  authenAdmin(to: String!): ICredential!
+
+  """向指定 Conversation 添加一条消息"""
+  addMessage(
+    """Conversation ID"""
+    conversationId: String!
+
+    """The content of current message"""
+    content: String!
+  ): Message!
+
+  """创建一个会话"""
+  createConversation(title: String!, description: String!, participants: [String!]!): Conversation!
+
+  """关闭一个会话"""
+  closeConversation(conversationId: String!): Conversation!
+
+  """添加一个权限到某管理员"""
+  addPrivilegeOnAdmin(privilege: IPRIVILEGE!, adminId: String!): Privilege!
+
+  """添加一个权限到某用户"""
+  addPrivilegeOnUser(privilege: IPRIVILEGE!, id: String!): Privilege!
+
+  """从某用户移除一个权限"""
+  removePrivilegeOnUser(privilege: IPRIVILEGE!, from: String!): Boolean!
+
+  """从某管理员移除一个权限"""
+  removePrivilegeOnAdmin(privilege: IPRIVILEGE!, from: String!): Boolean!
+
+  """用户添加一个 deadline"""
+  addDeadline(
+    """deadline 对应的课程的 id"""
+    lessonId: String
+
+    """唯一的 deadline id"""
+    deadlineId: String!
+
+    """deadline 对应的课程的名字"""
+    courseName: String!
+
+    """deadline 的开始时间"""
+    startDate: String!
+
+    """deadline 的结束时间"""
+    endDate: String!
+
+    """deadline 的标题"""
+    title: String!
+
+    """deadline 的类型"""
+    type: DEADLINE_TYPE!
+  ): Deadline!
+
+  """增加帖子的浏览量"""
+  addViewOnPost(postId: String!): View!
+
+  """增加评论的浏览量"""
+  addViewOnComment(commentId: String!): View!
+
+  """添加一个角色到某用户"""
+  addRoleOnUser(roleId: String!, to: String!): User!
+
+  """创建角色"""
+  createRole(title: String!): Role!
+
   """手动触发一个课程通知任务"""
   triggerTask: String!
   createUniversity(
@@ -4555,6 +4300,34 @@ input CreateTeamUpOrderArgs {
   expiredAt: String!
 }
 
+input LessonItemInput {
+  """第几节课开始"""
+  start: Int!
+
+  """第几节课结束"""
+  end: Int!
+
+  """该节课位于一星期中的第几天"""
+  dayInWeek: Int!
+
+  """该课程要上课的周数的数组"""
+  circle: [Int!]!
+
+  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
+  description: String!
+
+  """上课地点"""
+  destination: String!
+}
+
+enum TASK_TYPE {
+  """早上8点的提醒"""
+  GM
+
+  """晚上10点的提醒"""
+  GF
+}
+
 union UpdatePasswordResultUnion = Admin | User
 
 input AuthenticationInfo {
@@ -4587,34 +4360,6 @@ input AuthenticationInfo {
 
   """用户申请的角色的id的数组"""
   roles: [String!]
-}
-
-input LessonItemInput {
-  """第几节课开始"""
-  start: Int!
-
-  """第几节课结束"""
-  end: Int!
-
-  """该节课位于一星期中的第几天"""
-  dayInWeek: Int!
-
-  """该课程要上课的周数的数组"""
-  circle: [Int!]!
-
-  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
-  description: String!
-
-  """上课地点"""
-  destination: String!
-}
-
-enum TASK_TYPE {
-  """早上8点的提醒"""
-  GM
-
-  """晚上10点的提醒"""
-  GF
 }
 
 type Subscription {

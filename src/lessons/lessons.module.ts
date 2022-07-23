@@ -1,13 +1,14 @@
-import { Module } from '@nestjs/common'
+import { forwardRef, Module } from '@nestjs/common'
 
-import { CosService } from '../cos/cos.service'
+import { DbModule } from '../db/db.module'
 import { SharedModule } from '../shared/shared.module'
-import { WxService } from '../wx/wx.service'
+import { WxModule } from '../wx/wx.module'
 import { LessonsResolver } from './lessons.resolver'
 import { LessonsService } from './lessons.service'
 
 @Module({
-  providers: [LessonsResolver, LessonsService, WxService, CosService],
-  imports: [SharedModule]
+  providers: [LessonsResolver, LessonsService],
+  imports: [forwardRef(() => SharedModule), WxModule, DbModule],
+  exports: [LessonsService]
 })
 export class LessonsModule {}
