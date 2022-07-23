@@ -37,7 +37,7 @@ describe('UserResolver', () => {
       .useValue({})
       .overrideProvider(UserService)
       .useValue({
-        getRandomUserId: jest.fn().mockImplementation(() => 'disajdisa'),
+        getRandomUserId: jest.fn().mockImplementation(() => 'random_user_id'),
         registerUser: jest.fn().mockImplementation(() => result),
         updateUser: jest.fn().mockImplementation(() => result)
       })
