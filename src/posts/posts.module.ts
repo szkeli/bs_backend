@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common'
 
-import { DbService } from 'src/db/db.service'
 import { SubjectService } from 'src/subject/subject.service'
 import { UserService } from 'src/user/user.service'
 
@@ -11,16 +10,17 @@ import { DeletesService } from '../deletes/deletes.service'
 import { NlpService } from '../nlp/nlp.service'
 import { PubsubsModule } from '../pubsubs/pubsubs.module'
 import { ReportsService } from '../reports/reports.service'
+import { SharedModule } from '../shared/shared.module'
 import { PostsResolver } from './posts.resolver'
 import { PostsService } from './posts.service'
 
 @Module({
   imports: [
-    PubsubsModule
+    PubsubsModule,
+    SharedModule
   ],
   providers: [
     PostsResolver,
-    DbService,
     PostsService,
     UserService,
     SubjectService,

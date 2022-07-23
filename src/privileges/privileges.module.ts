@@ -1,14 +1,14 @@
 import { Module } from '@nestjs/common'
 
-import { DbService } from '../db/db.service'
+import { SharedModule } from '../shared/shared.module'
 import { PrivilegesResolver } from './privileges.resolver'
 import { PrivilegesService } from './privileges.service'
 
 @Module({
+  imports: [SharedModule],
   providers: [
     PrivilegesResolver,
-    PrivilegesService,
-    DbService
+    PrivilegesService
   ]
 })
 export class PrivilegesModule {}

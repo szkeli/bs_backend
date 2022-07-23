@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common'
 
-import { DbService } from '../db/db.service'
+import { SharedModule } from '../shared/shared.module'
 import { RolesResolver } from './roles.resolver'
 import { RolesService } from './roles.service'
 
 @Module({
-  providers: [RolesService, RolesResolver, DbService]
+  imports: [SharedModule],
+  providers: [RolesService, RolesResolver]
 })
 export class RolesModule {}

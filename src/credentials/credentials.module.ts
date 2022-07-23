@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common'
 
-import { DbService } from '../db/db.service'
+import { DbModule } from '../db/db.module'
 import { CredentialsResolver } from './credentials.resolver'
 import { CredentialsService } from './credentials.service'
 
 @Module({
-  providers: [CredentialsService, CredentialsResolver, DbService]
+  providers: [CredentialsService, CredentialsResolver],
+  imports: [DbModule]
 })
 export class CredentialsModule {}

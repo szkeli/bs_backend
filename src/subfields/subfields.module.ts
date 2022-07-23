@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common'
 
-import { DbService } from '../db/db.service'
+import { SharedModule } from '../shared/shared.module'
 import { SubfieldsResolver } from './subfields.resolver'
 import { SubfieldsService } from './subfields.service'
 
 @Module({
-  providers: [SubfieldsResolver, SubfieldsService, DbService]
+  imports: [SharedModule],
+  providers: [SubfieldsResolver, SubfieldsService]
 })
 export class SubfieldsModule {}

@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common'
 
-import { DbService } from '../db/db.service'
+import { SharedModule } from '../shared/shared.module'
 import { DeletesResolver } from './deletes.resolver'
 import { DeletesService } from './deletes.service'
 
 @Module({
-  providers: [DeletesResolver, DeletesService, DbService]
+  providers: [DeletesResolver, DeletesService],
+  imports: [SharedModule]
 })
 export class DeletesModule {}

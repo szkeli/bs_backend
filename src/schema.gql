@@ -1349,6 +1349,340 @@ type LessonPageInfo {
   hasNextPage: Boolean!
 }
 
+type UserAuthenInfo implements Authenable {
+  id: String!
+  createdAt: String!
+
+  """提交信息的用户"""
+  to: User!
+
+  """审核信息的删除者"""
+  delete: Delete
+
+  """用户申请的角色"""
+  roles(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): RolesConnection!
+
+  """头像"""
+  avatarImageUrl: String!
+
+  """学号"""
+  studentId: String!
+
+  """学院"""
+  college: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 institutes 代替")
+
+  """校区"""
+  subCampus: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 subCampuses 代替")
+
+  """学校"""
+  school: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 universities 代替")
+
+  """年级"""
+  grade: String!
+
+  """性别"""
+  gender: GENDER!
+
+  """bug: 图片乱序，有效信息图片(e.g. 校园卡照片)的链接"""
+  images: [String!]
+}
+
+interface Authenable {
+  id: String!
+  createdAt: String!
+
+  """提交信息的用户"""
+  to: User!
+
+  """审核信息的删除者"""
+  delete: Delete
+
+  """用户申请的角色"""
+  roles(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): RolesConnection!
+}
+
+type UserAuthenInfosConnection {
+  edges: [UserAuthenInfoEdge!]!
+  pageInfo: UserAuthenInfoPageInfo!
+  totalCount: Int!
+}
+
+type UserAuthenInfoEdge {
+  node: UserAuthenInfo
+  cursor: String
+}
+
+type UserAuthenInfoPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type Block {
+  id: String!
+  createdAt: String!
+  description: String!
+
+  """被拉黑的对象"""
+  to: User!
+
+  """拉黑的创建者"""
+  creator: Admin!
+}
+
+type BlocksConnection {
+  edges: [BlockEdge!]!
+  pageInfo: BlockPageInfo!
+  totalCount: Int!
+}
+
+type BlockEdge {
+  node: Block
+  cursor: String
+}
+
+type BlockPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type Fold {
+  id: String!
+  createdAt: String!
+
+  """折叠的创建者"""
+  creator: Admin!
+
+  """被折叠的对象"""
+  to: Comment!
+}
+
+type FoldsConnection {
+  edges: [FoldEdge!]!
+  pageInfo: FoldPageInfo!
+  totalCount: Int!
+}
+
+type FoldEdge {
+  node: Fold
+  cursor: String
+}
+
+type FoldPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type Pin {
+  id: String!
+  createdAt: String!
+
+  """置顶的创建者"""
+  creator: Admin!
+
+  """被置顶的对象，被置顶对象被删除时，返回null"""
+  to: PostAndCommentUnion
+}
+
+type PinsConnection {
+  edges: [PinEdge!]!
+  pageInfo: PinPageInfo!
+  totalCount: Int!
+}
+
+type PinEdge {
+  node: Pin
+  cursor: String
+}
+
+type PinPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type Privilege {
+  id: String!
+  createdAt: String!
+  value: IPRIVILEGE!
+
+  """权限作用的对象"""
+  to: AdminAndUserUnion!
+
+  """权限的创建者"""
+  creator: Admin!
+}
+
+"""全局权限值"""
+enum IPRIVILEGE {
+  ROOT
+  ADMIN_CAN_AUTHEN_OTHER
+
+  """管理员能创建一个新的管理员"""
+  ADMIN_CAN_CREATE_ADMIN
+  ADMIN_CAN_DELETE_ADMIN
+  ADMIN_CAN_DELETE_USER
+  ADMIN_CAN_CREATE_USER
+  ADMIN_CAN_UPDATE_USER
+
+  """管理员能通过一个举报"""
+  ADMIN_CAN_ACCEPT_REPORT
+  ADMIN_CAN_REJECT_REPORT
+
+  """管理员能查看全局数据(某段时间内的注册数，点赞数，发帖数)"""
+  ADMIN_CAN_VIEW_STATE
+  ADMIN_CAN_DELETE_SUBJECT
+  ADMIN_CAN_ADD_PIN_ON_POST
+  ADMIN_CAN_REMOVE_PIN_ON_POST
+  ADMIN_CAN_AUTHEN_USER
+  ADMIN_CAN_ADD_BLOCK_ON_USER
+  ADMIN_CAN_REMOVE_BLOCK_ON_USER
+  ADMIN_CAN_ADD_FOLD_ON_COMMENT
+
+  """用户能创建一个新的主题"""
+  USER_CAN_CREATE_SUBJECT
+}
+
+union AdminAndUserUnion = User | Admin
+
+type PrivilegesConnection {
+  edges: [PrivilegeEdge!]!
+  pageInfo: PrivilegePageInfo!
+  totalCount: Int!
+}
+
+type PrivilegeEdge {
+  node: Privilege
+  cursor: String
+}
+
+type PrivilegePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type Subject {
+  id: String!
+  createdAt: String!
+  title: String!
+  description: String!
+  avatarImageUrl: String!
+  backgroundImageUrl: String!
+
+  """主题的创建者"""
+  creator: User!
+
+  """当前主题中的所有帖子"""
+  posts(first: Int = 10, offset: Int = 0): PostsConnection! @deprecated(reason: "请使用 postsWithRelay")
+  postsWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PostsConnectionWithRelay!
+
+  """具有该 Subject 的所有大学"""
+  universities(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UniversitiesConnection!
+
+  """Subject 的所有 SubField"""
+  subFields: [SubField!]!
+}
+
+type SubjectsConnection {
+  nodes: [Subject!]!
+  totalCount: Int!
+}
+
+type SubjectsConnectionWithRelay {
+  edges: [SubjectEdge!]!
+  pageInfo: SubjectPageInfo!
+  totalCount: Int!
+}
+
+type SubjectEdge {
+  node: Subject
+  cursor: String
+}
+
+type SubjectPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type SetDbSchema {
+  arrayIndexOffset: Int!
+  array: [String!]!
+  pivot_: Float!
+  wrappers_: String
+  messageId_: String
+  convertedPrimitiveFields_: String!
+}
+
 type Anonymous {
   id: String!
   createdAt: String!
@@ -1759,331 +2093,6 @@ type CommentEdge {
 }
 
 type CommentPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type UserAuthenInfo implements Authenable {
-  id: String!
-  createdAt: String!
-
-  """提交信息的用户"""
-  to: User!
-
-  """审核信息的删除者"""
-  delete: Delete
-
-  """用户申请的角色"""
-  roles(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): RolesConnection!
-
-  """头像"""
-  avatarImageUrl: String!
-
-  """学号"""
-  studentId: String!
-
-  """学院"""
-  college: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 institutes 代替")
-
-  """校区"""
-  subCampus: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 subCampuses 代替")
-
-  """学校"""
-  school: String @deprecated(reason: "feature/multiuniversity 中被弃用，请使用 universities 代替")
-
-  """年级"""
-  grade: String!
-
-  """性别"""
-  gender: GENDER!
-
-  """bug: 图片乱序，有效信息图片(e.g. 校园卡照片)的链接"""
-  images: [String!]
-}
-
-interface Authenable {
-  id: String!
-  createdAt: String!
-
-  """提交信息的用户"""
-  to: User!
-
-  """审核信息的删除者"""
-  delete: Delete
-
-  """用户申请的角色"""
-  roles(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): RolesConnection!
-}
-
-type UserAuthenInfosConnection {
-  edges: [UserAuthenInfoEdge!]!
-  pageInfo: UserAuthenInfoPageInfo!
-  totalCount: Int!
-}
-
-type UserAuthenInfoEdge {
-  node: UserAuthenInfo
-  cursor: String
-}
-
-type UserAuthenInfoPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type Block {
-  id: String!
-  createdAt: String!
-  description: String!
-
-  """被拉黑的对象"""
-  to: User!
-
-  """拉黑的创建者"""
-  creator: Admin!
-}
-
-type BlocksConnection {
-  edges: [BlockEdge!]!
-  pageInfo: BlockPageInfo!
-  totalCount: Int!
-}
-
-type BlockEdge {
-  node: Block
-  cursor: String
-}
-
-type BlockPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type Fold {
-  id: String!
-  createdAt: String!
-
-  """折叠的创建者"""
-  creator: Admin!
-
-  """被折叠的对象"""
-  to: Comment!
-}
-
-type FoldsConnection {
-  edges: [FoldEdge!]!
-  pageInfo: FoldPageInfo!
-  totalCount: Int!
-}
-
-type FoldEdge {
-  node: Fold
-  cursor: String
-}
-
-type FoldPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type Pin {
-  id: String!
-  createdAt: String!
-
-  """置顶的创建者"""
-  creator: Admin!
-
-  """被置顶的对象，被置顶对象被删除时，返回null"""
-  to: PostAndCommentUnion
-}
-
-type PinsConnection {
-  edges: [PinEdge!]!
-  pageInfo: PinPageInfo!
-  totalCount: Int!
-}
-
-type PinEdge {
-  node: Pin
-  cursor: String
-}
-
-type PinPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type Privilege {
-  id: String!
-  createdAt: String!
-  value: IPRIVILEGE!
-
-  """权限作用的对象"""
-  to: AdminAndUserUnion!
-
-  """权限的创建者"""
-  creator: Admin!
-}
-
-"""全局权限值"""
-enum IPRIVILEGE {
-  ROOT
-  ADMIN_CAN_AUTHEN_OTHER
-
-  """管理员能创建一个新的管理员"""
-  ADMIN_CAN_CREATE_ADMIN
-  ADMIN_CAN_DELETE_ADMIN
-  ADMIN_CAN_DELETE_USER
-  ADMIN_CAN_CREATE_USER
-  ADMIN_CAN_UPDATE_USER
-
-  """管理员能通过一个举报"""
-  ADMIN_CAN_ACCEPT_REPORT
-  ADMIN_CAN_REJECT_REPORT
-
-  """管理员能查看全局数据(某段时间内的注册数，点赞数，发帖数)"""
-  ADMIN_CAN_VIEW_STATE
-  ADMIN_CAN_DELETE_SUBJECT
-  ADMIN_CAN_ADD_PIN_ON_POST
-  ADMIN_CAN_REMOVE_PIN_ON_POST
-  ADMIN_CAN_AUTHEN_USER
-  ADMIN_CAN_ADD_BLOCK_ON_USER
-  ADMIN_CAN_REMOVE_BLOCK_ON_USER
-  ADMIN_CAN_ADD_FOLD_ON_COMMENT
-
-  """用户能创建一个新的主题"""
-  USER_CAN_CREATE_SUBJECT
-}
-
-union AdminAndUserUnion = User | Admin
-
-type PrivilegesConnection {
-  edges: [PrivilegeEdge!]!
-  pageInfo: PrivilegePageInfo!
-  totalCount: Int!
-}
-
-type PrivilegeEdge {
-  node: Privilege
-  cursor: String
-}
-
-type PrivilegePageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type Subject {
-  id: String!
-  createdAt: String!
-  title: String!
-  description: String!
-  avatarImageUrl: String!
-  backgroundImageUrl: String!
-
-  """主题的创建者"""
-  creator: User!
-
-  """当前主题中的所有帖子"""
-  posts(first: Int = 10, offset: Int = 0): PostsConnection! @deprecated(reason: "请使用 postsWithRelay")
-  postsWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): PostsConnectionWithRelay!
-
-  """具有该 Subject 的所有大学"""
-  universities(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): UniversitiesConnection!
-
-  """Subject 的所有 SubField"""
-  subFields: [SubField!]!
-}
-
-type SubjectsConnection {
-  nodes: [Subject!]!
-  totalCount: Int!
-}
-
-type SubjectsConnectionWithRelay {
-  edges: [SubjectEdge!]!
-  pageInfo: SubjectPageInfo!
-  totalCount: Int!
-}
-
-type SubjectEdge {
-  node: Subject
-  cursor: String
-}
-
-type SubjectPageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!
@@ -2589,15 +2598,6 @@ type VotesConnection {
   viewerCanUpvote: Boolean!
   viewerHasUpvoted: Boolean!
   nodes: [Vote!]!
-}
-
-type SetDbSchema {
-  arrayIndexOffset: Int!
-  array: [String!]!
-  pivot_: Float!
-  wrappers_: String
-  messageId_: String
-  convertedPrimitiveFields_: String!
 }
 
 """Deadline对象"""
@@ -3912,6 +3912,15 @@ type Mutation {
     teamUpOrder: CreateTeamUpOrderArgs
   ): Post!
 
+  """重置数据库schema"""
+  setSchema: SetDbSchema!
+
+  """删除数据库所有数据，包括schema"""
+  dropAllData: Boolean!
+
+  """删除数据库所有数据，但保留schema"""
+  dropData: Boolean!
+
   """注册"""
   register(
     """用户名"""
@@ -4153,15 +4162,6 @@ type Mutation {
 
   """关闭一个会话"""
   closeConversation(conversationId: String!): Conversation!
-
-  """重置数据库schema"""
-  setSchema: SetDbSchema!
-
-  """删除数据库所有数据，包括schema"""
-  dropAllData: Boolean!
-
-  """删除数据库所有数据，但保留schema"""
-  dropData: Boolean!
 
   """管理员或用户删除一个帖子"""
   deletePost(postId: String!): Delete!

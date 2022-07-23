@@ -7,6 +7,7 @@ import { JwtStrategy } from 'src/auth/jwt.strategy'
 import { DbService } from 'src/db/db.service'
 import { UserService } from 'src/user/user.service'
 
+import { DbModule } from '../db/db.module'
 import { NlpService } from '../nlp/nlp.service'
 
 @Module({
@@ -25,7 +26,8 @@ import { NlpService } from '../nlp/nlp.service'
         }
       },
       inject: [ConfigService]
-    })
+    }),
+    DbModule
   ],
   providers: [
     JwtStrategy,
@@ -37,7 +39,8 @@ import { NlpService } from '../nlp/nlp.service'
     JwtStrategy,
     PassportModule,
     JwtModule,
-    NlpService
+    NlpService,
+    DbModule
   ]
 })
 export class SharedModule {}

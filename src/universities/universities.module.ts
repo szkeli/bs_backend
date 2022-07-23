@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common'
 
-import { DbService } from '../db/db.service'
+import { SharedModule } from '../shared/shared.module'
 import { UniversitiesResolver } from './universities.resolver'
 import { UniversitiesService } from './universities.service'
 
 @Module({
-  providers: [UniversitiesResolver, UniversitiesService, DbService]
+  imports: [SharedModule],
+  providers: [UniversitiesResolver, UniversitiesService]
 })
 export class UniversitiesModule {}

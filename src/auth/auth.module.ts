@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common'
 
-import { DbService } from 'src/db/db.service'
 import { SharedModule } from 'src/shared/shared.module'
 import { UserService } from 'src/user/user.service'
 
@@ -14,7 +13,6 @@ import { AuthService } from './auth.service'
   ],
   providers: [
     UserService,
-    DbService,
     AuthService,
     AuthResolver,
     AdminService
