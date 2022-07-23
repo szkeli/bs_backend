@@ -15,6 +15,16 @@ export function sha1 (content: string) {
   return h.digest('hex')
 }
 
+/**
+ * hash anything
+ * @param content any for hash
+ * @returns hash string
+ *
+ * `hash()`
+ * ``` ts
+ * function hash(): string;
+ * ```
+ */
 export function hash (content: any) {
   const v = `${JSON.stringify(content)}:${Date.now()}`
   const h = crypto.createHash('sha256')
