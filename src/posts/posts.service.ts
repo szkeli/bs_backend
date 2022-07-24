@@ -538,9 +538,16 @@ export class PostsService {
       query v($postId: string, $universityId: string) {
         p(func: uid($postId)) @filter(type(Post)) { p as uid }
         u(func: uid($universityId)) @filter(type(University)) { u as uid }
+        # 帖子的创建者所在的 universities 包含待添加到的 university
+        var(func: uid(p)) {
+          creator @filter(type(User)) {
+            temp as ~users @filter(type(University) and uid(u))
+          }
+        }
+        in(func: uid(temp)) { in as uid }
       }
     `
-    const condition = '@if( eq(len(p), 1) and eq(len(u), 1) )'
+    const condition = '@if( eq(len(p), 1) and eq(len(u), 1) and eq(len(in), 1) )'
     const mutation = {
       uid: 'uid(u)',
       posts: {
@@ -548,26 +555,24 @@ export class PostsService {
       }
     }
 
-    const mutate = new Mutation()
-    mutate.setSetJson(mutation)
-    mutate.setCond(condition)
-    const request = new Request()
-    const vars = request.getVarsMap()
-    vars.set('$universityId', universityId)
-    vars.set('$postId', postId)
-    request.setQuery(query)
-    request.addMutations(mutate)
-    const res = await txn.doRequest(request)
-
-    const json = res.getJson() as unknown as {
+    const res = await this.dbService.handleTransaction<{}, {
       p: Array<{ uid: string }>
       u: Array<{ uid: string }>
-    }
-    if (json.p.length !== 1) {
+      in: Array<{ uid: string }>
+    }>(txn, {
+      query,
+      mutations: [{ set: mutation, cond: condition }],
+      vars: { $universityId: universityId, $postId: postId }
+    })
+
+    if (res.json.p.length !== 1) {
       throw new PostNotFoundException(postId)
     }
-    if (json.u.length !== 1) {
+    if (res.json.u.length !== 1) {
       throw new UniversityNotFoundException(universityId)
+    }
+    if (res.json.in.length !== 1) {
+      throw new ForbiddenException('用户不在该学校内')
     }
   }
 
@@ -578,19 +583,18 @@ export class PostsService {
         '单个帖子最多只能携带 takeAwayOrder, idleItemOrder, teamUpOrder 中的一种订单'
       )
     }
-    const txn = this.dbService.getDgraphIns().newTxn()
-    try {
+    const res = await this.dbService.withTxn(async txn => {
       const post = await this.createPostTxn(id, args, txn)
       takeAwayOrder && (await this.createTakeAwayOrderTxn(args, post, txn))
       idleItemOrder && (await this.createIdleItemOrderTxn(args, post, txn))
       teamUpOrder && (await this.createTeamUpOrderTxn(args, post, txn))
       await this.addPostToSubjectTxn(post.id, args, txn)
       await this.addPostToUniversityTxn(post.id, args, txn)
-      await txn.commit()
+
       return post
-    } finally {
-      await txn.discard()
-    }
+    })
+
+    return res
   }
 
   async createTeamUpOrderTxn (
