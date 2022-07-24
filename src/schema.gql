@@ -2275,18 +2275,6 @@ type ExperiencePageInfo {
   hasNextPage: Boolean!
 }
 
-type SubField {
-  id: String!
-  title: String!
-  avatarImageUrl: String!
-
-  """SubField 的创建者"""
-  creator: Admin!
-
-  """SubField 所在的 Subject"""
-  subject: Subject!
-}
-
 type Role {
   title: String!
   createdAt: String!
@@ -2330,6 +2318,18 @@ type RolePageInfo {
   endCursor: String
   hasPreviousPage: Boolean!
   hasNextPage: Boolean!
+}
+
+type SubField {
+  id: String!
+  title: String!
+  avatarImageUrl: String!
+
+  """SubField 的创建者"""
+  creator: Admin!
+
+  """SubField 所在的 Subject"""
+  subject: Subject!
 }
 
 type Hashtag {

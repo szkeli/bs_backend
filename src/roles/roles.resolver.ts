@@ -1,26 +1,16 @@
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 
 import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, Role as RoleGuard, Roles } from '../auth/decorator'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { User, UsersConnectionWithRelay } from '../user/models/user.model'
+import { User } from '../user/models/user.model'
 import { CreateRoleArgs, Role, RolesConnection } from './models/roles.model'
 import { RolesService } from './roles.service'
 
 @Resolver(of => Role)
 export class RolesResolver {
   constructor (private readonly rolesService: RolesService) {}
-
-  @ResolveField(of => UsersConnectionWithRelay, { description: '具有该角色的所有用户' })
-  async users (@Parent() role: Role, @Args() args: RelayPagingConfigArgs) {
-    return await this.rolesService.users(role.id, args)
-  }
-
-  @ResolveField(of => Admin, { description: '角色的创建者' })
-  async creator (@Parent() role: Role) {
-    return await this.rolesService.creator(role.id)
-  }
 
   @Query(of => RolesConnection, { description: '所有的角色' })
   @Roles(RoleGuard.Admin)

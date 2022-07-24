@@ -15,6 +15,7 @@ import { MessageResovler } from './message.resolver'
 import { NotificationResolver } from './notification.resolver'
 import { PinResolver } from './pin.resolver'
 import { PostResolver } from './post.resolver'
+import { RoleResolver } from './role.resolver'
 import { SubFieldResolver } from './subfield.resolver'
 import { UserResolver } from './user.resolver'
 import { UserService } from './user.service'
@@ -45,7 +46,8 @@ import { VoteResolver } from './vote.resolver'
     PinResolver,
     FoldResolver,
     CredentialResolver,
-    ConversationResolver
+    ConversationResolver,
+    RoleResolver
   ]
 })
 export class UserModule {}
