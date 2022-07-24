@@ -1174,6 +1174,30 @@ type CensorResponse {
   detail: CensorDetail!
 }
 
+type SubCampus {
+  id: String!
+  name: String!
+  createdAt: String!
+}
+
+type SubCampusesConnection {
+  edges: [SubCampusEdge!]!
+  pageInfo: SubCampusPageInfo!
+  totalCount: Int!
+}
+
+type SubCampusEdge {
+  node: SubCampus
+  cursor: String
+}
+
+type SubCampusPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type Anonymous {
   id: String!
   createdAt: String
@@ -1181,8 +1205,8 @@ type Anonymous {
   """同一个用户的匿名信息在同一条帖子下面的 watermark 相同"""
   watermark: String!
 
-  """匿名时的校区"""
-  subCampus: String
+  """匿名用户的校区"""
+  subCampus: SubCampus
 
   """匿名的创建者，只有创建者自己可见"""
   creator: User
@@ -2342,30 +2366,6 @@ type InstituteEdge {
 }
 
 type InstitutePageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type SubCampus {
-  id: String!
-  name: String!
-  createdAt: String!
-}
-
-type SubCampusesConnection {
-  edges: [SubCampusEdge!]!
-  pageInfo: SubCampusPageInfo!
-  totalCount: Int!
-}
-
-type SubCampusEdge {
-  node: SubCampus
-  cursor: String
-}
-
-type SubCampusPageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!

@@ -1,5 +1,7 @@
 import { Field, ObjectType } from '@nestjs/graphql'
 
+import { SubCampus } from '../../subcampus/models/subcampus.model'
+
 @ObjectType()
 export class Anonymous {
   @Field(of => String)
@@ -11,6 +13,6 @@ export class Anonymous {
   @Field(of => String, { description: '同一个用户的匿名信息在同一条帖子下面的 watermark 相同' })
     watermark: string
 
-  @Field(of => String, { description: '匿名时的校区', nullable: true })
-    subCampus?: string | null
+  @Field(of => SubCampus, { description: '匿名用户的校区', nullable: true })
+    subCampus?: SubCampus | null
 }

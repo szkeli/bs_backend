@@ -14,10 +14,12 @@ import { PUB_SUB_KEY } from '../constants'
 import { NlpService } from '../nlp/nlp.service'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
 import { IImage, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { SubCampus } from '../subcampus/models/subcampus.model'
 import {
   atob, btoa, edgifyByCreatedAt, handleRelayForwardAfter, imagesV2fy,
   imagesV2ToImages, now, relayfyArrayForward, relayfyArrayForwardByScore, RelayfyArrayParamByScore, sha1
 } from '../tool'
+import { User } from '../user/models/user.model'
 import {
   AddCommentArgs,
   Comment,
@@ -570,28 +572,31 @@ export class CommentService {
             id: uid
             expand(_all_)
             dgraph.type
-            creator @filter(type(User)) {
-              id: uid
-              subCampus
-            }
+            c as creator @filter(type(User))
           }
+        }
+        creator(func: uid(c)) {
+          id: uid
+          s as ~users @filter(type(SubCampus))
+        }
+        subCampus(func: uid(s)) {
+          id: uid
+          expand(_all_)
         }
       }
     `
     const res = await this.dbService.commitQuery<{
       originalPost: Array<{id: string}>
+      creator: User[]
+      subCampus: SubCampus[]
       comment: Array<{to: (typeof CommentToUnion) & {
-        'dgraph.type': string[]
-        creator: {
-          id: string
-          subCampus: string
-        }
+        'dgraph.type': Array<'Comment' | 'User' | 'Anonymous' | 'Post'>
       }}>
     }>({ query, vars: { $commentId: id } })
 
     const originalPostId = res.originalPost[0]?.id
-    const creatorId = res.comment[0]?.to?.creator?.id
-    const subCampus = res.comment[0]?.to?.creator?.subCampus
+    const creatorId = res.creator?.[0]?.id
+    const subCampus = res.subCampus?.[0]
 
     // TODO 直接将 watermark、subCampus 信息存 Anonymous 而不是运行时计算
     const to = res.comment[0]?.to

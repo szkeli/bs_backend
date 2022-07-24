@@ -2,6 +2,7 @@ import { Parent, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { DbService } from '../db/db.service'
 import { Post } from '../posts/models/post.model'
+import { SubCampus } from '../subcampus/models/subcampus.model'
 import { sha1 } from '../tool'
 import { User } from '../user/models/user.model'
 import { Anonymous } from './models/anonymous.model'
@@ -24,24 +25,32 @@ export class PostResolver {
       }
       creator(func: uid(c)) {
         id: uid
-        subCampus
+        s as ~users @filter(type(SubCampus)) {
+          uid
+          name
+        }
       }
       anonymous(func: uid(a)) {
         id: uid
         expand(_all_)
       } 
+      subCampuses(func: uid(s)) {
+        id: uid
+        expand(_all_)
+      }
     }
   `
     const res = await this.dbService.commitQuery<{
       creator: User[]
       anonymous: Anonymous[]
       post: Post[]
+      subCampuses: SubCampus[]
     }>({ query, vars: { $postId: id } })
 
     const anonymous = res.anonymous[0]
     const postId = res.post?.[0]?.id
     const creatorId = res.creator?.[0]?.id
-    const subCampus = res.creator?.[0]?.subCampus
+    const subCampus = res.subCampuses[0]
 
     if (anonymous) {
       anonymous.watermark = sha1(`${postId}${creatorId}`)
