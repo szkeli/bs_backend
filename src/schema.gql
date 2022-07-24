@@ -1439,6 +1439,9 @@ type Post {
   """该帖子所在的大学"""
   university: University
 
+  """帖子所在的 SubField"""
+  subField: SubField
+
   """当前帖子携带的订单"""
   order: OrderUnion
 }
