@@ -18,8 +18,7 @@ export class ExperiencesService {
    * @param user User
    * @param points number
    */
-  async addPointsTxn (txn: Txn, user: User, points: number) {
-    const { id } = user
+  async addPointsTxn (txn: Txn, id: string, points: number) {
     let t = ''
     if (points >= 0) {
       t = `newExperiencePoints as math(cond(exist == 1, last + ${points}, ${points}))`
@@ -122,11 +121,10 @@ export class ExperiencesService {
   async mintForSZTU (user: User, args: MintForSZTUArgs) {
     const res = await this.dbService.withTxn(async txn => {
       const exp = await this.mintForSZTUTxn(txn, user, args)
-      await this.addPointsTxn(txn, user, exp.points)
+      await this.addPointsTxn(txn, user.id, exp.points)
 
       return exp
     })
-    console.error(res)
 
     return res
   }
@@ -141,11 +139,6 @@ export class ExperiencesService {
         # 当前用户存在
         u(func: uid($id)) @filter(type(User) and not has(delete)) {
             u as uid
-        }
-        v(func: uid(u)) {
-            exCount as count(experiencePoints)
-            exValue as experiencePoints
-            newExperiencePoints as math(cond(exCount == 1, exValue + ${dailCheckInPoints}, ${dailCheckInPoints}))
         }
         # TODO: 当前用户今日没有签到
         # 当前用户的所有签到
@@ -171,8 +164,7 @@ export class ExperiencesService {
       createdAt: now(),
       transactionType: ExperienceTransactionType.DAILY_CHECK_IN,
       to: {
-        uid: 'uid(u)',
-        experiencePoints: 'val(newExperiencePoints)'
+        uid: 'uid(u)'
       }
     }
 
@@ -274,6 +266,7 @@ export class ExperiencesService {
     const res = await this.dbService.withTxn(async txn => {
       await this.addDailyCheckInSumTxn(id, txn)
       const e = await this.addDailyCheckInExperiencePointsTxn(id, txn)
+      await this.addPointsTxn(txn, id, e.points)
       return e
     })
 
