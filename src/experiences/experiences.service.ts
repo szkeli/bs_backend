@@ -1,15 +1,135 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 import dgraph from 'dgraph-js'
+import { verify } from 'jsonwebtoken'
 
 import { SystemErrorException, UserAlreadyCheckInException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
-import { DbService } from '../db/db.service'
+import { DbService, Txn } from '../db/db.service'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
-import { Experience, ExperienceTransactionType } from './models/experiences.model'
+import { User } from '../user/models/user.model'
+import { Experience, ExperienceTransactionType, MintForSZTUArgs } from './models/experiences.model'
 
 @Injectable()
 export class ExperiencesService {
   constructor (private readonly dbService: DbService) {}
+
+  /**
+   * 添加指定数量的 points 到 experiencePoints
+   * @param user User
+   * @param points number
+   */
+  async addPointsTxn (txn: Txn, user: User, points: number) {
+    const { id } = user
+    let t = ''
+    if (points >= 0) {
+      t = `newExperiencePoints as math(cond(exist == 1, last + ${points}, ${points}))`
+    } else {
+      t = `newExperiencePoints as math(cond(exist == 1, last - ${points}, ${points}))`
+    }
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(User)) {
+          u as uid
+          exist as count(experiencePoints)
+          last as experiencePoints
+          ${t}
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      experiencePoints: 'val(newExperiencePoints)'
+    }
+
+    await this.dbService.handleTransaction(txn, {
+      query,
+      mutations: [{ set: mutation, cond: condition }],
+      vars: { $id: id }
+    })
+  }
+
+  async mintForSZTUTxn (txn: Txn, user: User, args: MintForSZTUArgs) {
+    const { id } = user
+    const { payload } = args
+    // TODO: payload 里面添加当前用户的 userId 防止重放攻击
+    const mintFromSZTUKey = process.env.MINT_FOR_SZTU_JWT_KEY
+    if (!mintFromSZTUKey) {
+      throw new ForbiddenException('process.env.MINT_FOR_SZTU_JWT_KEY 不能为空')
+    }
+    const _payload = verify(payload, mintFromSZTUKey) as unknown as {
+      points: number
+      uid: string
+    }
+
+    if (!_payload || !_payload.points || _payload.points < 0) {
+      throw new ForbiddenException('points 不符合规则')
+    }
+    if (!_payload.uid || _payload.uid !== user.id) {
+      throw new ForbiddenException('payload 的 uid 和领取用户的 uid 不匹配')
+    }
+
+    const query = `
+      query v($id: string, $type: string) {
+        u(func: uid($id)) @filter(type(User)) { 
+          u as uid
+          no as ~to @filter(type(ExperiencePointTransaction) and eq(transactionType, $type))
+        }
+        n(func: uid(no)) { n as uid }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) and eq(len(n), 0) )'
+    const mutation = {
+      uid: '_:exp',
+      'dgraph.type': 'ExperiencePointTransaction',
+      points: _payload.points,
+      createdAt: now(),
+      transactionType: ExperienceTransactionType.FROM_SZTU,
+      to: {
+        uid: 'uid(u)'
+      }
+    }
+
+    const res = await this.dbService.handleTransaction<Map<string, string>, {
+      u: Array<{uid: string}>
+      n: Array<{uid: string}>
+    }>(txn, {
+      query,
+      mutations: [{ set: mutation, cond: condition }],
+      vars: { $id: id, $type: ExperienceTransactionType.FROM_SZTU }
+    })
+
+    if (res.json.u.length !== 1) {
+      throw new UserNotFoundException(id)
+    }
+    if (res.json.n.length !== 0) {
+      throw new ForbiddenException('当前用户已领取')
+    }
+
+    const _id = res.uids.get('exp')
+    if (!_id) {
+      throw new SystemErrorException()
+    }
+
+    return {
+      id: _id,
+      points: _payload.points,
+      createdAt: now(),
+      transactionType: ExperienceTransactionType.DAILY_CHECK_IN
+    }
+  }
+
+  async mintForSZTU (user: User, args: MintForSZTUArgs) {
+    const res = await this.dbService.withTxn(async txn => {
+      const exp = await this.mintForSZTUTxn(txn, user, args)
+      await this.addPointsTxn(txn, user, exp.points)
+
+      return exp
+    })
+    console.error(res)
+
+    return res
+  }
 
   async addDailyCheckInExperiencePointsTxn (id: string, txn: dgraph.Txn): Promise<Experience> {
     // 今日零点时间戳
@@ -151,15 +271,13 @@ export class ExperiencesService {
      * @param id User's is
      */
   async dailyCheckIn (id: string) {
-    const txn = this.dbService.getDgraphIns().newTxn()
-    try {
+    const res = await this.dbService.withTxn(async txn => {
       await this.addDailyCheckInSumTxn(id, txn)
       const e = await this.addDailyCheckInExperiencePointsTxn(id, txn)
-      await txn.commit()
       return e
-    } finally {
-      await txn.discard()
-    }
+    })
+
+    return res
   }
 
   async experiencePointsTransaction (id: string) {

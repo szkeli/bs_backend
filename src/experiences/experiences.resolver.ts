@@ -4,7 +4,7 @@ import { CurrentUser, Role, Roles } from '../auth/decorator'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { User } from '../user/models/user.model'
 import { ExperiencesService } from './experiences.service'
-import { Experience, ExperiencesConnection } from './models/experiences.model'
+import { Experience, ExperiencesConnection, MintForSZTUArgs } from './models/experiences.model'
 
 @Resolver(of => Experience)
 export class ExperiencesResolver {
@@ -24,5 +24,11 @@ export class ExperiencesResolver {
   @Roles(Role.User)
   async dailyCheckIn (@CurrentUser() user: User) {
     return await this.experiencesService.dailyCheckIn(user.id)
+  }
+
+  @Mutation(of => Experience, { description: 'mint from sztu' })
+  @Roles(Role.User)
+  async mintForSZTU (@CurrentUser() user: User, @Args() args: MintForSZTUArgs) {
+    return await this.experiencesService.mintForSZTU(user, args)
   }
 }
