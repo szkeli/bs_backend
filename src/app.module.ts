@@ -59,6 +59,7 @@ import { WxModule } from './wx/wx.module'
 import { FavoritesModule } from './favorites/favorites.module';
 import { SubfieldsModule } from './subfields/subfields.module';
 import { OrdersModule } from './orders/orders.module';
+import { PersonModule } from './person/person.module';
 
 @Module({
   imports: [
@@ -146,7 +147,8 @@ import { OrdersModule } from './orders/orders.module';
     ExperiencesModule,
     FavoritesModule,
     SubfieldsModule,
-    OrdersModule
+    OrdersModule,
+    PersonModule
   ],
   controllers: [AppController],
   providers: [

@@ -4,6 +4,7 @@ import { Mutation } from 'dgraph-js'
 export type UserId = string
 export type PostId = string
 export type Time = number
+export type StringMap = Map<string, string>
 
 @ObjectType()
 export class SetDbSchema {

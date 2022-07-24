@@ -1,12 +1,9 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 
-import { Admin } from '../admin/models/admin.model'
 import { SystemErrorException } from '../app.exception'
-import { Role } from '../auth/model/auth.model'
 import { DbService } from '../db/db.service'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { btoa, now, relayfyArrayForward } from '../tool'
-import { AdminAndUserUnion, User } from '../user/models/user.model'
 import {
   IPRIVILEGE,
   Privilege,
@@ -374,31 +371,6 @@ export class PrivilegesService {
       id: _id,
       createdAt: now(),
       value: privilege
-    }
-  }
-
-  async to (id: string) {
-    const query = `
-      query v($uid: string) {
-        privilege(func: uid($uid)) @filter(type(Privilege)) {
-          to @filter(type(User) OR type(Admin)) {
-            id: uid
-            expand(_all_)
-            dgraph.type
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      privilege: Array<{
-        to: typeof AdminAndUserUnion & { 'dgraph.type': Role[] }
-      }>
-    }>({ query, vars: { $uid: id } })
-    if (res.privilege[0].to['dgraph.type'].includes(Role.Admin)) {
-      return new Admin(res.privilege[0].to)
-    }
-    if (res.privilege[0].to['dgraph.type'].includes(Role.User)) {
-      return new User(res.privilege[0].to as unknown as User)
     }
   }
 

@@ -1037,6 +1037,7 @@ enum IPRIVILEGE {
   ADMIN_CAN_ADD_BLOCK_ON_USER
   ADMIN_CAN_REMOVE_BLOCK_ON_USER
   ADMIN_CAN_ADD_FOLD_ON_COMMENT
+  ADMIN_CAN_CREATE_SUBJECT
 
   """用户能创建一个新的主题"""
   USER_CAN_CREATE_SUBJECT
@@ -1090,7 +1091,7 @@ type Subject {
   ): PostsConnectionWithRelay!
 
   """主题的创建者"""
-  creator: User!
+  creator: AdminAndUserUnion!
 
   """具有该 Subject 的所有大学"""
   universities(

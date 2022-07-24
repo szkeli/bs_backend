@@ -7,7 +7,7 @@ import {
 
 import { CheckPolicies, CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
 import { RelayPagingConfigArgs } from 'src/posts/models/post.model'
-import { User } from 'src/user/models/user.model'
+import { Person, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
 import {
@@ -68,14 +68,15 @@ export class SubjectResolver {
   }
 
   @Mutation(of => Subject, { description: '创建一个主题' })
+  @Roles(Role.Admin, Role.User)
   @CheckPolicies(
     new MustWithCredentialPolicyHandler(),
     new CreateSubjectPolicyHandler()
   )
   async createSubject (
-    @CurrentUser() user: User,
+    @CurrentUser() person: Person,
       @Args() args: CreateSubjectArgs
   ): Promise<Subject> {
-    return await this.subjectService.createSubject(user.id, args)
+    return await this.subjectService.createSubject(person.id, args)
   }
 }

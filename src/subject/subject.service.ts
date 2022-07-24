@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common'
 import { DgraphClient } from 'dgraph-js'
 
-import { DbService } from 'src/db/db.service'
+import { DbService, Txn } from 'src/db/db.service'
 
 import {
   SystemErrorException,
@@ -9,6 +9,7 @@ import {
   UserNotFoundException
 } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
+import { StringMap } from '../db/model/db.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import {
   handleRelayForwardAfter,
@@ -272,23 +273,43 @@ export class SubjectService {
     return res.json.subject[0]
   }
 
-  /**
-   * 创建一个新的主题
-   * @param id 创建 Subject 的 User 的 id
-   * @param param1 相关参数
-   * @returns Promise<Subject>
-   */
-  async createSubject (
-    id: string,
-    { universityId, ...args }: CreateSubjectArgs
-  ): Promise<Subject> {
+  async addSubjectToUniversityTxn (txn: Txn, subjectId: string, universityId: string) {
     const query = `
-      query v($id: string, $universityId: string) {
-        q(func: uid($id)) @filter(type(User)) { q as uid }
-        u(func: uid($universityId)) @filter(type(University)) { u as uid }
+      query v($universityId: string, $subjectId: string) {
+        u(func: uid($universityId)) @filter(type(University)) {
+          u as uid
+        }
+        s(func: uid($subjectId)) { s as uid }
       }
     `
-    const condition = '@if( eq(len(q), 1) and eq(len(u), 1) )'
+    const cond = '@if( eq(len(u), 1) )'
+    const mut = {
+      uid: 'uid(u)',
+      subjects: {
+        uid: 'uid(s)'
+      }
+    }
+    const res = await this.dbService.handleTransaction<StringMap, {
+      u: Array<{uid: string}>
+    }>(txn, {
+      query,
+      mutations: [{ set: mut, cond }],
+      vars: { $universityId: universityId, $subjectId: subjectId }
+    })
+
+    if (res.json.u.length !== 1) {
+      throw new UniversityNotFoundException(universityId)
+    }
+  }
+
+  async createSubjectTxn (txn: Txn, id: string, params: CreateSubjectArgs) {
+    const { universityId, ...args } = params
+    const query = `
+      query v($id: string) {
+        q(func: uid($id)) @filter(type(User) or type(Admin)) { q as uid }
+      }
+    `
+    const condition = '@if( eq(len(q), 1) )'
     const mutation = {
       uid: 'uid(q)',
       subjects: {
@@ -301,35 +322,17 @@ export class SubjectService {
         }
       }
     }
-
-    const addToUniversityCond = '@if( eq(len(q), 1) and eq(len(u), 1) )'
-    const addToUniversityMut = {
-      uid: 'uid(u)',
-      subjects: {
-        uid: '_:subject'
-      }
-    }
-
-    const res = await this.dbService.commitConditionalUperts<
-    Map<string, string>,
-    {
+    const res = await this.dbService.handleTransaction<StringMap, {
       q: Array<{ uid: string }>
-      u: Array<{ uid: string }>
     }
-    >({
+    >(txn, {
       query,
-      mutations: [
-        { mutation, condition },
-        { mutation: addToUniversityMut, condition: addToUniversityCond }
-      ],
-      vars: { $id: id, $universityId: universityId }
+      mutations: [{ set: mutation, cond: condition }],
+      vars: { $id: id }
     })
 
     if (res.json.q.length !== 1) {
       throw new UserNotFoundException(id)
-    }
-    if (res.json.u.length !== 1) {
-      throw new UniversityNotFoundException(universityId)
     }
 
     const _id = res.uids.get('subject')
@@ -340,6 +343,23 @@ export class SubjectService {
       createdAt: now(),
       ...args
     }
+  }
+
+  /**
+   * 创建一个新的主题
+   * @param id 创建 Subject 的 User 的 id
+   * @param param1 相关参数
+   * @returns Promise<Subject>
+   */
+  async createSubject (id: string, params: CreateSubjectArgs): Promise<Subject> {
+    const { universityId } = params
+    const res = await this.dbService.withTxn(async txn => {
+      const subject = await this.createSubjectTxn(txn, id, params)
+      await this.addSubjectToUniversityTxn(txn, subject.id, universityId)
+      return subject
+    })
+
+    return res
   }
 
   async findSubjectByPostId (id: string) {

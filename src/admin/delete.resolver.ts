@@ -2,7 +2,7 @@ import { Parent, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { DbService } from '../db/db.service'
 import { Delete } from '../deletes/models/deletes.model'
-import { AdminAndUserUnion } from '../user/models/user.model'
+import { AdminAndUserUnion } from '../person/models/person.model'
 
 @Resolver(of => Delete)
 export class DeleteResolver {

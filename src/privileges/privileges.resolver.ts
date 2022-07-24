@@ -1,11 +1,10 @@
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
 
 import { Admin } from '../admin/models/admin.model'
 import { CheckPolicies, CurrentUser, Roles } from '../auth/decorator'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler } from '../casl/casl.handler'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { AdminAndUserUnion } from '../user/models/user.model'
 import { AddPrivilegeOnAdmin, AddPrivilegeOnUserArgs, Privilege, PrivilegesConnection, RemovePrivilegeArgs } from './models/privileges.model'
 import { PrivilegesService } from './privileges.service'
 
@@ -52,10 +51,5 @@ export class PrivilegesResolver {
   @CheckPolicies(new MustWithCredentialPolicyHandler())
   async removePrivilegeOnAdmin (@CurrentUser() admin: Admin, @Args() { privilege, from }: RemovePrivilegeArgs) {
     return await this.privilegesService.removePrivilegeOnAdmin(admin.id, from, privilege)
-  }
-
-  @ResolveField(of => AdminAndUserUnion, { description: '权限作用的对象' })
-  async to (@Parent() privilege: Privilege) {
-    return await this.privilegesService.to(privilege.id)
   }
 }
