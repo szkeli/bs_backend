@@ -231,6 +231,24 @@ type User implements Person & Node {
   """当前用户创建的所有主题"""
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
 
+  """当前用户创建的所有会话"""
+  conversations(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): ConversationsConnection!
+
   """当前用户的deadlines"""
   deadlines(
     """最新的n个对象"""
@@ -463,6 +481,24 @@ interface Person implements Node {
   """当前用户创建的所有主题"""
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
 
+  """当前用户创建的所有会话"""
+  conversations(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): ConversationsConnection!
+
   """当前用户的deadlines"""
   deadlines(
     """最新的n个对象"""
@@ -599,6 +635,24 @@ type LoginResult implements Node & Person {
 
   """当前用户创建的所有主题"""
   subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
+
+  """当前用户创建的所有会话"""
+  conversations(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): ConversationsConnection!
 
   """当前用户的deadlines"""
   deadlines(
@@ -1806,6 +1860,9 @@ type Conversation implements Node {
   title: String!
   description: String!
   state: CONVERSATION_STATE!
+
+  """会话的所有参与者"""
+  participants: [User!]!
 
   """会话中的所有消息"""
   messages(

@@ -4,7 +4,6 @@ import { randomUUID } from 'crypto'
 import { SystemErrorException, UserIdExistException, UserNotAuthenException, UserNotFoundException } from '../app.exception'
 import { UserAuthenInfo, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
-import { Conversation, ConversationsConnection } from '../conversations/models/conversations.model'
 import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
 import { Experience } from '../experiences/models/experiences.model'
@@ -84,39 +83,6 @@ export class UserService {
       }
     })
 
-    return relayfyArrayForward({
-      ...res,
-      first: first ?? 0,
-      after
-    })
-  }
-
-  async conversations (user: User, args: RelayPagingConfigArgs): Promise<ConversationsConnection> {
-    const { first, after, orderBy } = args
-    if (NotNull(first) && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.conversationsRelayFarword(user, first, after)
-    }
-    throw new NotImplementedException()
-  }
-
-  async conversationsRelayFarword (user: User, first: number | null, after: string | null): Promise<ConversationsConnection> {
-    const q1 = 'var(func: uid(conversations), orderdesc: createdAt) @filter(lt(createdAt, #after)) { q as uid }'
-    const query = `
-      query v($id: string, $after: string) {
-        var(func: uid($id)) @filter(type(User)) {
-          conversations as conversations(orderdesc: createdAt) @filter(type(Conversation))
-        }
-        ${after ? q1 : ''}
-        totalCount(func: uid(conversations)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'conversations'}), orderdesc: createdAt, first: ${first ?? 0}) {
-          id: uid
-          expand(_all_)
-        }
-        startO(func: uid(conversations), first: -1) { createdAt }
-        endO(func: uid(conversations), first: 1) { createdAt }
-      }
-    `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<Conversation>>({ query, vars: { $id: user.id, $after: after } })
     return relayfyArrayForward({
       ...res,
       first: first ?? 0,
