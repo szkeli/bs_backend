@@ -428,6 +428,9 @@ type User implements Person & Node {
 
   """当前用户所属的学院"""
   institutes: [Institute!]
+
+  """当前用户所属的校区"""
+  subCampuses: [SubCampus!]
 }
 
 interface Person implements Node {
@@ -803,6 +806,9 @@ type LoginResult implements Node & Person {
 
   """当前用户所属的学院"""
   institutes: [Institute!]
+
+  """当前用户所属的校区"""
+  subCampuses: [SubCampus!]
 
   """token"""
   token: String!
@@ -1645,6 +1651,24 @@ type University {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): SubjectsConnectionWithRelay!
+
+  """该大学的所有学院"""
+  institutes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): InstitutesConnection!
 }
 
 type UniversitiesConnection {
