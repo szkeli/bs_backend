@@ -228,9 +228,6 @@ type User implements Person & Node {
   """获取当前用户上课通知的设置"""
   lessonNotificationSettings: LessonNotificationSettings!
 
-  """当前用户创建的所有主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-
   """当前用户创建的所有会话"""
   conversations(
     """最新的n个对象"""
@@ -466,9 +463,6 @@ interface Person implements Node {
   """获取当前用户上课通知的设置"""
   lessonNotificationSettings: LessonNotificationSettings!
 
-  """当前用户创建的所有主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
-
   """当前用户创建的所有会话"""
   conversations(
     """最新的n个对象"""
@@ -605,9 +599,6 @@ type LoginResult implements Node & Person {
 
   """获取当前用户上课通知的设置"""
   lessonNotificationSettings: LessonNotificationSettings!
-
-  """当前用户创建的所有主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection!
 
   """当前用户创建的所有会话"""
   conversations(
@@ -1098,9 +1089,6 @@ type Subject {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): PostsConnectionWithRelay!
 
-  """主题的创建者"""
-  creator: User!
-
   """具有该 Subject 的所有大学"""
   universities(
     """最新的n个对象"""
@@ -1121,11 +1109,6 @@ type Subject {
 
   """Subject 的所有 SubField"""
   subFields: [SubField!]!
-}
-
-type SubjectsConnection {
-  nodes: [Subject!]!
-  totalCount: Int!
 }
 
 type SubjectsConnectionWithRelay {
@@ -2875,9 +2858,6 @@ type Query {
 
   """以id获取主题"""
   subject(id: String!): Subject!
-
-  """获取所有主题"""
-  subjects(first: Int = 10, offset: Int = 0): SubjectsConnection! @deprecated(reason: "请使用 subjectsWithRelay")
 
   """获取所有主题"""
   subjectsWithRelay(

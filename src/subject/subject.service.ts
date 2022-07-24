@@ -3,19 +3,24 @@ import { DgraphClient } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 
-import { SystemErrorException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
+import {
+  SystemErrorException,
+  UniversityNotFoundException,
+  UserNotFoundException
+} from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { SubField } from '../subfields/models/subfields.model'
-import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
-import { University } from '../universities/models/universities.models'
-import { User } from '../user/models/user.model'
+import {
+  handleRelayForwardAfter,
+  now,
+  relayfyArrayForward,
+  RelayfyArrayParam
+} from '../tool'
 import {
   CreateSubjectArgs,
   QuerySubjectsFilter,
   Subject,
   SubjectId,
-  SubjectsConnection,
   SubjectsConnectionWithRelay,
   UpdateSubjectArgs
 } from './model/subject.model'
@@ -27,59 +32,10 @@ export class SubjectService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async subFields (id: string) {
-    const query = `
-      query v($id: string) {
-        s(func: type(SubField)) @filter(uid_in(subject, uid(subject))) {
-          id: uid
-          expand(_all_)
-        }
-        var(func: uid($id)) @filter(type(Subject)) {
-          subject as uid
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{s: SubField[]}>({ query, vars: { $id: id } })
-    return res.s
-  }
-
-  async universities (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
-    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.universitiesRelayForward(id, first, after)
-    }
-    throw new Error('Method not implemented.')
-  }
-
-  async universitiesRelayForward (id: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(universities), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    const query = `
-      query v($id: string, $after: string) {
-        var(func: uid($id)) @filter(type(Subject)) {
-          universities as ~subjects @filter(type(University))
-        }
-        ${after ? q1 : ''}
-        totalCount(func: uid(universities)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'universities'}), orderdesc: createdAt, first: ${first}) {
-          id: uid
-          expand(_all_)
-        }
-        startO(func: uid(universities), first: -1) { createdAt }
-        endO(func: uid(universities), first: 1) { createdAt }
-      }
-    `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<University>>({
-      query,
-      vars: { $id: id, $after: after }
-    })
-
-    return relayfyArrayForward({
-      ...res,
-      first,
-      after
-    })
-  }
-
-  async subjectsWithRelay ({ orderBy, first, after }: RelayPagingConfigArgs, filter: QuerySubjectsFilter): Promise<SubjectsConnectionWithRelay> {
+  async subjectsWithRelay (
+    { orderBy, first, after }: RelayPagingConfigArgs,
+    filter: QuerySubjectsFilter
+  ): Promise<SubjectsConnectionWithRelay> {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.subjectsWithRelayForward(first, after, filter)
@@ -88,8 +44,13 @@ export class SubjectService {
     throw new ForbiddenException('undefined')
   }
 
-  async subjectsWithRelayForward (first: number, after: string | null, { universityId }: QuerySubjectsFilter): Promise<SubjectsConnectionWithRelay> {
-    const q1 = 'var(func: uid(subjects), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+  async subjectsWithRelayForward (
+    first: number,
+    after: string | null,
+    { universityId }: QuerySubjectsFilter
+  ): Promise<SubjectsConnectionWithRelay> {
+    const q1 =
+      'var(func: uid(subjects), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const university = universityId
       ? `
       var(func: uid($universityId)) @filter(type(University)) {
@@ -108,7 +69,9 @@ export class SubjectService {
         totalCount(func: uid(subjects)) {
           count(uid)
         }
-        objs(func: uid(${after ? 'q' : 'subjects'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${
+          after ? 'q' : 'subjects'
+        }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -144,9 +107,11 @@ export class SubjectService {
       }
      `
     // actor是管理员
-    const conditions1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 0) and eq(len(d), 1) )'
+    const conditions1 =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 0) and eq(len(d), 1) )'
     // actor是subject的创建者
-    const conditions2 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 0) and eq(len(y), 1) and eq(len(d), 1) )'
+    const conditions2 =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 0) and eq(len(y), 1) and eq(len(d), 1) )'
     const mutation = {
       uid: '_:delete',
       'dgraph.type': 'Delete',
@@ -164,13 +129,16 @@ export class SubjectService {
         }
       }
     }
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string}>
-      x: Array<{uid: string}>
-      y: Array<{uid: string}>
-      d: Array<{uid: string}>
-    }>({
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
+      u: Array<{ uid: string }>
+      x: Array<{ uid: string }>
+      y: Array<{ uid: string }>
+      d: Array<{ uid: string }>
+    }
+    >({
       mutations: [
         { mutation, condition: conditions1 },
         { mutation, condition: conditions2 }
@@ -183,7 +151,9 @@ export class SubjectService {
     })
 
     if (res.json.x.length !== 1 && res.json.y.length !== 1) {
-      throw new ForbiddenException(`${actorId} 既不是 ${subjectId} 的创建者也不是管理员`)
+      throw new ForbiddenException(
+        `${actorId} 既不是 ${subjectId} 的创建者也不是管理员`
+      )
     }
 
     if (res.json.d.length !== 1) {
@@ -228,33 +198,11 @@ export class SubjectService {
     }
   }
 
-  async subjects (first: number, offset: number): Promise<SubjectsConnection> {
-    const query = `
-        query {
-          var(func: type(Subject)) @filter(not has(delete)) {
-            subjects as uid
-          }
-          totalCount(func: uid(subjects)) {
-            count(uid)
-          }
-          subjects(func: uid(subjects), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      subjects: Subject[]
-    }>({ query })
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.subjects ?? []
-    }
-  }
-
-  async updateSubject (actorId: string, subjectId: string, args: UpdateSubjectArgs) {
+  async updateSubject (
+    actorId: string,
+    subjectId: string,
+    args: UpdateSubjectArgs
+  ) {
     const query = `
       query v($actorId: string, $subjectId: string) {
         v(func: uid($actorId)) @filter(type(Admin) or type(User)) { v as uid }
@@ -269,9 +217,11 @@ export class SubjectService {
       }
     `
     // 操作者是管理员
-    const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 0) and eq(len(d), 1))'
+    const condition1 =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 0) and eq(len(d), 1))'
     // 操作者是 subject 创建者
-    const condition2 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 0) and eq(len(y), 1) and eq(len(d), 1))'
+    const condition2 =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 0) and eq(len(y), 1) and eq(len(d), 1))'
 
     const mutation = {
       uid: subjectId,
@@ -280,14 +230,17 @@ export class SubjectService {
 
     Object.assign(mutation, args)
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string}>
-      x: Array<{uid: string}>
-      y: Array<{uid: string}>
-      d: Array<{uid: string}>
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
+      u: Array<{ uid: string }>
+      x: Array<{ uid: string }>
+      y: Array<{ uid: string }>
+      d: Array<{ uid: string }>
       subject: Subject[]
-    }>({
+    }
+    >({
       mutations: [
         { mutation, condition: condition1 },
         { mutation, condition: condition2 }
@@ -309,7 +262,9 @@ export class SubjectService {
       throw new ForbiddenException(`主题 ${subjectId} 已被删除`)
     }
     if (res.json.x.length !== 1 && res.json.y.length !== 1) {
-      throw new ForbiddenException(`操作者 ${actorId} 既不是 ${subjectId} 的创建者也不是管理员`)
+      throw new ForbiddenException(
+        `操作者 ${actorId} 既不是 ${subjectId} 的创建者也不是管理员`
+      )
     }
 
     Object.assign(res.json.subject[0], args)
@@ -323,7 +278,10 @@ export class SubjectService {
    * @param param1 相关参数
    * @returns Promise<Subject>
    */
-  async createSubject (id: string, { universityId, ...args }: CreateSubjectArgs): Promise<Subject> {
+  async createSubject (
+    id: string,
+    { universityId, ...args }: CreateSubjectArgs
+  ): Promise<Subject> {
     const query = `
       query v($id: string, $universityId: string) {
         q(func: uid($id)) @filter(type(User)) { q as uid }
@@ -352,10 +310,13 @@ export class SubjectService {
       }
     }
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      q: Array<{uid: string}>
-      u: Array<{uid: string}>
-    }>({
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      q: Array<{ uid: string }>
+      u: Array<{ uid: string }>
+    }
+    >({
       query,
       mutations: [
         { mutation, condition },
@@ -378,33 +339,6 @@ export class SubjectService {
       id: _id,
       createdAt: now(),
       ...args
-    }
-  }
-
-  async getCreatorOfSubject (id: SubjectId) {
-    const txn = this.dgraph.newTxn()
-    try {
-      const query = `
-        query v($uid: string) {
-          subject(func: uid($uid)) @filter(type(Subject)) {
-            creator @filter(type(User)) {
-              id: uid
-              expand(_all_)
-            }
-          }
-        }
-      `
-      const res = await this.dgraph
-        .newTxn({ readOnly: true })
-        .queryWithVars(query, { $uid: id })
-      const user = res.getJson().subject[0].creator as unknown as User
-      if (!user) {
-        throw new ForbiddenException('user不存在')
-      }
-
-      return user
-    } finally {
-      await txn.discard()
     }
   }
 

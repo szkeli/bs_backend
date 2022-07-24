@@ -1,4 +1,4 @@
-import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, ObjectType } from '@nestjs/graphql'
 
 import { Connection } from '../../connections/models/connections.model'
 
@@ -66,13 +66,7 @@ export class UpdateSubjectArgs {
 }
 
 @ObjectType()
-export class SubjectsConnection {
-  @Field(type => [Subject])
-    nodes: Subject[]
-
-  @Field(type => Int)
-    totalCount: number
-}
+export class SubjectsConnection extends Connection<Subject>(Subject) {}
 
 @ObjectType()
 export class SubjectsConnectionWithRelay extends Connection<Subject>(Subject) {}

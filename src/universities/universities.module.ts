@@ -3,6 +3,7 @@ import { Module } from '@nestjs/common'
 import { DbModule } from '../db/db.module'
 import { SharedModule } from '../shared/shared.module'
 import { PostResolver } from './post.resolver'
+import { SubjectResolver } from './subject.resolver'
 import { UniversitiesResolver } from './universities.resolver'
 import { UniversitiesService } from './universities.service'
 import { UserResolver } from './user.resolver'
@@ -13,7 +14,8 @@ import { UserResolver } from './user.resolver'
     UniversitiesResolver,
     UniversitiesService,
     UserResolver,
-    PostResolver
+    PostResolver,
+    SubjectResolver
   ]
 })
 export class UniversitiesModule {}

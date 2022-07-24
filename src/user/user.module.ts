@@ -18,6 +18,7 @@ import { PinResolver } from './pin.resolver'
 import { PostResolver } from './post.resolver'
 import { RoleResolver } from './role.resolver'
 import { SubFieldResolver } from './subfield.resolver'
+import { SubjectResolver } from './subject.resolver'
 import { UserResolver } from './user.resolver'
 import { UserService } from './user.service'
 import { VoteResolver } from './vote.resolver'
@@ -49,7 +50,8 @@ import { VoteResolver } from './vote.resolver'
     CredentialResolver,
     ConversationResolver,
     RoleResolver,
-    AnonymousResolver
+    AnonymousResolver,
+    SubjectResolver
   ]
 })
 export class UserModule {}
