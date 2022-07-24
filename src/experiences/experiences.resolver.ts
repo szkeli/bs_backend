@@ -1,4 +1,4 @@
-import { Args, Mutation, Query, Resolver } from '@nestjs/graphql'
+import { Args, Int, Mutation, Query, Resolver } from '@nestjs/graphql'
 
 import { CurrentUser, Role, Roles } from '../auth/decorator'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
@@ -30,5 +30,10 @@ export class ExperiencesResolver {
   @Roles(Role.User)
   async mintForSZTU (@CurrentUser() user: User, @Args() args: MintForSZTUArgs) {
     return await this.experiencesService.mintForSZTU(user, args)
+  }
+
+  @Mutation(of => Int, { description: '从 Experience Transcation 中重新恢复某个 User 的总经验值' })
+  async rebuildExperiencePoints (@CurrentUser() user: User) {
+    return await this.experiencesService.rebuildExperiencePoints(user)
   }
 }

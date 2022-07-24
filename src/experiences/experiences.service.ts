@@ -13,6 +13,44 @@ import { Experience, ExperienceTransactionType, MintForSZTUArgs } from './models
 export class ExperiencesService {
   constructor (private readonly dbService: DbService) {}
 
+  async getPointsTxn (txn: Txn, id: string) {
+    const query = `
+      query v($id: string) {
+        var(func: uid($id)) @filter(type(User)) {
+          u as uid
+          txn as ~to @filter(type(ExperiencePointTransaction))
+        }
+        var(func: uid(txn)) {
+          points as points
+        }
+        total() {
+          points: newExperiencePoints as sum(val(points))
+        }
+      }
+    `
+    const condition = '@if( eq(len(u), 1) )'
+    const mutation = {
+      uid: 'uid(u)',
+      experiencePoints: 'val(newExperiencePoints)'
+    }
+    const res = await this.dbService.handleTransaction<{}, {
+      total: Array<{points: number}>
+    }>(txn, {
+      query,
+      mutations: [{ set: mutation, cond: condition }],
+      vars: { $id: id }
+    })
+
+    return res.json.total[0].points
+  }
+
+  async rebuildExperiencePoints (user: User) {
+    const res = await this.dbService.withTxn(async txn => {
+      return await this.getPointsTxn(txn, user.id)
+    })
+    return res
+  }
+
   /**
    * 添加指定数量的 points 到 experiencePoints
    * @param user User

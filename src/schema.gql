@@ -3890,6 +3890,9 @@ type Mutation {
     """
     payload: String!
   ): Experience!
+
+  """从 Experience Transcation 中重新恢复某个 User 的总经验值"""
+  rebuildExperiencePoints: Int!
   createFavorite(
     """将一个 Post 添加到收藏"""
     postId: String
