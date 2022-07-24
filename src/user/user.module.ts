@@ -7,6 +7,7 @@ import { NotificationsModule } from '../notifications/notifications.module'
 import { PubsubsModule } from '../pubsubs/pubsubs.module'
 import { SharedModule } from '../shared/shared.module'
 import { VotesModule } from '../votes/votes.module'
+import { AnonymousResolver } from './anonymous.resolver'
 import { ConversationResolver } from './conversation.resolver'
 import { CredentialResolver } from './credential.resolver'
 import { ExperienceResolver } from './experience.resolver'
@@ -47,7 +48,8 @@ import { VoteResolver } from './vote.resolver'
     FoldResolver,
     CredentialResolver,
     ConversationResolver,
-    RoleResolver
+    RoleResolver,
+    AnonymousResolver
   ]
 })
 export class UserModule {}

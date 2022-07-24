@@ -5,9 +5,9 @@ import { DbService } from 'src/db/db.service'
 
 import { SystemErrorException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
-import { Post, PostsConnection, RelayPagingConfigArgs } from '../posts/models/post.model'
+import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { SubField } from '../subfields/models/subfields.model'
-import { atob, btoa, edgifyByCreatedAt, edgifyByKey, getCurosrByScoreAndId, handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
+import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { University } from '../universities/models/universities.models'
 import { User } from '../user/models/user.model'
 import {
@@ -127,153 +127,6 @@ export class SubjectService {
       first,
       after
     })
-  }
-
-  async postsWithRelayForward (subjectId: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    const query = `
-      query v($subjectId: string, $after: string) {
-        var(func: uid($subjectId)) @filter(type(Subject)) {
-          posts as posts(orderdesc: createdAt) @filter(not has(delete))
-        }
-
-        ${after ? q1 : ''}
-        totalCount(func: uid(posts)) { count(uid) }
-        posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
-          id: uid
-          expand(_all_)
-        }
-        # 开始游标
-        startPost(func: uid(posts), first: -1) {
-          id: uid
-          createdAt
-        }
-        # 结束游标
-        endPost(func: uid(posts), first: 1) {
-          id: uid
-          createdAt
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      posts: Post[]
-      startPost: Array<{id: string, createdAt: string}>
-      endPost: Array<{id: string, createdAt: string}>
-    }>({ query, vars: { $subjectId: subjectId, $after: after } })
-
-    const totalCount = res.totalCount[0]?.count ?? 0
-    const v = totalCount !== 0
-    const startPost = res.startPost[0]
-    const endPost = res.endPost[0]
-    const lastPost = res.posts?.slice(-1)[0]
-
-    const hasNextPage = endPost?.createdAt !== lastPost?.createdAt && endPost?.createdAt !== after && res.posts.length === first && totalCount !== first
-    const hasPreviousPage = after !== startPost?.createdAt && !!after
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      edges: edgifyByCreatedAt(res.posts ?? []),
-      pageInfo: {
-        endCursor: atob(lastPost?.createdAt),
-        startCursor: atob(res.posts[0]?.createdAt),
-        hasNextPage: hasNextPage && v,
-        hasPreviousPage: hasPreviousPage && v
-      }
-    }
-  }
-
-  async postsWithRelay (id: string, { first, after, last, before, orderBy }: RelayPagingConfigArgs) {
-    after = btoa(after)
-    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.postsWithRelayForward(id, first, after)
-    }
-
-    if (first && orderBy === ORDER_BY.TRENDING) {
-      if (after) {
-        try {
-          after = JSON.parse(after).score
-        } catch {
-          throw new ForbiddenException(`解析游标失败 ${after ?? ''}`)
-        }
-      }
-      return await this.trendingPostsWithRelayForward(id, first, after)
-    }
-  }
-
-  async trendingPostsWithRelayForward (subjectId: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
-    const query = `
-      query v($subjectId: string, $after: string) {
-        var(func: uid($subjectId)) @filter(not has(delete)) {
-          tposts as posts @filter(not has(delete))  
-        }
-
-        v as var(func: uid(tposts)) @filter(not has(delete)) {
-          voteCount as count(votes @filter(type(Vote)))
-          # TODO
-          c as count(comments @filter(type(Comment)))
-          commentsCount as math(c * 3)
-          createdAt as createdAt
-        
-          hour as math(
-            0.75*(since(createdAt)/216000)
-          )
-          score as math((voteCount + commentsCount)* hour)
-        }
-        posts as var(func: uid(v)) @filter(gt(val(score), 0))
-
-        ${after ? q1 : ''}
-        
-        totalCount(func: uid(posts)) { count(uid) }
-        posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: val(score), first: ${first}) {
-          score: val(score)
-          id: uid
-          expand(_all_)
-        }
-        # 开始游标
-        startPost(func: uid(posts), orderdesc: val(score), first: 1) {
-          id: uid
-          score: val(score)
-        }
-        # 结束游标
-        endPost(func: uid(posts), orderdesc: val(score), first: -1) {
-          id: uid
-          score: val(score)
-        }
-      }
-    `
-
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      posts: Array<Post & {score: number}>
-      startPost: Array<{score: number}>
-      endPost: Array<{score: number}>
-    }>({ query, vars: { $after: after, $subjectId: subjectId } })
-
-    const totalCount = res.totalCount[0]?.count ?? 0
-    const v = totalCount !== 0
-
-    const firstPost = res.posts[0]
-    const lastPost = res.posts?.slice(-1)[0]
-    const startPost = res.startPost[0]
-    const endPost = res.endPost[0]
-    const startCursor = getCurosrByScoreAndId(firstPost?.id, firstPost?.score)
-    const endCursor = getCurosrByScoreAndId(lastPost?.id, lastPost?.score)
-
-    const hasNextPage = endPost?.score !== lastPost?.score && res.posts.length === first && endPost?.score?.toString() !== after
-    const hasPreviousPage = after !== startPost?.score?.toString() && !!after
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      edges: edgifyByKey(res.posts ?? [], 'score'),
-      pageInfo: {
-        startCursor,
-        endCursor,
-        hasNextPage: hasNextPage && v,
-        hasPreviousPage: hasPreviousPage && v
-      }
-    }
   }
 
   async deleteSubject (actorId: string, subjectId: string) {
@@ -575,29 +428,5 @@ export class SubjectService {
     })
 
     return res.subject[0]
-  }
-
-  async findPostsBySubjectId (id: string, first: number, offset: number): Promise<PostsConnection> {
-    const query = `
-        query v($uid: string) {
-          var(func: uid($uid)) {
-            posts as posts @filter(not has(delete))
-          }
-          totalCount(func: uid(posts)) {count(uid)}
-          posts(func: uid(posts), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      posts: Post[]
-    }>({ query, vars: { $uid: id } })
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.posts ?? []
-    }
   }
 }

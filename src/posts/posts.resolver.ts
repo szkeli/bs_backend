@@ -10,18 +10,15 @@ import {
 
 import { CheckPolicies, CurrentUser, MaybeAuth, Roles } from 'src/auth/decorator'
 import {
-  CommentsConnection, CommentsConnectionWithRelay
+  CommentsConnectionWithRelay
 } from 'src/comment/models/comment.model'
 import { PostId } from 'src/db/model/db.model'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
-import { Anonymous } from '../anonymous/models/anonymous.model'
 import { Role } from '../auth/model/auth.model'
 import { MustWithCredentialPolicyHandler, ViewAppStatePolicyHandler } from '../casl/casl.handler'
 import { CommentService } from '../comment/comment.service'
-import { HashtagsConnection } from '../hashtags/models/hashtags.model'
 import { WithinArgs } from '../node/models/node.model'
-import { University } from '../universities/models/universities.models'
 import {
   CreatePostArgs,
   Post,
@@ -100,38 +97,8 @@ export class PostsResolver {
   //   return await this.reportsService.findReportsByPostId(post.id.toString(), first, offset)
   // }
 
-  @ResolveField(of => CommentsConnection, { description: '帖子的折叠评论' })
-  async foldedComments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.postsService.findFoldedCommentsByPostId(post.id.toString(), first, offset)
-  }
-
-  @ResolveField(of => CommentsConnectionWithRelay, { description: '帖子的所有折叠评论' })
-  async foldedCommentsWithRelay (@Parent() post: Post, @Args() paging: RelayPagingConfigArgs) {
-    return await this.postsService.foldedCommentsWithRelay(post.id, paging)
-  }
-
-  @ResolveField(of => CommentsConnection, { description: '按热度返回评论' })
-  async trendingComments (@Parent() post: Post, @Args() { first, offset }: PagingConfigArgs) {
-    return await this.postsService.trendingComments(post.id.toString(), first, offset)
-  }
-
-  @ResolveField(of => Anonymous, { description: '帖子的匿名信息，非匿名帖子此项为空', nullable: true })
-  async anonymous (@Parent() post: Post) {
-    return await this.postsService.anonymous(post.id)
-  }
-
-  @ResolveField(of => HashtagsConnection, { description: '该帖子的所有 Hashtag' })
-  async hashtags (@Args() args: RelayPagingConfigArgs, @Parent() post: Post) {
-    return await this.postsService.hashtags(post.id, args)
-  }
-
   @ResolveField(of => [String], { description: '帖子的图片', nullable: 'items' })
   async images (@Parent() post: Post): Promise<string[]> {
     return await this.postsService.imagesV2(post.id)
-  }
-
-  @ResolveField(of => University, { description: '该帖子所在的大学', nullable: true })
-  async university (@Parent() post: Post): Promise<University> {
-    return await this.postsService.university(post.id)
   }
 }

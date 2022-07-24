@@ -8,7 +8,7 @@ import {
 } from '@nestjs/graphql'
 
 import { CheckPolicies, CurrentUser, NoAuth, Roles } from 'src/auth/decorator'
-import { PostsConnection, PostsConnectionWithRelay, RelayPagingConfigArgs } from 'src/posts/models/post.model'
+import { RelayPagingConfigArgs } from 'src/posts/models/post.model'
 import { PagingConfigArgs, User } from 'src/user/models/user.model'
 
 import { Role } from '../auth/model/auth.model'
@@ -49,12 +49,6 @@ export class SubjectResolver {
     return await this.subjectService.subjectsWithRelay(args, filter)
   }
 
-  @Query(of => PostsConnectionWithRelay, { description: 'Relay版 以id获取某主题下所有帖子', deprecationReason: '请使用 subjects.postsWithRelay' })
-  @NoAuth()
-  async subjectPostsWithRelay (@Args('id') id: SubjectId, @Args() paging: RelayPagingConfigArgs) {
-    return await this.subjectService.postsWithRelay(id, paging)
-  }
-
   @Mutation(of => Delete, { description: '以id删除一个主题' })
   @Roles(Role.Admin, Role.User)
   @CheckPolicies(new MustWithCredentialPolicyHandler(), new DeleteSubjectPolicyHandler())
@@ -80,16 +74,6 @@ export class SubjectResolver {
   @ResolveField(of => User, { description: '主题的创建者' })
   async creator (@Parent() subject: Subject): Promise<User> {
     return await this.subjectService.getCreatorOfSubject(subject.id)
-  }
-
-  @ResolveField(of => PostsConnection, { description: '当前主题中的所有帖子', deprecationReason: '请使用 postsWithRelay' })
-  async posts (@Parent() subject: Subject, @Args() args: PagingConfigArgs): Promise<PostsConnection> {
-    return await this.subjectService.findPostsBySubjectId(subject.id, args.first, args.offset)
-  }
-
-  @ResolveField(of => PostsConnectionWithRelay)
-  async postsWithRelay (@Parent() subject: Subject, @Args() paging: RelayPagingConfigArgs) {
-    return await this.subjectService.postsWithRelay(subject.id, paging)
   }
 
   @ResolveField(of => UniversitiesConnection, { description: '具有该 Subject 的所有大学' })

@@ -4,7 +4,6 @@ import { Comment } from '../comment/models/comment.model'
 import { DbService } from '../db/db.service'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { Post } from '../posts/models/post.model'
-import { User } from '../user/models/user.model'
 
 @Injectable()
 export class AnonymousService {
@@ -22,7 +21,11 @@ export class AnonymousService {
             }
         }
       `
-    const res = await this.dbService.commitQuery<{anonymous: Array<{to: (typeof PostAndCommentUnion) & {'dgraph.type': string[]}}>}>({ query, vars: { $id: id } })
+    const res = await this.dbService.commitQuery<{
+      anonymous: Array<{
+        to: typeof PostAndCommentUnion & { 'dgraph.type': string[] }
+      }>
+    }>({ query, vars: { $id: id } })
     const v = res.anonymous[0]?.to
 
     if (v?.['dgraph.type']?.includes('Post')) {
@@ -32,23 +35,5 @@ export class AnonymousService {
       return new Comment(v as unknown as Comment)
     }
     return null
-  }
-
-  async creator (anonymousId: string, viewerId: string) {
-    if (!viewerId) {
-      return null
-    }
-    const query = `
-        query v($anonymousId: string, $viewerId: string) {
-            anonymous(func: uid($anonymousId)) @filter(uid_in(creator, $viewerId)) {
-                creator @filter(type(User)) {
-                    id: uid
-                    expand(_all_)
-                }
-            }
-        }
-    `
-    const res = await this.dbService.commitQuery<{anonymous: Array<{creator: User}>}>({ query, vars: { $anonymousId: anonymousId, $viewerId: viewerId } })
-    return res.anonymous[0]?.creator
   }
 }

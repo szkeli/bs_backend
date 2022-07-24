@@ -7,13 +7,10 @@ import { SharedModule } from '../shared/shared.module'
 import { AdminResolver } from './admin.resolver'
 import { AdminService } from './admin.service'
 import { DeleteResolver } from './delete.resolver'
+import { PrivilegeResolver } from './privilege.resolver'
 
 @Module({
-  providers: [
-    AdminResolver,
-    AdminService,
-    DeleteResolver
-  ],
+  providers: [AdminResolver, AdminService, DeleteResolver, PrivilegeResolver],
   exports: [AdminService],
   imports: [SharedModule, DbModule, FoldsModule, PinsModule]
 })

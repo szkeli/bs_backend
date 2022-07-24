@@ -1,18 +1,47 @@
 import { ForbiddenException } from '@nestjs/common'
-import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
+import {
+  Args,
+  Mutation,
+  Parent,
+  Query,
+  ResolveField,
+  Resolver
+} from '@nestjs/graphql'
 
 import { sign as sign_calculus } from 'src/tool'
 
 import { Admin } from '../admin/models/admin.model'
-import { AuthenAdminPolicyHandler, MustWithCredentialPolicyHandler } from '../casl/casl.handler'
+import {
+  AuthenAdminPolicyHandler,
+  MustWithCredentialPolicyHandler
+} from '../casl/casl.handler'
 import { ICredential } from '../credentials/models/credentials.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { RolesConnection } from '../roles/models/roles.model'
-import { AuthenticateUserArgs, LoginResult, Person, PersonLoginArgs, PersonWithRoles, User } from '../user/models/user.model'
+import {
+  AuthenticateUserArgs,
+  LoginResult,
+  Person,
+  PersonLoginArgs,
+  PersonWithRoles,
+  User
+} from '../user/models/user.model'
 import { AuthService } from './auth.service'
-import { CheckPolicies, CurrentPerson, CurrentUser, NoAuth, Roles } from './decorator'
-import { Authenable, LoginByCodeArgs, Role, UpdatePasswordArgs, UpdatePasswordResultUnion, UserAuthenInfosConnection } from './model/auth.model'
+import {
+  CheckPolicies,
+  CurrentPerson,
+  CurrentUser,
+  NoAuth,
+  Roles
+} from './decorator'
+import {
+  Authenable,
+  LoginByCodeArgs,
+  Role,
+  UpdatePasswordArgs,
+  UpdatePasswordResultUnion,
+  UserAuthenInfosConnection
+} from './model/auth.model'
 
 @Resolver(of => Authenable)
 export class AuthResolver {
@@ -33,22 +62,17 @@ export class AuthResolver {
 
   @Mutation(of => UpdatePasswordResultUnion, { description: '更改密码' })
   @Roles(Role.Admin, Role.User)
-  async updatePassword (@CurrentPerson() person: Person, @Args() { sign }: UpdatePasswordArgs) {
+  async updatePassword (
+  @CurrentPerson() person: Person,
+    @Args() { sign }: UpdatePasswordArgs
+  ) {
     const v = sign_calculus(sign)
     return await this.authService.updatePassword(person.id, v)
   }
 
-  @ResolveField(of => User, { description: '提交信息的用户' })
-  async to (@Parent() authenable: Authenable) {
-    return await this.authService.to(authenable.id)
-  }
-
-  @ResolveField(of => Delete, { description: '审核信息的删除者', nullable: true })
-  async delete (@Parent() authenable: Authenable) {
-    return await this.authService.delete(authenable.id)
-  }
-
-  @Query(of => UserAuthenInfosConnection, { description: '待通过审核的用户信息' })
+  @Query(of => UserAuthenInfosConnection, {
+    description: '待通过审核的用户信息'
+  })
   @Roles(Role.Admin)
   async userAuthenInfos (@Args() args: RelayPagingConfigArgs) {
     return await this.authService.userAuthenInfos(args)
@@ -75,17 +99,28 @@ export class AuthResolver {
     throw new ForbiddenException()
   }
 
-  @Mutation(of => ICredential, { description: '已存在的管理员认证一个新注册的管理员' })
+  @Mutation(of => ICredential, {
+    description: '已存在的管理员认证一个新注册的管理员'
+  })
   @Roles(Role.Admin)
-  @CheckPolicies(new MustWithCredentialPolicyHandler(), new AuthenAdminPolicyHandler())
+  @CheckPolicies(
+    new MustWithCredentialPolicyHandler(),
+    new AuthenAdminPolicyHandler()
+  )
   async authenAdmin (@CurrentUser() admin: Admin, @Args('to') to: string) {
     return await this.authService.authenAdmin(admin.id, to)
   }
 
-  @ResolveField(of => RolesConnection, { description: '用户申请的角色' })
-  @Roles(Role.Admin)
-  @CheckPolicies(new MustWithCredentialPolicyHandler())
-  async roles (@Parent() authenable: Authenable, @Args() args: RelayPagingConfigArgs) {
-    return await this.authService.roles(authenable.id, args)
+  @ResolveField(of => User, { description: '提交信息的用户' })
+  async to (@Parent() authenable: Authenable) {
+    return await this.authService.to(authenable.id)
+  }
+
+  @ResolveField(of => Delete, {
+    description: '审核信息的删除者',
+    nullable: true
+  })
+  async delete (@Parent() authenable: Authenable) {
+    return await this.authService.delete(authenable.id)
   }
 }

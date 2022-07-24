@@ -858,24 +858,6 @@ type UserAuthenInfo implements Authenable {
   """审核信息的删除者"""
   delete: Delete
 
-  """用户申请的角色"""
-  roles(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): RolesConnection!
-
   """头像"""
   avatarImageUrl: String!
 
@@ -899,6 +881,9 @@ type UserAuthenInfo implements Authenable {
 
   """bug: 图片乱序，有效信息图片(e.g. 校园卡照片)的链接"""
   images: [String!]
+
+  """用户申请的角色"""
+  roles: [Role!]!
 }
 
 interface Authenable {
@@ -910,24 +895,6 @@ interface Authenable {
 
   """审核信息的删除者"""
   delete: Delete
-
-  """用户申请的角色"""
-  roles(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): RolesConnection!
 }
 
 type UserAuthenInfosConnection {
@@ -1041,11 +1008,11 @@ type Privilege {
   createdAt: String!
   value: IPRIVILEGE!
 
-  """权限作用的对象"""
-  to: AdminAndUserUnion!
-
   """权限的创建者"""
   creator: Admin!
+
+  """权限作用的对象"""
+  to: AdminAndUserUnion!
 }
 
 """全局权限值"""
@@ -1106,9 +1073,6 @@ type Subject {
   avatarImageUrl: String!
   backgroundImageUrl: String!
 
-  """主题的创建者"""
-  creator: User!
-
   """当前主题中的所有帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection! @deprecated(reason: "请使用 postsWithRelay")
   postsWithRelay(
@@ -1127,6 +1091,9 @@ type Subject {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): PostsConnectionWithRelay!
+
+  """主题的创建者"""
+  creator: User!
 
   """具有该 Subject 的所有大学"""
   universities(
@@ -1396,56 +1363,8 @@ type Post {
   content: String!
   createdAt: String!
 
-  """帖子的折叠评论"""
-  foldedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """帖子的所有折叠评论"""
-  foldedCommentsWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): CommentsConnectionWithRelay!
-
-  """按热度返回评论"""
-  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
-
-  """帖子的匿名信息，非匿名帖子此项为空"""
-  anonymous: Anonymous
-
-  """该帖子的所有 Hashtag"""
-  hashtags(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): HashtagsConnection!
-
   """帖子的图片"""
   images: [String]!
-
-  """该帖子所在的大学"""
-  university: University
 
   """帖子的创建者，当帖子是匿名帖子时，返回null"""
   creator: User
@@ -1471,8 +1390,38 @@ type Post {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): CommentsConnectionWithRelay!
 
+  """帖子的折叠评论"""
+  foldedComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
+  """帖子的所有折叠评论"""
+  foldedCommentsWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): CommentsConnectionWithRelay!
+
+  """按热度返回评论"""
+  trendingComments(first: Int = 10, offset: Int = 0): CommentsConnection!
+
   """帖子所属的主题"""
   subject: Subject
+
+  """帖子的匿名信息，非匿名帖子此项为空"""
+  anonymous: Anonymous
+
+  """该帖子所在的大学"""
+  university: University
 
   """当前帖子携带的订单"""
   order: OrderUnion
@@ -2403,7 +2352,6 @@ type SubCampus {
   id: String!
   name: String!
   createdAt: String!
-  university: University!
 }
 
 type SubCampusesConnection {
@@ -2596,6 +2544,25 @@ type Query {
     orderBy: ORDER_BY = CREATED_AT_DESC
     id: String!
   ): PostsConnectionWithRelay!
+
+  """Relay版 以id获取某主题下所有帖子"""
+  subjectPostsWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+    id: String!
+  ): PostsConnectionWithRelay! @deprecated(reason: "请使用 subjects.postsWithRelay")
 
   """指定时间段内注册的所有用户"""
   registerWithin(first: Int = 10, offset: Int = 0, startTime: String!, endTime: String!): UsersConnection!
@@ -2904,25 +2871,6 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): SubjectsConnectionWithRelay!
-
-  """Relay版 以id获取某主题下所有帖子"""
-  subjectPostsWithRelay(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-    id: String!
-  ): PostsConnectionWithRelay! @deprecated(reason: "请使用 subjects.postsWithRelay")
 
   """以id获取管理员"""
   admin(id: String!): Admin!

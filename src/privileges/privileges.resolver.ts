@@ -58,9 +58,4 @@ export class PrivilegesResolver {
   async to (@Parent() privilege: Privilege) {
     return await this.privilegesService.to(privilege.id)
   }
-
-  @ResolveField(of => Admin, { description: '权限的创建者' })
-  async creator (@Parent() privilege: Privilege) {
-    return await this.privilegesService.creator(privilege.id)
-  }
 }

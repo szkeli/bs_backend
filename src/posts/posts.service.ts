@@ -1,19 +1,47 @@
-import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common'
+import {
+  ForbiddenException,
+  Injectable,
+  NotImplementedException
+} from '@nestjs/common'
 import dgraph, { DgraphClient, Mutation, Request } from 'dgraph-js'
 
 import { DbService } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
-import { Anonymous } from '../anonymous/models/anonymous.model'
-import { ParseCursorFailedException, PostNotFoundException, RelayPagingConfigErrorException, SubjectNotFoundException, SubjectNotInTheUniversityException, SystemAdminNotFoundException, SystemErrorException, UniversityNotFoundException, UserNotFoundException } from '../app.exception'
+import {
+  ParseCursorFailedException,
+  PostNotFoundException,
+  RelayPagingConfigErrorException,
+  SubjectNotFoundException,
+  SubjectNotInTheUniversityException,
+  SystemAdminNotFoundException,
+  SystemErrorException,
+  UniversityNotFoundException,
+  UserNotFoundException
+} from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
-import { Comment, CommentsConnection } from '../comment/models/comment.model'
-import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
+import {
+  ORDER_BY,
+  RelayPagingConfigArgs
+} from '../connections/models/connections.model'
 import { Delete } from '../deletes/models/deletes.model'
 import { NlpService } from '../nlp/nlp.service'
-import { atMostOne, atob, btoa, edgify, edgifyByKey, getCurosrByScoreAndId, handleRelayBackwardBefore, handleRelayForwardAfter, imagesV2ToImages, NotNull, now, relayfyArrayForward, RelayfyArrayParam, sha1 } from '../tool'
-import { University } from '../universities/models/universities.models'
+import {
+  atMostOne,
+  atob,
+  btoa,
+  edgify,
+  edgifyByKey,
+  getCurosrByScoreAndId,
+  handleRelayBackwardBefore,
+  handleRelayForwardAfter,
+  imagesV2ToImages,
+  NotNull,
+  now,
+  relayfyArrayForward,
+  RelayfyArrayParam
+} from '../tool'
 import {
   CreatePostArgs,
   IImage,
@@ -35,26 +63,6 @@ export class PostsService {
     this.dgraph = dbService.getDgraphIns()
   }
 
-  async university (id: string): Promise<University> {
-    const query = `
-      query v($id: string) {
-        var(func: uid($id)) @filter(type(Post)) {
-          university as ~posts @filter(type(University))
-        }
-        university(func: uid(university)) {
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{university: University[]}>({
-      query,
-      vars: { $id: id }
-    })
-
-    return res.university[0]
-  }
-
   async imagesV2 (id: string): Promise<string[]> {
     const query = `
       query v($id: string) {
@@ -73,7 +81,7 @@ export class PostsService {
     `
     const res = await this.dbService.commitQuery<{
       imagesV2: [IImage]
-      post: Array<{images: string[]}>
+      post: Array<{ images: string[] }>
     }>({ query, vars: { $id: id } })
 
     if (res.post[0]?.images) {
@@ -87,93 +95,12 @@ export class PostsService {
     throw new Error('Method not implemented.')
   }
 
-  async foldedCommentsWithRelay (id: string, { first, after, last, before, orderBy }: RelayPagingConfigArgs) {
-    after = btoa(after)
-    before = btoa(before)
-
-    if (first && ORDER_BY.CREATED_AT_DESC === orderBy) {
-      return await this.foldedCommentsWithRelayForward(id, first, after)
-    }
-    throw new Error('Method not implemented.')
-  }
-
-  async foldedCommentsWithRelayForward (postId: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    const query = `
-      query v($postId: string, $after: string) {
-        var(func: uid($postId)) @filter(type(Post)) {
-          comments as comments (orderdesc: createdAt) @filter(type(Comment) and has(fold))
-        }
-
-        ${after ? q1 : ''}
-        totalCount(func: uid(comments)) {
-          count(uid)
-        }
-        comments(func: uid(${after ? 'q' : 'comments'}), orderdesc: createdAt, first: ${first}) {
-          id: uid
-          expand(_all_)
-        }
-        # 开始游标
-        startComment(func: uid(comments), first: -1) {
-          createdAt
-        }
-        # 结束游标
-        endComment(func: uid(comments), first: 1) {
-          createdAt
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      startComment: Array<{createdAt: string}>
-      endComment: Array<{createdAt: string}>
-      comments: Comment[]
-    }>({ query, vars: { $postId: postId, $after: after } })
-
-    return relayfyArrayForward({
-      totalCount: res.totalCount,
-      startO: res.startComment,
-      endO: res.endComment,
-      objs: res.comments,
-      first,
-      after
-    })
-  }
-
-  async anonymous (id: string): Promise<Anonymous> {
-    const query = `
-      query v($postId: string) {
-        post(func: uid($postId)) @filter(type(Post)) {
-          id: uid
-          creator @filter(type(User)) {
-            id: uid
-            subCampus
-          }
-          anonymous @filter(type(Anonymous)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      post: Array<{id: string, anonymous: Anonymous, creator: {id: string, subCampus?: string | null}}>
-    }>({ query, vars: { $postId: id } })
-
-    const anonymous = res.post[0]?.anonymous
-    const postId = res.post[0]?.id
-    const creatorId = res.post[0]?.creator?.id
-    const subCampus = res.post[0]?.creator?.subCampus
-
-    if (anonymous) {
-      anonymous.watermark = sha1(`${postId}${creatorId}`)
-      anonymous.subCampus = subCampus
-    }
-
-    return anonymous
-  }
-
-  async postsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<PostsConnection> {
+  async postsCreatedWithin (
+    startTime: string,
+    endTime: string,
+    first: number,
+    offset: number
+  ): Promise<PostsConnection> {
     const query = `
       query v($startTime: string, $endTime: string) {
         var(func: type(User)) @filter(not eq(openId, "") and not eq(unionId, "")) {
@@ -193,7 +120,7 @@ export class PostsService {
     `
 
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
       posts: Post[]
     }>({ query, vars: { $startTime: startTime, $endTime: endTime } })
 
@@ -216,7 +143,7 @@ export class PostsService {
     `
     const res = await this.dbService.commitQuery<{
       deletedPosts: Delete[]
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
     }>({ query })
 
     return {
@@ -225,62 +152,13 @@ export class PostsService {
     }
   }
 
-  async trendingComments (id: string, first: number, offset: number): Promise<CommentsConnection> {
-    const query = `
-      query v($postId: string) {
-        var(func: uid($postId)) @filter(type(Post)) {
-          comments as comments @filter(type(Comment) and not has(delete)) {
-            c as count(comments @filter(type(Comment)))
-            voteCount as count(votes @filter(type(Vote)))
-            commentScore as math(c * 3)
-            createdAt as createdAt
-
-            hour as math (
-              0.75 * (since(createdAt)/216000)
-            )
-            score as math((voteCount + commentScore) * hour)
-          }
-        }
-        totalCount(func: uid(comments)) { count(uid) }
-        comments(func: uid(comments), orderdesc: val(score), first: ${first}, offset: ${offset}) {
-          val(score)
-          id: uid
-          expand(_all_)
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      comments: Comment[]
-    }>({ query, vars: { $postId: id } })
-
-    return {
-      totalCount: res.totalCount[0]?.count ?? 0,
-      nodes: res.comments ?? []
-    }
-  }
-
-  async findFoldedCommentsByPostId (id: string, first: number, offset: number): Promise<CommentsConnection> {
-    const query = `
-      query v($postId: string) {
-        post(func: uid($postId)) @filter(type(Post)) {
-          count: count(comments @filter(has(fold)))
-          comments (orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(has(fold)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{post: Array<{count: number, comments?: Comment[]}>}>({ query, vars: { $postId: id } })
-    return {
-      totalCount: res.post[0]?.count ?? 0,
-      nodes: res.post[0]?.comments ?? []
-    }
-  }
-
-  async trendingPostsWithRelayForward (first: number, after: string | null, { universityId, subjectId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
-    const q1 = 'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
+  async trendingPostsWithRelayForward (
+    first: number,
+    after: string | null,
+    { universityId, subjectId }: QueryPostsFilter
+  ): Promise<PostsConnectionWithRelay> {
+    const q1 =
+      'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
 
     // 没有提供 UniversityId 也没有提供 SubjectId
     const a = `
@@ -343,7 +221,9 @@ export class PostsService {
         ${after ? q1 : ''}
         
         totalCount(func: uid(posts)) { count(uid) }
-        posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: val(score), first: ${first}) {
+        posts(func: uid(${
+          after ? 'q' : 'posts'
+        }), orderdesc: val(score), first: ${first}) {
           score: val(score)
           timeScore: val(hour)
           voteScore: val(votesCount)
@@ -366,11 +246,11 @@ export class PostsService {
     `
 
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      posts: Array<Post & {score: number}>
-      startPost: Array<{score: number}>
-      endPost: Array<{score: number}>
-      subjects: Array<{uid: string}>
+      totalCount: Array<{ count: number }>
+      posts: Array<Post & { score: number }>
+      startPost: Array<{ score: number }>
+      endPost: Array<{ score: number }>
+      subjects: Array<{ uid: string }>
     }>({
       query,
       vars: {
@@ -394,7 +274,10 @@ export class PostsService {
     const startCursor = getCurosrByScoreAndId(firstPost?.id, firstPost?.score)
     const endCursor = getCurosrByScoreAndId(lastPost?.id, lastPost?.score)
 
-    const hasNextPage = endPost?.score !== lastPost?.score && res.posts.length === first && endPost?.score?.toString() !== after
+    const hasNextPage =
+      endPost?.score !== lastPost?.score &&
+      res.posts.length === first &&
+      endPost?.score?.toString() !== after
     const hasPreviousPage = after !== startPost?.score?.toString() && !!after
 
     return {
@@ -409,7 +292,10 @@ export class PostsService {
     }
   }
 
-  async trendingPostsWithRelay ({ first, before, last, after, orderBy }: RelayPagingConfigArgs, filter: QueryPostsFilter) {
+  async trendingPostsWithRelay (
+    { first, before, last, after, orderBy }: RelayPagingConfigArgs,
+    filter: QueryPostsFilter
+  ) {
     after = btoa(after)
     if (after) {
       try {
@@ -453,7 +339,7 @@ export class PostsService {
     }
   `
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: 13}>
+      totalCount: Array<{ count: 13 }>
       posts: Post[]
     }>({ query, vars: { $first: `${first}`, $offset: `${offset}` } })
 
@@ -463,7 +349,11 @@ export class PostsService {
     }
   }
 
-  async createPostTxn (id: string, args: CreatePostArgs, txn: dgraph.Txn): Promise<Post> {
+  async createPostTxn (
+    id: string,
+    args: CreatePostArgs,
+    txn: dgraph.Txn
+  ): Promise<Post> {
     const { content, images, isAnonymous } = args
 
     // 审查帖子文本内容
@@ -471,14 +361,12 @@ export class PostsService {
     // 获取帖子文本的情感信息
     const _sentiment = await this.nlpService.sentimentAnalysis(content)
     // 处理帖子图片
-    const imagesV2 = images?.map((image, index) => (
-      {
-        uid: `_:image_${index}`,
-        'dgraph.type': 'Image',
-        value: image,
-        index
-      }
-    ))
+    const imagesV2 = images?.map((image, index) => ({
+      uid: `_:image_${index}`,
+      'dgraph.type': 'Image',
+      value: image,
+      index
+    }))
     const query = `
         query v($creatorId: string) {
           # system 是否存在
@@ -551,7 +439,10 @@ export class PostsService {
     if ((imagesV2?.length ?? 0) !== 0) {
       Object.assign(mutation.posts, { imagesV2 })
     }
-    if ((textCensor?.suggestion ?? CENSOR_SUGGESTION.PASS) === CENSOR_SUGGESTION.BLOCK) {
+    if (
+      (textCensor?.suggestion ?? CENSOR_SUGGESTION.PASS) ===
+      CENSOR_SUGGESTION.BLOCK
+    ) {
       Object.assign(mutation.posts, { delete: _delete })
     }
 
@@ -566,8 +457,8 @@ export class PostsService {
     vars.set('$creatorId', id)
     const res = await txn.doRequest(request)
     const json = res.getJson() as unknown as {
-      s: Array<{uid: string}>
-      v: Array<{uid: string}>
+      s: Array<{ uid: string }>
+      v: Array<{ uid: string }>
     }
     const uids = res.getUidsMap()
 
@@ -588,9 +479,15 @@ export class PostsService {
     }
   }
 
-  async addPostToSubjectTxn (postId: string, args: CreatePostArgs, txn: dgraph.Txn) {
+  async addPostToSubjectTxn (
+    postId: string,
+    args: CreatePostArgs,
+    txn: dgraph.Txn
+  ) {
     const { subjectId } = args
-    if (!subjectId) { return }
+    if (!subjectId) {
+      return
+    }
 
     const query = `
       query v($subjectId: string, $postId: string) {
@@ -619,8 +516,8 @@ export class PostsService {
     const res = await txn.doRequest(request)
 
     const json = res.getJson() as unknown as {
-      p: Array<{uid: string}>
-      s: Array<{uid: string}>
+      p: Array<{ uid: string }>
+      s: Array<{ uid: string }>
     }
     if (json.p.length !== 1) {
       throw new PostNotFoundException(postId)
@@ -630,7 +527,11 @@ export class PostsService {
     }
   }
 
-  async addPostToUniversityTxn (postId: string, args: CreatePostArgs, txn: dgraph.Txn) {
+  async addPostToUniversityTxn (
+    postId: string,
+    args: CreatePostArgs,
+    txn: dgraph.Txn
+  ) {
     const { universityId } = args
     const query = `
       query v($postId: string, $universityId: string) {
@@ -658,8 +559,8 @@ export class PostsService {
     const res = await txn.doRequest(request)
 
     const json = res.getJson() as unknown as {
-      p: Array<{uid: string}>
-      u: Array<{uid: string}>
+      p: Array<{ uid: string }>
+      u: Array<{ uid: string }>
     }
     if (json.p.length !== 1) {
       throw new PostNotFoundException(postId)
@@ -672,14 +573,16 @@ export class PostsService {
   async createPost (id: string, args: CreatePostArgs): Promise<Post> {
     const { takeAwayOrder, idleItemOrder, teamUpOrder } = args
     if (!atMostOne(takeAwayOrder, idleItemOrder, teamUpOrder)) {
-      throw new ForbiddenException('单个帖子最多只能携带 takeAwayOrder, idleItemOrder, teamUpOrder 中的一种订单')
+      throw new ForbiddenException(
+        '单个帖子最多只能携带 takeAwayOrder, idleItemOrder, teamUpOrder 中的一种订单'
+      )
     }
     const txn = this.dbService.getDgraphIns().newTxn()
     try {
       const post = await this.createPostTxn(id, args, txn)
-      takeAwayOrder && await this.createTakeAwayOrderTxn(args, post, txn)
-      idleItemOrder && await this.createIdleItemOrderTxn(args, post, txn)
-      teamUpOrder && await this.createTeamUpOrderTxn(args, post, txn)
+      takeAwayOrder && (await this.createTakeAwayOrderTxn(args, post, txn))
+      idleItemOrder && (await this.createIdleItemOrderTxn(args, post, txn))
+      teamUpOrder && (await this.createTeamUpOrderTxn(args, post, txn))
       await this.addPostToSubjectTxn(post.id, args, txn)
       await this.addPostToUniversityTxn(post.id, args, txn)
       await txn.commit()
@@ -689,7 +592,11 @@ export class PostsService {
     }
   }
 
-  async createTeamUpOrderTxn (args: CreatePostArgs, post: Post, txn: dgraph.Txn) {
+  async createTeamUpOrderTxn (
+    args: CreatePostArgs,
+    post: Post,
+    txn: dgraph.Txn
+  ) {
     const { teamUpOrder } = args
     const {
       type,
@@ -736,7 +643,11 @@ export class PostsService {
    * @param post
    * @param txn
    */
-  async createIdleItemOrderTxn (args: CreatePostArgs, post: Post, txn: dgraph.Txn) {
+  async createIdleItemOrderTxn (
+    args: CreatePostArgs,
+    post: Post,
+    txn: dgraph.Txn
+  ) {
     const { idleItemOrder } = args
     // TODO: 测试 expiredAt, endTime, createdAt 有效性
     // TODO: 根据 type 清除部分属性
@@ -768,9 +679,12 @@ export class PostsService {
         uid: 'uid(p)'
       }
     }
-    const res = await this.dbService.handleTransaction<{}, {
-      p: Array<{uid: string}>
-    }>(txn, {
+    const res = await this.dbService.handleTransaction<
+    {},
+    {
+      p: Array<{ uid: string }>
+    }
+    >(txn, {
       query,
       mutations: [{ set: mutation, cond: condition }],
       vars: { $id: post.id }
@@ -787,13 +701,23 @@ export class PostsService {
    * @param post
    * @param txn
    */
-  async createTakeAwayOrderTxn (args: CreatePostArgs, post: Post, txn: dgraph.Txn) {
+  async createTakeAwayOrderTxn (
+    args: CreatePostArgs,
+    post: Post,
+    txn: dgraph.Txn
+  ) {
     const { takeAwayOrder } = args
     // TODO: 测试 expiredAt, endTime, createdAt 有效性
     // TODO: 根据 type 清除部分属性
     const {
-      type, orderStartingPoint, orderDestination, reserveAmounts,
-      contactInfo, redeemCounts, expiredAt, endTime
+      type,
+      orderStartingPoint,
+      orderDestination,
+      reserveAmounts,
+      contactInfo,
+      redeemCounts,
+      expiredAt,
+      endTime
     } = takeAwayOrder
 
     const query = `
@@ -819,9 +743,12 @@ export class PostsService {
       }
     }
 
-    const res = await this.dbService.handleTransaction<{}, {
-      p: Array<{uid: string}>
-    }>(txn, {
+    const res = await this.dbService.handleTransaction<
+    {},
+    {
+      p: Array<{ uid: string }>
+    }
+    >(txn, {
       query,
       mutations: [{ set: mutation, cond: condition }],
       vars: { $postId: post.id }
@@ -856,8 +783,13 @@ export class PostsService {
     return res.post[0]
   }
 
-  async postsWithRelayForward (first: number, after: string | null, { universityId, subjectId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
-    const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+  async postsWithRelayForward (
+    first: number,
+    after: string | null,
+    { universityId, subjectId }: QueryPostsFilter
+  ): Promise<PostsConnectionWithRelay> {
+    const q1 =
+      'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     // 没有提供 UniversityId 也没有提供 SubjectId
     const a = `
       var(func: type(Post), orderdesc: createdAt) { 
@@ -902,7 +834,9 @@ export class PostsService {
         }
         ${after ? q1 : ''}
         totalCount(func: uid(posts)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${
+          after ? 'q' : 'posts'
+        }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -910,9 +844,11 @@ export class PostsService {
         endO(func: uid(posts), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<Post> & {
-      subjects: Array<{uid: string}>
-    }>({
+    const res = await this.dbService.commitQuery<
+    RelayfyArrayParam<Post> & {
+      subjects: Array<{ uid: string }>
+    }
+    >({
       query,
       vars: {
         $after: after,
@@ -932,7 +868,11 @@ export class PostsService {
     })
   }
 
-  async postsWithRelayBackward (last: number, before: string | null, { universityId }: QueryPostsFilter): Promise<PostsConnectionWithRelay> {
+  async postsWithRelayBackward (
+    last: number,
+    before: string | null,
+    { universityId }: QueryPostsFilter
+  ): Promise<PostsConnectionWithRelay> {
     const q1 = `
       var(func: uid(posts), orderdesc: createdAt) @filter(gt(createdAt, $before)) { q as uid }
       var(func: uid(q), orderasc: createdAt, first: ${last}) { v as uid }
@@ -974,18 +914,19 @@ export class PostsService {
     }
   `
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
       posts: Post[]
       edge: Post[]
-      startPost: Array<{id: string, createdAt: string}>
-      endPost: Array<{id: string, createdAt: string}>
+      startPost: Array<{ id: string, createdAt: string }>
+      endPost: Array<{ id: string, createdAt: string }>
     }>({ query, vars: { $before: before, $universityId: universityId } })
 
     const startPost = res.startPost[0]
     const endPost = res.endPost[0]
     const lastPost = res.posts.slice(-1)[0]
     const v = (res.totalCount[0]?.count ?? 0) !== 0
-    const hasNextPage = startPost?.createdAt !== before && res.posts.length === last
+    const hasNextPage =
+      startPost?.createdAt !== before && res.posts.length === last
     const hasPreviousPage = before !== endPost?.createdAt && !!before
 
     return {
@@ -1000,14 +941,19 @@ export class PostsService {
     }
   }
 
-  async postsWithRelay (pagingConfig: RelayPagingConfigArgs, filter: QueryPostsFilter): Promise<Nullable<PostsConnectionWithRelay>> {
+  async postsWithRelay (
+    pagingConfig: RelayPagingConfigArgs,
+    filter: QueryPostsFilter
+  ): Promise<Nullable<PostsConnectionWithRelay>> {
     let { first, last, before, after, orderBy } = pagingConfig
 
     after = handleRelayForwardAfter(after)
     before = handleRelayBackwardBefore(before)
 
     if (NotNull(first, last) || NotNull(before, after)) {
-      throw new RelayPagingConfigErrorException('同一时间只能使用after作为向后分页、before作为向前分页的游标')
+      throw new RelayPagingConfigErrorException(
+        '同一时间只能使用after作为向后分页、before作为向前分页的游标'
+      )
     }
 
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
@@ -1044,11 +990,10 @@ export class PostsService {
           }
         }
       `
-    const res = (await this.dgraph
-      .newTxn({ readOnly: true })
-      .query(query))
-      .getJson() as unknown as {
-      totalCount: Array<{count: number}>
+    const res = (
+      await this.dgraph.newTxn({ readOnly: true }).query(query)
+    ).getJson() as unknown as {
+      totalCount: Array<{ count: number }>
       v: Post[]
     }
     const u: PostsConnection = {

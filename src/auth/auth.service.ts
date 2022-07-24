@@ -2,20 +2,51 @@ import { ForbiddenException, Injectable } from '@nestjs/common'
 import { JwtService } from '@nestjs/jwt'
 import dgraph, { Mutation, Request } from 'dgraph-js'
 
-import { AuthenticationInfo, CheckUserResult, CODE2SESSION_GRANT_TYPE, LoginResult, User } from 'src/user/models/user.model'
+import {
+  AuthenticationInfo,
+  CheckUserResult,
+  CODE2SESSION_GRANT_TYPE,
+  LoginResult,
+  User
+} from 'src/user/models/user.model'
 
 import { AdminService } from '../admin/admin.service'
-import { AdminNotFoundException, InstituteNotAllExistException, InstitutesOrSubCampusesNotAllInTheUniversityException, RolesNotAllExistException, SubCampusNotAllExistException, SystemAdminNotFoundException, SystemErrorException, UnionIdBeNullException, UniversityNotAllExistException, UserHadAuthenedException, UserHadSubmitAuthenInfoException, UserNotFoundException } from '../app.exception'
+import {
+  AdminNotFoundException,
+  InstituteNotAllExistException,
+  InstitutesOrSubCampusesNotAllInTheUniversityException,
+  RolesNotAllExistException,
+  SubCampusNotAllExistException,
+  SystemAdminNotFoundException,
+  SystemErrorException,
+  UnionIdBeNullException,
+  UniversityNotAllExistException,
+  UserHadAuthenedException,
+  UserHadSubmitAuthenInfoException,
+  UserNotFoundException
+} from '../app.exception'
 import { ORDER_BY } from '../connections/models/connections.model'
 import { ICredential } from '../credentials/models/credentials.model'
 import { DbService } from '../db/db.service'
 import { Delete } from '../deletes/models/deletes.model'
 import { LESSON_NOTIFY_STATE } from '../lessons/models/lessons.model'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
-import { Role } from '../roles/models/roles.model'
-import { atob, btoa, code2Session, getAuthenticationInfo, ids2String, now, relayfyArrayForward } from '../tool'
+import {
+  atob,
+  code2Session,
+  getAuthenticationInfo,
+  ids2String,
+  now,
+  relayfyArrayForward
+} from '../tool'
 import { UserService } from '../user/user.service'
-import { LoginByCodeArgs, Payload, UpdatePasswordResultUnion, UserAuthenInfo, UserWithRoles } from './model/auth.model'
+import {
+  LoginByCodeArgs,
+  Payload,
+  UpdatePasswordResultUnion,
+  UserAuthenInfo,
+  UserWithRoles
+} from './model/auth.model'
 
 @Injectable()
 export class AuthService {
@@ -42,9 +73,12 @@ export class AuthService {
       uid: 'uid(u)',
       sign: v
     }
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
       u: Array<typeof UpdatePasswordResultUnion>
-    }>({
+    }
+    >({
       query,
       mutations: [{ mutation, condition }],
       vars: { $id: id, $sign: v }
@@ -55,54 +89,6 @@ export class AuthService {
     }
 
     return res.json.u[0]
-  }
-
-  async roles (id: string, { after, first, orderBy }: RelayPagingConfigArgs) {
-    after = btoa(after)
-    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.rolesWithRelayForword(id, first, after)
-    }
-    throw new Error('Method not implemented.')
-  }
-
-  async rolesWithRelayForword (id: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(roles), orderdesc: createdAt) @filter(lt(creaedtAt, $after)) { q as uid }'
-    const query = `
-      query v($id: string, $after: after) {
-        var(func: uid($id)) @filter(type(UserAuthenInfo)) {
-          roles as roles (orderdesc: createdAt) @filter(type(Role))
-        }
-        ${after ? q1 : ''}
-        totalCount(func: uid(roles)) { count(uid) }
-        roles(func: uid(${after ? 'q' : 'roles'}), orderdesc: createdAt, first: ${first}) {
-          id: uid
-          expand(_all_)
-        }
-        # 开始游标
-        startRole(func: uid(roles), first: -1) {
-          createdAt
-        }
-        # 结束游标
-        endRole(func: uid(roles), first: 1) {
-          createdAt
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      roles: Role[]
-      startRole: Array<{createdAt}>
-      endRole: Array<{createdAt}>
-    }>({ query, vars: { $id: id, $after: after } })
-
-    return relayfyArrayForward({
-      totalCount: res.totalCount,
-      startO: res.startRole,
-      endO: res.endRole,
-      objs: res.roles,
-      first,
-      after
-    })
   }
 
   async delete (id: string) {
@@ -117,7 +103,10 @@ export class AuthService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{delete: Delete[]}>({ query, vars: { $id: id } })
+    const res = await this.dbService.commitQuery<{ delete: Delete[] }>({
+      query,
+      vars: { $id: id }
+    })
     return res.delete[0]
   }
 
@@ -133,7 +122,10 @@ export class AuthService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{user: User[]}>({ query, vars: { $id: id } })
+    const res = await this.dbService.commitQuery<{ user: User[] }>({
+      query,
+      vars: { $id: id }
+    })
 
     return res.user[0]
   }
@@ -160,7 +152,8 @@ export class AuthService {
         }
       }
     `
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 0) )'
+    const condition =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 0) )'
     const mutation = {
       uid: '_:credential',
       'dgraph.type': 'Credential',
@@ -179,12 +172,15 @@ export class AuthService {
       }
     }
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string}>
-      x: Array<{credential: {uid: string}}>
-      y: Array<{credential: {uid: string}}>
-    }>({
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
+      u: Array<{ uid: string }>
+      x: Array<{ credential: { uid: string } }>
+      y: Array<{ credential: { uid: string } }>
+    }
+    >({
       query,
       mutations: [{ mutation, condition }],
       vars: {
@@ -228,10 +224,12 @@ export class AuthService {
     // 2. 当前管理员已被认证
     // 3. 被认证的管理员存在
     // 4. 被认证的管理员未被认证
-    const condition1 = '@if( eq(len(x), 0) and eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) )'
+    const condition1 =
+      '@if( eq(len(x), 0) and eq(len(v), 1) and eq(len(u), 1) and eq(len(q), 1) )'
 
     // 当前授权者是system
-    const condition2 = '@if( eq(len(x), 0) and eq(len(v), 1) and eq(len(u), 1) and eq(len(s), 1) )'
+    const condition2 =
+      '@if( eq(len(x), 0) and eq(len(v), 1) and eq(len(u), 1) and eq(len(s), 1) )'
     const query = `
           query v($i: string, $to: string) {
             # 授权者存在
@@ -271,13 +269,16 @@ export class AuthService {
         }
       }
     }
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string}>
-      s: Array<{uid: string}>
-      x: Array<{credential: {uid: string}}>
-      q: Array<{credential: {uid: string}}>
-    }>({
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
+      u: Array<{ uid: string }>
+      s: Array<{ uid: string }>
+      x: Array<{ credential: { uid: string } }>
+      q: Array<{ credential: { uid: string } }>
+    }
+    >({
       mutations: [
         { mutation, condition: condition1 },
         { mutation, condition: condition2 }
@@ -319,7 +320,11 @@ export class AuthService {
    * @param id 用户id
    * @param info 认证信息
    */
-  async authenticateUser (adminId: string, id: string, info: AuthenticationInfo): Promise<User> {
+  async authenticateUser (
+    adminId: string,
+    id: string,
+    info: AuthenticationInfo
+  ): Promise<User> {
     const txn = this.dbService.getDgraphIns().newTxn()
     try {
       const user = await this.updateUserBaseInfoTxn(id, info, txn)
@@ -344,7 +349,11 @@ export class AuthService {
    * @param txn Txn
    * @returns {Promise<User>}
    */
-  async updateUserBaseInfoTxn (id: string, info: AuthenticationInfo, txn: dgraph.Txn): Promise<User> {
+  async updateUserBaseInfoTxn (
+    id: string,
+    info: AuthenticationInfo,
+    txn: dgraph.Txn
+  ): Promise<User> {
     const { avatarImageUrl, gender, grade, name, studentId } = info
     const query = `
       query v($userId: string) {
@@ -388,8 +397,11 @@ export class AuthService {
   }
 
   async addCredentialToUserTxn (id: string, txn: dgraph.Txn, adminId?: string) {
-    const q1 = `a(func: uid(${adminId ?? ''})) @filter(type(Admin)) { a as uid }`
-    const q2 = 'a(func: eq(userId, "system")) @filter(type(Admin)) { a as uid }'
+    const q1 = `a(func: uid(${
+      adminId ?? ''
+    })) @filter(type(Admin)) { a as uid }`
+    const q2 =
+      'a(func: eq(userId, "system")) @filter(type(Admin)) { a as uid }'
     const query = `
       query v($userId: string) {
         ${adminId ? q1 : q2}
@@ -400,7 +412,8 @@ export class AuthService {
         c(func: uid(yy)) @filter(type(Credential)) { c as uid }
       }
     `
-    const condition = '@if( eq(len(u), 1) and eq(len(a), 1) and eq(len(c), 0) )'
+    const condition =
+      '@if( eq(len(u), 1) and eq(len(a), 1) and eq(len(c), 0) )'
     const mutation = {
       uid: 'uid(u)',
       credential: {
@@ -431,9 +444,9 @@ export class AuthService {
 
     const res = await txn.doRequest(request)
     const json = res.getJson() as unknown as {
-      a: Array<{uid: string}>
-      u: Array<{uid: string}>
-      c: Array<{uid: string}>
+      a: Array<{ uid: string }>
+      u: Array<{ uid: string }>
+      c: Array<{ uid: string }>
     }
 
     if (json.a.length !== 1) {
@@ -489,7 +502,7 @@ export class AuthService {
 
     const res = await txn.doRequest(request)
     const json = res.getJson() as unknown as {
-      s: Array<{uid: string}>
+      s: Array<{ uid: string }>
     }
 
     if (json.s.length !== 1) {
@@ -497,7 +510,11 @@ export class AuthService {
     }
   }
 
-  async addUniversitiesToUserTxn (id: string, info: AuthenticationInfo, txn: dgraph.Txn) {
+  async addUniversitiesToUserTxn (
+    id: string,
+    info: AuthenticationInfo,
+    txn: dgraph.Txn
+  ) {
     const { universities } = info
     const len = universities.length
     const str = ids2String(universities)
@@ -531,7 +548,7 @@ export class AuthService {
 
     const res = await txn.doRequest(request)
     const json = res.getJson() as unknown as {
-      universities: Array<{uid: string}>
+      universities: Array<{ uid: string }>
     }
 
     if (json.universities.length !== len) {
@@ -539,7 +556,11 @@ export class AuthService {
     }
   }
 
-  async addInstitutesToUserTxn (id: string, info: AuthenticationInfo, txn: dgraph.Txn) {
+  async addInstitutesToUserTxn (
+    id: string,
+    info: AuthenticationInfo,
+    txn: dgraph.Txn
+  ) {
     const { institutes, universities } = info
     const len = institutes.length
     const str = ids2String(institutes)
@@ -577,7 +598,7 @@ export class AuthService {
 
     const res = await txn.doRequest(request)
     const json = res.getJson() as unknown as {
-      institutes: Array<{uid: string}>
+      institutes: Array<{ uid: string }>
     }
 
     if (json.institutes.length !== len) {
@@ -585,7 +606,11 @@ export class AuthService {
     }
   }
 
-  async addSubCampusesToUserTxn (id: string, info: AuthenticationInfo, txn: dgraph.Txn) {
+  async addSubCampusesToUserTxn (
+    id: string,
+    info: AuthenticationInfo,
+    txn: dgraph.Txn
+  ) {
     const { subCampuses, universities } = info
     const len = subCampuses.length
     const str = ids2String(subCampuses)
@@ -623,7 +648,7 @@ export class AuthService {
 
     const res = await txn.doRequest(request)
     const json = res.getJson() as unknown as {
-      subCampuses: Array<{uid: string}>
+      subCampuses: Array<{ uid: string }>
     }
 
     if (json.subCampuses.length !== len) {
@@ -631,7 +656,11 @@ export class AuthService {
     }
   }
 
-  async addRolesToUserTxn (id: string, info: AuthenticationInfo, txn: dgraph.Txn) {
+  async addRolesToUserTxn (
+    id: string,
+    info: AuthenticationInfo,
+    txn: dgraph.Txn
+  ) {
     const { roles } = info
     const len = roles?.length ?? 0
     const str = ids2String(roles)
@@ -668,7 +697,7 @@ export class AuthService {
 
     const res = await txn.doRequest(request)
     const json = res.getJson() as unknown as {
-      roles: Array<{uid: string}>
+      roles: Array<{ uid: string }>
     }
 
     if (json.roles.length !== len) {
@@ -682,7 +711,10 @@ export class AuthService {
    * @param info 认证信息
    * @returns Promise<User>
    */
-  async addInfoForAuthenUser (id: string, info: AuthenticationInfo): Promise<User> {
+  async addInfoForAuthenUser (
+    id: string,
+    info: AuthenticationInfo
+  ): Promise<User> {
     const roleIds = info.roles
     const roleIdsLen = info.roles?.length ?? 0
     const roleIdsStr = ids2String(info.roles)
@@ -776,17 +808,20 @@ export class AuthService {
       }
     }
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string}>
-      x: Array<{uid: string}>
-      i: Array<{uid: string}>
-      k: Array<{uid: string}>
-      universities: Array<{uid: string}>
-      institutes: Array<{uid: string}>
-      subCampuses: Array<{uid: string}>
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
+      u: Array<{ uid: string }>
+      x: Array<{ uid: string }>
+      i: Array<{ uid: string }>
+      k: Array<{ uid: string }>
+      universities: Array<{ uid: string }>
+      institutes: Array<{ uid: string }>
+      subCampuses: Array<{ uid: string }>
       user: User[]
-    }>({
+    }
+    >({
       query,
       mutations: [
         { mutation, condition },
@@ -818,7 +853,11 @@ export class AuthService {
       throw new SubCampusNotAllExistException(subCampusIds)
     }
     if (res.json.k.length !== 0) {
-      throw new InstitutesOrSubCampusesNotAllInTheUniversityException(instituteIds, subCampusIds, universitiyIds)
+      throw new InstitutesOrSubCampusesNotAllInTheUniversityException(
+        instituteIds,
+        subCampusIds,
+        universitiyIds
+      )
     }
 
     return res.json.user[0]
@@ -849,7 +888,13 @@ export class AuthService {
     }
   }
 
-  async userAuthenInfos ({ orderBy, first, after, last, before }: RelayPagingConfigArgs) {
+  async userAuthenInfos ({
+    orderBy,
+    first,
+    after,
+    last,
+    before
+  }: RelayPagingConfigArgs) {
     after = atob(after)
     before = atob(before)
     if (orderBy === ORDER_BY.CREATED_AT_DESC && first) {
@@ -859,7 +904,8 @@ export class AuthService {
   }
 
   async userAuthenInfosRelayForward (first: number, after: string | null) {
-    const q1 = 'var(func: uid(infos), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid } '
+    const q1 =
+      'var(func: uid(infos), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid } '
     const query = `
       query v($after: string) {
         infos as var(func: type(UserAuthenInfo), orderdesc: createdAt) @filter(not has(delete) and has(avatarImageUrl))
@@ -868,7 +914,9 @@ export class AuthService {
         totalCount(func: uid(infos)) {
           count(uid)
         }
-        infos(func: uid(${after ? 'q1' : 'infos'}), orderdesc: createdAt, first: ${first}) {
+        infos(func: uid(${
+          after ? 'q1' : 'infos'
+        }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -883,9 +931,9 @@ export class AuthService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      startInfo: Array<{createdAt: string}>
-      endInfo: Array<{createdAt: string}>
+      totalCount: Array<{ count: number }>
+      startInfo: Array<{ createdAt: string }>
+      endInfo: Array<{ createdAt: string }>
       infos: UserAuthenInfo[]
     }>({ query, vars: { $after: after } })
 
@@ -899,7 +947,11 @@ export class AuthService {
     })
   }
 
-  async login (userId: string | undefined | null, id: string | undefined | null, sign: string): Promise<LoginResult> {
+  async login (
+    userId: string | undefined | null,
+    id: string | undefined | null,
+    sign: string
+  ): Promise<LoginResult> {
     const user = await this.checkUserPasswordAndGetUser(userId, id, sign)
     const payload: Payload = { id: user.id, roles: user.roles }
     return {
@@ -908,7 +960,11 @@ export class AuthService {
     }
   }
 
-  async checkUserPasswordAndGetUser (userId: string | undefined | null, id: string | undefined | null, sign: string) {
+  async checkUserPasswordAndGetUser (
+    userId: string | undefined | null,
+    id: string | undefined | null,
+    sign: string
+  ) {
     if (userId && userId.length <= 2) {
       throw new ForbiddenException('userId 不能少于3个字符')
     }
@@ -942,7 +998,10 @@ export class AuthService {
       uid: 'uid(t)',
       lastLoginedAt: now
     }
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {user: CheckUserResult[]}>({
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    { user: CheckUserResult[] }
+    >({
       query,
       vars: {
         $userId: userId,
@@ -1010,9 +1069,12 @@ export class AuthService {
       Object.assign(mutation, { blankspaceAssistantOpenId: openId })
     }
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
       user: UserWithRoles[]
-    }>({
+    }
+    >({
       mutations: [
         { mutation, condition },
         { mutation: condMutation, condition: cond }

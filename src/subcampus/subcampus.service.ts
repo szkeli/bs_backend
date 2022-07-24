@@ -1,11 +1,20 @@
 import { Injectable } from '@nestjs/common'
 
-import { SubCampusAlreadyAtTheUniversityExxception, SubCampusNotFoundException, SystemErrorException, UniversityHasBeenDeletedException, UniversityNotFoundException } from '../app.exception'
+import {
+  SubCampusAlreadyAtTheUniversityExxception,
+  SubCampusNotFoundException,
+  SystemErrorException,
+  UniversityHasBeenDeletedException,
+  UniversityNotFoundException
+} from '../app.exception'
 import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { now } from '../tool'
-import { University } from '../universities/models/universities.models'
-import { CreateSubCampusArgs, DeleteSubCampusArgs, SubCampus } from './models/subcampus.model'
+import {
+  CreateSubCampusArgs,
+  DeleteSubCampusArgs,
+  SubCampus
+} from './models/subcampus.model'
 
 @Injectable()
 export class SubcampusService {
@@ -31,9 +40,12 @@ export class SubcampusService {
       }
     }
 
-    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
-      s: Array<{uid: string}>
-    }>({
+    const res = await this.dbService.commitConditionalDeletions<
+    Map<string, string>,
+    {
+      s: Array<{ uid: string }>
+    }
+    >({
       query,
       mutations: [{ mutation, condition }],
       vars: { $id: id }
@@ -44,28 +56,6 @@ export class SubcampusService {
     }
 
     return true
-  }
-
-  async university (id: string) {
-    const query = `
-        query v($id: string) {
-            var(func: uid($id)) @filter(type(SubCampus)) {
-                university as ~subCampuses @filter(type(University))
-            }
-            university(func: uid(university)) {
-                id: uid
-                expand(_all_)
-            }
-        }
-      `
-    const res = await this.dbService.commitQuery<{
-      university: University[]
-    }>({
-      query,
-      vars: { $id: id }
-    })
-
-    return res.university[0]
   }
 
   async createSubCampus ({ id, name }: CreateSubCampusArgs): Promise<SubCampus> {
@@ -85,7 +75,8 @@ export class SubcampusService {
             }
         }
       `
-    const condition = '@if( eq(len(u), 1) and eq(len(v), 0) and eq(len(j), 1) )'
+    const condition =
+      '@if( eq(len(u), 1) and eq(len(v), 0) and eq(len(j), 1) )'
     const mutation = {
       uid: 'uid(u)',
       subCampuses: {
@@ -95,11 +86,14 @@ export class SubcampusService {
         createdAt: now()
       }
     }
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      u: Array<{uid: string}>
-      v: Array<{uid: string}>
-      j: Array<{uid: string}>
-    }>({
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      u: Array<{ uid: string }>
+      v: Array<{ uid: string }>
+      j: Array<{ uid: string }>
+    }
+    >({
       query,
       mutations: [{ mutation, condition }],
       vars: { $id: id, $name: name }

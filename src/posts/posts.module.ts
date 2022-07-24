@@ -12,6 +12,7 @@ import { UserModule } from '../user/user.module'
 import { OrderResolver } from './order.resolver'
 import { PostsResolver } from './posts.resolver'
 import { PostsService } from './posts.service'
+import { SubjectResolver } from './subject.resolver'
 import { UniversityResolver } from './university.resolver'
 import { UserResolver } from './user.resolver'
 
@@ -32,7 +33,8 @@ import { UserResolver } from './user.resolver'
     PostsService,
     UserResolver,
     OrderResolver,
-    UniversityResolver
+    UniversityResolver,
+    SubjectResolver
   ],
   exports: [PostsService]
 })

@@ -7,7 +7,11 @@ import { DbService } from '../db/db.service'
 import { RelayPagingConfigArgs } from '../posts/models/post.model'
 import { btoa, now, relayfyArrayForward } from '../tool'
 import { AdminAndUserUnion, User } from '../user/models/user.model'
-import { IPRIVILEGE, Privilege, PrivilegesConnection } from './models/privileges.model'
+import {
+  IPRIVILEGE,
+  Privilege,
+  PrivilegesConnection
+} from './models/privileges.model'
 
 @Injectable()
 export class PrivilegesService {
@@ -32,7 +36,8 @@ export class PrivilegesService {
         }
       }
     `
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 1) )'
+    const condition =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 1) and eq(len(y), 1) )'
     const mutation = {
       uid: 'uid(y)',
       'dgraph.type': 'Privilege',
@@ -46,12 +51,15 @@ export class PrivilegesService {
         }
       }
     }
-    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string}>
-      x: Array<{uid: string}>
-      y: Array<{uid: string}>
-    }>({
+    const res = await this.dbService.commitConditionalDeletions<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
+      u: Array<{ uid: string }>
+      x: Array<{ uid: string }>
+      y: Array<{ uid: string }>
+    }
+    >({
       mutations: [{ mutation, condition }],
       query,
       vars: {
@@ -77,7 +85,11 @@ export class PrivilegesService {
     return true
   }
 
-  async privileges ({ first, after, orderBy }: RelayPagingConfigArgs): Promise<PrivilegesConnection> {
+  async privileges ({
+    first,
+    after,
+    orderBy
+  }: RelayPagingConfigArgs): Promise<PrivilegesConnection> {
     after = btoa(after)
     if (first && orderBy) {
       return await this.privilegesWithRelayForward(first, after)
@@ -85,15 +97,21 @@ export class PrivilegesService {
     throw new Error('Method not implemented.')
   }
 
-  async privilegesWithRelayForward (first: number, after: string | null): Promise<PrivilegesConnection> {
-    const q1 = 'var(func: uid(privileges), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+  async privilegesWithRelayForward (
+    first: number,
+    after: string | null
+  ): Promise<PrivilegesConnection> {
+    const q1 =
+      'var(func: uid(privileges), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string) {
         var(func: type(Privilege), orderdesc: createdAt) { privileges as uid }
 
         ${after ? q1 : ''}
         totalCount (func: uid(privileges)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'privileges'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${
+          after ? 'q' : 'privileges'
+        }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -106,9 +124,9 @@ export class PrivilegesService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      startO: Array<{createdAt: string}>
-      endO: Array<{createdAt: string}>
+      totalCount: Array<{ count: number }>
+      startO: Array<{ createdAt: string }>
+      endO: Array<{ createdAt: string }>
       objs: Privilege[]
     }>({ query, vars: { $after: after } })
 
@@ -119,7 +137,11 @@ export class PrivilegesService {
     })
   }
 
-  async addPrivilegeOnUser (adminId: string, privilege: IPRIVILEGE, to: string): Promise<Privilege> {
+  async addPrivilegeOnUser (
+    adminId: string,
+    privilege: IPRIVILEGE,
+    to: string
+  ): Promise<Privilege> {
     const query = `
       query v($adminId: string, $privilege: string, $to: string) {
         v(func: uid($adminId)) @filter(type(Admin)) { v as uid }
@@ -136,7 +158,8 @@ export class PrivilegesService {
     `
 
     const _now = now()
-    const condition = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 0) and eq(len(q), 1) )'
+    const condition =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(x), 0) and eq(len(q), 1) )'
     const mutation = {
       uid: '_:privilege',
       'dgraph.type': 'Privilege',
@@ -153,15 +176,16 @@ export class PrivilegesService {
       }
     }
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      q: Array<{uid: string}>
-      u: Array<{uid: string}>
-      x: Array<{uid: string}>
-    }>({
-      mutations: [
-        { mutation, condition }
-      ],
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
+      q: Array<{ uid: string }>
+      u: Array<{ uid: string }>
+      x: Array<{ uid: string }>
+    }
+    >({
+      mutations: [{ mutation, condition }],
       query,
       vars: {
         $adminId: adminId,
@@ -195,7 +219,11 @@ export class PrivilegesService {
     }
   }
 
-  async removePrivilegeOnAdmin (adminId: string, from: string, privilege: IPRIVILEGE) {
+  async removePrivilegeOnAdmin (
+    adminId: string,
+    from: string,
+    privilege: IPRIVILEGE
+  ) {
     if (adminId === from) {
       throw new ForbiddenException('不能对自己操作')
     }
@@ -213,7 +241,8 @@ export class PrivilegesService {
         }
       }
     `
-    const condition = '@if( eq(len(v), 1) and eq(len(x), 1) and eq(len(u), 1) )'
+    const condition =
+      '@if( eq(len(v), 1) and eq(len(x), 1) and eq(len(u), 1) )'
     const mutation = {
       uid: 'uid(x)',
       'dgraph.type': 'Privilege',
@@ -228,11 +257,14 @@ export class PrivilegesService {
         }
       }
     }
-    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
-      v: Array<{uid: string}>
+    const res = await this.dbService.commitConditionalDeletions<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
       x: Array<{}>
       u: Array<{}>
-    }>({
+    }
+    >({
       mutations: [{ mutation, condition }],
       query,
       vars: {
@@ -253,7 +285,11 @@ export class PrivilegesService {
     return res.json.x.length === 1
   }
 
-  async addPrivilegeOnAdmin (id: string, privilege: IPRIVILEGE, to: string): Promise<Privilege> {
+  async addPrivilegeOnAdmin (
+    id: string,
+    privilege: IPRIVILEGE,
+    to: string
+  ): Promise<Privilege> {
     if (id === to) {
       throw new ForbiddenException(`不能对自己授权 ${privilege}`)
     }
@@ -277,7 +313,8 @@ export class PrivilegesService {
         }
       }
     `
-    const condition = '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 1) AND eq(len(y), 0) )'
+    const condition =
+      '@if( eq(len(v), 1) AND eq(len(u), 1) AND eq(len(x), 1) AND eq(len(y), 0) )'
     const mutation = {
       uid: '_:privilege',
       'dgraph.type': 'Privilege',
@@ -294,12 +331,15 @@ export class PrivilegesService {
       }
     }
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string, count: number}>
-      x: Array<{credential: {uid: string}}>
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
+      u: Array<{ uid: string, count: number }>
+      x: Array<{ credential: { uid: string } }>
       y: Array<{}>
-    }>({
+    }
+    >({
       mutations: [{ mutation, condition }],
       vars: {
         $adminId: id,
@@ -315,7 +355,12 @@ export class PrivilegesService {
     if (res.json.u.length !== 1) {
       throw new ForbiddenException(`管理员 ${to} 不存在`)
     }
-    if (!res.json.x || res.json.x.length !== 1 || !res.json.x[0].credential || !res.json.x[0].credential.uid) {
+    if (
+      !res.json.x ||
+      res.json.x.length !== 1 ||
+      !res.json.x[0].credential ||
+      !res.json.x[0].credential.uid
+    ) {
       throw new ForbiddenException(`管理员 ${to} 未认证`)
     }
     if (res.json.y.length !== 0) {
@@ -332,21 +377,6 @@ export class PrivilegesService {
     }
   }
 
-  async creator (id: string) {
-    const query = `
-      query v($uid: string) {
-        privilege(func: uid($uid)) @filter(type(Privilege)) {
-          creator @filter(type(Admin)) {
-            id: uid
-            expand(_all_)
-          }
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{privilege: Array<{creator: Admin}>}>({ query, vars: { $uid: id } })
-    return res.privilege[0]?.creator
-  }
-
   async to (id: string) {
     const query = `
       query v($uid: string) {
@@ -359,7 +389,11 @@ export class PrivilegesService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{privilege: Array<{to: (typeof AdminAndUserUnion) & { 'dgraph.type': Role[]}}>}>({ query, vars: { $uid: id } })
+    const res = await this.dbService.commitQuery<{
+      privilege: Array<{
+        to: typeof AdminAndUserUnion & { 'dgraph.type': Role[] }
+      }>
+    }>({ query, vars: { $uid: id } })
     if (res.privilege[0].to['dgraph.type'].includes(Role.Admin)) {
       return new Admin(res.privilege[0].to)
     }
@@ -377,7 +411,10 @@ export class PrivilegesService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{privilege: Privilege[]}>({ query, vars: { $privilegeId: id } })
+    const res = await this.dbService.commitQuery<{ privilege: Privilege[] }>({
+      query,
+      vars: { $privilegeId: id }
+    })
     if (res.privilege.length !== 1 || !res.privilege[0]) {
       throw new ForbiddenException(`权限 ${id} 不存在`)
     }
