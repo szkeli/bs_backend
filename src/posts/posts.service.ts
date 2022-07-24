@@ -384,7 +384,8 @@ export class PostsService {
       },
       to: {
         uid: '_:post'
-      }
+      },
+      createdAt: now()
     }
     // 帖子的情感信息
     const sentiment = {

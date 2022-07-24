@@ -701,7 +701,8 @@ export class CommentService {
     }
   }
 
-  async addCommentOnComment (creator: string, { content, to: commentId, isAnonymous, images }: AddCommentArgs): Promise<CommentWithTo> {
+  async addCommentOnComment (creator: string, args: AddCommentArgs): Promise<CommentWithTo> {
+    const { content, to: commentId, isAnonymous, images } = args
     const _now = now()
 
     const query = `
