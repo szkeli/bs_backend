@@ -1176,7 +1176,7 @@ type CensorResponse {
 
 type Anonymous {
   id: String!
-  createdAt: String!
+  createdAt: String
 
   """同一个用户的匿名信息在同一条帖子下面的 watermark 相同"""
   watermark: String!

@@ -5,7 +5,7 @@ export class Anonymous {
   @Field(of => String)
     id: string
 
-  @Field(of => String)
+  @Field(of => String, { nullable: true })
     createdAt: string
 
   @Field(of => String, { description: '同一个用户的匿名信息在同一条帖子下面的 watermark 相同' })

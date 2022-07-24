@@ -34,11 +34,11 @@ export class PostResolver {
   `
     const res = await this.dbService.commitQuery<{
       creator: User[]
-      anonymous: Anonymous
+      anonymous: Anonymous[]
       post: Post[]
     }>({ query, vars: { $postId: id } })
 
-    const anonymous = res.anonymous
+    const anonymous = res.anonymous[0]
     const postId = res.post?.[0]?.id
     const creatorId = res.creator?.[0]?.id
     const subCampus = res.creator?.[0]?.subCampus
