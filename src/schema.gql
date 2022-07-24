@@ -1089,6 +1089,9 @@ type Subject {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): PostsConnectionWithRelay!
 
+  """主题的创建者"""
+  creator: User!
+
   """具有该 Subject 的所有大学"""
   universities(
     """最新的n个对象"""
@@ -3328,6 +3331,9 @@ type Mutation {
 
     """帖子所在的 University"""
     universityId: String!
+
+    """帖子所属的二级分类"""
+    subFieldId: String
 
     """是否匿名帖子"""
     isAnonymous: Boolean = false

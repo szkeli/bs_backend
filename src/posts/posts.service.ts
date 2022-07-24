@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common'
 import dgraph, { DgraphClient, Mutation, Request } from 'dgraph-js'
 
-import { DbService } from 'src/db/db.service'
+import { DbService, Txn } from 'src/db/db.service'
 import { PostId } from 'src/db/model/db.model'
 
 import {
@@ -482,18 +482,19 @@ export class PostsService {
 
   async addPostToSubjectTxn (
     postId: string,
-    args: CreatePostArgs,
+    subjectId: string,
     txn: dgraph.Txn
   ) {
-    const { subjectId } = args
-    if (!subjectId) {
-      return
-    }
-
     const query = `
       query v($subjectId: string, $postId: string) {
         p(func: uid($postId)) @filter(type(Post)) { p as uid }
-        s(func: uid($subjectId)) @filter(type(Subject)) { s as uid }
+        s(func: uid($subjectId)) @filter(type(Subject)) { 
+          s as uid
+          subfields as ~subject @filter(type(SubField)) 
+        }
+        subFields(func: uid(subfields)) {
+          id: uid
+        }
       }
     `
     const condition = '@if( eq(len(p), 1) and eq(len(s), 1) )'
@@ -504,28 +505,24 @@ export class PostsService {
       }
     }
 
-    const mutate = new Mutation()
-    mutate.setSetJson(mutation)
-    mutate.setCond(condition)
-    const request = new Request()
-    const vars = request.getVarsMap()
-    vars.set('$subjectId', subjectId)
-    vars.set('$postId', postId)
-
-    request.setQuery(query)
-    request.addMutations(mutate)
-    const res = await txn.doRequest(request)
-
-    const json = res.getJson() as unknown as {
+    const res = await this.dbService.handleTransaction<{}, {
       p: Array<{ uid: string }>
       s: Array<{ uid: string }>
-    }
-    if (json.p.length !== 1) {
+      subFields: Array<{ id: string }>
+    }>(txn, {
+      query,
+      mutations: [{ set: mutation, cond: condition }],
+      vars: { $subjectId: subjectId, $postId: postId }
+    })
+
+    if (res.json.p.length !== 1) {
       throw new PostNotFoundException(postId)
     }
-    if (json.s.length !== 1) {
+    if (res.json.s.length !== 1) {
       throw new SubjectNotFoundException(subjectId)
     }
+
+    return res.json.subFields.map(s => s.id)
   }
 
   async addPostToUniversityTxn (
@@ -577,6 +574,7 @@ export class PostsService {
   }
 
   async createPost (id: string, args: CreatePostArgs): Promise<Post> {
+    const { subjectId, subFieldId } = args
     const { takeAwayOrder, idleItemOrder, teamUpOrder } = args
     if (!atMostOne(takeAwayOrder, idleItemOrder, teamUpOrder)) {
       throw new ForbiddenException(
@@ -588,13 +586,41 @@ export class PostsService {
       takeAwayOrder && (await this.createTakeAwayOrderTxn(args, post, txn))
       idleItemOrder && (await this.createIdleItemOrderTxn(args, post, txn))
       teamUpOrder && (await this.createTeamUpOrderTxn(args, post, txn))
-      await this.addPostToSubjectTxn(post.id, args, txn)
+
+      if (subjectId) {
+        const subFieldIds = await this.addPostToSubjectTxn(post.id, subjectId, txn)
+        if (subFieldId && !subFieldIds.includes(subFieldId)) {
+          throw new ForbiddenException(`Subject ${subjectId} 没有 SubField ${subFieldId}`)
+        }
+        await this.addPostToSubFieldTxn(post.id, subFieldId, txn)
+      }
       await this.addPostToUniversityTxn(post.id, args, txn)
 
       return post
     })
 
     return res
+  }
+
+  async addPostToSubFieldTxn (id: string, subFieldId: string, txn: Txn) {
+    const query = `
+      query v($id: string, $subFieldId: string) {
+        p(func: uid($id)) @filter(type(Post)) { p as uid }
+        s(func: uid($subFieldId)) @filter(type(SubField)) { s as uid }
+      }
+    `
+    const condition = '@if( eq(len(p), 1) and eq(len(s), 1) )'
+    const mutation = {
+      uid: 'uid(s)',
+      posts: {
+        uid: 'uid(p)'
+      }
+    }
+    return await this.dbService.handleTransaction(txn, {
+      query,
+      mutations: [{ set: mutation, cond: condition }],
+      vars: { $id: id, $subFieldId: subFieldId }
+    })
   }
 
   async createTeamUpOrderTxn (

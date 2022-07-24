@@ -33,6 +33,9 @@ export class CreatePostArgs {
   @Field(of => String, { description: '帖子所在的 University' })
     universityId: string
 
+  @Field(of => String, { nullable: true, description: '帖子所属的二级分类' })
+    subFieldId: string
+
   @Field(of => Boolean, { nullable: true, description: '是否匿名帖子', defaultValue: false })
     isAnonymous: boolean
 
