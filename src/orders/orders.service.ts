@@ -1,14 +1,132 @@
-import { ForbiddenException, Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common'
 
 import { ExceedRedeenCountException, OrderHasBeenTakenException, OrderNotFoundException, OrderPickUpErrorException, UserNotFoundException } from '../app.exception'
+import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { DbService, Txn } from '../db/db.service'
-import { now } from '../tool'
+import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { User } from '../user/models/user.model'
 import { OrderPickUp } from './models/order-pick-up.model'
-import { CancelPickUpArgs, OrderUnion, PickUpOrderArgs } from './models/orders.model'
+import { CancelPickUpArgs, ORDER_TYPE, OrdersFilter, OrderUnion, PickUpOrderArgs, ReserveAmountsRng } from './models/orders.model'
 
 @Injectable()
 export class OrdersService {
+  constructor (private readonly dbService: DbService) {}
+
+  async orders (args: RelayPagingConfigArgs, filter: OrdersFilter) {
+    let { first, after, orderBy } = args
+    after = handleRelayForwardAfter(after)
+    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
+      return await this.ordersRelayForward(after, first, filter)
+    }
+    throw new NotImplementedException()
+  }
+
+  // TODO: 解决注入风险
+  handleOrdersFilter (filter: OrdersFilter) {
+    const { type, orderDestination, reserveAmountsRng } = filter
+
+    // entrypoint
+    const orderTypeHandler = (type: ORDER_TYPE | null) => {
+      const retName = 'orderTypeHandlerRet'
+      if (!type) {
+        return [`
+        var(func: type(TakeAwayOrder)) { takeaway as uid }
+        var(func: type(IdleItemOrder)) { idleitem as uid }
+        var(func: type(TeamUpOrder)) { teamup as uid }
+        var(func: uid(takeaway, idleitem, teamup)) { ${retName} as uid }
+        `, retName]
+      }
+      const map = {
+        [ORDER_TYPE.IDLEITEM]: ['var(func: type(IdleItemOrder)) { idleitem as uid }', 'idleitem'],
+        [ORDER_TYPE.TAKEAWAY]: ['var(func: type(TakeAwayOrder)) { takeaway as uid }', 'takeaway'],
+        [ORDER_TYPE.TEAM_UP]: ['var(func: type(TeamUpOrder)) { teamup as uid }', 'teamup']
+      }
+      return [`
+        ${map[type][0]}
+        var(func: uid(${map[type][1]})) { ${retName} as uid }
+      `, retName]
+    }
+
+    const orderDestinationHandler = (destination: string | null, last: string[]) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const [_v, r] = last
+      const retName = 'orderDestinationHandlerRet'
+      if (!destination) {
+        return [`
+          var(func: uid(${r})) { ${retName} as uid }
+        `, retName]
+      }
+
+      return [`
+        var(func: uid(${r})) @filter(anyoftext(orderDestination, "${destination}")) {
+          ${retName} as uid
+        } 
+      `, retName]
+    }
+
+    const reserveAmountsHandler = (reserveAmountsRng: ReserveAmountsRng | null, last: string[]) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const [_v, r] = last
+      const retName = 'reserveAmountsHandlerRet'
+      if (!reserveAmountsRng) {
+        return [`
+          var(func: uid(${r})) { ${retName} as uid }
+        `, retName]
+      }
+      const { max, min } = reserveAmountsRng
+      return [`
+        var(func: uid(${r})) @filter(between(reserveAmounts, ${min}, ${max})) {
+          ${retName} as uid
+        }
+      `, retName]
+    }
+
+    const a = orderTypeHandler(type)
+    const b = orderDestinationHandler(orderDestination, a)
+    const c = reserveAmountsHandler(reserveAmountsRng, b)
+
+    return [`
+      ${a[0]}
+      ${b[0]}
+      ${c[0]}
+    `,
+    c[1]
+    ]
+  }
+
+  async ordersRelayForward (after: string | null, first: number, filter: OrdersFilter) {
+    const [r, v] = this.handleOrdersFilter(filter)
+    const q1 = 'var(func: uid(orders), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const query = `
+      query v($after: string) {
+        ${r}
+
+        var(func: uid(${v})) { orders as uid }
+
+        ${after ? q1 : ''}
+
+        totalCount(func: uid(orders)) { count(uid) }
+        objs(func: uid(${after ? 'q' : 'orders'}), orderdesc: createdAt, first: ${first}) {
+          id: uid
+          expand(_all_)
+          dgraph.type
+        }
+        startO(func: uid(orders), first: -1) { createdAt }
+        endO(func: uid(orders), first: 1) { createdAt }
+      }
+    `
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<typeof OrderUnion>>({
+      query,
+      vars: { $after: after }
+    })
+
+    return relayfyArrayForward({
+      ...res,
+      first,
+      after
+    })
+  }
+
   async findOrderByPostId (id: string): Promise<typeof OrderUnion> {
     const query = `
       query v($id: string) {
@@ -25,8 +143,6 @@ export class OrdersService {
     const res = await this.dbService.commitQuery<{o: Array<typeof OrderUnion>}>({ query, vars: { $id: id } })
     return res.o[0]
   }
-
-  constructor (private readonly dbService: DbService) {}
 
   /**
    * 取消一个接单

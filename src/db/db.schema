@@ -89,7 +89,7 @@ educatorName: string @index(hash) .
 deadlineId: string @index(hash) .
 color: string .
 orderStartingPoint: string @index(fulltext) .
-orderDestination: string @index(fulltext) .
+orderDestination: string @index(fulltext, term) .
 contactInfo: string @index(fulltext) .
 
 circle: [int] .

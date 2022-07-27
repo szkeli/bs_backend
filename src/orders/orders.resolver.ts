@@ -1,14 +1,20 @@
-import { Args, Mutation, Parent, ResolveField, Resolver } from '@nestjs/graphql'
+import { Args, Mutation, Parent, Query, ResolveField, Resolver } from '@nestjs/graphql'
 
 import { CurrentUser } from '../auth/decorator'
+import { RelayPagingConfigArgs } from '../connections/models/connections.model'
 import { User } from '../user/models/user.model'
 import { OrderPickUp } from './models/order-pick-up.model'
-import { CancelPickUpArgs, Order, OrderUnion, PickUpOrderArgs } from './models/orders.model'
+import { CancelPickUpArgs, Order, OrdersConnection, OrdersFilter, OrderUnion, PickUpOrderArgs } from './models/orders.model'
 import { OrdersService } from './orders.service'
 
 @Resolver(of => Order)
 export class OrdersResolver {
   constructor (private readonly ordersService: OrdersService) {
+  }
+
+  @Query(of => OrdersConnection, { description: '筛选顶订单' })
+  async orders (@Args() args: RelayPagingConfigArgs, @Args() filter: OrdersFilter) {
+    return await this.ordersService.orders(args, filter)
   }
 
   @Mutation(of => OrderUnion, { description: '接单' })

@@ -3,6 +3,16 @@ import { IsISO8601, Min, MinLength, ValidateIf } from 'class-validator'
 
 import { Connection, ValueRef } from '../../connections/models/connections.model'
 
+export enum ORDER_TYPE {
+  TAKEAWAY = 'TAKEAWAY',
+  TEAM_UP = 'TEAM_UP',
+  IDLEITEM = 'IDLEITEM'
+}
+
+registerEnumType(ORDER_TYPE, {
+  name: 'ORDER_TYPE'
+})
+
 export enum TAKEAWAY_ORDER_TYPE {
   EXPRESS_DELIVERY = 'EXPRESS_DELIVERY',
   TAKEOUT = 'TAKEOUT',
@@ -312,4 +322,34 @@ export class PickUpOrderArgs {
 export class CancelPickUpArgs {
   @Field(of => String)
     orderId: string
+}
+
+@InputType()
+export class ReserveAmountsRng {
+  @Field(of => Int, { description: '最小金额' })
+    min: number
+
+  @Field(of => Int, { description: '最大金额' })
+    max: number
+}
+
+@ArgsType()
+export class OrdersFilter {
+  @Field(of => ORDER_TYPE, { nullable: true, description: '订单的第一分类' })
+    type: ORDER_TYPE | null
+
+  // @Field(of => TAKEAWAY_ORDER_TYPE, { nullable: true })
+  //   takeAwayOrderType: TAKEAWAY_ORDER_TYPE | null
+
+  @Field(of => ReserveAmountsRng, { nullable: true, description: '价格区间' })
+    reserveAmountsRng: ReserveAmountsRng | null
+
+  // @Field(of => String, { nullable: true })
+  //   endTime: string | null
+
+  // @Field(of => Boolean, { description: 'hasPickUp == true: 已被接单', nullable: true })
+  //   hasPickUp: string | null
+
+  @Field(of => String, { nullable: true })
+    orderDestination: string | null
 }
