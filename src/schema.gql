@@ -190,6 +190,24 @@ type UpvoteNotification implements Notifiable {
   isRead: Boolean!
 }
 
+type NotificationsConnection {
+  edges: [NotificationEdge!]!
+  pageInfo: NotificationPageInfo!
+  totalCount: Int!
+}
+
+type NotificationEdge {
+  node: Notification
+  cursor: String
+}
+
+type NotificationPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type User implements Person & Node {
   """id 自动生成"""
   id: String!
@@ -227,6 +245,70 @@ type User implements Person & Node {
 
   """获取当前用户上课通知的设置"""
   lessonNotificationSettings: LessonNotificationSettings!
+
+  """当前用户的所有点赞"""
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
+
+  """当前用户的所有点赞"""
+  votesWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
+
+  """回复的通知"""
+  replyNotifications(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+
+    """获取"""
+    type: NOTIFICATION_TYPE = ALL
+
+    """按action获取通知"""
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
+  ): NotificationsConnection
+
+  """点赞的通知"""
+  upvoteNotifications(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+    type: NOTIFICATION_TYPE = ALL
+  ): VoteWithUnreadCountsConnection
 
   """当前用户创建的所有会话"""
   conversations(
@@ -463,6 +545,70 @@ interface Person implements Node {
   """获取当前用户上课通知的设置"""
   lessonNotificationSettings: LessonNotificationSettings!
 
+  """当前用户的所有点赞"""
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
+
+  """当前用户的所有点赞"""
+  votesWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
+
+  """回复的通知"""
+  replyNotifications(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+
+    """获取"""
+    type: NOTIFICATION_TYPE = ALL
+
+    """按action获取通知"""
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
+  ): NotificationsConnection
+
+  """点赞的通知"""
+  upvoteNotifications(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+    type: NOTIFICATION_TYPE = ALL
+  ): VoteWithUnreadCountsConnection
+
   """当前用户创建的所有会话"""
   conversations(
     """最新的n个对象"""
@@ -563,6 +709,12 @@ enum GENDER {
   FEMALE
 }
 
+enum NOTIFICATION_TYPE {
+  ALL
+  READ
+  UN_READ
+}
+
 type LoginResult implements Node & Person {
   id: String!
 
@@ -599,6 +751,70 @@ type LoginResult implements Node & Person {
 
   """获取当前用户上课通知的设置"""
   lessonNotificationSettings: LessonNotificationSettings!
+
+  """当前用户的所有点赞"""
+  votes(first: Int = 10, offset: Int = 0): VotesConnection!
+
+  """当前用户的所有点赞"""
+  votesWithRelay(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
+
+  """回复的通知"""
+  replyNotifications(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+
+    """获取"""
+    type: NOTIFICATION_TYPE = ALL
+
+    """按action获取通知"""
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
+  ): NotificationsConnection
+
+  """点赞的通知"""
+  upvoteNotifications(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+    type: NOTIFICATION_TYPE = ALL
+  ): VoteWithUnreadCountsConnection
 
   """当前用户创建的所有会话"""
   conversations(
@@ -1386,6 +1602,24 @@ type Post {
   """帖子的创建者，当帖子是匿名帖子时，返回null"""
   creator: User
 
+  """帖子的点赞"""
+  votes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
+
   """帖子的所有评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection! @deprecated(reason: "请使用commentsWithRelay")
 
@@ -1475,6 +1709,9 @@ type Comment {
   content: String!
   createdAt: String!
   score: Float
+
+  """评论的创建者，评论是匿名评论时，creator为null"""
+  creator: User
 
   """获取该评论下的点赞信息"""
   votes(first: Int = 10, offset: Int = 0): VotesConnection!
@@ -2189,6 +2426,44 @@ type VoteWithUnreadCount implements VoteInterface {
   unreadCount: Int!
 }
 
+type VoteWithUnreadCountsConnection {
+  edges: [VoteWithUnreadCountEdge!]!
+  pageInfo: VoteWithUnreadCountPageInfo!
+  totalCount: Int!
+}
+
+type VoteWithUnreadCountEdge {
+  node: VoteWithUnreadCount
+  cursor: String
+}
+
+type VoteWithUnreadCountPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type VotesConnectionWithRelay {
+  edges: [VoteEdge!]
+  pageInfo: VotePageInfo
+  totalCount: Int
+  viewerCanUpvote: Boolean!
+  viewerHasUpvoted: Boolean!
+}
+
+type VoteEdge {
+  node: Vote
+  cursor: String
+}
+
+type VotePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type VotesConnection {
   totalCount: Int!
   viewerCanUpvote: Boolean!
@@ -2735,6 +3010,51 @@ type Query {
   keywordsExtraction(keywordNum: Int = 5, content: String!): [KeywordsExtractionResult!]!
   textClassification(content: String!): TextClassificationResult!
   autoSummarization(length: Int = 200, content: String!): String!
+
+  """测试接口，某用户的所有回复通知，非当前用户获取到null"""
+  userReplyNotifications(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+
+    """获取"""
+    type: NOTIFICATION_TYPE = ALL
+
+    """按action获取通知"""
+    actions: [NOTIFICATION_ACTION!] = [ADD_COMMENT_ON_POST, ADD_COMMENT_ON_COMMENT, ADD_COMMENT_ON_USER]
+    id: String!
+  ): NotificationsConnection
+
+  """测试接口，获取某用户所有的点赞通知，非当前用户获取到null"""
+  userUpvoteNotifications(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+    id: String!
+    type: NOTIFICATION_TYPE = ALL
+  ): VoteWithUnreadCountsConnection
 
   """获取当前用户上课通知的设置"""
   lessonNotificationSettings: LessonNotificationSettings!

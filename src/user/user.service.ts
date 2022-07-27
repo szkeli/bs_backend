@@ -1,17 +1,41 @@
-import { ForbiddenException, Injectable, NotImplementedException } from '@nestjs/common'
+import {
+  ForbiddenException,
+  Injectable,
+  NotImplementedException
+} from '@nestjs/common'
 import { randomUUID } from 'crypto'
 
-import { SystemErrorException, UserIdExistException, UserNotAuthenException, UserNotFoundException } from '../app.exception'
-import { UserAuthenInfo, UserWithRolesAndPrivilegesAndCredential } from '../auth/model/auth.model'
-import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
+import {
+  SystemErrorException,
+  UserIdExistException,
+  UserNotAuthenException,
+  UserNotFoundException
+} from '../app.exception'
+import {
+  UserAuthenInfo,
+  UserWithRolesAndPrivilegesAndCredential
+} from '../auth/model/auth.model'
+import {
+  ORDER_BY,
+  RelayPagingConfigArgs
+} from '../connections/models/connections.model'
 import { DbService } from '../db/db.service'
 import { Deadline } from '../deadlines/models/deadlines.model'
 import { Experience } from '../experiences/models/experiences.model'
 import { Favorite } from '../favorites/models/favorite.model'
 import { OrderUnion } from '../orders/models/orders.model'
 import { Post, PostsConnection } from '../posts/models/post.model'
-import { atob, btoa, code2Session, edgifyByCreatedAt, handleRelayForwardAfter, NotNull, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
-import { Vote, VotesConnectionWithRelay } from '../votes/model/votes.model'
+import {
+  atob,
+  btoa,
+  code2Session,
+  edgifyByCreatedAt,
+  handleRelayForwardAfter,
+  NotNull,
+  now,
+  relayfyArrayForward,
+  RelayfyArrayParam
+} from '../tool'
 import {
   GENDER,
   PrivateSettings,
@@ -39,7 +63,10 @@ export class UserService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{creator: User[]}>({ query, vars: { $postId: id } })
+    const res = await this.dbService.commitQuery<{ creator: User[] }>({
+      query,
+      vars: { $postId: id }
+    })
     return res.creator[0]
   }
 
@@ -52,8 +79,13 @@ export class UserService {
     throw new SystemErrorException()
   }
 
-  async ordersRelayForward (user: User, first: number | null, after: string | null) {
-    const q1 = 'var(func: uid(orders), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+  async ordersRelayForward (
+    user: User,
+    first: number | null,
+    after: string | null
+  ) {
+    const q1 =
+      'var(func: uid(orders), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
         var(func: uid($id)) @filter(type(User)) { u as uid }
@@ -65,7 +97,9 @@ export class UserService {
         }
         ${after ? q1 : ''}
         totalCount(func: uid(orders)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'orders'}), orderdesc: createdAt, first: ${first ?? 0}) {
+        objs(func: uid(${
+          after ? 'q' : 'orders'
+        }), orderdesc: createdAt, first: ${first ?? 0}) {
           id: uid
           expand(_all_)
           dgraph.type
@@ -74,7 +108,9 @@ export class UserService {
         endO(func: uid(orders), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<typeof OrderUnion>>({
+    const res = await this.dbService.commitQuery<
+    RelayfyArrayParam<typeof OrderUnion>
+    >({
       query,
       vars: {
         $id: user.id,
@@ -97,8 +133,13 @@ export class UserService {
     throw new NotImplementedException()
   }
 
-  async favoritesRelayFarword (id: string, first: number | null, after: string | null) {
-    const q1 = 'var(func: uid(favorites), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+  async favoritesRelayFarword (
+    id: string,
+    first: number | null,
+    after: string | null
+  ) {
+    const q1 =
+      'var(func: uid(favorites), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
         var(func: uid($id)) @filter(type(User)) {
@@ -106,7 +147,9 @@ export class UserService {
         }
         ${after ? q1 : ''}
         totalCount(func: uid(favorites)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'favorites'}), orderdesc: createdAt, first: ${first ?? 0}) {
+        objs(func: uid(${
+          after ? 'q' : 'favorites'
+        }), orderdesc: createdAt, first: ${first ?? 0}) {
           id: uid
           expand(_all_)
         }
@@ -114,7 +157,10 @@ export class UserService {
         endO(func: uid(favorites), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<Favorite>>({ query, vars: { $id: id, $after: after } })
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Favorite>>({
+      query,
+      vars: { $id: id, $after: after }
+    })
     return relayfyArrayForward({
       ...res,
       first: first ?? 0,
@@ -122,15 +168,27 @@ export class UserService {
     })
   }
 
-  async experiencePointTransaction (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+  async experiencePointTransaction (
+    id: string,
+    { first, after, orderBy }: RelayPagingConfigArgs
+  ) {
     if (orderBy === ORDER_BY.CREATED_AT_DESC && first) {
-      return await this.experiencePointTransactionsWithRelayForward(id, first, after)
+      return await this.experiencePointTransactionsWithRelayForward(
+        id,
+        first,
+        after
+      )
     }
     throw new NotImplementedException()
   }
 
-  async experiencePointTransactionsWithRelayForward (id: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(transactions), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+  async experiencePointTransactionsWithRelayForward (
+    id: string,
+    first: number,
+    after: string | null
+  ) {
+    const q1 =
+      'var(func: uid(transactions), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
         var(func: uid($id)) @filter(type(User)) {
@@ -141,7 +199,9 @@ export class UserService {
         }
         ${after ? q1 : ''}
         totalCount(func: uid(transactions)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'transactions'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${
+          after ? 'q' : 'transactions'
+        }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -149,10 +209,12 @@ export class UserService {
         endO(func: uid(transactions), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<Experience>>({
-      query,
-      vars: { $id: id, $after: after }
-    })
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Experience>>(
+      {
+        query,
+        vars: { $id: id, $after: after }
+      }
+    )
 
     return relayfyArrayForward({
       ...res,
@@ -181,7 +243,7 @@ export class UserService {
     `
     const res = await this.dbService.commitQuery<{
       settings: PrivateSettings[]
-      user: Array<{gender: GENDER}>
+      user: Array<{ gender: GENDER }>
     }>({
       query,
       vars: { $id: user?.id }
@@ -236,10 +298,13 @@ export class UserService {
       }
     }
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      u: Array<{uid: string}>
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      u: Array<{ uid: string }>
       settings: PrivateSettings[]
-    }>({
+    }
+    >({
       query,
       mutations: [
         { mutation, condition },
@@ -292,7 +357,10 @@ export class UserService {
    * @param args Relay 分页参数
    * @param filter 按条件返回所有用户
    */
-  async usersWithRelay ({ first, after, orderBy }: RelayPagingConfigArgs, filter: UsersWithRelayFilter) {
+  async usersWithRelay (
+    { first, after, orderBy }: RelayPagingConfigArgs,
+    filter: UsersWithRelayFilter
+  ) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.usersWithRelayForward(first, after, filter)
@@ -300,8 +368,13 @@ export class UserService {
     throw new Error('Method not implemented.')
   }
 
-  async usersWithRelayForward (first: number, after: string | null, { universityId }: UsersWithRelayFilter) {
-    const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+  async usersWithRelayForward (
+    first: number,
+    after: string | null,
+    { universityId }: UsersWithRelayFilter
+  ) {
+    const q1 =
+      'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const users = universityId
       ? `
       var(func: uid($universityId)) @filter(type(University)) {
@@ -318,7 +391,9 @@ export class UserService {
         ${users}
         ${after ? q1 : ''}
         totalCount(func: uid(users)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'users'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${
+          after ? 'q' : 'users'
+        }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -326,7 +401,7 @@ export class UserService {
         endO(func: uid(users), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery <RelayfyArrayParam<User>>({
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<User>>({
       query,
       vars: { $universityId: universityId, $after: after }
     })
@@ -338,16 +413,31 @@ export class UserService {
     })
   }
 
-  async authenWithin (startTime: string, endTime: string, { after, first, orderBy }: RelayPagingConfigArgs) {
+  async authenWithin (
+    startTime: string,
+    endTime: string,
+    { after, first, orderBy }: RelayPagingConfigArgs
+  ) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.authenWithinRelayForward(startTime, endTime, first, after)
+      return await this.authenWithinRelayForward(
+        startTime,
+        endTime,
+        first,
+        after
+      )
     }
     throw new Error('Method not implemented.')
   }
 
-  async authenWithinRelayForward (startTime: string, endTime: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+  async authenWithinRelayForward (
+    startTime: string,
+    endTime: string,
+    first: number,
+    after: string | null
+  ) {
+    const q1 =
+      'var(func: uid(users), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($after: string, $startTime: string, $endTime: string) {
         var(func: between(createdAt, $startTime, $endTime)) @filter(type(User) and not eq(openId, "") and not eq(unionId, "") and has(credential)) {
@@ -355,7 +445,9 @@ export class UserService {
         }
         ${after ? q1 : ''}
         totalCount(func: uid(users)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'users'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${
+          after ? 'q' : 'users'
+        }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -365,7 +457,10 @@ export class UserService {
         endO(func: uid(users), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<User>>({ query, vars: { $startTime: startTime, $endTime: endTime, $after: after } })
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<User>>({
+      query,
+      vars: { $startTime: startTime, $endTime: endTime, $after: after }
+    })
 
     return relayfyArrayForward({
       ...res,
@@ -383,11 +478,17 @@ export class UserService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{v: UserAuthenInfo[]}>({ query, vars: { $id: id } })
+    const res = await this.dbService.commitQuery<{ v: UserAuthenInfo[] }>({
+      query,
+      vars: { $id: id }
+    })
     return res.v[0]
   }
 
-  async deadlines (id: string, { first, after, orderBy }: RelayPagingConfigArgs) {
+  async deadlines (
+    id: string,
+    { first, after, orderBy }: RelayPagingConfigArgs
+  ) {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.deadlinesRelayForward(id, first, after)
@@ -396,7 +497,8 @@ export class UserService {
   }
 
   async deadlinesRelayForward (id: string, first: number, after: string | null) {
-    const q1 = 'var(func: uid(deadlines), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const q1 =
+      'var(func: uid(deadlines), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
         var(func: uid($id)) @filter(type(User)) {
@@ -406,7 +508,9 @@ export class UserService {
         }
         ${after ? q1 : ''}
         totalCount(func: uid(deadlines)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'deadlines'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${
+          after ? 'q' : 'deadlines'
+        }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -416,60 +520,16 @@ export class UserService {
         endO(func: uid(deadlines), first: 1) { createdAt }
       }
     `
-    const res = await this.dbService.commitQuery<RelayfyArrayParam<Deadline>>({ query, vars: { $id: id, $after: after } })
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Deadline>>({
+      query,
+      vars: { $id: id, $after: after }
+    })
 
     return relayfyArrayForward({
       ...res,
       first,
       after
     })
-  }
-
-  async votesWithRelay (id: string, { first, after, orderBy }: RelayPagingConfigArgs): Promise<VotesConnectionWithRelay> {
-    after = btoa(after)
-    if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.votesWithRelayForward(id, first, after)
-    }
-    throw new Error('Method not implemented.')
-  }
-
-  async votesWithRelayForward (id, first: number, after: string | null): Promise<VotesConnectionWithRelay> {
-    const q1 = 'var(func: uid(votes), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    const query = `
-      query v($id: string, $after: string) {
-        var(func: uid($id)) @filter(type(User)) {
-          votes as votes (orderdesc: createdAt) @filter(type(Vote))
-        }
-        ${after ? q1 : ''}
-        totalCount(func: uid(votes)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'votes'}), orderdesc: createdAt, first: ${first}) {
-          id: uid
-          expand(_all_)
-        }
-        startO(func: uid(votes), first: -1) {
-          createdAt
-        }
-        endO(func: uid(votes), first: 1) {
-          createdAt
-        }
-      }
-    `
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      startO: Array<{createdAt: string}>
-      endO: Array<{createdAt: string}>
-      objs: Vote[]
-    }>({ query, vars: { $id: id, $after: after } })
-
-    return {
-      ...relayfyArrayForward({
-        ...res,
-        first,
-        after
-      }),
-      viewerCanUpvote: false,
-      viewerHasUpvoted: true
-    }
   }
 
   async pureDeleteUser (adminId: string, userId: string) {
@@ -488,14 +548,17 @@ export class UserService {
         }
       }
     `
-    const condition = '@if( eq(len(u), 1) and eq(len(v), 1) and eq(len(votes), 0) and eq(len(subjects), 0) and eq(len(conversations), 0) and eq(len(reports), 0) )'
+    const condition =
+      '@if( eq(len(u), 1) and eq(len(v), 1) and eq(len(votes), 0) and eq(len(subjects), 0) and eq(len(conversations), 0) and eq(len(reports), 0) )'
     const mutation = {
       uid: 'uid(u)',
       'dgraph.type': 'User'
     }
 
-    const res = await this.dbService.commitConditionalDeletions<Map<string, string>, {
-      v: Array<{uid: string}>
+    const res = await this.dbService.commitConditionalDeletions<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
       u: Array<{
         votesCount: number
         subjectsCount: number
@@ -503,10 +566,9 @@ export class UserService {
         reportsCount: number
         uid: string
       }>
-    }>({
-      mutations: [
-        { mutation, condition }
-      ],
+    }
+    >({
+      mutations: [{ mutation, condition }],
       query,
       vars: {
         $adminId: adminId,
@@ -523,7 +585,12 @@ export class UserService {
     return true
   }
 
-  async registerWithin (startTime: string, endTime: string, first: number, offset: number): Promise<UsersConnection> {
+  async registerWithin (
+    startTime: string,
+    endTime: string,
+    first: number,
+    offset: number
+  ): Promise<UsersConnection> {
     const query = `
       query v($startTime: string, $endTime: string) {
         var(func: between(createdAt, $startTime, $endTime)) @filter(type(User) and not eq(openId, "") and not eq(unionId, "")) {
@@ -540,7 +607,7 @@ export class UserService {
     `
 
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
       users: User[]
     }>({ query, vars: { $startTime: startTime, $endTime: endTime } })
 
@@ -559,7 +626,10 @@ export class UserService {
           }
         }
       `
-    const res = await this.dbService.commitQuery<{user: User[]}>({ query, vars: { $uid: id } })
+    const res = await this.dbService.commitQuery<{ user: User[] }>({
+      query,
+      vars: { $uid: id }
+    })
     return res.user[0]
   }
 
@@ -581,7 +651,7 @@ export class UserService {
       `
     // TODO: fix this
     return await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
     }>({
       query,
       vars: { $uid: id }
@@ -602,14 +672,19 @@ export class UserService {
       `
     // TODO: fix this
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
       users: User[]
     }>({ query })
 
     return res
   }
 
-  async findPostsByXidWithRelayForward (viewerId: string, xid: string, first: number, after: string | null) {
+  async findPostsByXidWithRelayForward (
+    viewerId: string,
+    xid: string,
+    first: number,
+    after: string | null
+  ) {
     const cannotViewDelete = `
       var(func: uid($xid)) @filter(type(User)) {
         p as posts @filter(type(Post) and not has(delete) and not has(anonymous))
@@ -625,7 +700,8 @@ export class UserService {
         p as uid
       }
     `
-    const q1 = 'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const q1 =
+      'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($xid: string, $after: string) {
         ${viewerId === xid ? canViewDelete : cannotViewDelete}
@@ -634,7 +710,9 @@ export class UserService {
         }
         ${after ? q1 : ''}
         totalCount(func: uid(posts)) { count(uid) }
-        posts(func: uid(${after ? 'q' : 'posts'}), orderdesc: createdAt, first: ${first}) {
+        posts(func: uid(${
+          after ? 'q' : 'posts'
+        }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -651,10 +729,10 @@ export class UserService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
       posts: Post[]
-      startPost: Array<{id: string, createdAt: string}>
-      endPost: Array<{id: string, createdAt: string}>
+      startPost: Array<{ id: string, createdAt: string }>
+      endPost: Array<{ id: string, createdAt: string }>
     }>({ query, vars: { $after: after, $xid: xid } })
 
     const totalCount = res.totalCount[0]?.count ?? 0
@@ -663,7 +741,11 @@ export class UserService {
     const endPost = res.endPost[0]
     const lastPost = res.posts?.slice(-1)[0]
 
-    const hasNextPage = endPost?.createdAt !== lastPost?.createdAt && endPost?.createdAt !== after && res.posts.length === first && totalCount !== first
+    const hasNextPage =
+      endPost?.createdAt !== lastPost?.createdAt &&
+      endPost?.createdAt !== after &&
+      res.posts.length === first &&
+      totalCount !== first
     const hasPreviousPage = after !== startPost?.createdAt && !!after
 
     return {
@@ -678,16 +760,30 @@ export class UserService {
     }
   }
 
-  async findPostsByXidWithRelay (viewerId: string, xid: string, { after, first, orderBy, last, before }: RelayPagingConfigArgs) {
+  async findPostsByXidWithRelay (
+    viewerId: string,
+    xid: string,
+    { after, first, orderBy, last, before }: RelayPagingConfigArgs
+  ) {
     after = btoa(after)
     before = btoa(before)
 
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.findPostsByXidWithRelayForward(viewerId, xid, first, after)
+      return await this.findPostsByXidWithRelayForward(
+        viewerId,
+        xid,
+        first,
+        after
+      )
     }
   }
 
-  async findPostsByUid (viewerId: string, id: string, first: number, offset: number): Promise<PostsConnection> {
+  async findPostsByUid (
+    viewerId: string,
+    id: string,
+    first: number,
+    offset: number
+  ): Promise<PostsConnection> {
     if (viewerId === id) {
       const query = `
         query v($uid: string) {
@@ -700,7 +796,9 @@ export class UserService {
           }
         }
       `
-      const res = await this.dbService.commitQuery<{me: Array<{postsCount: number, posts?: Post[]}>}>({ query, vars: { $uid: id } })
+      const res = await this.dbService.commitQuery<{
+        me: Array<{ postsCount: number, posts?: Post[] }>
+      }>({ query, vars: { $uid: id } })
       return {
         totalCount: res.me[0]?.postsCount ?? 0,
         nodes: res.me[0]?.posts ?? []
@@ -724,7 +822,10 @@ export class UserService {
         } 
       }
     `
-    const res = await this.dbService.commitQuery<{totalCount: Array<{count: number}>, posts: Post[]}>({ query, vars: { $uid: id } })
+    const res = await this.dbService.commitQuery<{
+      totalCount: Array<{ count: number }>
+      posts: Post[]
+    }>({ query, vars: { $uid: id } })
     return {
       totalCount: res.totalCount[0]?.count ?? 0,
       nodes: res.posts ?? []
@@ -748,7 +849,9 @@ export class UserService {
           }
         }
       `
-      const res = await this.dbService.commitQuery<{v: Array<{count: number}>}>({ query, vars: { $userId: userId } })
+      const res = await this.dbService.commitQuery<{
+        v: Array<{ count: number }>
+      }>({ query, vars: { $userId: userId } })
 
       if ((res.v[0]?.count ?? 0) === 0) {
         break
@@ -757,7 +860,9 @@ export class UserService {
     return userId
   }
 
-  async getUserOrAdminWithRolesByUid (id: string): Promise<UserWithRolesAndPrivilegesAndCredential> {
+  async getUserOrAdminWithRolesByUid (
+    id: string
+  ): Promise<UserWithRolesAndPrivilegesAndCredential> {
     const query = `
         query v($uid: string) {
           user(func: uid($uid)) @filter(type(User) OR type(Admin)) {
@@ -774,7 +879,9 @@ export class UserService {
           }
         }
       `
-    const res = await this.dbService.commitQuery<{user: UserWithRolesAndPrivilegesAndCredential[]}>({ query, vars: { $uid: id } })
+    const res = await this.dbService.commitQuery<{
+      user: UserWithRolesAndPrivilegesAndCredential[]
+    }>({ query, vars: { $uid: id } })
 
     if (res.user.length !== 1) {
       throw new ForbiddenException(`用户或管理员 ${id} 不存在`)
@@ -815,9 +922,12 @@ export class UserService {
 
     const condition = '@if( eq(len(v), 0) )'
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      q: Array<{uid: string}>
-    }>({
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      q: Array<{ uid: string }>
+    }
+    >({
       mutations: [{ mutation, condition }],
       query,
       vars: {
@@ -866,7 +976,8 @@ export class UserService {
         c(func: uid(c)) { uid }
       }
     `
-    const updateCondition = '@if( eq(len(u), 1) and eq(len(c), 1) and eq(len(v), 0) )'
+    const updateCondition =
+      '@if( eq(len(u), 1) and eq(len(c), 1) and eq(len(v), 0) )'
     const updateMutation = {
       uid: 'uid(u)',
       updatedAt: _now
@@ -874,16 +985,17 @@ export class UserService {
 
     Object.assign(updateMutation, args)
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string}>
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
+      u: Array<{ uid: string }>
       user: User[]
-      system: Array<{uid: string}>
-      c: Array<{uid: string}>
-    }>({
-      mutations: [
-        { mutation: updateMutation, condition: updateCondition }
-      ],
+      system: Array<{ uid: string }>
+      c: Array<{ uid: string }>
+    }
+    >({
+      mutations: [{ mutation: updateMutation, condition: updateCondition }],
       query,
       vars: {
         $id: id,
