@@ -17,7 +17,6 @@ import { FoldResolver } from './fole.resolver'
 import { MessageResovler } from './message.resolver'
 import { NotificationResolver } from './notification.resolver'
 import { PinResolver } from './pin.resolver'
-import { PostResolver } from './post.resolver'
 import { RoleResolver } from './role.resolver'
 import { SubFieldResolver } from './subfield.resolver'
 import { UserResolver } from './user.resolver'
@@ -40,7 +39,6 @@ import { VoteResolver } from './vote.resolver'
   providers: [
     UserResolver,
     UserService,
-    PostResolver,
     MessageResovler,
     NotificationResolver,
     VoteResolver,

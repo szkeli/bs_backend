@@ -2,27 +2,26 @@ import { ArgsType, createUnionType, Field, Int, ObjectType } from '@nestjs/graph
 
 import { Anonymous } from '../../anonymous/models/anonymous.model'
 import { Connection } from '../../connections/models/connections.model'
+import { Creatable } from '../../person/models/creatable.model'
 import { Post } from '../../posts/models/post.model'
 import { User } from '../../user/models/user.model'
 import { Votable } from '../../votes/model/votes.model'
 
-export type CommentId = string
-
 @ObjectType({
-  implements: [Votable]
+  implements: () => [Votable, Creatable]
 })
-export class Comment implements Votable {
+export class Comment implements Votable, Creatable {
   constructor (comment: Comment) {
     Object.assign(this, comment)
   }
 
-  @Field()
+  @Field(of => String)
     id: string
 
-  @Field()
+  @Field(of => String)
     content: string
 
-  @Field()
+  @Field(of => String)
     createdAt: string
 
   @Field(of => Number, { nullable: true })
@@ -31,28 +30,28 @@ export class Comment implements Votable {
 
 @ObjectType()
 export class CommentWithTo extends Comment {
-  @Field({ description: '被评论的对象的 id' })
+  @Field(of => String, { description: '被评论的对象的 id' })
     to: string
 }
 
 @ObjectType()
 export class CommentsConnection {
-  @Field(type => [Comment])
+  @Field(of => [Comment])
     nodes: Comment[]
 
-  @Field(type => Int)
+  @Field(of => Int)
     totalCount: number
 }
 
 @ArgsType()
 export class AddCommentArgs {
-  @Field({ description: '评论的内容' })
+  @Field(of => String, { description: '评论的内容' })
     content: string
 
-  @Field({ description: '被评论的对象的id' })
+  @Field(of => String, { description: '被评论的对象的id' })
     to: string
 
-  @Field(type => Boolean, { description: '是否匿名发布这条评论', nullable: true, defaultValue: false })
+  @Field(of => Boolean, { description: '是否匿名发布这条评论', nullable: true, defaultValue: false })
     isAnonymous: boolean
 
   @Field(of => [String], { nullable: true, description: '评论包含的图片' })

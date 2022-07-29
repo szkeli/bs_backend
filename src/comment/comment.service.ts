@@ -42,7 +42,6 @@ import { User } from '../user/models/user.model'
 import {
   AddCommentArgs,
   Comment,
-  CommentId,
   CommentsConnection,
   CommentsConnectionWithRelay,
   CommentToUnion,
@@ -748,7 +747,7 @@ export class CommentService {
   }
 
   async getCommentsByCommentId (
-    id: CommentId,
+    id: string,
     first: number,
     offset: number
   ): Promise<CommentsConnection> {
@@ -1159,7 +1158,7 @@ export class CommentService {
     } as unknown as any
   }
 
-  async comment (id: CommentId) {
+  async comment (id: string) {
     const query = `
         query v($uid: string) {
           comment(func: uid($uid)) @filter(type(Comment)) {

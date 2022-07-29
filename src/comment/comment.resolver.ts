@@ -23,7 +23,6 @@ import { CommentService } from './comment.service'
 import {
   AddCommentArgs,
   Comment,
-  CommentId,
   CommentsConnection,
   CommentsConnectionWithRelay,
   CommentToUnion,
@@ -59,12 +58,12 @@ export class CommentResolver {
   }
 
   @Query(of => Comment, { description: '以id获取一条评论' })
-  async comment (@Args('id') id: CommentId) {
+  async comment (@Args('id') id: string) {
     return await this.commentService.comment(id)
   }
 
   @Query(of => CommentsConnectionWithRelay, { description: 'Relay版 以id获取某评论下所有评论' })
-  async commentCommentsWithRelay (@Args('id') id: CommentId, @Args() paging: RelayPagingConfigArgs) {
+  async commentCommentsWithRelay (@Args('id') id: string, @Args() paging: RelayPagingConfigArgs) {
     return await this.commentService.commentsWithRelay(id, paging)
   }
 

@@ -27,10 +27,10 @@ export abstract class Votable {
 
 @ObjectType()
 export class Vote {
-  @Field()
+  @Field(of => String)
     id: string
 
-  @Field()
+  @Field(of => String)
     createdAt: string
 }
 

@@ -4,6 +4,7 @@ import { ValidateNested } from 'class-validator'
 
 import { Connection, ORDER_BY } from '../../connections/models/connections.model'
 import { CreateIdleItemOrderArgs, CreateTakeAwayOrderArgs, CreateTeamUpOrderArgs } from '../../orders/models/orders.model'
+import { Creatable } from '../../person/models/creatable.model'
 import { Votable } from '../../votes/model/votes.model'
 
 @ObjectType()
@@ -58,9 +59,9 @@ export class CreatePostArgs {
 }
 
 @ObjectType({
-  implements: [Votable]
+  implements: () => [Votable, Creatable]
 })
-export class Post implements Votable {
+export class Post implements Votable, Creatable {
   constructor (post: Post) {
     Object.assign(this, post)
   }
@@ -68,10 +69,10 @@ export class Post implements Votable {
   @Field(of => String)
     id: string
 
-  @Field()
+  @Field(of => String)
     content: string
 
-  @Field()
+  @Field(of => String)
     createdAt: string
 }
 

@@ -137,6 +137,7 @@ export class PostsService {
         deletedPosts(func: uid(v), orderdesc: createdAt, first: ${first}, offset: ${offset}) {
           id: uid
           expand(_all_)
+          dgrahp.type
         }
         totalCount(func: uid(v)) { count(uid) }
       }
@@ -231,6 +232,7 @@ export class PostsService {
           dayScore: val(dayScore)
           id: uid
           expand(_all_)
+          dgraph.type
         }
         # 开始游标
         startPost(func: uid(posts), orderdesc: val(score), first: 1) {
@@ -335,6 +337,7 @@ export class PostsService {
         score: val(score)
         id: uid
         expand(_all_)
+        dgraph.type
       } 
     }
   `
@@ -795,7 +798,8 @@ export class PostsService {
         query v($uid: string) {
           post(func: uid($uid)) @filter(type(Post) and not has(delete)) {
             id: uid
-            expand(_all_) 
+            expand(_all_)
+            dgraph.type
           }
         }
       `
@@ -1019,6 +1023,7 @@ export class PostsService {
           v(func: type(Post), orderdesc: createdAt, first: ${first}, offset: ${offset}) @filter(type(Post) AND NOT has(delete)) {
             id: uid
             expand(_all_)
+            dgraph.type
           }
         }
       `
