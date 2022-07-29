@@ -4,11 +4,14 @@ import { Anonymous } from '../../anonymous/models/anonymous.model'
 import { Connection } from '../../connections/models/connections.model'
 import { Post } from '../../posts/models/post.model'
 import { User } from '../../user/models/user.model'
+import { Votable } from '../../votes/model/votes.model'
 
 export type CommentId = string
 
-@ObjectType()
-export class Comment {
+@ObjectType({
+  implements: [Votable]
+})
+export class Comment implements Votable {
   constructor (comment: Comment) {
     Object.assign(this, comment)
   }

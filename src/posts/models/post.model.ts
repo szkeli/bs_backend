@@ -4,6 +4,7 @@ import { ValidateNested } from 'class-validator'
 
 import { Connection, ORDER_BY } from '../../connections/models/connections.model'
 import { CreateIdleItemOrderArgs, CreateTakeAwayOrderArgs, CreateTeamUpOrderArgs } from '../../orders/models/orders.model'
+import { Votable } from '../../votes/model/votes.model'
 
 @ObjectType()
 export class IImage {
@@ -56,8 +57,10 @@ export class CreatePostArgs {
     teamUpOrder: CreateTeamUpOrderArgs
 }
 
-@ObjectType()
-export class Post {
+@ObjectType({
+  implements: [Votable]
+})
+export class Post implements Votable {
   constructor (post: Post) {
     Object.assign(this, post)
   }

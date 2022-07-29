@@ -6,9 +6,8 @@ import { DeletesModule } from '../deletes/deletes.module'
 import { PubsubsModule } from '../pubsubs/pubsubs.module'
 import { ReportsModule } from '../reports/reports.module'
 import { SharedModule } from '../shared/shared.module'
-import { CommentResolver } from './comment.resolver'
-import { PostResolver } from './post.resolver'
 import { UserResolver } from './user.resolver'
+import { VotableInterfaceResolver } from './votable-interface-resolver'
 import { VotesResolver } from './votes.resolver'
 import { VotesService } from './votes.service'
 
@@ -24,9 +23,8 @@ import { VotesService } from './votes.service'
   providers: [
     VotesService,
     VotesResolver,
-    CommentResolver,
-    PostResolver,
-    UserResolver
+    UserResolver,
+    VotableInterfaceResolver
   ],
   exports: [
     VotesService

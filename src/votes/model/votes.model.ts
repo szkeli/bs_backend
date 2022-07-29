@@ -1,32 +1,32 @@
 import { Field, Int, InterfaceType, ObjectType, PartialType } from '@nestjs/graphql'
 
+import { Comment } from '../../comment/models/comment.model'
 import { Connection } from '../../connections/models/connections.model'
+import { Post } from '../../posts/models/post.model'
 
-@ObjectType()
-export class Votable {
-  @Field(type => Int, { description: '对象当前总赞数' })
-    totalCount: number
-
-  @Field(type => Boolean, { description: '浏览者是否能点赞' })
-    viewerCanUpvote: boolean
-
-  @Field(type => Boolean, { description: '浏览者是否已经点赞' })
-    viewerHasUpvoted: boolean
-
-  @Field({ description: '被点赞或取消点赞的对象的id' })
-    to: string
-}
-
-@InterfaceType()
-export abstract class VoteInterface {
+@InterfaceType({
+  resolveType (votable) {
+    if (votable['dgraph.type']?.include('Comment')) {
+      return Comment
+    }
+    if (votable['dgraph.type']?.include('Post')) {
+      return Post
+    }
+  }
+})
+export abstract class Votable {
   @Field(of => String)
     id: string
 }
 
-@ObjectType({
-  implements: [VoteInterface]
-})
-export class Vote implements VoteInterface {
+// @InterfaceType()
+// export abstract class VoteInterface {
+//   @Field(of => String)
+//     id: string
+// }
+
+@ObjectType()
+export class Vote {
   @Field()
     id: string
 

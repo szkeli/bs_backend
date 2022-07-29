@@ -870,6 +870,7 @@ export class PostsService {
         }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
+          dgraph.type
         }
         startO(func: uid(posts), first: -1) { createdAt }
         endO(func: uid(posts), first: 1) { createdAt }

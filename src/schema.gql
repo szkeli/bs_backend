@@ -1591,18 +1591,76 @@ type OredrUnionPageInfo {
   hasNextPage: Boolean!
 }
 
-type Post {
+type Vote {
   id: String!
-  content: String!
   createdAt: String!
 
-  """帖子的图片"""
-  images: [String]!
+  """点赞的创建者"""
+  creator: User!
 
-  """帖子的创建者，当帖子是匿名帖子时，返回null"""
-  creator: User
+  """被点赞的对象"""
+  to: PostAndCommentUnion!
+}
 
-  """帖子的点赞"""
+type VoteWithUnreadCount {
+  id: String!
+  createdAt: String!
+
+  """点赞的创建者"""
+  creator: User!
+
+  """被点赞的对象"""
+  to: PostAndCommentUnion!
+  unreadCount: Int!
+}
+
+type VoteWithUnreadCountsConnection {
+  edges: [VoteWithUnreadCountEdge!]!
+  pageInfo: VoteWithUnreadCountPageInfo!
+  totalCount: Int!
+}
+
+type VoteWithUnreadCountEdge {
+  node: VoteWithUnreadCount
+  cursor: String
+}
+
+type VoteWithUnreadCountPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type VotesConnectionWithRelay {
+  edges: [VoteEdge!]
+  pageInfo: VotePageInfo
+  totalCount: Int
+  viewerCanUpvote: Boolean!
+  viewerHasUpvoted: Boolean!
+}
+
+type VoteEdge {
+  node: Vote
+  cursor: String
+}
+
+type VotePageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
+type VotesConnection {
+  totalCount: Int!
+  viewerCanUpvote: Boolean!
+  viewerHasUpvoted: Boolean!
+  nodes: [Vote!]!
+}
+
+type Post implements Votable {
+  id: String!
   votes(
     """最新的n个对象"""
     first: Int = 10
@@ -1619,6 +1677,14 @@ type Post {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): VotesConnectionWithRelay!
+  content: String!
+  createdAt: String!
+
+  """帖子的图片"""
+  images: [String]!
+
+  """帖子的创建者，当帖子是匿名帖子时，返回null"""
+  creator: User
 
   """帖子的所有评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection! @deprecated(reason: "请使用commentsWithRelay")
@@ -1681,6 +1747,26 @@ type Post {
   order: OrderUnion
 }
 
+interface Votable {
+  id: String!
+  votes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
+}
+
 type PostsConnection {
   nodes: [Post!]!
   totalCount: Int!
@@ -1704,17 +1790,30 @@ type PostPageInfo {
   hasNextPage: Boolean!
 }
 
-type Comment {
+type Comment implements Votable {
   id: String!
+  votes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): VotesConnectionWithRelay!
   content: String!
   createdAt: String!
   score: Float
 
   """评论的创建者，评论是匿名评论时，creator为null"""
   creator: User
-
-  """获取该评论下的点赞信息"""
-  votes(first: Int = 10, offset: Int = 0): VotesConnection!
 
   """获取该评论下的所有评论"""
   comments(first: Int = 10, offset: Int = 0): CommentsConnection!
@@ -2394,81 +2493,6 @@ type LessonPageInfo {
   endCursor: String
   hasPreviousPage: Boolean!
   hasNextPage: Boolean!
-}
-
-type Vote implements VoteInterface {
-  id: String!
-
-  """被点赞的对象"""
-  to: PostAndCommentUnion!
-  createdAt: String!
-
-  """点赞的创建者"""
-  creator: User!
-}
-
-interface VoteInterface {
-  id: String!
-
-  """被点赞的对象"""
-  to: PostAndCommentUnion!
-}
-
-type VoteWithUnreadCount implements VoteInterface {
-  id: String!
-
-  """被点赞的对象"""
-  to: PostAndCommentUnion!
-  createdAt: String!
-
-  """点赞的创建者"""
-  creator: User!
-  unreadCount: Int!
-}
-
-type VoteWithUnreadCountsConnection {
-  edges: [VoteWithUnreadCountEdge!]!
-  pageInfo: VoteWithUnreadCountPageInfo!
-  totalCount: Int!
-}
-
-type VoteWithUnreadCountEdge {
-  node: VoteWithUnreadCount
-  cursor: String
-}
-
-type VoteWithUnreadCountPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type VotesConnectionWithRelay {
-  edges: [VoteEdge!]
-  pageInfo: VotePageInfo
-  totalCount: Int
-  viewerCanUpvote: Boolean!
-  viewerHasUpvoted: Boolean!
-}
-
-type VoteEdge {
-  node: Vote
-  cursor: String
-}
-
-type VotePageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type VotesConnection {
-  totalCount: Int!
-  viewerCanUpvote: Boolean!
-  viewerHasUpvoted: Boolean!
-  nodes: [Vote!]!
 }
 
 """凭证是成为管理员的前提"""

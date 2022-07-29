@@ -12,10 +12,10 @@ import { PUB_SUB_KEY } from '../constants'
 import { PostAndCommentUnion } from '../deletes/models/deletes.model'
 import { WithinArgs } from '../node/models/node.model'
 import { Post } from '../posts/models/post.model'
-import { Vote, VoteInterface, VotesConnection } from './model/votes.model'
+import { Vote, VotesConnection } from './model/votes.model'
 import { VotesService } from './votes.service'
 
-@Resolver(_of => VoteInterface)
+@Resolver(of => Vote)
 export class VotesResolver {
   constructor (
     private readonly votesService: VotesService,
