@@ -2,7 +2,7 @@ import { ArgsType, Field, InterfaceType } from '@nestjs/graphql'
 
 @InterfaceType()
 export abstract class Node {
-  @Field(type => String)
+  @Field(of => String)
     id: string
 }
 

@@ -513,9 +513,9 @@ type User implements Person & Node {
 }
 
 interface Person implements Node {
+  id: String!
   userId: String!
   name: String!
-  id: String!
 
   """当前用户创建的所有帖子"""
   posts(first: Int = 10, offset: Int = 0): PostsConnection!

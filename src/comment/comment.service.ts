@@ -4,8 +4,13 @@ import { DbService } from 'src/db/db.service'
 
 import { Anonymous } from '../anonymous/models/anonymous.model'
 import {
-  CannotCommentUser, CommentNotFoundException, ParseCursorFailedException,
-  PostNotFoundException, SystemAdminNotFoundException, SystemErrorException, UserNotFoundException
+  CannotCommentUser,
+  CommentNotFoundException,
+  ParseCursorFailedException,
+  PostNotFoundException,
+  SystemAdminNotFoundException,
+  SystemErrorException,
+  UserNotFoundException
 } from '../app.exception'
 import { CensorsService } from '../censors/censors.service'
 import { CENSOR_SUGGESTION } from '../censors/models/censors.model'
@@ -13,11 +18,25 @@ import { ORDER_BY } from '../connections/models/connections.model'
 import { PUB_SUB_KEY } from '../constants'
 import { NlpService } from '../nlp/nlp.service'
 import { NOTIFICATION_ACTION } from '../notifications/models/notifications.model'
-import { IImage, Post, RelayPagingConfigArgs } from '../posts/models/post.model'
+import {
+  IImage,
+  Post,
+  RelayPagingConfigArgs
+} from '../posts/models/post.model'
 import { SubCampus } from '../subcampus/models/subcampus.model'
 import {
-  atob, btoa, edgifyByCreatedAt, handleRelayForwardAfter, imagesV2fy,
-  imagesV2ToImages, now, relayfyArrayForward, relayfyArrayForwardByScore, RelayfyArrayParamByScore, sha1
+  atob,
+  btoa,
+  edgifyByCreatedAt,
+  handleRelayForwardAfter,
+  imagesV2fy,
+  imagesV2ToImages,
+  now,
+  relayfyArrayForward,
+  relayfyArrayForwardByScore,
+  RelayfyArrayParam,
+  RelayfyArrayParamByScore,
+  sha1
 } from '../tool'
 import { User } from '../user/models/user.model'
 import {
@@ -46,7 +65,11 @@ export class CommentService {
    * @param offset 偏移量
    * @returns {Promise<CommentsConnection>} CommentsConnection
    */
-  async findCommentsByPostId (id: string, first: number, offset: number): Promise<CommentsConnection> {
+  async findCommentsByPostId (
+    id: string,
+    first: number,
+    offset: number
+  ): Promise<CommentsConnection> {
     const query = `
       query v($uid: string) {
         # 包含已经被折叠的帖子
@@ -68,8 +91,8 @@ export class CommentService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      post: Array<{ comments?: Comment[]}>
-      totalCount: Array<{count: number}>
+      post: Array<{ comments?: Comment[] }>
+      totalCount: Array<{ count: number }>
     }>({ query, vars: { $uid: id } })
 
     if (!res.post) {
@@ -94,12 +117,18 @@ export class CommentService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{imagesV2: IImage[]}>({ query, vars: { $id: id } })
+    const res = await this.dbService.commitQuery<{ imagesV2: IImage[] }>({
+      query,
+      vars: { $id: id }
+    })
 
     return imagesV2ToImages(res.imagesV2)
   }
 
-  async addCommentOnUser (id: string, { content, to, isAnonymous, images }: AddCommentArgs): Promise<CommentWithTo> {
+  async addCommentOnUser (
+    id: string,
+    { content, to, isAnonymous, images }: AddCommentArgs
+  ): Promise<CommentWithTo> {
     const query = `
       query v($id: string, $to: string) {
         # 系统 
@@ -171,7 +200,8 @@ export class CommentService {
     }
 
     // 创建一条新评论（评论创建者存在、被评论的评论存在、系统管理员存在、被评论的评论的父对象是评论、非匿名评论）
-    const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(commentTo), 1) and eq(len(anonymous), 0))'
+    const condition1 =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(commentTo), 1) and eq(len(anonymous), 0))'
     const mutation1 = {
       // 被评论的评论
       uid: 'uid(commentTo)',
@@ -194,7 +224,8 @@ export class CommentService {
     }
 
     // 创建一条新评论（评论创建者存在、被评论的评论存在、系统管理员存在、被评论的评论的父对象是评论、匿名评论）
-    const condition2 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(commentTo), 1) and eq(len(anonymous), 1))'
+    const condition2 =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(commentTo), 1) and eq(len(anonymous), 1))'
     const mutation2 = {
       // 被评论的评论
       uid: 'uid(commentTo)',
@@ -217,7 +248,8 @@ export class CommentService {
     }
 
     // 创建新通知（评论创建者存在、被评论的评论存在、系统管理员存在、被评论的评论的创建者不是当前评论的创建者）
-    const condition3 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(y), 0) )'
+    const condition3 =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(y), 0) )'
     const mutation3 = {
       uid: '_:notification',
       'dgraph.type': 'Notification',
@@ -248,21 +280,24 @@ export class CommentService {
       Object.assign(mutation1.comments, { delete: iDelete })
     }
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
       // 系统管理员
-      s: Array<{uid: string}>
+      s: Array<{ uid: string }>
       // 当前评论创建者
-      v: Array<{uid: string}>
+      v: Array<{ uid: string }>
       // 被评论的评论
       u: Array<{
         uid: string
-        creator: {uid: string}
-        anonymous: {id: string}
+        creator: { uid: string }
+        anonymous: { id: string }
       }>
-      t: Array<{uid: string}>
+      t: Array<{ uid: string }>
       // 评论者是否评论的创建者
-      y: Array<{uid: string}>
-    }>({
+      y: Array<{ uid: string }>
+    }
+    >({
       query,
       mutations: [
         { mutation: mutation1, condition: condition1 },
@@ -277,18 +312,15 @@ export class CommentService {
 
     if (res.uids.get('notification')) {
       // 向websocket发送通知
-      await this.pubSub.publish(
-        'notificationsAdded',
-        {
-          notificationsAdded: {
-            id: res.uids.get('notification'),
-            createdAt: now(),
-            action: NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT,
-            isRead: false,
-            to: res.json.u[0]?.creator?.uid
-          }
+      await this.pubSub.publish('notificationsAdded', {
+        notificationsAdded: {
+          id: res.uids.get('notification'),
+          createdAt: now(),
+          action: NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT,
+          isRead: false,
+          to: res.json.u[0]?.creator?.uid
         }
-      )
+      })
     }
 
     if (res.json.s.length !== 1) {
@@ -335,11 +367,19 @@ export class CommentService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<{originPost: Post[]}>({ query, vars: { $id: id } })
+    const res = await this.dbService.commitQuery<{ originPost: Post[] }>({
+      query,
+      vars: { $id: id }
+    })
     return res.originPost[0]
   }
 
-  async findCommentsByXidWithRelayForward (viewerId: string, xid: string, first: number, after: string | null): Promise<CommentsConnectionWithRelay> {
+  async findCommentsByXidWithRelayForward (
+    viewerId: string,
+    xid: string,
+    first: number,
+    after: string | null
+  ): Promise<CommentsConnectionWithRelay> {
     const cannotViewDelete = `
       var(func: type(Comment)) @filter(uid_in(creator, $xid) and not has(delete) and not has(anonymous)) {
         p as uid
@@ -356,7 +396,8 @@ export class CommentService {
         p as uid
       }
     `
-    const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+    const q1 =
+      'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($xid: string, $after: string) {
         ${viewerId === xid ? canViewDelete : cannotViewDelete}
@@ -366,7 +407,9 @@ export class CommentService {
         ${after ? q1 : ''}
 
         totalCount(func: uid(comments)) { count(uid) }
-        comments(func: uid(${after ? 'q' : 'comments'}), orderdesc: createdAt, first: ${first}) {
+        comments(func: uid(${
+          after ? 'q' : 'comments'
+        }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
@@ -383,10 +426,10 @@ export class CommentService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
       comments: Comment[]
-      startComment: Array<{id: string, createdAt: string}>
-      endComment: Array<{id: string, createdAt: string}>
+      startComment: Array<{ id: string, createdAt: string }>
+      endComment: Array<{ id: string, createdAt: string }>
     }>({ query, vars: { $after: after, $xid: xid } })
 
     const totalCount = res.totalCount[0]?.count ?? 0
@@ -395,7 +438,11 @@ export class CommentService {
     const endComment = res.endComment[0]
     const lastComment = res.comments?.slice(-1)[0]
 
-    const hasNextPage = endComment?.createdAt !== lastComment?.createdAt && endComment?.createdAt !== after && res.comments.length === first && totalCount !== first
+    const hasNextPage =
+      endComment?.createdAt !== lastComment?.createdAt &&
+      endComment?.createdAt !== after &&
+      res.comments.length === first &&
+      totalCount !== first
     const hasPreviousPage = after !== startComment?.createdAt && !!after
 
     return {
@@ -410,60 +457,72 @@ export class CommentService {
     }
   }
 
-  async findCommentsByXidWithRelay (viewerId: string, id: string, { first, last, after, before, orderBy }: RelayPagingConfigArgs) {
+  async findCommentsByXidWithRelay (
+    viewerId: string,
+    id: string,
+    { first, last, after, before, orderBy }: RelayPagingConfigArgs
+  ) {
     after = btoa(after)
     before = btoa(before)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
-      return await this.findCommentsByXidWithRelayForward(viewerId, id, first, after)
+      return await this.findCommentsByXidWithRelayForward(
+        viewerId,
+        id,
+        first,
+        after
+      )
     }
   }
 
-  async commentsWithRelayForward (id: string, first: number, after: string | null): Promise<CommentsConnectionWithRelay> {
-    const q1 = 'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
+  async commentsWithRelayForward (
+    id: string,
+    first: number,
+    after: string | null
+  ): Promise<CommentsConnectionWithRelay> {
+    const q1 =
+      'var(func: uid(comments), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
         var(func: uid($id)) @filter(type(Post) or type(Comment)) {
-          comments as comments(orderdesc: createdAt) @filter(type(Comment) and not has(delete))
+          comments as comments(orderdesc: createdAt) @filter(type(Comment) and not has(delete) and has(creator))
         }
         ${after ? q1 : ''}
 
         totalCount(func: uid(comments)) { count(uid) }
-        comments(func: uid(${after ? 'q' : 'comments'}), orderdesc: createdAt, first: ${first}) {
+        objs(func: uid(${
+          after ? 'q' : 'comments'
+        }), orderdesc: createdAt, first: ${first}) {
           id: uid
           expand(_all_)
         }
-        # 开始游标
-        startPost(func: uid(comments), first: -1) {
-          id: uid
+        startO(func: uid(comments), first: -1) {
           createdAt
         }
-        # 结束游标
-        endPost(func: uid(comments), first: 1) {
-          id: uid
+        endO(func: uid(comments), first: 1) {
           createdAt
         }
       }
     `
 
-    const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
-      comments: Comment[]
-      startPost: Array<{id: string, createdAt: string}>
-      endPost: Array<{id: string, createdAt: string}>
-    }>({ query, vars: { $id: id, $after: after } })
+    const res = await this.dbService.commitQuery<RelayfyArrayParam<Comment>>({
+      query,
+      vars: { $id: id, $after: after }
+    })
 
-    return relayfyArrayForward<Comment>({
-      totalCount: res.totalCount,
-      objs: res.comments,
-      startO: res.startPost,
-      endO: res.endPost,
+    return relayfyArrayForward({
+      ...res,
       first,
       after
     })
   }
 
-  async trendingCommentsWithRelay (id: string, first: number, after: string | null): Promise<CommentsConnectionWithRelay> {
-    const q1 = 'var(func: uid(comments), orderdesc: val(score), after: $after) { q as uid }'
+  async trendingCommentsWithRelay (
+    id: string,
+    first: number,
+    after: string | null
+  ): Promise<CommentsConnectionWithRelay> {
+    const q1 =
+      'var(func: uid(comments), orderdesc: val(score), after: $after) { q as uid }'
     const query = `
       query v($id: string, $after: string) {
         var(func: uid($id)) @filter(type(Post) or type(Comment)) {
@@ -477,7 +536,9 @@ export class CommentService {
         } 
         ${after ? q1 : ''}
         totalCount(func: uid(comments)) { count(uid) }
-        objs(func: uid(${after ? 'q' : 'comments'}), orderdesc: val(score), first: ${first}) {
+        objs(func: uid(${
+          after ? 'q' : 'comments'
+        }), orderdesc: val(score), first: ${first}) {
           id: uid
           score: val(score)
           expand(_all_)
@@ -494,7 +555,9 @@ export class CommentService {
         }
       }
     `
-    const res = await this.dbService.commitQuery<RelayfyArrayParamByScore<Comment>>({
+    const res = await this.dbService.commitQuery<
+    RelayfyArrayParamByScore<Comment>
+    >({
       query,
       vars: { $id: id, $after: after }
     })
@@ -506,7 +569,10 @@ export class CommentService {
     })
   }
 
-  async commentsWithRelay (id: string, { first, after, orderBy }: RelayPagingConfigArgs): Promise<CommentsConnectionWithRelay> {
+  async commentsWithRelay (
+    id: string,
+    { first, after, orderBy }: RelayPagingConfigArgs
+  ): Promise<CommentsConnectionWithRelay> {
     after = handleRelayForwardAfter(after)
     if (first && orderBy === ORDER_BY.CREATED_AT_DESC) {
       return await this.commentsWithRelayForward(id, first, after)
@@ -525,7 +591,12 @@ export class CommentService {
     throw new Error('Method not implemented.')
   }
 
-  async commentsCreatedWithin (startTime: string, endTime: string, first: number, offset: number): Promise<CommentsConnection> {
+  async commentsCreatedWithin (
+    startTime: string,
+    endTime: string,
+    first: number,
+    offset: number
+  ): Promise<CommentsConnection> {
     const query = `
       query v($startTime: string, $endTime: string) {
         var(func: type(Comment)) @filter(not has(delete)) {
@@ -548,7 +619,7 @@ export class CommentService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
       comments: Comment[]
     }>({ query, vars: { $startTime: startTime, $endTime: endTime } })
 
@@ -586,12 +657,14 @@ export class CommentService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      originalPost: Array<{id: string}>
+      originalPost: Array<{ id: string }>
       creator: User[]
       subCampus: SubCampus[]
-      comment: Array<{to: (typeof CommentToUnion) & {
-        'dgraph.type': Array<'Comment' | 'User' | 'Anonymous' | 'Post'>
-      }}>
+      comment: Array<{
+        to: typeof CommentToUnion & {
+          'dgraph.type': Array<'Comment' | 'User' | 'Anonymous' | 'Post'>
+        }
+      }>
     }>({ query, vars: { $commentId: id } })
 
     const originalPostId = res.originalPost[0]?.id
@@ -601,13 +674,18 @@ export class CommentService {
     // TODO 直接将 watermark、subCampus 信息存 Anonymous 而不是运行时计算
     const to = res.comment[0]?.to
     if (to?.['dgraph.type']?.includes('Anonymous')) {
-      ;(to as unknown as Anonymous).watermark = sha1(`${originalPostId}${creatorId}`)
-      ;(to as unknown as Anonymous).subCampus = subCampus
+      (to as unknown as Anonymous).watermark = sha1(
+        `${originalPostId}${creatorId}`
+      );
+      (to as unknown as Anonymous).subCampus = subCampus
     }
     return res.comment[0]?.to
   }
 
-  async deletedComments (first: number, offset: number): Promise<CommentsConnection> {
+  async deletedComments (
+    first: number,
+    offset: number
+  ): Promise<CommentsConnection> {
     const query = `
       {
         var(func: type(Comment)) @filter(has(delete)) { v as uid }
@@ -620,7 +698,7 @@ export class CommentService {
     `
     const res = await this.dbService.commitQuery<{
       deletedComments: Comment[]
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
     }>({ query })
 
     return {
@@ -629,7 +707,11 @@ export class CommentService {
     }
   }
 
-  async trendingComments (id: string, first: number, offset: number): Promise<CommentsConnection> {
+  async trendingComments (
+    id: string,
+    first: number,
+    offset: number
+  ): Promise<CommentsConnection> {
     const query = `
       # TODO 实现产品中要求的计算评论热度的方法
       query v($commentId: string) {
@@ -655,7 +737,7 @@ export class CommentService {
       }
     `
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
       comments: Comment[]
     }>({ query, vars: { $commentId: id } })
 
@@ -665,7 +747,11 @@ export class CommentService {
     }
   }
 
-  async getCommentsByCommentId (id: CommentId, first: number, offset: number): Promise<CommentsConnection> {
+  async getCommentsByCommentId (
+    id: CommentId,
+    first: number,
+    offset: number
+  ): Promise<CommentsConnection> {
     const query = `
         query v($uid: string) {
           var(func: uid($uid)) @recurse(loop: false) {
@@ -686,7 +772,7 @@ export class CommentService {
         }
       `
     const res = await this.dbService.commitQuery<{
-      totalCount: Array<{count: number}>
+      totalCount: Array<{ count: number }>
       comment: {
         comments: Comment[]
       }
@@ -706,7 +792,10 @@ export class CommentService {
     }
   }
 
-  async addCommentOnComment (creator: string, args: AddCommentArgs): Promise<CommentWithTo> {
+  async addCommentOnComment (
+    creator: string,
+    args: AddCommentArgs
+  ): Promise<CommentWithTo> {
     const { content, to: commentId, isAnonymous, images } = args
     const _now = now()
 
@@ -772,7 +861,8 @@ export class CommentService {
     }
 
     // 创建一条新评论
-    const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
+    const condition1 =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
     const mutation1 = {
       // 被评论的评论
       uid: commentId,
@@ -794,7 +884,8 @@ export class CommentService {
       }
     }
 
-    const condition2 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(y), 0) )'
+    const condition2 =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(y), 0) )'
     const mutation2 = {
       uid: '_:notification',
       'dgraph.type': 'Notification',
@@ -826,12 +917,15 @@ export class CommentService {
       Object.assign(mutation1.comments, { delete: iDelete })
     }
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      v: Array<{uid: string}>
-      u: Array<{uid: string, creator: {uid: string}}>
-      s: Array<{uid: string}>
-      y: Array<{uid: string}>
-    }>({
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      v: Array<{ uid: string }>
+      u: Array<{ uid: string, creator: { uid: string } }>
+      s: Array<{ uid: string }>
+      y: Array<{ uid: string }>
+    }
+    >({
       mutations: [
         { mutation: mutation1, condition: condition1 },
         { mutation: mutation2, condition: condition2 }
@@ -845,18 +939,15 @@ export class CommentService {
 
     if (res.uids.get('notification')) {
       // 向websocket发送通知
-      await this.pubSub.publish(
-        'notificationsAdded',
-        {
-          notificationsAdded: {
-            id: res.uids.get('notification'),
-            createdAt: _now,
-            action: NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT,
-            isRead: false,
-            to: res.json.u[0]?.creator?.uid
-          }
+      await this.pubSub.publish('notificationsAdded', {
+        notificationsAdded: {
+          id: res.uids.get('notification'),
+          createdAt: _now,
+          action: NOTIFICATION_ACTION.ADD_COMMENT_ON_COMMENT,
+          isRead: false,
+          to: res.json.u[0]?.creator?.uid
         }
-      )
+      })
     }
 
     if (res.json.s.length !== 1) {
@@ -880,9 +971,13 @@ export class CommentService {
     } as unknown as any
   }
 
-  async addCommentOnPost (creator: string, { content, to: postId, isAnonymous, images }: AddCommentArgs): Promise<CommentWithTo> {
+  async addCommentOnPost (
+    creator: string,
+    { content, to: postId, isAnonymous, images }: AddCommentArgs
+  ): Promise<CommentWithTo> {
     const _now = now()
-    const condition1 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
+    const condition1 =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) )'
     const query = `
       query v($creator: string, $postId: string) {
         # 系统
@@ -972,7 +1067,8 @@ export class CommentService {
     }
 
     // 评论自己的帖子不发通知
-    const condition2 = '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(y), 0) )'
+    const condition2 =
+      '@if( eq(len(v), 1) and eq(len(u), 1) and eq(len(system), 1) and eq(len(y), 0) )'
     // 创建通知
     const mutation2 = {
       uid: '_:notification',
@@ -1008,11 +1104,14 @@ export class CommentService {
 
     // TODO 将疑似违规帖子添加到复查队列
 
-    const res = await this.dbService.commitConditionalUperts<Map<string, string>, {
-      s: Array<{uid: string}>
-      v: Array<{uid: string}>
-      u: Array<{uid: string, creator: {uid: string}}>
-    }>({
+    const res = await this.dbService.commitConditionalUperts<
+    Map<string, string>,
+    {
+      s: Array<{ uid: string }>
+      v: Array<{ uid: string }>
+      u: Array<{ uid: string, creator: { uid: string } }>
+    }
+    >({
       mutations: [
         { mutation: mutation1, condition: condition1 },
         { mutation: mutation2, condition: condition2 }
@@ -1026,18 +1125,15 @@ export class CommentService {
 
     if (res.uids.get('notification')) {
       // 向websocket发送通知
-      await this.pubSub.publish(
-        'notificationsAdded',
-        {
-          notificationsAdded: {
-            id: res.uids.get('notification'),
-            createdAt: _now,
-            action: NOTIFICATION_ACTION.ADD_COMMENT_ON_POST,
-            isRead: false,
-            to: res.json.u[0]?.creator?.uid
-          }
+      await this.pubSub.publish('notificationsAdded', {
+        notificationsAdded: {
+          id: res.uids.get('notification'),
+          createdAt: _now,
+          action: NOTIFICATION_ACTION.ADD_COMMENT_ON_POST,
+          isRead: false,
+          to: res.json.u[0]?.creator?.uid
         }
-      )
+      })
     }
 
     if (res.json.s.length !== 1) {
@@ -1072,7 +1168,7 @@ export class CommentService {
           }
         }
       `
-    const res = await this.dbService.commitQuery<{comment: Comment[]}>({
+    const res = await this.dbService.commitQuery<{ comment: Comment[] }>({
       query,
       vars: { $uid: id }
     })

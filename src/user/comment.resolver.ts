@@ -15,7 +15,7 @@ export class CommentResolver {
   async creator (@Parent() comment: Comment) {
     const query = `
     query v($commentId: string) {
-      var (func: uid($commentId)) @filter(type(Comment) and not has(anonymous)) {
+      var(func: uid($commentId)) @filter(type(Comment) and not has(anonymous)) {
         c as creator @filter(type(User))
       }
       creator(func: uid(c)) {
@@ -28,6 +28,6 @@ export class CommentResolver {
       creator: User[]
     }>({ query, vars: { $commentId: comment.id } })
 
-    return res.creator
+    return res.creator[0]
   }
 }

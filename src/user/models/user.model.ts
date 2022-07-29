@@ -9,8 +9,6 @@ import {
   registerEnumType
 } from '@nestjs/graphql'
 
-import { UserId } from 'src/db/model/db.model'
-
 import { Admin } from '../../admin/models/admin.model'
 import { Role } from '../../auth/model/auth.model'
 import { Connection } from '../../connections/models/connections.model'
@@ -290,18 +288,14 @@ export class LoginResult extends User implements Node {
   implements: () => [Node]
 })
 export abstract class Person implements Node {
-  constructor (person: Person) {
-    Object.assign(this, person)
-  }
+  @Field(of => String)
+    id: string
 
-  @Field(type => String)
-    userId: UserId
+  @Field(of => String)
+    userId: string
 
   @Field()
     name: string
-
-  @Field()
-    id: string
 }
 
 export type PersonWithRoles = Person & {
