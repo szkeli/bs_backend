@@ -1,11 +1,12 @@
-import { ArgsType, Field, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, ObjectType, PartialType } from '@nestjs/graphql'
 
 import { Connection } from '../../connections/models/connections.model'
+import { FindUniversityArgs } from '../../universities/models/universities.models'
 
 export type SubjectId = string
 
 @ArgsType()
-export class CreateSubjectArgs {
+export class CreateSubjectArgs extends PartialType(FindUniversityArgs) {
   @Field()
     title: string
 
@@ -17,9 +18,6 @@ export class CreateSubjectArgs {
 
   @Field()
     backgroundImageUrl: string
-
-  @Field({ nullable: true, description: 'Subject 所在的大学的 id' })
-    universityId: string
 }
 
 @ObjectType()

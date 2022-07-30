@@ -1279,6 +1279,126 @@ type PrivilegePageInfo {
   hasNextPage: Boolean!
 }
 
+type University {
+  """大学的唯一id"""
+  id: String!
+
+  """该大学的名字"""
+  name: String!
+
+  """该大学的 logo"""
+  logoUrl: String!
+  createdAt: String!
+
+  """该大学拥有的所有 Post"""
+  posts(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PostsConnectionWithRelay!
+
+  """该大学的所有校区"""
+  subcampuses(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubCampusesConnection!
+
+  """该大学内的所有 User"""
+  users(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UsersConnectionWithRelay!
+
+  """该大学拥有的所有 Subject"""
+  subjects(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubjectsConnectionWithRelay!
+
+  """该大学的所有学院"""
+  institutes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): InstitutesConnection!
+}
+
+type UniversitiesConnection {
+  edges: [UniversityEdge!]!
+  pageInfo: UniversityPageInfo!
+  totalCount: Int!
+}
+
+type UniversityEdge {
+  node: University
+  cursor: String
+}
+
+type UniversityPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type Subject {
   id: String!
   createdAt: String!
@@ -1585,126 +1705,6 @@ enum TEAM_UP_TYPE {
 }
 
 type OredrUnionPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type University {
-  """大学的唯一id"""
-  id: String!
-
-  """该大学的名字"""
-  name: String!
-
-  """该大学的 logo"""
-  logoUrl: String!
-  createdAt: String!
-
-  """该大学拥有的所有 Post"""
-  posts(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): PostsConnectionWithRelay!
-
-  """该大学的所有校区"""
-  subcampuses(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubCampusesConnection!
-
-  """该大学内的所有 User"""
-  users(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): UsersConnectionWithRelay!
-
-  """该大学拥有的所有 Subject"""
-  subjects(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubjectsConnectionWithRelay!
-
-  """该大学的所有学院"""
-  institutes(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): InstitutesConnection!
-}
-
-type UniversitiesConnection {
-  edges: [UniversityEdge!]!
-  pageInfo: UniversityPageInfo!
-  totalCount: Int!
-}
-
-type UniversityEdge {
-  node: University
-  cursor: String
-}
-
-type UniversityPageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!
@@ -4092,13 +4092,15 @@ type Mutation {
 
   """创建一个主题"""
   createSubject(
+    """Subject 所在的大学的 id"""
+    universityId: String
+
+    """Post 所属的 University, 支持模糊匹配，匹配结果大于1时报错"""
+    universityName: String
     title: String!
     description: String!
     avatarImageUrl: String!
     backgroundImageUrl: String!
-
-    """Subject 所在的大学的 id"""
-    universityId: String
   ): Subject!
   createUniversity(
     """大学的名字"""

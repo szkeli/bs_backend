@@ -2,6 +2,7 @@ import { forwardRef, Module } from '@nestjs/common'
 
 import { DbModule } from '../db/db.module'
 import { SharedModule } from '../shared/shared.module'
+import { UniversitiesModule } from '../universities/universities.module'
 import { UserModule } from '../user/user.module'
 import { PostResolver } from './post.resolver'
 import { SubFieldResolver } from './subfield.resolver'
@@ -13,7 +14,8 @@ import { UserResolver } from './user.resolver'
   imports: [
     forwardRef(() => SharedModule),
     UserModule,
-    DbModule
+    DbModule,
+    UniversitiesModule
   ],
   providers: [
     SubjectService,

@@ -17,6 +17,7 @@ import {
   relayfyArrayForward,
   RelayfyArrayParam
 } from '../tool'
+import { UniversitiesService } from '../universities/universities.service'
 import {
   CreateSubjectArgs,
   QuerySubjectsFilter,
@@ -29,7 +30,10 @@ import {
 @Injectable()
 export class SubjectService {
   private readonly dgraph: DgraphClient
-  constructor (private readonly dbService: DbService) {
+  constructor (
+    private readonly dbService: DbService,
+    private readonly universityService: UniversitiesService
+  ) {
     this.dgraph = dbService.getDgraphIns()
   }
 
@@ -273,7 +277,11 @@ export class SubjectService {
     return res.json.subject[0]
   }
 
-  async addSubjectToUniversityTxn (txn: Txn, subjectId: string, universityId: string) {
+  async addSubjectToUniversityTxn (
+    txn: Txn,
+    subjectId: string,
+    universityId: string
+  ) {
     const query = `
       query v($universityId: string, $subjectId: string) {
         u(func: uid($universityId)) @filter(type(University)) {
@@ -289,9 +297,12 @@ export class SubjectService {
         uid: 'uid(s)'
       }
     }
-    const res = await this.dbService.handleTransaction<StringMap, {
-      u: Array<{uid: string}>
-    }>(txn, {
+    const res = await this.dbService.handleTransaction<
+    StringMap,
+    {
+      u: Array<{ uid: string }>
+    }
+    >(txn, {
       query,
       mutations: [{ set: mut, cond }],
       vars: { $universityId: universityId, $subjectId: subjectId }
@@ -303,7 +314,7 @@ export class SubjectService {
   }
 
   async createSubjectTxn (txn: Txn, id: string, params: CreateSubjectArgs) {
-    const { universityId, ...args } = params
+    const { universityId, universityName, ...args } = params
     const query = `
       query v($id: string) {
         q(func: uid($id)) @filter(type(User) or type(Admin)) { q as uid }
@@ -322,7 +333,9 @@ export class SubjectService {
         }
       }
     }
-    const res = await this.dbService.handleTransaction<StringMap, {
+    const res = await this.dbService.handleTransaction<
+    StringMap,
+    {
       q: Array<{ uid: string }>
     }
     >(txn, {
@@ -352,10 +365,22 @@ export class SubjectService {
    * @returns Promise<Subject>
    */
   async createSubject (id: string, params: CreateSubjectArgs): Promise<Subject> {
-    const { universityId } = params
+    const { universityId, universityName } = params
     const res = await this.dbService.withTxn(async txn => {
       const subject = await this.createSubjectTxn(txn, id, params)
-      await this.addSubjectToUniversityTxn(txn, subject.id, universityId)
+
+      const universities = await this.universityService.findUniversityByIdOrNameTxn(txn, {
+        universityId,
+        universityName
+      })
+
+      if (universities.length === 0) {
+        throw new UniversityNotFoundException(universityId ?? universityName ?? 'N/A')
+      }
+      if (universities.length > 1) {
+        throw new ForbiddenException('universityName 匹配到多个学校')
+      }
+      await this.addSubjectToUniversityTxn(txn, subject.id, universities[0].id)
       return subject
     })
 
