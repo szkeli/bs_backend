@@ -16,7 +16,14 @@ export class SubfieldsService {
             a(func: uid($adminId)) @filter(type(Admin)) { a as uid }
             s(func: uid($subjectId)) @filter(type(Subject)) { s as uid }
             # 是否有 title 相同的 SubField
-            t(func: eq(title, $title)) @filter(type(SubField)) { t as uid }
+            c(func: eq(title, $title)) @filter(type(SubField)) { 
+              subject @filter(uid(s)) {
+                temp as uid
+              }
+            }
+            t(func: uid(temp)) {
+              t as uid
+            }
         }
     `
     const condition = '@if( eq(len(a), 1) and eq(len(s), 1) and eq(len(t), 0) )'
@@ -46,6 +53,7 @@ export class SubfieldsService {
         $title: title
       }
     })
+
     if (res.json.a.length !== 1) {
       throw new AdminNotFoundException(admin.id)
     }
