@@ -94,17 +94,6 @@ export class DbService {
 
   async handleTransaction<U, V> (txn: dgraph.Txn, props: CommitMutationProps) {
     const { mutations, query, vars } = props
-    if (mutations.length === 0) {
-      throw new ForbiddenException('变更不能为空')
-    }
-
-    const mus = mutations.map(({ del, set, cond }) => {
-      const mu = new Mutation()
-      cond && mu.setCond(cond)
-      set && mu.setSetJson(set)
-      del && mu.setDeleteJson(del)
-      return mu
-    })
 
     const req = new Request()
     if (vars && Object.entries(vars).length !== 0) {
@@ -112,8 +101,18 @@ export class DbService {
       Object.entries(vars).forEach(r => _vars.set(r[0], r?.[1] ?? ''))
     }
 
+    if (mutations.length !== 0) {
+      const mus = mutations.map(({ del, set, cond }) => {
+        const mu = new Mutation()
+        cond && mu.setCond(cond)
+        set && mu.setSetJson(set)
+        del && mu.setDeleteJson(del)
+        return mu
+      })
+      req.setMutationsList(mus)
+    }
+
     req.setQuery(query)
-    req.setMutationsList(mus)
 
     const res = await txn.doRequest(req)
 

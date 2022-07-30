@@ -1,17 +1,60 @@
-import { Injectable } from '@nestjs/common'
+import { ForbiddenException, Injectable } from '@nestjs/common'
 
 import { SystemErrorException, UniversityAlreadyExsistException, UniversityNotFoundException } from '../app.exception'
 import { ORDER_BY, RelayPagingConfigArgs } from '../connections/models/connections.model'
-import { DbService } from '../db/db.service'
+import { DbService, Txn } from '../db/db.service'
 import { SubCampus } from '../subcampus/models/subcampus.model'
 import { Subject } from '../subject/model/subject.model'
 import { handleRelayForwardAfter, now, relayfyArrayForward, RelayfyArrayParam } from '../tool'
 import { User } from '../user/models/user.model'
-import { CreateUniversityArgs, DeleteUniversityArgs, University, UpdateUniversityArgs } from './models/universities.models'
+import { CreateUniversityArgs, DeleteUniversityArgs, FindUniversityByIdOrNameArgs, University, UpdateUniversityArgs } from './models/universities.models'
 
 @Injectable()
 export class UniversitiesService {
   constructor (private readonly dbService: DbService) {}
+
+  /**
+   *
+   */
+  async findUniversityByIdOrNameTxn (txn: Txn, args: FindUniversityByIdOrNameArgs): Promise<University[]> {
+    const { universityId, universityName } = args
+    if (!universityId && !universityName) {
+      throw new ForbiddenException(
+        'universityId 和 universityName 不能同时为 null'
+      )
+    }
+
+    const _universityId = universityId
+      ? 'u(func: uid($universityId)) @filter(type(University)) { u as uid }'
+      : ''
+    const _universityName = universityName
+      ? 'u(func: type(University)) @filter(alloftext(name, $universityName) and not has(delete)) { u as uid }'
+      : ''
+
+    const query = `
+      query v($universityId: string, $universityName: string) {
+        ${_universityId}
+        ${_universityName}
+        university(func: uid(u)) {
+          id: uid
+          expand(_all_)
+          dgraph.type
+        }
+      }
+    `
+    const res = await this.dbService.handleTransaction<{}, {
+      university: University[]
+    }>(txn, {
+      query,
+      mutations: [],
+      vars: {
+        $universityId: universityId,
+        $universityName: universityName
+      }
+    })
+
+    return res.json.university
+  }
 
   async addAllPostToUniversity (id: string) {
     const query = `

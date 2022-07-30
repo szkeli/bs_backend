@@ -481,6 +481,9 @@ type User implements Person & Node {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): LessonsConnection!
 
+  """当前用户所在的大学"""
+  university: University
+
   """当前用户具有的权限"""
   privileges(
     """最新的n个对象"""
@@ -501,9 +504,6 @@ type User implements Person & Node {
 
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
-
-  """当前用户所在的大学"""
-  university: University
 
   """当前用户所属的学院"""
   institutes: [Institute!]
@@ -987,6 +987,9 @@ type LoginResult implements Node & Person {
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): LessonsConnection!
 
+  """当前用户所在的大学"""
+  university: University
+
   """当前用户具有的权限"""
   privileges(
     """最新的n个对象"""
@@ -1007,9 +1010,6 @@ type LoginResult implements Node & Person {
 
   """当前用户的认证凭证，未认证用户为null"""
   credential: ICredential
-
-  """当前用户所在的大学"""
-  university: University
 
   """当前用户所属的学院"""
   institutes: [Institute!]
@@ -1591,6 +1591,126 @@ type OredrUnionPageInfo {
   hasNextPage: Boolean!
 }
 
+type University {
+  """大学的唯一id"""
+  id: String!
+
+  """该大学的名字"""
+  name: String!
+
+  """该大学的 logo"""
+  logoUrl: String!
+  createdAt: String!
+
+  """该大学拥有的所有 Post"""
+  posts(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): PostsConnectionWithRelay!
+
+  """该大学的所有校区"""
+  subcampuses(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubCampusesConnection!
+
+  """该大学内的所有 User"""
+  users(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UsersConnectionWithRelay!
+
+  """该大学拥有的所有 Subject"""
+  subjects(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): SubjectsConnectionWithRelay!
+
+  """该大学的所有学院"""
+  institutes(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): InstitutesConnection!
+}
+
+type UniversitiesConnection {
+  edges: [UniversityEdge!]!
+  pageInfo: UniversityPageInfo!
+  totalCount: Int!
+}
+
+type UniversityEdge {
+  node: University
+  cursor: String
+}
+
+type UniversityPageInfo {
+  startCursor: String
+  endCursor: String
+  hasPreviousPage: Boolean!
+  hasNextPage: Boolean!
+}
+
 type Vote {
   id: String!
   createdAt: String!
@@ -1732,11 +1852,11 @@ type Post implements Votable & Creatable {
   """帖子所属的主题"""
   subject: Subject
 
-  """帖子的匿名信息，非匿名帖子此项为空"""
-  anonymous: Anonymous
-
   """该帖子所在的大学"""
   university: University
+
+  """帖子的匿名信息，非匿名帖子此项为空"""
+  anonymous: Anonymous
 
   """帖子所在的 SubField"""
   subField: SubField
@@ -1890,126 +2010,6 @@ type CommentEdge {
 }
 
 type CommentPageInfo {
-  startCursor: String
-  endCursor: String
-  hasPreviousPage: Boolean!
-  hasNextPage: Boolean!
-}
-
-type University {
-  """大学的唯一id"""
-  id: String!
-
-  """该大学的名字"""
-  name: String!
-
-  """该大学的 logo"""
-  logoUrl: String!
-  createdAt: String!
-
-  """该大学拥有的所有 Post"""
-  posts(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): PostsConnectionWithRelay!
-
-  """该大学的所有校区"""
-  subcampuses(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubCampusesConnection!
-
-  """该大学内的所有 User"""
-  users(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): UsersConnectionWithRelay!
-
-  """该大学拥有的所有 Subject"""
-  subjects(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): SubjectsConnectionWithRelay!
-
-  """该大学的所有学院"""
-  institutes(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): InstitutesConnection!
-}
-
-type UniversitiesConnection {
-  edges: [UniversityEdge!]!
-  pageInfo: UniversityPageInfo!
-  totalCount: Int!
-}
-
-type UniversityEdge {
-  node: University
-  cursor: String
-}
-
-type UniversityPageInfo {
   startCursor: String
   endCursor: String
   hasPreviousPage: Boolean!
@@ -3230,6 +3230,23 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): SubjectsConnectionWithRelay!
+  university(id: String!): University!
+  universities(
+    """最新的n个对象"""
+    first: Int = 10
+
+    """向前分页游标"""
+    after: String
+
+    """最早的n个对象"""
+    last: Int
+
+    """向后分页游标"""
+    before: String
+
+    """排序方式"""
+    orderBy: ORDER_BY = CREATED_AT_DESC
+  ): UniversitiesConnection!
 
   """以id获取管理员"""
   admin(id: String!): Admin!
@@ -3478,23 +3495,6 @@ type Query {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): HashtagsConnection!
-  university(id: String!): University!
-  universities(
-    """最新的n个对象"""
-    first: Int = 10
-
-    """向前分页游标"""
-    after: String
-
-    """最早的n个对象"""
-    last: Int
-
-    """向后分页游标"""
-    before: String
-
-    """排序方式"""
-    orderBy: ORDER_BY = CREATED_AT_DESC
-  ): UniversitiesConnection!
   institute(id: String!): Institute!
   institutes(
     """最新的n个对象"""
@@ -3708,6 +3708,12 @@ input ReserveAmountsRng {
 type Mutation {
   """创建一个帖子"""
   createPost(
+    """Subject 所在的大学的 id"""
+    universityId: String
+
+    """Post 所属的 University, 支持模糊匹配，匹配结果大于1时报错"""
+    universityName: String
+
     """帖子内容"""
     content: String!
 
@@ -3716,9 +3722,6 @@ type Mutation {
 
     """帖子所属的 Subject"""
     subjectId: String
-
-    """帖子所在的 University"""
-    universityId: String!
 
     """帖子所属的二级分类"""
     subFieldId: String
@@ -4095,8 +4098,30 @@ type Mutation {
     backgroundImageUrl: String!
 
     """Subject 所在的大学的 id"""
-    universityId: String!
+    universityId: String
   ): Subject!
+  createUniversity(
+    """大学的名字"""
+    name: String!
+
+    """大学的 logo"""
+    logoUrl: String!
+  ): University!
+  updateUniversity(id: String!, name: String, logoUrl: String): University!
+
+  """标记删除一个 University"""
+  deleteUniversity(
+    id: String!
+
+    """为何删除它"""
+    description: String
+  ): Boolean!
+
+  """测试接口，将当前所有用户添加到某个学校"""
+  addAllUserToUniversity(id: String!): Boolean!
+
+  """测试接口，将当前所有帖子添加到某个学校"""
+  addAllPostToUniversity(id: String!): Boolean!
 
   """注册一个管理员，需要使用authen认证新注册的管理员"""
   registerAdmin(
@@ -4236,28 +4261,6 @@ type Mutation {
 
   """手动触发一个课程通知任务"""
   triggerTask: String!
-  createUniversity(
-    """大学的名字"""
-    name: String!
-
-    """大学的 logo"""
-    logoUrl: String!
-  ): University!
-  updateUniversity(id: String!, name: String, logoUrl: String): University!
-
-  """标记删除一个 University"""
-  deleteUniversity(
-    id: String!
-
-    """为何删除它"""
-    description: String
-  ): Boolean!
-
-  """测试接口，将当前所有用户添加到某个学校"""
-  addAllUserToUniversity(id: String!): Boolean!
-
-  """测试接口，将当前所有帖子添加到某个学校"""
-  addAllPostToUniversity(id: String!): Boolean!
   createInstitute(
     """学院所在的大学的 id"""
     id: String!

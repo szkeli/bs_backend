@@ -16,6 +16,7 @@ import { UserResolver } from './user.resolver'
     UserResolver,
     PostResolver,
     SubjectResolver
-  ]
+  ],
+  exports: [UniversitiesService]
 })
 export class UniversitiesModule {}

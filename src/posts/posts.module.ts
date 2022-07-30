@@ -8,6 +8,7 @@ import { PubsubsModule } from '../pubsubs/pubsubs.module'
 import { ReportsModule } from '../reports/reports.module'
 import { SharedModule } from '../shared/shared.module'
 import { SubjectModule } from '../subject/subject.module'
+import { UniversitiesModule } from '../universities/universities.module'
 import { UserModule } from '../user/user.module'
 import { OrderResolver } from './order.resolver'
 import { PostsResolver } from './posts.resolver'
@@ -26,7 +27,8 @@ import { UserResolver } from './user.resolver'
     CommentModule,
     DeletesModule,
     CensorsModule,
-    NlpModule
+    NlpModule,
+    UniversitiesModule
   ],
   providers: [
     PostsResolver,

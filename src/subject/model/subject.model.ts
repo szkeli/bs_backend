@@ -18,7 +18,7 @@ export class CreateSubjectArgs {
   @Field()
     backgroundImageUrl: string
 
-  @Field({ description: 'Subject 所在的大学的 id' })
+  @Field({ nullable: true, description: 'Subject 所在的大学的 id' })
     universityId: string
 }
 

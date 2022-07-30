@@ -42,6 +42,7 @@ import {
   relayfyArrayForward,
   RelayfyArrayParam
 } from '../tool'
+import { UniversitiesService } from '../universities/universities.service'
 import {
   CreatePostArgs,
   IImage,
@@ -58,7 +59,8 @@ export class PostsService {
   constructor (
     private readonly dbService: DbService,
     private readonly censorsService: CensorsService,
-    private readonly nlpService: NlpService
+    private readonly nlpService: NlpService,
+    private readonly universityService: UniversitiesService
   ) {
     this.dgraph = dbService.getDgraphIns()
   }
@@ -508,11 +510,14 @@ export class PostsService {
       }
     }
 
-    const res = await this.dbService.handleTransaction<{}, {
+    const res = await this.dbService.handleTransaction<
+    {},
+    {
       p: Array<{ uid: string }>
       s: Array<{ uid: string }>
       subFields: Array<{ id: string }>
-    }>(txn, {
+    }
+    >(txn, {
       query,
       mutations: [{ set: mutation, cond: condition }],
       vars: { $subjectId: subjectId, $postId: postId }
@@ -533,11 +538,25 @@ export class PostsService {
     args: CreatePostArgs,
     txn: dgraph.Txn
   ) {
-    const { universityId } = args
+    const { universityId, universityName } = args
+
+    const universities = await this.universityService.findUniversityByIdOrNameTxn(txn, {
+      universityId, universityName
+    })
+
+    if (universities.length === 0) {
+      throw new UniversityNotFoundException(universityId ?? universityName ?? 'N/A')
+    }
+    if (universities.length > 1) {
+      throw new ForbiddenException('universityName 匹配到多个学校')
+    }
+
     const query = `
       query v($postId: string, $universityId: string) {
         p(func: uid($postId)) @filter(type(Post)) { p as uid }
-        u(func: uid($universityId)) @filter(type(University)) { u as uid }
+        u(func: uid($universityId)) {
+          u as uid
+        }
         # 帖子的创建者所在的 universities 包含待添加到的 university
         var(func: uid(p)) {
           creator @filter(type(User)) {
@@ -547,7 +566,8 @@ export class PostsService {
         in(func: uid(temp)) { in as uid }
       }
     `
-    const condition = '@if( eq(len(p), 1) and eq(len(u), 1) and eq(len(in), 1) )'
+    const condition =
+      '@if( eq(len(p), 1) and eq(len(u), 1) and eq(len(in), 1) )'
     const mutation = {
       uid: 'uid(u)',
       posts: {
@@ -555,21 +575,24 @@ export class PostsService {
       }
     }
 
-    const res = await this.dbService.handleTransaction<{}, {
+    const res = await this.dbService.handleTransaction<
+    {},
+    {
       p: Array<{ uid: string }>
       u: Array<{ uid: string }>
       in: Array<{ uid: string }>
-    }>(txn, {
+    }
+    >(txn, {
       query,
       mutations: [{ set: mutation, cond: condition }],
-      vars: { $universityId: universityId, $postId: postId }
+      vars: {
+        $universityId: universities[0].id,
+        $postId: postId
+      }
     })
 
     if (res.json.p.length !== 1) {
       throw new PostNotFoundException(postId)
-    }
-    if (res.json.u.length !== 1) {
-      throw new UniversityNotFoundException(universityId)
     }
     if (res.json.in.length !== 1) {
       throw new ForbiddenException('用户不在该学校内')
@@ -579,6 +602,7 @@ export class PostsService {
   async createPost (id: string, args: CreatePostArgs): Promise<Post> {
     const { subjectId, subFieldId } = args
     const { takeAwayOrder, idleItemOrder, teamUpOrder } = args
+
     if (!atMostOne(takeAwayOrder, idleItemOrder, teamUpOrder)) {
       throw new ForbiddenException(
         '单个帖子最多只能携带 takeAwayOrder, idleItemOrder, teamUpOrder 中的一种订单'
@@ -591,9 +615,15 @@ export class PostsService {
       teamUpOrder && (await this.createTeamUpOrderTxn(args, post, txn))
 
       if (subjectId) {
-        const subFieldIds = await this.addPostToSubjectTxn(post.id, subjectId, txn)
+        const subFieldIds = await this.addPostToSubjectTxn(
+          post.id,
+          subjectId,
+          txn
+        )
         if (subFieldId && !subFieldIds.includes(subFieldId)) {
-          throw new ForbiddenException(`Subject ${subjectId} 没有 SubField ${subFieldId}`)
+          throw new ForbiddenException(
+            `Subject ${subjectId} 没有 SubField ${subFieldId}`
+          )
         }
         await this.addPostToSubFieldTxn(post.id, subFieldId, txn)
       }

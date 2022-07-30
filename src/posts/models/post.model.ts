@@ -1,10 +1,11 @@
-import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
+import { ArgsType, Field, Int, ObjectType, PartialType } from '@nestjs/graphql'
 import { Type } from 'class-transformer'
 import { ValidateNested } from 'class-validator'
 
 import { Connection, ORDER_BY } from '../../connections/models/connections.model'
 import { CreateIdleItemOrderArgs, CreateTakeAwayOrderArgs, CreateTeamUpOrderArgs } from '../../orders/models/orders.model'
 import { Creatable } from '../../person/models/creatable.model'
+import { FindUniversityArgs } from '../../universities/models/universities.models'
 import { Votable } from '../../votes/model/votes.model'
 
 @ObjectType()
@@ -22,7 +23,7 @@ export class IImage {
 export type Nullable<T> = T | null
 
 @ArgsType()
-export class CreatePostArgs {
+export class CreatePostArgs extends PartialType(FindUniversityArgs) {
   @Field({ description: '帖子内容' })
     content: string
 
@@ -31,9 +32,6 @@ export class CreatePostArgs {
 
   @Field(of => String, { nullable: true, description: '帖子所属的 Subject' })
     subjectId: string
-
-  @Field(of => String, { description: '帖子所在的 University' })
-    universityId: string
 
   @Field(of => String, { nullable: true, description: '帖子所属的二级分类' })
     subFieldId: string
