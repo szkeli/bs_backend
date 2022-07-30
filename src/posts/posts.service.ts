@@ -13,7 +13,6 @@ import {
   PostNotFoundException,
   RelayPagingConfigErrorException,
   SubjectNotFoundException,
-  SubjectNotInTheUniversityException,
   SystemAdminNotFoundException,
   SystemErrorException,
   UniversityNotFoundException,
@@ -158,49 +157,19 @@ export class PostsService {
   async trendingPostsWithRelayForward (
     first: number,
     after: string | null,
-    { universityId, subjectId }: QueryPostsFilter
+    filter: QueryPostsFilter
   ): Promise<PostsConnectionWithRelay> {
+    const [q, key] = this.handleFindPostFilter(filter)
+
     const q1 =
       'var(func: uid(posts), orderdesc: val(score)) @filter(lt(val(score), $after)) { q as uid }'
 
-    // 没有提供 UniversityId 也没有提供 SubjectId
-    const a = `
-      var(func: type(Post), orderdesc: createdAt) { 
-        temp as uid
-      }
-    `
-    // 提供了 UniversityId 但没有提供 SubjectId
-    const b = `
-      var(func: uid($universityId)) @filter(type(University) and not has(delete)) {
-        temp as posts(orderdesc: createdAt)
-      }
-    `
-    // 没有提供 UniversityId 提供了 SubjectId
-    const c = `
-      var(func: uid($subjectId)) @filter(type(Subject) and not has(delete)) {
-        temp as posts(orderdesc: createdAt)
-      }
-    `
-    // 提供了 UniversityId 和 SubjectId
-    // 该 Subject 必须在该 University 内
-    const d = `
-      var(func: uid($universityId)) @filter(type(University) and not has(delete)) {
-        subjects as subjects @filter(uid($subjectId) and type(Subject) and not has(delete))
-      }
-      subjects(func: uid(subjects)) {
-        uid
-      }
-      var(func: uid(subjects)) {
-        temp as posts(orderdesc: createdAt)
-      }
-    `
-
     const query = `
-      query v($after: string, $universityId: string, $subjectId: string) {
-        ${!NotNull(universityId) && !NotNull(subjectId) ? a : ''}
-        ${NotNull(universityId) && !NotNull(subjectId) ? b : ''}
-        ${!NotNull(universityId) && NotNull(subjectId) ? c : ''}
-        ${NotNull(universityId) && NotNull(subjectId) ? d : ''}
+      query v($after: string) {
+        ${q}
+        var(func: uid(${key})) {
+          temp as uid
+        }
 
         var(func: uid(temp)) @filter(type(Post) and not has(delete) and not has(pin) and has(createdAt)) {
           pre as uid
@@ -258,15 +227,9 @@ export class PostsService {
     }>({
       query,
       vars: {
-        $after: after,
-        $universityId: universityId,
-        $subjectId: subjectId
+        $after: after
       }
     })
-
-    if (NotNull(universityId, subjectId) && res.subjects.length === 0) {
-      throw new SubjectNotInTheUniversityException(universityId, subjectId)
-    }
 
     const totalCount = res.totalCount[0]?.count ?? 0
     const v = totalCount !== 0
@@ -625,7 +588,9 @@ export class PostsService {
             `Subject ${subjectId} 没有 SubField ${subFieldId}`
           )
         }
-        await this.addPostToSubFieldTxn(post.id, subFieldId, txn)
+        if (subFieldId) {
+          await this.addPostToSubFieldTxn(post.id, subFieldId, txn)
+        }
       }
       await this.addPostToUniversityTxn(post.id, args, txn)
 
@@ -848,53 +813,78 @@ export class PostsService {
     return res.post[0]
   }
 
+  handleFindPostFilter (filter: QueryPostsFilter) {
+    const { universityId, universityName, subjectId } = filter
+
+    const handleUniversityIdOrName = (universityId: string | null| undefined, universityName: string | null | undefined) => {
+      const key = 'handleUniversityIdOrNameKey'
+      if (universityId) {
+        return [`
+          var(func: uid(${universityId})) @filter(type(University) and not has(delete)) {
+            ${key} as posts(orderdesc: createdAt)
+          }
+        `, key]
+      }
+      if (universityName) {
+        return [`
+          var(func: type(University)) @filter(alloftext(name, "${universityName}") and not has(delete)) {
+            ${key} as posts(orderdesc: createdAt)
+          }
+        `, key]
+      }
+
+      return [`
+        var(func: type(Post)) @filter(not has(delete)) {
+          ${key} as uid
+        }
+      `, key]
+    }
+    const handleSubjectId = (subjectId: string | null, v: string[]) => {
+      const key = 'handleSubjectIdKey'
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const [u, k] = v
+      if (subjectId) {
+        return [`
+        var(func: uid(${subjectId})) @filter(type(Subject) and not has(delete)) {
+          _xidhsauw as posts
+        }
+        var(func: uid(${k})) @filter(uid(_xidhsauw)) {
+          ${key} as uid
+        }
+      `, key]
+      }
+      return [`
+        var(func: uid(${k})) {
+          ${key} as uid
+        }
+      `, key]
+    }
+    const a = handleUniversityIdOrName(universityId, universityName)
+    const b = handleSubjectId(subjectId, a)
+
+    return [
+      `
+      ${a[0]}
+      ${b[0]}
+      `,
+      b[1]
+    ]
+  }
+
   async postsWithRelayForward (
     first: number,
     after: string | null,
-    { universityId, subjectId }: QueryPostsFilter
+    filter: QueryPostsFilter
   ): Promise<PostsConnectionWithRelay> {
+    const [q, key] = this.handleFindPostFilter(filter)
+
     const q1 =
       'var(func: uid(posts), orderdesc: createdAt) @filter(lt(createdAt, $after)) { q as uid }'
-    // 没有提供 UniversityId 也没有提供 SubjectId
-    const a = `
-      var(func: type(Post), orderdesc: createdAt) { 
-        temp as uid
-      }
-    `
-    // 提供了 UniversityId 但没有提供 SubjectId
-    const b = `
-      var(func: uid($universityId)) @filter(type(University) and not has(delete)) {
-        temp as posts(orderdesc: createdAt)
-      }
-    `
-    // 没有提供 UniversityId 提供了 SubjectId
-    const c = `
-      var(func: uid($subjectId)) @filter(type(Subject) and not has(delete)) {
-        temp as posts(orderdesc: createdAt)
-      }
-    `
-    // 提供了 UniversityId 和 SubjectId
-    // 该 Subject 必须在该 University 内
-    const d = `
-      var(func: uid($universityId)) @filter(type(University) and not has(delete)) {
-        subjects as subjects @filter(uid($subjectId) and type(Subject) and not has(delete))
-      }
-      subjects(func: uid(subjects)) {
-        uid
-      }
-      var(func: uid(subjects)) {
-        temp as posts(orderdesc: createdAt)
-      }
-    `
 
     const query = `
-      query v($after: string, $universityId: string, $subjectId: string) {
-        ${!NotNull(universityId) && !NotNull(subjectId) ? a : ''}
-        ${NotNull(universityId) && !NotNull(subjectId) ? b : ''}
-        ${!NotNull(universityId) && NotNull(subjectId) ? c : ''}
-        ${NotNull(universityId) && NotNull(subjectId) ? d : ''}
-
-        var(func: uid(temp)) @filter(type(Post) and not has(delete) and not has(pin) and has(createdAt)) {
+      query v($after: string) {
+        ${q}
+        var(func: uid(${key})) @filter(type(Post) and not has(delete) and not has(pin) and has(createdAt)) {
           posts as uid
         }
         ${after ? q1 : ''}
@@ -917,15 +907,9 @@ export class PostsService {
     >({
       query,
       vars: {
-        $after: after,
-        $universityId: universityId,
-        $subjectId: subjectId
+        $after: after
       }
     })
-
-    if (NotNull(universityId, subjectId) && res.subjects.length === 0) {
-      throw new SubjectNotInTheUniversityException(universityId, subjectId)
-    }
 
     return relayfyArrayForward({
       ...res,
@@ -937,8 +921,10 @@ export class PostsService {
   async postsWithRelayBackward (
     last: number,
     before: string | null,
-    { universityId }: QueryPostsFilter
+    filter: QueryPostsFilter
   ): Promise<PostsConnectionWithRelay> {
+    const [q, key] = this.handleFindPostFilter(filter)
+
     const q1 = `
       var(func: uid(posts), orderdesc: createdAt) @filter(gt(createdAt, $before)) { q as uid }
       var(func: uid(q), orderasc: createdAt, first: ${last}) { v as uid }
@@ -946,20 +932,13 @@ export class PostsService {
     const q2 = `
       var(func: uid(posts), orderasc: createdAt, first: ${last}) { v as uid }
     `
-    const university = universityId
-      ? `
-      var(func: uid($universityId)) @filter(type(University)) {
-        posts as posts(orderdesc: createdAt) @filter(not has(delete))
-      }
-    `
-      : `
-      var(func: type(Post), orderdesc: createdAt) @filter(not has(delete)) { 
+
+    const query = `
+    query v($before: string) {
+      ${q}
+      var(func: uid(${key})) {
         posts as uid
       }
-    `
-    const query = `
-    query v($before: string, $universityId: string) {
-      ${university}
       totalCount(func: uid(posts)) { count(uid) }
 
       ${before ? q1 : q2}
@@ -985,7 +964,7 @@ export class PostsService {
       edge: Post[]
       startPost: Array<{ id: string, createdAt: string }>
       endPost: Array<{ id: string, createdAt: string }>
-    }>({ query, vars: { $before: before, $universityId: universityId } })
+    }>({ query, vars: { $before: before } })
 
     const startPost = res.startPost[0]
     const endPost = res.endPost[0]

@@ -2780,8 +2780,11 @@ type Query {
 
   """Relay分页版的posts接口"""
   postsWithRelay(
-    """指定 University 下的 Post"""
+    """Subject 所在的大学的 id"""
     universityId: String
+
+    """Post 所属的 University, 支持模糊匹配，匹配结果大于1时报错"""
+    universityName: String
 
     """指定 Subject 下的 Post"""
     subjectId: String
