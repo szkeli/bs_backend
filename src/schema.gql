@@ -2396,32 +2396,13 @@ type LessonMetaData {
   dayInWeek: Int
 }
 
-type LessonItem {
-  id: String!
-
-  """第几节课开始"""
-  start: Int!
-
-  """第几节课结束"""
-  end: Int!
-
-  """该节课位于一星期中的第几天"""
-  dayInWeek: Int
-
-  """TODO, 该课程要上课的周数的数组"""
-  circle: [Int!]
-
-  """TODO, 课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
-  description: String
-
-  """TODO, 上课地点"""
-  destination: String
-}
-
 """课程对象"""
 type Lesson {
   """课程内部唯一 id"""
   id: String!
+
+  """课程对应的唯一课程号"""
+  lessonId: String!
 
   """上课地点"""
   destination: String
@@ -2438,9 +2419,6 @@ type Lesson {
   """课程的创建时间"""
   createdAt: String!
 
-  """课程对应的唯一课程号"""
-  lessonId: String!
-
   """TODO, 授课教师的名字"""
   educatorName: String
 
@@ -2455,6 +2433,12 @@ type Lesson {
 
   """自定义课程时的颜色"""
   color: String
+
+  """开始上课的节数"""
+  startAt: Int!
+
+  """结束上课的节数"""
+  endAt: Int!
 
   """获取该课程的所有 deadline"""
   deadlines(
@@ -2473,9 +2457,6 @@ type Lesson {
     """排序方式"""
     orderBy: ORDER_BY = CREATED_AT_DESC
   ): DeadlinesConnection!
-
-  """该课程下的所有课程实例"""
-  lessonItems: [LessonItem]!
 }
 
 type LessonsConnection {
@@ -3938,9 +3919,6 @@ type Mutation {
 
   """添加一个课程到当前用户"""
   addLesson(
-    """lessonItem，对于未列出的课程，此项可为 null"""
-    lessonItems: [LessonItemInput!]
-
     """上课地点，对于未列出的课程，此项可为 null"""
     destination: String
 
@@ -3970,18 +3948,27 @@ type Mutation {
 
     """自定义课程时的颜色"""
     color: String
+
+    """开始上课的节数"""
+    startAt: Int!
+
+    """节数上课的节数"""
+    endAt: Int!
+
+    """该节课位于一星期中的第几天"""
+    dayInWeek: Int!
   ): Lesson!
 
   """更新一个课程"""
   updateLesson(
+    """课程id"""
+    lessonId: String!
+
     """课程名称"""
     name: String
 
     """上课地点，对于未列出的课程，此项可为 null"""
     destination: String
-
-    """课程id"""
-    lessonId: String!
 
     """授课教师的名字"""
     educatorName: String
@@ -3991,27 +3978,17 @@ type Mutation {
 
     """课程的周数的数组，例如[2, 3, 4, 8, 9]"""
     circle: [Int!]
+    startAt: Int
+    endAt: Int
+    dayInWeek: Int
   ): Lesson!
 
   """从当前用户中删除一个课程"""
   deleteLesson(lessonId: String!): Boolean!
 
-  """从当前用户中删除某节课"""
-  deleteLessonItem(id: String!): Boolean!
-
-  """添加一个 LessonItem 到 Lesson"""
-  addLessonItems(
-    """lessonItem，对于未列出的课程，此项可为 null"""
-    lessonItems: [LessonItemInput!]
-    lessonId: String!
-  ): Lesson!
-
   """管理员添加课程到某用户"""
   addLessonToUser(
     to: String!
-
-    """lessonItem，对于未列出的课程，此项可为 null"""
-    lessonItems: [LessonItemInput!]
 
     """上课地点，对于未列出的课程，此项可为 null"""
     destination: String
@@ -4042,6 +4019,15 @@ type Mutation {
 
     """自定义课程时的颜色"""
     color: String
+
+    """开始上课的节数"""
+    startAt: Int!
+
+    """节数上课的节数"""
+    endAt: Int!
+
+    """该节课位于一星期中的第几天"""
+    dayInWeek: Int!
   ): Lesson!
 
   """更新课程表元信息"""
@@ -4061,28 +4047,6 @@ type Mutation {
     """该节课位于一星期中的第几天"""
     dayInWeek: Int
   ): LessonMetaData!
-
-  """测试接口，手动触发一个上课课程通知"""
-  triggerLessonNotification(
-    """被通知的 User 的 id"""
-    to: String!
-
-    """星期几"""
-    dayInWeek: Int
-
-    """当前开始学年"""
-    startYear: Int!
-
-    """当前结束学年"""
-    endYear: Int!
-
-    """当前学期"""
-    semester: Int!
-
-    """当前周数"""
-    week: Int!
-    taskType: TASK_TYPE!
-  ): String!
 
   """测试方法"""
   setLessonNotificationStatus: String!
@@ -4263,9 +4227,6 @@ type Mutation {
 
   """创建角色"""
   createRole(title: String!): Role!
-
-  """手动触发一个课程通知任务"""
-  triggerTask: String!
   createInstitute(
     """学院所在的大学的 id"""
     id: String!
@@ -4396,34 +4357,6 @@ input CreateTeamUpOrderArgs {
 
   """订单结束时间"""
   expiredAt: String!
-}
-
-input LessonItemInput {
-  """第几节课开始"""
-  start: Int!
-
-  """第几节课结束"""
-  end: Int!
-
-  """该节课位于一星期中的第几天"""
-  dayInWeek: Int!
-
-  """该课程要上课的周数的数组"""
-  circle: [Int!]!
-
-  """课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302"""
-  description: String!
-
-  """上课地点"""
-  destination: String!
-}
-
-enum TASK_TYPE {
-  """早上8点的提醒"""
-  GM
-
-  """晚上10点的提醒"""
-  GF
 }
 
 union UpdatePasswordResultUnion = Admin | User

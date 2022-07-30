@@ -1,13 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common'
 import { Cron, CronExpression, SchedulerRegistry } from '@nestjs/schedule'
-import { CronJob } from 'cron'
 import * as log4js from 'log4js'
 
 import { LESSON_NOTIFY_JOB_NAME } from '../constants'
 import { DbService } from '../db/db.service'
 import { LessonsService } from '../lessons/lessons.service'
 import { LESSON_NOTIFY_STATE, LessonMetaData } from '../lessons/models/lessons.model'
-import { ids2String, now, sleep } from '../tool'
+import { ids2String, now } from '../tool'
 import { TASK_TYPE } from './models/tasks.model'
 
 log4js.configure({
@@ -57,37 +56,36 @@ export class TasksService {
     }
     const condition = '@if( not eq(len(users), 0) )'
 
-    const res = await this.dbService.commitConditionalUperts({
+    await this.dbService.commitConditionalUperts({
       query,
       mutations: [{ mutation, condition }],
       vars: {}
     })
-    console.error(res)
   }
 
-  async testTr () {
-    await this.triggerEveryDayAt10PM()
-    // await this.triggerEveryDayAt8AM()
-    return 'success'
-  }
+  // async testTr () {
+  //   await this.triggerEveryDayAt10PM()
+  //   // await this.triggerEveryDayAt8AM()
+  //   return 'success'
+  // }
 
   // 每天早上8点的任务
-  @Cron(CronExpression.EVERY_DAY_AT_8AM, {
-    timeZone: 'Asia/Shanghai'
-  })
-  async triggerEveryDayAt8AM () {
-    mlogger.debug('started at 8 AM')
-    this.startJob(TASK_TYPE.GM)
-  }
+  // @Cron(CronExpression.EVERY_DAY_AT_8AM, {
+  //   timeZone: 'Asia/Shanghai'
+  // })
+  // async triggerEveryDayAt8AM () {
+  //   mlogger.debug('started at 8 AM')
+  //   this.startJob(TASK_TYPE.GM)
+  // }
 
-  // 每天晚上10点的任务
-  @Cron(CronExpression.EVERY_DAY_AT_10PM, {
-    timeZone: 'Asia/Shanghai'
-  })
-  async triggerEveryDayAt10PM () {
-    mlogger.debug('started at 10PM')
-    this.startJob(TASK_TYPE.GF)
-  }
+  // // 每天晚上10点的任务
+  // @Cron(CronExpression.EVERY_DAY_AT_10PM, {
+  //   timeZone: 'Asia/Shanghai'
+  // })
+  // async triggerEveryDayAt10PM () {
+  //   mlogger.debug('started at 10PM')
+  //   this.startJob(TASK_TYPE.GF)
+  // }
 
   // 11PM 停止课程通知
   @Cron(CronExpression.EVERY_DAY_AT_11PM, {
@@ -114,37 +112,37 @@ export class TasksService {
     }
   }
 
-  startJob (taskType: TASK_TYPE) {
-    const job = new CronJob(
-      CronExpression.EVERY_5_SECONDS,
-      async () => await this.triggerExery5Seconds(taskType)
-    )
+  // startJob (taskType: TASK_TYPE) {
+  //   const job = new CronJob(
+  //     CronExpression.EVERY_5_SECONDS,
+  //     async () => await this.triggerExery5Seconds(taskType)
+  //   )
 
-    this.schedulerRegistry
-      .addCronJob(LESSON_NOTIFY_JOB_NAME, job)
-    job.start()
+  //   this.schedulerRegistry
+  //     .addCronJob(LESSON_NOTIFY_JOB_NAME, job)
+  //   job.start()
 
-    const i = taskType === TASK_TYPE.GF ? '10 PM' : '8 AM'
-    this.logger.debug(`called at every day on ${i}...`)
-  }
+  //   const i = taskType === TASK_TYPE.GF ? '10 PM' : '8 AM'
+  //   this.logger.debug(`called at every day on ${i}...`)
+  // }
 
-  async triggerExery5Seconds (taskType: TASK_TYPE) {
-    const res = await this.getAndPendding(taskType)
+  // async triggerExery5Seconds (taskType: TASK_TYPE) {
+  //   const res = await this.getAndPendding(taskType)
 
-    mlogger.debug(`totalCount: ${res.json.totalCount[0]?.count ?? 0}, ` + 'valiedUser: ' + res.json.valiedUser.map(i => i.id).toString())
-    const exist = this.schedulerRegistry.doesExist('cron', LESSON_NOTIFY_JOB_NAME)
+  //   mlogger.debug(`totalCount: ${res.json.totalCount[0]?.count ?? 0}, ` + 'valiedUser: ' + res.json.valiedUser.map(i => i.id).toString())
+  //   const exist = this.schedulerRegistry.doesExist('cron', LESSON_NOTIFY_JOB_NAME)
 
-    if (res.json.valiedUser.length === 0 && exist) {
-      mlogger.debug('schdulerStopped')
-      this.schedulerRegistry.deleteCronJob(LESSON_NOTIFY_JOB_NAME)
-    }
+  //   if (res.json.valiedUser.length === 0 && exist) {
+  //     mlogger.debug('schdulerStopped')
+  //     this.schedulerRegistry.deleteCronJob(LESSON_NOTIFY_JOB_NAME)
+  //   }
 
-    const res2 = await this.sendNotification(res, taskType)
-    // const res2 = await this.mockSendNotification(res, taskType)
-    mlogger.debug(JSON.stringify(res2))
-    await this.tagThem(res, res2 as any)
-    mlogger.debug('called every 5 seconds...')
-  }
+  //   const res2 = await this.sendNotification(res, taskType)
+  //   // const res2 = await this.mockSendNotification(res, taskType)
+  //   mlogger.debug(JSON.stringify(res2))
+  //   await this.tagThem(res, res2 as any)
+  //   mlogger.debug('called every 5 seconds...')
+  // }
 
   async tagThem (res: NotificationTaskArgs, res2: Array<{status: string, value: any}>) {
     const succeededIds: string[] = []
@@ -364,35 +362,35 @@ export class TasksService {
     }) as NotificationTaskArgs
   }
 
-  async sendNotification (args: NotificationTaskArgs, taskType: TASK_TYPE) {
-    const { week, dayInWeek, startYear, endYear, semester } = args.json.metadata[0]
+  // async sendNotification (args: NotificationTaskArgs, taskType: TASK_TYPE) {
+  //   const { week, dayInWeek, startYear, endYear, semester } = args.json.metadata[0]
 
-    // eslint-disable-next-line @typescript-eslint/promise-function-async
-    return await Promise.allSettled(args.json.valiedUser.map(({ id }) => {
-      return this.lessonsService.triggerLessonNotification({
-        to: id, week, dayInWeek, startYear, endYear, semester, taskType
-      })
-    }))
-  }
+  //   // eslint-disable-next-line @typescript-eslint/promise-function-async
+  //   return await Promise.allSettled(args.json.valiedUser.map(({ id }) => {
+  //     return this.lessonsService.triggerLessonNotification({
+  //       to: id, week, dayInWeek, startYear, endYear, semester, taskType
+  //     })
+  //   }))
+  // }
 
-  async mockSendNotification (args: NotificationTaskArgs, taskType: TASK_TYPE) {
-    const { week, dayInWeek, startYear, endYear, semester } = args.json.metadata[0]
+  // async mockSendNotification (args: NotificationTaskArgs, taskType: TASK_TYPE) {
+  //   const { week, dayInWeek, startYear, endYear, semester } = args.json.metadata[0]
 
-    console.error(args.json.metadata[0])
+  //   console.error(args.json.metadata[0])
 
-    const t = 0 * 1000
+  //   const t = 0 * 1000
 
-    this.logger.debug(`mockSendNotification: sleepping ${t}ms...`)
+  //   this.logger.debug(`mockSendNotification: sleepping ${t}ms...`)
 
-    await sleep(t)
+  //   await sleep(t)
 
-    // eslint-disable-next-line @typescript-eslint/promise-function-async
-    return await Promise.allSettled(args.json.valiedUser.map(({ id }) => {
-      return this.lessonsService.mockTriggerLessonNotification({
-        to: id, week, dayInWeek, startYear, endYear, semester, taskType
-      })
-    }))
-  }
+  //   // eslint-disable-next-line @typescript-eslint/promise-function-async
+  //   return await Promise.allSettled(args.json.valiedUser.map(({ id }) => {
+  //     return this.lessonsService.mockTriggerLessonNotification({
+  //       to: id, week, dayInWeek, startYear, endYear, semester, taskType
+  //     })
+  //   }))
+  // }
 
   // 每天更新LessonMetaData
   @Cron(CronExpression.EVERY_DAY_AT_MIDNIGHT, {

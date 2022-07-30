@@ -4,9 +4,7 @@ import * as crypto from 'crypto'
 import { verify } from 'jsonwebtoken'
 
 import { Code2SessionErrorException, LackSomeOfPropsException, UnknownPropsException } from './app.exception'
-import { Lesson, LessonItem } from './lessons/models/lessons.model'
 import { IImage, Nullable } from './posts/models/post.model'
-import { TASK_TYPE } from './tasks/models/tasks.model'
 import { AuthenticationInfo, CODE2SESSION_GRANT_TYPE, UpdateUserArgs, UserWithFacets } from './user/models/user.model'
 
 export function sha1 (content: string) {
@@ -298,68 +296,68 @@ export const fmtLessonTimeByDayInWeekThroughSchoolTimeTable = (start: number, en
   return `[${start},${end}节] ${startTable[start - 1]}-${endTable[end - 1]}`
 }
 
-export const fmtLessonItems = (items: LessonItem[]) =>
-  items
-    .map(item => fmtLessonTimeByDayInWeekThroughSchoolTimeTable(item.start, item.end))
-    .join('\n')
+// export const fmtLessonItems = (items: LessonItem[]) =>
+//   items
+//     .map(item => fmtLessonTimeByDayInWeekThroughSchoolTimeTable(item.start, item.end))
+//     .join('\n')
 
-export type LessonNotificationTemplateItem = Array<LessonItem & { lesson: Lesson[] }>
+// export type LessonNotificationTemplateItem = Array<LessonItem & { lesson: Lesson[] }>
 
-export const getLessonNotificationTemplate = (openId: string, items: LessonNotificationTemplateItem, taskType: TASK_TYPE) => {
-  const a = taskType === TASK_TYPE.GM ? '今天' : '明天'
-  const b = process.env.BACKEND?.includes('dev') ? '测试: ' : ''
+// export const getLessonNotificationTemplate = (openId: string, items: LessonNotificationTemplateItem, taskType: TASK_TYPE) => {
+//   const a = taskType === TASK_TYPE.GM ? '今天' : '明天'
+//   const b = process.env.BACKEND?.includes('dev') ? '测试: ' : ''
 
-  return {
-    touser: openId,
-    mp_template_msg: {
-      // 服务号 appId
-      appid: 'wxfcf7b19fdd5d9770',
-      template_id: '49nv12UdpuLNktBfXNrH61-ci3x71_FX8hhAew8fQoQ',
-      url: 'http://weixin.qq.com/download',
-      miniprogram: {
-        appid: 'wx10ac1dfea0e2b8c6',
-        pagepath: '/pages/index/index'
-      },
-      data: {
-        first: {
-          value: `${b}${a}你有${items.length ?? 'N/A'}门课程`
-        },
-        // 所有课程
-        // 线性代数；音乐；体育；（列举全部课程用分号连接）
-        keyword1: {
-          value: items
-            .map(i => ({ start: i.start, end: i.end, i }))
-            .sort((a, b) => a.start - b.start)
-            .map(({ start, end, i }) => i.lesson[0]?.name ?? 'N/A')
-            .join('\n') ?? 'N/A'
-        },
-        // 课程名称和时间
-        // 【1，2节】8:30-9：55 线性代数
-        // 【1，2节】8:30-9：55 线性代数
-        keyword2: {
-          value: items
-            .map(i => ({ start: i.start, end: i.end, i }))
-            .sort((a, b) => a.start - b.start)
-            .map(({ start, end, i }) => `${fmtLessonTimeByDayInWeekThroughSchoolTimeTable(i.start, i.end)} ${i.lesson[0]?.name ?? 'N/A'}`)
-            .join('\n')
-        },
-        // 上课地点
-        // 【1，2节】师院B204
-        // 【1，2节】师院B204
-        keyword3: {
-          value: items
-            .map(i => ({ start: i.start, end: i.end, i }))
-            .sort((a, b) => a.start - b.start)
-            .map(({ start, end, i }) => `[${i.start},${i.end}节] ${i?.destination ?? 'N/A'}`)
-            .join('\n')
-        },
-        remark: {
-          value: '详情请点击进入小程序查看'
-        }
-      }
-    }
-  }
-}
+//   return {
+//     touser: openId,
+//     mp_template_msg: {
+//       // 服务号 appId
+//       appid: 'wxfcf7b19fdd5d9770',
+//       template_id: '49nv12UdpuLNktBfXNrH61-ci3x71_FX8hhAew8fQoQ',
+//       url: 'http://weixin.qq.com/download',
+//       miniprogram: {
+//         appid: 'wx10ac1dfea0e2b8c6',
+//         pagepath: '/pages/index/index'
+//       },
+//       data: {
+//         first: {
+//           value: `${b}${a}你有${items.length ?? 'N/A'}门课程`
+//         },
+//         // 所有课程
+//         // 线性代数；音乐；体育；（列举全部课程用分号连接）
+//         keyword1: {
+//           value: items
+//             .map(i => ({ start: i.start, end: i.end, i }))
+//             .sort((a, b) => a.start - b.start)
+//             .map(({ start, end, i }) => i.lesson[0]?.name ?? 'N/A')
+//             .join('\n') ?? 'N/A'
+//         },
+//         // 课程名称和时间
+//         // 【1，2节】8:30-9：55 线性代数
+//         // 【1，2节】8:30-9：55 线性代数
+//         keyword2: {
+//           value: items
+//             .map(i => ({ start: i.start, end: i.end, i }))
+//             .sort((a, b) => a.start - b.start)
+//             .map(({ start, end, i }) => `${fmtLessonTimeByDayInWeekThroughSchoolTimeTable(i.start, i.end)} ${i.lesson[0]?.name ?? 'N/A'}`)
+//             .join('\n')
+//         },
+//         // 上课地点
+//         // 【1，2节】师院B204
+//         // 【1，2节】师院B204
+//         keyword3: {
+//           value: items
+//             .map(i => ({ start: i.start, end: i.end, i }))
+//             .sort((a, b) => a.start - b.start)
+//             .map(({ start, end, i }) => `[${i.start},${i.end}节] ${i?.destination ?? 'N/A'}`)
+//             .join('\n')
+//         },
+//         remark: {
+//           value: '详情请点击进入小程序查看'
+//         }
+//       }
+//     }
+//   }
+// }
 
 export const sleep = async (ms: number) => await new Promise(resolve => setTimeout(resolve, ms))
 export const imagesV2fy = (images: string[]) => (

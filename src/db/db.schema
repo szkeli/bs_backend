@@ -117,6 +117,8 @@ experiencePoints: int @index(int) .
 dailyCheckInSum: int @index(int) .
 reserveAmounts: int @index(int) .
 redeemCounts: int @index(int) .
+startAt: int @index(int) .
+endAt: int @index(int) .
 
 positive: float .
 negative: float .
@@ -630,7 +632,6 @@ type Lesson {
   educatorName
   # 要上课的周数
   circle
-  lessonItems
   # 开始学年
   startYear
   # 结束学年
@@ -639,6 +640,12 @@ type Lesson {
   semester
   # 用户自定义课程的颜色
   color
+  # 开始上课的节数
+  startAt
+  # 结束上课的节数
+  endAt
+  # 该节课位于一星期中的第几天
+  dayInWeek
 }
 
 type LessonItem {

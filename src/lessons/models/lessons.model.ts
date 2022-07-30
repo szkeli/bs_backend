@@ -1,4 +1,4 @@
-import { ArgsType, Field, InputType, Int, ObjectType, PartialType } from '@nestjs/graphql'
+import { ArgsType, Field, Int, ObjectType } from '@nestjs/graphql'
 
 import { Connection } from '../../connections/models/connections.model'
 import { TASK_TYPE } from '../../tasks/models/tasks.model'
@@ -51,55 +51,13 @@ export class UpdateLessonMetaDataArgs {
     dayInWeek: number
 }
 
-@ObjectType()
-export class LessonItem {
-  @Field()
-    id: string
-
-  @Field(of => Int, { description: '第几节课开始' })
-    start: number
-
-  @Field(of => Int, { description: '第几节课结束' })
-    end: number
-
-  @Field(of => Int, { nullable: true, description: '该节课位于一星期中的第几天' })
-    dayInWeek: number
-
-  @Field(of => [Int], { nullable: true, description: 'TODO, 该课程要上课的周数的数组' })
-    circle: number[]
-
-  @Field({ nullable: true, description: 'TODO, 课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
-    description: string
-
-  @Field({ nullable: true, description: 'TODO, 上课地点' })
-    destination: string
-}
-
-@InputType()
-export class LessonItemInput {
-  @Field(of => Int, { description: '第几节课开始' })
-    start: number
-
-  @Field(of => Int, { description: '第几节课结束' })
-    end: number
-
-  @Field(of => Int, { description: '该节课位于一星期中的第几天' })
-    dayInWeek: number
-
-  @Field(of => [Int], { description: '该课程要上课的周数的数组' })
-    circle: number[]
-
-  @Field({ description: '课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
-    description: string
-
-  @Field({ description: '上课地点' })
-    destination: string
-}
-
 @ObjectType({ description: '课程对象' })
 export class Lesson {
   @Field({ description: '课程内部唯一 id' })
     id: string
+
+  @Field(of => String, { description: '课程对应的唯一课程号' })
+    lessonId: string
 
   @Field({ description: '上课地点', nullable: true })
     destination: string
@@ -110,16 +68,13 @@ export class Lesson {
   @Field(of => [Int], { nullable: true, description: 'TODO, 该课程要上课的周数的数组' })
     circle: number[]
 
-  @Field({ description: '课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
+  @Field(of => String, { description: '课程描述，比如 1-17周 星期五 第3-4节 致理楼L1-302,1-17周 星期四 第3-4节 致理楼L1-302' })
     description: string
 
   @Field(of => String, { description: '课程的创建时间' })
     createdAt: string
 
-  @Field(of => String, { description: '课程对应的唯一课程号' })
-    lessonId: string
-
-  @Field({ nullable: true, description: 'TODO, 授课教师的名字' })
+  @Field(of => String, { nullable: true, description: 'TODO, 授课教师的名字' })
     educatorName: string
 
   @Field(of => Int, { nullable: true, description: 'TODO, 开始学年' })
@@ -133,18 +88,24 @@ export class Lesson {
 
   @Field(of => String, { nullable: true, description: '自定义课程时的颜色' })
     color: string
+
+  @Field(of => Int, { description: '开始上课的节数' })
+    startAt: number
+
+  @Field(of => Int, { description: '结束上课的节数' })
+    endAt: number
 }
 
 @ArgsType()
 export class UpdateLessonArgs {
+  @Field(of => String, { description: '课程id' })
+    lessonId: string
+
   @Field(of => String, { description: '课程名称', nullable: true })
     name?: string | null
 
   @Field(of => String, { description: '上课地点，对于未列出的课程，此项可为 null', nullable: true })
     destination?: string | null
-
-  @Field(of => String, { description: '课程id' })
-    lessonId: string
 
   @Field(of => String, { description: '授课教师的名字', nullable: true })
     educatorName?: string | null
@@ -154,16 +115,19 @@ export class UpdateLessonArgs {
 
   @Field(of => [Int], { description: '课程的周数的数组，例如[2, 3, 4, 8, 9]', nullable: true })
     circle?: number[] | null
+
+  @Field(of => Int, { nullable: true })
+    startAt: number
+
+  @Field(of => Int, { nullable: true })
+    endAt: number
+
+  @Field(of => Int, { nullable: true })
+    dayInWeek: number
 }
 
 @ArgsType()
-export class UpdateLessonArgsBase {
-  @Field(of => [LessonItemInput], { description: 'lessonItem，对于未列出的课程，此项可为 null', nullable: true })
-    lessonItems?: LessonItemInput[] | null
-}
-
-@ArgsType()
-export class AddLessonArgs extends PartialType(UpdateLessonArgsBase) {
+export class AddLessonArgs {
   @Field(of => String, { description: '上课地点，对于未列出的课程，此项可为 null', nullable: true })
     destination: string
 
@@ -193,12 +157,15 @@ export class AddLessonArgs extends PartialType(UpdateLessonArgsBase) {
 
   @Field(of => String, { nullable: true, description: '自定义课程时的颜色' })
     color: string
-}
 
-@ArgsType()
-export class AddLessonItemsArgs extends PartialType(UpdateLessonArgsBase) {
-  @Field(of => String)
-    lessonId: string
+  @Field(of => Int, { description: '开始上课的节数' })
+    startAt: number
+
+  @Field(of => Int, { description: '节数上课的节数' })
+    endAt: number
+
+  @Field(of => Int, { description: '该节课位于一星期中的第几天' })
+    dayInWeek: number
 }
 
 @ObjectType()
