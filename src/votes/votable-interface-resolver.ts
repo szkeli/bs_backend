@@ -14,6 +14,7 @@ export class VotableInterfaceResolver {
 
   @ResolveField(of => VotesConnectionWithRelay)
   async votes (
+  // TODO: Admin 处理 viewer 是 Admin 时的逻辑
   @CurrentUser() user: User,
     @Parent() votable: Votable,
     @Args() args: RelayPagingConfigArgs

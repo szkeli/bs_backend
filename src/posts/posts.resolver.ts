@@ -57,6 +57,7 @@ export class PostsResolver {
 
   @Query(of => PostsConnectionWithRelay, { description: 'Relay分页版的posts接口' })
   @MaybeAuth()
+  @Roles(Role.Admin, Role.User)
   async postsWithRelay (@Args() paging: RelayPagingConfigArgs, @Args() filter: QueryPostsFilter) {
     return await this.postsService.postsWithRelay(paging, filter)
   }
