@@ -34,6 +34,7 @@ export class PinsResolver {
 
   @Query(of => PinsConnection, { description: '获取全部置顶信息' })
   @MaybeAuth()
+  @Roles(Role.Admin, Role.User)
   async pins (@Args() paging: RelayPagingConfigArgs) {
     return await this.pinsService.pins(paging)
   }
